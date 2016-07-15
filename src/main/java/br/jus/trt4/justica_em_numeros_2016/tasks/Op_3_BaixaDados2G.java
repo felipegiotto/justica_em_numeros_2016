@@ -52,12 +52,17 @@ public class Op_3_BaixaDados2G {
 	private NamedParameterStatement nsAssuntos;
 	private NamedParameterStatement nsMovimentos;
 	private NamedParameterStatement nsComplementos;
+	private int codigoMunicipioIBGETRT;
 
 	public static void main(String[] args) throws SQLException, Exception {
 
 		Op_3_BaixaDados2G baixaDados = new Op_3_BaixaDados2G();
 		try {
-			baixaDados.init();
+			
+			// Abre conexões com o PJe e prepara consultas a serem realizadas
+			baixaDados.prepararConexao();
+			
+			// Executa consultas e grava arquivo XML
 			baixaDados.gerarXML();
 		} finally {
 			baixaDados.close();
@@ -68,9 +73,10 @@ public class Op_3_BaixaDados2G {
 
 		// Objetos auxiliares para gerar o XML
 		ObjectFactory factory = new ObjectFactory();
+		JAXBContext context = JAXBContext.newInstance(Processos.class);
+		Marshaller jaxbMarshaller = context.createMarshaller();
+		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 		Processos processos = factory.createProcessos();
-
-		nsConsultaProcessos.setString("cd_municipio_ibge_trt", Auxiliar.getParametroConfiguracao("codigo_municipio_ibge_trt", true));
 
 		// Executa a consulta no banco de dados do PJe
 		LOGGER.info("Executando consulta no banco de dados...");
@@ -81,7 +87,7 @@ public class Op_3_BaixaDados2G {
 				LOGGER.debug("Analisando processo " + numeroCompletoProcesso + " (" + (++i) + ")");
 
 				TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
-				preencheProcessoJudicialComBaseEmScriptDoTRT14(processoJudicial, rsProcessos);
+				preencheDadosProcesso(processoJudicial, rsProcessos);
 				processos.getProcesso().add(processoJudicial);
 			}
 		}
@@ -89,18 +95,14 @@ public class Op_3_BaixaDados2G {
 		// Arquivo onde o XML será gravado
 		arquivoSaida.getParentFile().mkdirs();
 
-		// Objetos auxiliares para gerar o XML
-		JAXBContext context = JAXBContext.newInstance(Processos.class);
-		Marshaller jaxbMarshaller = context.createMarshaller();
-		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-
+		// Gera o arquivo XML
 		LOGGER.info("Gerando arquivo XML: " + arquivoSaida + "...");
 		jaxbMarshaller.marshal(processos, arquivoSaida);
 		LOGGER.info("Arquivo XML gerado!");
 	}
 
 	/**
-	 * Método criado com base no script recebido do TRT14 (Felypp De Assis Oliveira)
+	 * Método criado com base no script recebido do TRT14
 	 * para preencher os dados de um processo judicial dentro das classes que gerarão o XML.
 	 * 
 	 * @param processoJudicial
@@ -108,7 +110,7 @@ public class Op_3_BaixaDados2G {
 	 * @throws SQLException 
 	 * @throws IOException 
 	 */
-	private void preencheProcessoJudicialComBaseEmScriptDoTRT14(TipoProcessoJudicial processoJudicial, ResultSet rsProcesso) throws SQLException, IOException {
+	private void preencheDadosProcesso(TipoProcessoJudicial processoJudicial, ResultSet rsProcesso) throws SQLException, IOException {
 
 		// Cabeçalho com dados básicos do processo:
 		TipoCabecalhoProcesso cabecalhoProcesso = new TipoCabecalhoProcesso();
@@ -120,11 +122,11 @@ public class Op_3_BaixaDados2G {
 		cabecalhoProcesso.setNivelSigilo(Auxiliar.getCampoIntNotNull(rsProcesso, "nivelSigilo"));
 		cabecalhoProcesso.setNumero(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
 		cabecalhoProcesso.setClasseProcessual(Auxiliar.getCampoIntNotNull(rsProcesso, "cd_classe_judicial"));
-		cabecalhoProcesso.setCodigoLocalidade(Auxiliar.getCampoStringNotNull(rsProcesso, "id_municipio_ibge_origem"));
+		cabecalhoProcesso.setCodigoLocalidade(Integer.toString(codigoMunicipioIBGETRT));
 		cabecalhoProcesso.setDataAjuizamento(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
 
+		// Consulta todos os polos do processo
 		nsPolos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
-
 		try (ResultSet rsPolos = nsPolos.executeQuery()) {
 			while (rsPolos.next()) {
 
@@ -137,6 +139,7 @@ public class Op_3_BaixaDados2G {
 				polo.setPolo(ModalidadePoloProcessual.valueOf(rsPolos.getString("in_polo_participacao")));
 				cabecalhoProcesso.getPolo().add(polo);
 
+				// Consulta as partes de um determinado polo no processo
 				nsPartes.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
 				nsPartes.setString("in_participacao", rsPolos.getString("in_participacao"));
 				try (ResultSet rsPartes = nsPartes.executeQuery()) {
@@ -163,6 +166,7 @@ public class Op_3_BaixaDados2G {
 						pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(rsPartes.getString("tp_sexo")));
 						pessoa.setNumeroDocumentoPrincipal(rsPartes.getString("nr_documento"));
 
+						// Consulta os documentos da parte
 						nsDocumentos.setInt("id_pessoa", rsPartes.getInt("id_pessoa"));
 						try (ResultSet rsDocumentos = nsDocumentos.executeQuery()) {
 							while (rsDocumentos.next()) {
@@ -182,6 +186,7 @@ public class Op_3_BaixaDados2G {
 			}
 		}
 
+		// Consulta os assuntos desse processo
 		nsAssuntos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
 		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
 			boolean encontrouAssunto = false;
@@ -221,10 +226,10 @@ public class Op_3_BaixaDados2G {
 		//		orgaoJulgador.setCodigoOrgao(rsProcesso.getString("ds_sigla")); // TODO: Falta definir origem do campo "CodigoOrgao"!
 		//		orgaoJulgador.setNomeOrgao(rsProcesso.getString("ds_orgao_julgador")); // TODO: Falta definir origem do campo "NomeOrgao"!
 		orgaoJulgador.setInstancia(rsProcesso.getString("tp_instancia"));
-		orgaoJulgador.setCodigoMunicipioIBGE(rsProcesso.getInt("id_municipio_ibge_atual"));
+		orgaoJulgador.setCodigoMunicipioIBGE(codigoMunicipioIBGETRT);
 		cabecalhoProcesso.setOrgaoJulgador(orgaoJulgador);
 
-
+		// Consulta os movimentos processuais desse processo
 		nsMovimentos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
 		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
 			while (rsMovimentos.next()) {
@@ -242,7 +247,7 @@ public class Op_3_BaixaDados2G {
 				movimentoNacional.setCodigoNacional(rsMovimentos.getInt("cd_movimento_cnj"));
 				movimento.setMovimentoNacional(movimentoNacional);
 
-
+				// Consulta os complementos desse movimento processual
 				nsComplementos.setInt("id_processo_evento", rsMovimentos.getInt("id_processo_evento"));
 				try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
 					while (rsComplementos.next()) {
@@ -272,7 +277,7 @@ public class Op_3_BaixaDados2G {
 		}
 	}
 
-	private void init() throws SQLException, IOException {
+	private void prepararConexao() throws SQLException, IOException {
 
 		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe2G();
@@ -312,6 +317,9 @@ public class Op_3_BaixaDados2G {
 		// Le o SQL que fará a consulta dos complementos dos movimentos processuais
 		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/07_consulta_complementos.sql");
 		nsComplementos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaComplementos);
+		
+		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
+		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao("codigo_municipio_ibge_trt");		
 	}
 
 	private void close() {
@@ -320,6 +328,7 @@ public class Op_3_BaixaDados2G {
 		if (nsConsultaProcessos != null) {
 			try {
 				nsConsultaProcessos.close();
+				nsConsultaProcessos = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsConsultaProcessos': " + e.getLocalizedMessage(), e);
 			}
@@ -327,6 +336,7 @@ public class Op_3_BaixaDados2G {
 		if (nsPolos != null) {
 			try {
 				nsPolos.close();
+				nsPolos = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsPolos': " + e.getLocalizedMessage(), e);
 			}
@@ -334,6 +344,7 @@ public class Op_3_BaixaDados2G {
 		if (nsPartes != null) {
 			try {
 				nsPartes.close();
+				nsPartes = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsPartes': " + e.getLocalizedMessage(), e);
 			}
@@ -341,6 +352,7 @@ public class Op_3_BaixaDados2G {
 		if (nsDocumentos != null) {
 			try {
 				nsDocumentos.close();
+				nsDocumentos = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsDocumentos': " + e.getLocalizedMessage(), e);
 			}
@@ -348,6 +360,7 @@ public class Op_3_BaixaDados2G {
 		if (nsAssuntos != null) {
 			try {
 				nsAssuntos.close();
+				nsAssuntos = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsAssuntos': " + e.getLocalizedMessage(), e);
 			}
@@ -355,6 +368,7 @@ public class Op_3_BaixaDados2G {
 		if (nsMovimentos != null) {
 			try {
 				nsMovimentos.close();
+				nsMovimentos = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsMovimentos': " + e.getLocalizedMessage(), e);
 			}
@@ -362,6 +376,7 @@ public class Op_3_BaixaDados2G {
 		if (nsComplementos != null) {
 			try {
 				nsComplementos.close();
+				nsComplementos = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsComplementos': " + e.getLocalizedMessage(), e);
 			}
@@ -371,6 +386,7 @@ public class Op_3_BaixaDados2G {
 		if (conexaoBasePrincipal != null) {
 			try {
 				conexaoBasePrincipal.close();
+				conexaoBasePrincipal = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando conexão com o PJe: " + e.getLocalizedMessage(), e);
 			}

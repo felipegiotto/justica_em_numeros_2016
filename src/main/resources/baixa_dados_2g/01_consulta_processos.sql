@@ -15,7 +15,7 @@ SELECT
       /* classeProcessual */
       cj.cd_classe_judicial,
       /* codigoLocalidade */
-      :cd_municipio_ibge_trt id_municipio_ibge_origem,
+      --:cd_municipio_ibge_trt id_municipio_ibge_origem,
       /* dataAjuizamento */
       to_char(pt.dt_autuacao, 'yyyymmddhh24miss') dt_autuacao,  -- TODO: Definir formato para mostrar a data/hora da autuação
 /*
@@ -25,9 +25,9 @@ SELECT
       -- nomeOrgao
       case when ps.id_processo_trf is null then serv_ojc.nom_org_julg else serv_oj.nom_org_julg end ds_orgao_julgador,
       -- instancia   */
-      case when pt.nr_instancia = '2' then 'ORIG' else 'REV' end tp_instancia, 
+      case when pt.nr_instancia = '2' then 'ORIG' else 'REV' end tp_instancia 
       /* codigoMunicipioIBGE */
-      :cd_municipio_ibge_trt id_municipio_ibge_atual 
+      --:cd_municipio_ibge_trt id_municipio_ibge_atual 
     FROM tb_processo_trf pt
     INNER JOIN tb_processo p ON 1=1
      and p.id_processo = pt.id_processo_trf

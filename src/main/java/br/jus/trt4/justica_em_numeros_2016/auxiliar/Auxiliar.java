@@ -58,6 +58,14 @@ public class Auxiliar {
 		throw new RuntimeException("Defina o parâmetro '" + parametro + "' no arquivo '" + arquivoConfiguracoes + "' com os valores SIM ou NAO");
 	}
 	
+	public static int getParametroInteiroConfiguracao(String parametro) {
+		try {
+			return Integer.parseInt(getParametroConfiguracao(parametro, true));
+		} catch (NumberFormatException ex) {
+			throw new RuntimeException("O parâmetro '" + parametro + "', no arquivo '" + arquivoConfiguracoes + "', deve ser numérico.");
+		}
+	}
+	
 	public static String getParametroConfiguracao(String parametro, boolean obrigatorio) {
 		if (obrigatorio && !getConfigs().containsKey(parametro)) {
 			throw new RuntimeException("Defina o parâmetro '" + parametro + "' no arquivo '" + arquivoConfiguracoes + "'");
