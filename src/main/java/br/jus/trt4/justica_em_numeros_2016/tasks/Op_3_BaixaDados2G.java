@@ -58,10 +58,10 @@ public class Op_3_BaixaDados2G {
 
 		Op_3_BaixaDados2G baixaDados = new Op_3_BaixaDados2G();
 		try {
-			
+
 			// Abre conexões com o PJe e prepara consultas a serem realizadas
 			baixaDados.prepararConexao();
-			
+
 			// Executa consultas e grava arquivo XML
 			baixaDados.gerarXML();
 		} finally {
@@ -71,6 +71,8 @@ public class Op_3_BaixaDados2G {
 
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
+		// TODO: revisar todos os campos que possam estar gravando NULL nos atributos. Verificar se será necessário utilizar o Auxiliar.getIntNotNull ou equivalente.
+
 		// Objetos auxiliares para gerar o XML
 		ObjectFactory factory = new ObjectFactory();
 		JAXBContext context = JAXBContext.newInstance(Processos.class);
@@ -78,7 +80,23 @@ public class Op_3_BaixaDados2G {
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 		Processos processos = factory.createProcessos();
 
+		// TODO: Verificar se CNJ irá disponibilizar ferramenta para extrair dados do PJe:
+		// Para extrair os dados do PJE ou MNI, o CNJ disponibilizará um programa capaz de gerar as informações segundo o modelo MNI. Para tanto, o tribunal deverá prover listagens com os números dos processos, separados entre 2º grau, 1º grau, Juizados Especiais e Turmas Recursais.
+		// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
+
 		// Executa a consulta no banco de dados do PJe
+		// TODO: Restringir a consulta de processos, conforme regra do CNJ:
+		// * Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 
+		//   31 de julho de 2016, bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
+		// * Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização 
+		// no mês de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar 
+		// perda de algum tipo de informação.
+		// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
+		// 3. Quais processos devem ser enviados? 
+		// R: Todos os processos em tramitação na data de 31/07/2016 e todos os baixados no período de 01/01/2016 a 31/07/2016 deverão ser encaminhados, com todas os movimentos desde o seu ajuizamento.
+		// 4. E nas cargas mensais? 
+		// R: Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês de agosto de 2016, com todos os dados e movimentos destes processos, desde o seu início, de forma a evitar perda de alguma informação em relação ao processo.		
+		// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
 		LOGGER.info("Executando consulta no banco de dados...");
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
 			int i=0;
@@ -197,7 +215,7 @@ public class Op_3_BaixaDados2G {
 				// raise notice '<codigoNacional>%</codigoNacional>', assunto.cd_assunto_trf;
 				// raise notice '</assunto>';
 				TipoAssuntoProcessual assunto = new TipoAssuntoProcessual();
-				assunto.setCodigoNacional(rsAssuntos.getInt("cd_assunto_trf"));
+				assunto.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf"));
 				cabecalhoProcesso.getAssunto().add(assunto);
 
 				encontrouAssunto = true;
@@ -217,7 +235,26 @@ public class Op_3_BaixaDados2G {
 			}
 		}
 
+		// TODO: Campo "Competência"
+		/*
+		11. Como preencher o campo “Competência”? 
+			    R: Os tribunais poderão utilizar seus próprios descritivos internos.
+			    Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
+		 */		
 
+		// Órgão julgador:
+		/*
+		 * Órgãos Julgadores
+Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
+Em <codigoOrgao> deverão ser informados os mesmos códigos das serventias judiciárias cadastradas no Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009).
+Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judiciárias cadastradas no Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009)
+			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
+		 */
+		/*
+			10. Como preencher o campo “Órgão Julgador”? 
+			    R: Os Tribunais deverão seguir os mesmos códigos e descrições utilizadas no módulo de produtividade.
+			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
+		 */
 		// Script TRT14:
 		// -- orgaoJulgador
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
@@ -267,6 +304,18 @@ public class Op_3_BaixaDados2G {
 						if (!"".equals(rsComplementos.getString("cd_complemento").trim())) { // TODO: Conferir se o cd_complemento realmente vem antes do nm_complemento
 							sb.append(":");
 							sb.append(rsComplementos.getString("cd_complemento"));
+						} else {
+							// TODO: Verificar complemento de movimento sem cd_complemento!
+							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
+							/*
+								5. Como devo informar o complemento de um movimento, visto que ele é composto de duas informações e o modelo só tem um campo? 
+
+								    R: O complemento é composto pelo seu código e descrição, do complemento e do complemento tabela deverá ser colocado no formato:
+
+								    <código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>							 * 
+							 */
+							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
+							//LOGGER.warn("Verificar complemento de movimento sem cd_complemento!");
 						}
 						sb.append(":");
 						sb.append(rsComplementos.getString("nm_complemento"));
@@ -317,7 +366,7 @@ public class Op_3_BaixaDados2G {
 		// Le o SQL que fará a consulta dos complementos dos movimentos processuais
 		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/07_consulta_complementos.sql");
 		nsComplementos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaComplementos);
-		
+
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao("codigo_municipio_ibge_trt");		
 	}
