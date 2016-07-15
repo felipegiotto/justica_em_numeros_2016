@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
+			<!-- <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY" /> --> <!-- Na tela, mostra somente ERROR para cima -->
+		</Console>
+		
+		<RollingFile name="File" fileName="log/justica_em_numeros.log" filePattern="log/justica_em_numeros-%d{yyyy-MM-dd-HH-mm}--%i.log">
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
+		</RollingFile>
+	</Appenders>
+	
+	<Loggers>
+		<Root level="DEBUG">
+			<AppenderRef ref="Console" />
+			<AppenderRef ref="File" />
+		</Root>
+	</Loggers>
+</Configuration>
