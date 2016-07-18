@@ -351,8 +351,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/01_consulta_processos.sql");
 
 		// Em ambiente de testes, processa somente um lote menor, para ficar mais rápido
-		if (Auxiliar.getParametroBooleanConfiguracao("testar_com_lote_pequeno")) {
-			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'testar_com_lote_pequeno', nas configurações!! <<<<<<<<<<");
+		if ("TESTES".equals(Auxiliar.getParametroConfiguracao("tipo_carga_xml", true))) {
+			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			sqlConsultaProcessos += " LIMIT 30";
 		}
 
