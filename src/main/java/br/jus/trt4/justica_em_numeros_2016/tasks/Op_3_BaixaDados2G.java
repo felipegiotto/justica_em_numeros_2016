@@ -31,6 +31,8 @@ import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
+import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ProcessaServentiasCNJ;
+import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
 
 /**
  * Consulta os processos no banco de dados de 2o Grau e gera o arquivo XML em "output/dados_2g.xml".
@@ -53,6 +55,7 @@ public class Op_3_BaixaDados2G {
 	private NamedParameterStatement nsMovimentos;
 	private NamedParameterStatement nsComplementos;
 	private int codigoMunicipioIBGETRT;
+	private ProcessaServentiasCNJ processaServentiasCNJ;
 
 	public static void main(String[] args) throws SQLException, Exception {
 
@@ -259,9 +262,11 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// -- orgaoJulgador
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
+		String nomeServentiaPJe = rsProcesso.getString("ds_orgao_julgador");
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeServentiaPJe);
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
-		//		orgaoJulgador.setCodigoOrgao(rsProcesso.getString("ds_sigla")); // TODO: Falta definir origem do campo "CodigoOrgao"!
-		//		orgaoJulgador.setNomeOrgao(rsProcesso.getString("ds_orgao_julgador")); // TODO: Falta definir origem do campo "NomeOrgao"!
+		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo()); // TODO: Falta definir origem do campo "CodigoOrgao"!
+		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome()); // TODO: Falta definir origem do campo "NomeOrgao"!
 		orgaoJulgador.setInstancia(rsProcesso.getString("tp_instancia"));
 		orgaoJulgador.setCodigoMunicipioIBGE(codigoMunicipioIBGETRT);
 		cabecalhoProcesso.setOrgaoJulgador(orgaoJulgador);
@@ -328,6 +333,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 
 	private void prepararConexao() throws SQLException, IOException {
 
+		processaServentiasCNJ = new ProcessaServentiasCNJ();
+		
 		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe2G();
 
@@ -336,7 +343,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 
 		// Em ambiente de testes, processa somente um lote menor, para ficar mais rápido
 		if (Auxiliar.getParametroBooleanConfiguracao("testar_com_lote_pequeno")) {
-			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados estão sendo carregados, para testes! <<<<<<<<<<");
+			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'testar_com_lote_pequeno', nas configurações!! <<<<<<<<<<");
 			sqlConsultaProcessos += " LIMIT 30";
 		}
 

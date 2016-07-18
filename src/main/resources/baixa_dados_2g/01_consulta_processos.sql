@@ -18,8 +18,10 @@ SELECT
       --:cd_municipio_ibge_trt id_municipio_ibge_origem,
       /* dataAjuizamento */
       to_char(pt.dt_autuacao, 'yyyymmddhh24miss') dt_autuacao,  -- TODO: Definir formato para mostrar a data/hora da autuação
+      
+      /*** orgaoJulgador ***/
+      upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
 /*
-      / *** orgaoJulgador *** /
       -- codigoOrgao 
       case when ps.id_processo_trf is null then serv_ojc.cod_serventia else serv_oj.cod_serventia end ds_sigla,
       -- nomeOrgao
@@ -40,11 +42,12 @@ SELECT
     INNER JOIN tb_municipio_ibge ib ON 1=1
       and ib.id_municipio = jm.id_municipio
     */
-      /*
+      
     LEFT JOIN tb_orgao_julgador oj ON 1=1
       and oj.id_orgao_julgador = pt.id_orgao_julgador
     LEFT JOIN tb_orgao_julgador_colgiado ojc ON 1=1
       and ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado
+/*      
     LEFT JOIN 
     (
       -- exemplo de preenchimento: 
