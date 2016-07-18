@@ -1,6 +1,10 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
+import java.io.IOException;
 import java.util.ArrayList;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
@@ -15,6 +19,8 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
  * @author fgiotto
  */
 public class Op_1_ParseArquivoXSD {
+	
+	private static final Logger LOGGER = LogManager.getLogger(Op_1_ParseArquivoXSD.class);
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -38,9 +44,17 @@ public class Op_1_ParseArquivoXSD {
 		comandos.add("src/main/java");
 		
 		// Executa o comando, mostrando o resultado no console
-		Process p = Runtime.getRuntime().exec(comandos.toArray(new String[comandos.size()]));
-		Auxiliar.consumirStream(p.getInputStream(), "STDOUT - ");
-		Auxiliar.consumirStream(p.getErrorStream(), "STDERR - ");
-		Auxiliar.conferirRetornoProcesso(p);
+		LOGGER.info("Executando comando: " + comandos);
+		Process process;
+		try {
+			process = Runtime.getRuntime().exec(comandos.toArray(new String[comandos.size()]));
+		} catch (IOException ex) {
+			throw new IOException("Não foi possível executar o comando 'xjc', do Java, para analisar os arquivos XSD do CNJ. Verifique se a pasta 'bin' do Java está no seu PATH!", ex);
+		}
+		Auxiliar.consumirStream(process.getInputStream(), "STDOUT - ");
+		Auxiliar.consumirStream(process.getErrorStream(), "STDERR - ");
+		Auxiliar.conferirRetornoProcesso(process);
+		
+		LOGGER.info("Operação concluída!");
 	}
 }
