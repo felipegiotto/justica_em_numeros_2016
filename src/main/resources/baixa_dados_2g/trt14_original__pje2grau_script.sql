@@ -1,4 +1,3 @@
-﻿
 DO language plpgsql $$
 declare 
   proc    record;

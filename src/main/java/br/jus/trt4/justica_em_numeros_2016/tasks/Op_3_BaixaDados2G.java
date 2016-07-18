@@ -76,8 +76,6 @@ public class Op_3_BaixaDados2G {
 
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
-		// TODO: revisar todos os campos que possam estar gravando NULL nos atributos. Verificar se será necessário utilizar o Auxiliar.getIntNotNull ou equivalente.
-
 		// Objetos auxiliares para gerar o XML
 		ObjectFactory factory = new ObjectFactory();
 		JAXBContext context = JAXBContext.newInstance(Processos.class);
