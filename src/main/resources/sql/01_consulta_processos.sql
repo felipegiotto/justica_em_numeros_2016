@@ -1,4 +1,4 @@
--- Trecho de SQL copiado do script do TRT14: pje2grau_script.sql
+-- Trecho de SQL adaptado do script do TRT14: trt14_original__pje2grau_script.sql
 
 SELECT 
       p.nr_processo as numero_completo_processo,
@@ -15,7 +15,7 @@ SELECT
       /* classeProcessual */
       cj.cd_classe_judicial,
       /* codigoLocalidade */
-      --:cd_municipio_ibge_trt id_municipio_ibge_origem,
+      ib.id_municipio_ibge id_municipio_ibge_origem,
       /* dataAjuizamento */
       to_char(pt.dt_autuacao, 'yyyymmddhh24miss') dt_autuacao,  -- TODO: Definir formato para mostrar a data/hora da autuação
       
@@ -28,26 +28,23 @@ SELECT
       -- nomeOrgao
       case when ps.id_processo_trf is null then serv_ojc.nom_org_julg else serv_oj.nom_org_julg end ds_orgao_julgador,
       -- instancia   */
-      case when pt.nr_instancia = '2' then 'ORIG' else 'REV' end tp_instancia 
+      case when pt.nr_instancia = '2' then 'ORIG' else 'REV' end tp_instancia, 
       /* codigoMunicipioIBGE */
-      --:cd_municipio_ibge_trt id_municipio_ibge_atual 
+      ib.id_municipio_ibge id_municipio_ibge_atual
     FROM tb_processo_trf pt
     INNER JOIN tb_processo p ON 1=1
      and p.id_processo = pt.id_processo_trf
     INNER JOIN tb_classe_judicial cj ON 1=1
       and cj.id_classe_judicial = pt.id_classe_judicial
-    /*
+    LEFT JOIN tb_orgao_julgador oj ON 1=1
+      and oj.id_orgao_julgador = pt.id_orgao_julgador
+    LEFT JOIN tb_orgao_julgador_colgiado ojc ON 1=1
+      and ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado
     INNER JOIN tb_jurisdicao_municipio jm ON 1=1
       and jm.id_jurisdicao = oj.id_jurisdicao
       AND jm.in_sede        = 'S'
     INNER JOIN tb_municipio_ibge ib ON 1=1
       and ib.id_municipio = jm.id_municipio
-    */
-      
-    LEFT JOIN tb_orgao_julgador oj ON 1=1
-      and oj.id_orgao_julgador = pt.id_orgao_julgador
-    LEFT JOIN tb_orgao_julgador_colgiado ojc ON 1=1
-      and ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado
 /*      
     LEFT JOIN 
     (
