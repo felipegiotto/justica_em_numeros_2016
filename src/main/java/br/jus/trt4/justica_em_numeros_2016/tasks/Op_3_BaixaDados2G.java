@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.TreeSet;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -56,6 +57,7 @@ public class Op_3_BaixaDados2G {
 	private NamedParameterStatement nsComplementos;
 	private int codigoMunicipioIBGETRT;
 	private ProcessaServentiasCNJ processaServentiasCNJ;
+	private TreeSet<String> processosAnalisados = new TreeSet<>();
 
 	public static void main(String[] args) throws SQLException, Exception {
 
@@ -110,6 +112,13 @@ public class Op_3_BaixaDados2G {
 				TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
 				preencheDadosProcesso(processoJudicial, rsProcessos);
 				processos.getProcesso().add(processoJudicial);
+				
+				// Gera um WARNING se o mesmo processo for analisado duas vezes
+				if (processosAnalisados.contains(numeroCompletoProcesso)) {
+					LOGGER.warn("O processo '" + numeroCompletoProcesso + "' foi inserido no XML mais do que uma vez! Confira as consultas que estão sendo realizadas.");
+				} else {
+					processosAnalisados.add(numeroCompletoProcesso);
+				}
 			}
 		}
 
@@ -182,9 +191,9 @@ public class Op_3_BaixaDados2G {
 						//   END IF;
 						TipoPessoa pessoa = new TipoPessoa();
 						parte.setPessoa(pessoa);
-						pessoa.setNome(rsPartes.getString("ds_nome"));
-						pessoa.setTipoPessoa(TipoQualificacaoPessoa.fromValue(rsPartes.getString("in_tipo_pessoa")));
-						pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(rsPartes.getString("tp_sexo")));
+						pessoa.setNome(Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome"));
+						pessoa.setTipoPessoa(TipoQualificacaoPessoa.fromValue(Auxiliar.getCampoStringNotNull(rsPartes, "in_tipo_pessoa")));
+						pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(Auxiliar.getCampoStringNotNull(rsPartes, "tp_sexo")));
 						pessoa.setNumeroDocumentoPrincipal(rsPartes.getString("nr_documento"));
 
 						// Consulta os documentos da parte
@@ -196,9 +205,9 @@ public class Op_3_BaixaDados2G {
 								// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
 								//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
 								TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
-								documento.setCodigoDocumento(rsDocumentos.getString("nr_documento"));
-								documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(rsDocumentos.getString("tp_documento")));
-								documento.setEmissorDocumento(rsDocumentos.getString("ds_emissor"));
+								documento.setCodigoDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento"));
+								documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(Auxiliar.getCampoStringNotNull(rsDocumentos, "tp_documento")));
+								documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
 								pessoa.getDocumento().add(documento);
 							}
 						}
@@ -262,7 +271,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// -- orgaoJulgador
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
-		String nomeServentiaPJe = rsProcesso.getString("ds_orgao_julgador");
+		String nomeServentiaPJe = rsProcesso.getString("nome_oj_ojc");
 		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeServentiaPJe);
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo()); // TODO: Falta definir origem do campo "CodigoOrgao"!
@@ -286,7 +295,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				// Script TRT14:
 				// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
 				TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
-				movimentoNacional.setCodigoNacional(rsMovimentos.getInt("cd_movimento_cnj"));
+				movimentoNacional.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"));
 				movimento.setMovimentoNacional(movimentoNacional);
 
 				// Consulta os complementos desse movimento processual
@@ -306,10 +315,14 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 						sb.append(rsComplementos.getString("cd_tipo_complemento"));
 						sb.append(":");
 						sb.append(rsComplementos.getString("ds_nome"));
-						if (!"".equals(rsComplementos.getString("cd_complemento").trim())) { // TODO: Conferir se o cd_complemento realmente vem antes do nm_complemento
+						boolean existeCodigoComplemento = !"".equals(rsComplementos.getString("cd_complemento").trim());
+						if (existeCodigoComplemento) { // TODO: Conferir se o cd_complemento realmente vem antes do nm_complemento
 							sb.append(":");
 							sb.append(rsComplementos.getString("cd_complemento"));
-						} else {
+						}
+						sb.append(":");
+						sb.append(rsComplementos.getString("nm_complemento"));
+						if (!existeCodigoComplemento) {
 							// TODO: Verificar complemento de movimento sem cd_complemento!
 							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 							/*
@@ -320,10 +333,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 								    <código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>							 * 
 							 */
 							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
-							//LOGGER.warn("Verificar complemento de movimento sem cd_complemento!");
+							LOGGER.warn("Há um complemento que não possui código: " + sb);
 						}
-						sb.append(":");
-						sb.append(rsComplementos.getString("nm_complemento"));
 						movimento.getComplemento().add(sb.toString());
 					}
 				}	

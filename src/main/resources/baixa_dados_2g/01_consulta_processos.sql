@@ -20,7 +20,8 @@ SELECT
       to_char(pt.dt_autuacao, 'yyyymmddhh24miss') dt_autuacao,  -- TODO: Definir formato para mostrar a data/hora da autuação
       
       /*** orgaoJulgador ***/
-      upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
+      upper(to_ascii(case when ps.id_processo_trf is null then ojc.ds_orgao_julgador_colegiado else oj.ds_orgao_julgador end)) nome_oj_ojc,
+      --upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
 /*
       -- codigoOrgao 
       case when ps.id_processo_trf is null then serv_ojc.cod_serventia else serv_oj.cod_serventia end ds_sigla,
@@ -78,7 +79,8 @@ SELECT
         and ad.dt_atualizacao <  dt_fim_periodo 
     ) pc on 1=1
       and pc.id_processo_trf = pt.id_processo_trf
-    LEFT JOIN 
+      */
+    LEFT JOIN -- TODO: Conferir se não está duplicando os registros de processos que tiveram mais de uma sessão
     (
       select ps.id_processo_trf 
       from tb_pauta_sessao ps
@@ -90,6 +92,5 @@ SELECT
         -- and ps.id_processo_trf = 2001
     ) ps on 1=1
       and ps.id_processo_trf = pt.id_processo_trf 
-      */
     WHERE 1=1
       and length(p.nr_processo) = 25
