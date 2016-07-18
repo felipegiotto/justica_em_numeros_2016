@@ -161,7 +161,7 @@ public class Op_2_GeraXMLs {
 	 * @throws SQLException 
 	 * @throws IOException 
 	 */
-	private void preencheDadosProcesso(TipoProcessoJudicial processoJudicial, ResultSet rsProcesso) throws SQLException, IOException {
+	public void preencheDadosProcesso(TipoProcessoJudicial processoJudicial, ResultSet rsProcesso) throws SQLException, IOException {
 
 		// Cabeçalho com dados básicos do processo:
 		TipoCabecalhoProcesso cabecalhoProcesso = new TipoCabecalhoProcesso();
@@ -303,10 +303,19 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		String nomeServentiaPJe = rsProcesso.getString("nome_oj_ojc");
 		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeServentiaPJe);
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
-		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo()); // TODO: Falta definir origem do campo "CodigoOrgao"!
-		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome()); // TODO: Falta definir origem do campo "NomeOrgao"!
+		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
+		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
 		orgaoJulgador.setInstancia(rsProcesso.getString("tp_instancia"));
-		orgaoJulgador.setCodigoMunicipioIBGE(codigoMunicipioIBGETRT);
+		if (grau == 1) {
+			
+			// Em 1G, pega como localidade do OJ o município do OJ do processo
+			orgaoJulgador.setCodigoMunicipioIBGE(Auxiliar.getCampoIntNotNull(rsProcesso, "id_municipio_ibge_atual"));
+		} else {
+			
+			// Em 2G, pega como localidade do OJ o município do TRT, que está definido no arquivo de configurações
+			orgaoJulgador.setCodigoMunicipioIBGE(codigoMunicipioIBGETRT);
+		}
+
 		cabecalhoProcesso.setOrgaoJulgador(orgaoJulgador);
 
 		// Consulta os movimentos processuais desse processo
@@ -371,7 +380,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		}
 	}
 
-	private void prepararConexao() throws SQLException, IOException {
+	public void prepararConexao() throws SQLException, IOException {
 
 		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
 		
@@ -423,7 +432,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao("codigo_municipio_ibge_trt");		
 	}
 
-	private void close() {
+	public void close() {
 
 		// Fecha PreparedStatements
 		if (nsConsultaProcessos != null) {
@@ -492,5 +501,9 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				LOGGER.warn("Erro fechando conexão com o PJe: " + e.getLocalizedMessage(), e);
 			}
 		}
+	}
+	
+	public Connection getConexaoBasePrincipal() {
+		return conexaoBasePrincipal;
 	}
 }

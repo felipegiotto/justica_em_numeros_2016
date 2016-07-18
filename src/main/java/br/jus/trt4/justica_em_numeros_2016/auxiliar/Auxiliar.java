@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 public class Auxiliar {
 
 	private static final File arquivoConfiguracoes = new File("config.properties");
+	private static final File arquivoModeloConfiguracoes = new File("config_modelo.properties");
 
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
@@ -132,7 +133,7 @@ public class Auxiliar {
 
 			try {
 				if (!arquivoConfiguracoes.exists()) {
-					throw new RuntimeException("Crie o arquivo '" + arquivoConfiguracoes + "' com os parâmetros necessários! Utilize como modelo o arquivo 'config_modelo.properties'");
+					throw new RuntimeException("Crie o arquivo '" + arquivoConfiguracoes + "' com os parâmetros necessários! Utilize como modelo o arquivo '" + arquivoModeloConfiguracoes + "'");
 				}
 				Properties p = new Properties();
 
