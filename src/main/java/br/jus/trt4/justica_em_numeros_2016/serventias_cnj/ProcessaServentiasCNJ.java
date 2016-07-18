@@ -15,6 +15,8 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
  * Classe responsável por ler os arquivos de serventia do CNJ (conforme parâmetro arquivo_serventias_cnj)
  * e auxiliar no preenchimento correto dos XMLs.
  * 
+ * Objeto que fará o "de/para" dos OJ e OJC do PJe para as serventias do CNJ
+ * 
  * @author fgiotto
  */
 public class ProcessaServentiasCNJ {

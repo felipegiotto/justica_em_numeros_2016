@@ -44,9 +44,10 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
  */
 public class Op_2_GeraXMLs {
 
-	private static final File arquivoSaida = new File("output/dados_2g.xml");
+	private final File arquivoSaida;
 
 	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLs.class);
+	private int grau;
 	private Connection conexaoBasePrincipal;
 	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPolos;
@@ -56,12 +57,32 @@ public class Op_2_GeraXMLs {
 	private NamedParameterStatement nsMovimentos;
 	private NamedParameterStatement nsComplementos;
 	private int codigoMunicipioIBGETRT;
-	private ProcessaServentiasCNJ processaServentiasCNJ;
+	private static ProcessaServentiasCNJ processaServentiasCNJ;
 	private TreeSet<String> processosAnalisados = new TreeSet<>();
 
+	public Op_2_GeraXMLs(int grau) {
+		this.grau = grau;
+		this.arquivoSaida = new File("output/dados_" + grau + "g.xml");
+	}
+
+	/**
+	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
+	 */
 	public static void main(String[] args) throws SQLException, Exception {
 
-		Op_2_GeraXMLs baixaDados = new Op_2_GeraXMLs();
+		// Verifica se deve gerar XML para 1o Grau
+		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
+			gerarXMLs(1);
+		}
+		
+		// Verifica se deve gerar XML para 2o Grau
+		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_2G")) {
+			gerarXMLs(2);
+		}
+	}
+
+	private static void gerarXMLs(int grau) throws Exception {
+		Op_2_GeraXMLs baixaDados = new Op_2_GeraXMLs(grau);
 		try {
 
 			// Abre conexões com o PJe e prepara consultas a serem realizadas
@@ -76,6 +97,8 @@ public class Op_2_GeraXMLs {
 
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
+		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
+		
 		// Objetos auxiliares para gerar o XML
 		ObjectFactory factory = new ObjectFactory();
 		JAXBContext context = JAXBContext.newInstance(Processos.class);
@@ -126,7 +149,7 @@ public class Op_2_GeraXMLs {
 		// Gera o arquivo XML
 		LOGGER.info("Gerando arquivo XML: " + arquivoSaida + "...");
 		jaxbMarshaller.marshal(processos, arquivoSaida);
-		LOGGER.info("Arquivo XML gerado!");
+		LOGGER.info("Arquivo XML do " + grau + "o Grau gerado!");
 	}
 
 	/**
@@ -342,13 +365,18 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 
 	private void prepararConexao() throws SQLException, IOException {
 
-		processaServentiasCNJ = new ProcessaServentiasCNJ();
+		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
+		
+		// Objeto que fará o de/para dos OJ e OJC do PJe para os do CNJ
+		if (processaServentiasCNJ == null) {
+			processaServentiasCNJ = new ProcessaServentiasCNJ();
+		}
 		
 		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe2G();
 
 		// SQL que fará a consulta de todos os processos
-		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/01_consulta_processos.sql");
+		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processos.sql");
 
 		// Em ambiente de testes, processa somente um lote menor, para ficar mais rápido
 		if ("TESTES".equals(Auxiliar.getParametroConfiguracao("tipo_carga_xml", true))) {
@@ -360,27 +388,27 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos);
 
 		// SQL que fará a consulta de todos os polos
-		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/02_consulta_polos.sql");
+		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/02_consulta_polos.sql");
 		nsPolos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPolos);		
 
 		// SQL que fará a consulta das partes
-		String sqlConsultaPartes = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/03_consulta_partes.sql");
+		String sqlConsultaPartes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/03_consulta_partes.sql");
 		nsPartes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPartes);
 
 		// SQL que fará a consulta dos documentos da pessoa
-		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/04_consulta_documentos_pessoa.sql");
+		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/04_consulta_documentos_pessoa.sql");
 		nsDocumentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaDocumentos);
 
 		// SQL que fará a consulta dos assuntos do processo
-		String sqlConsultaAssuntos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/05_consulta_assuntos.sql");
+		String sqlConsultaAssuntos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/05_consulta_assuntos.sql");
 		nsAssuntos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaAssuntos);
 
 		// SQL que fará a consulta dos movimentos processuais
-		String sqlConsultaMovimentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/06_consulta_movimentos.sql");
+		String sqlConsultaMovimentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/06_consulta_movimentos.sql");
 		nsMovimentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaMovimentos);
 
 		// Le o SQL que fará a consulta dos complementos dos movimentos processuais
-		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/baixa_dados_2g/07_consulta_complementos.sql");
+		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/07_consulta_complementos.sql");
 		nsComplementos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaComplementos);
 
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
