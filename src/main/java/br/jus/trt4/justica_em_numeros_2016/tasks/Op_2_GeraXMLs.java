@@ -36,17 +36,17 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ProcessaServentiasCNJ;
 import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
 
 /**
- * Consulta os processos no banco de dados de 2o Grau e gera o arquivo XML em "output/dados_2g.xml".
+ * Consulta os processos no banco de dados do PJe e gera os arquivo XML na pasta "output".
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
  * @author fgiotto
  */
-public class Op_3_BaixaDados2G {
+public class Op_2_GeraXMLs {
 
 	private static final File arquivoSaida = new File("output/dados_2g.xml");
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_3_BaixaDados2G.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLs.class);
 	private Connection conexaoBasePrincipal;
 	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPolos;
@@ -61,7 +61,7 @@ public class Op_3_BaixaDados2G {
 
 	public static void main(String[] args) throws SQLException, Exception {
 
-		Op_3_BaixaDados2G baixaDados = new Op_3_BaixaDados2G();
+		Op_2_GeraXMLs baixaDados = new Op_2_GeraXMLs();
 		try {
 
 			// Abre conexões com o PJe e prepara consultas a serem realizadas
