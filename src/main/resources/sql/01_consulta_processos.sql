@@ -30,7 +30,10 @@ SELECT
       -- instancia   */
       case when pt.nr_instancia = '2' then 'ORIG' else 'REV' end tp_instancia, 
       /* codigoMunicipioIBGE */
-      ib.id_municipio_ibge id_municipio_ibge_atual
+      ib.id_municipio_ibge id_municipio_ibge_atual,
+      
+      /* TRT4 */
+      pt.vl_causa
     FROM tb_processo_trf pt
     INNER JOIN tb_processo p ON 1=1
      and p.id_processo = pt.id_processo_trf

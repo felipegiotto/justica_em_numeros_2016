@@ -191,7 +191,7 @@ public class Auxiliar {
 	
 	
 	/**
-	 * Lê um campo "int" de um ResultSet, verificando se ele é nulo.
+	 * Lê um campo "int" de um ResultSet, lançando uma exceção se ele for nulo
 	 */
 	public static int getCampoIntNotNull(ResultSet rs, String fieldName) throws SQLException {
 		int result = rs.getInt(fieldName);
@@ -204,7 +204,7 @@ public class Auxiliar {
 	
 	
 	/**
-	 * Lê um campo "string" de um ResultSet, verificando se ele é nulo.
+	 * Lê um campo "string" de um ResultSet, lançando uma exceção se ele for nulo
 	 */
 	public static String getCampoStringNotNull(ResultSet rs, String fieldName) throws SQLException {
 		String result = rs.getString(fieldName);
@@ -214,4 +214,18 @@ public class Auxiliar {
 		
 		return result;
 	}
+	
+
+	/**
+	 * Lê um campo "double" de um ResultSet, retornando NULL se estiver em branco no banco de dados.
+	 */
+	public static Double getCampoDoubleOrNull(ResultSet rs, String fieldName) throws SQLException {
+		double result = rs.getDouble(fieldName);
+		if (rs.wasNull()) {
+			return null;
+		} else {
+			return result;
+		}
+	}
+	
 }

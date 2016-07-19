@@ -183,6 +183,9 @@ public class Op_2_GeraXMLs {
 			cabecalhoProcesso.setCodigoLocalidade(Integer.toString(codigoMunicipioIBGETRT));
 		}
 		cabecalhoProcesso.setDataAjuizamento(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
+		
+		// TRT4:
+		cabecalhoProcesso.setValorCausa(Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa")); 
 
 		// Consulta todos os polos do processo
 		nsPolos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
