@@ -393,7 +393,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		}
 		
 		// Abre conexão com o banco de dados do PJe
-		conexaoBasePrincipal = Auxiliar.getConexaoPJe2G();
+		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
 
 		// SQL que fará a consulta de todos os processos
 		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processos.sql");

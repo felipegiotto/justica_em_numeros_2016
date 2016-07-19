@@ -36,6 +36,7 @@ public class Auxiliar {
 	 * @throws SQLException
 	 */
 	public static Connection getConexaoPJe1G() throws SQLException {
+		LOGGER.info("Abrindo conexão com o PJe 2G");
 		Connection connection = getConexaoDasConfiguracoes("url_jdbc_1g");
 		return connection;
 	}
@@ -49,8 +50,18 @@ public class Auxiliar {
 	 * @throws SQLException
 	 */
 	public static Connection getConexaoPJe2G() throws SQLException {
+		LOGGER.info("Abrindo conexão com o PJe 2G");
 		Connection connection = getConexaoDasConfiguracoes("url_jdbc_2g");
 		return connection;
+	}
+	
+	
+	public static Connection getConexaoPJe(int grau) throws SQLException {
+		if (grau == 1) {
+			return getConexaoPJe1G();
+		} else {
+			return getConexaoPJe2G();
+		}
 	}
 	
 	
@@ -68,7 +79,6 @@ public class Auxiliar {
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
-		LOGGER.info("Abrindo conexão com o PJe");
 		return DriverManager.getConnection(getParametroConfiguracao(parametro, true));
 	}
 

@@ -170,6 +170,74 @@ public class Op_2_GeraXMLsTest {
 		assertEquals("20150922083157", dadosBasicos.getDataAjuizamento());
 	}
 	
+	@Test
+	public void testCampoNivelSigilo() throws Exception {
+		
+		// Nível de sigilo
+		/*
+			<attribute name="nivelSigilo" type="int" use="required">
+				<annotation>
+					<documentation>
+						Nível de sigilo a ser aplicado ao processo.
+						Dever-se-á utilizar os seguintes níveis: - 0:
+						públicos, acessíveis a todos os servidores do
+						Judiciário e dos demais órgãos públicos de
+						colaboração na administração da Justiça, assim como
+						aos advogados e a qualquer cidadão - 1: segredo de
+						justiça, acessíveis aos servidores do Judiciário,
+						aos servidores dos órgãos públicos de colaboração na
+						administração da Justiça e às partes do processo. -
+						2: sigilo mínimo, acessível aos servidores do
+						Judiciário e aos demais órgãos públicos de
+						colaboração na administração da Justiça - 3: sigilo
+						médio, acessível aos servidores do órgão em que
+						tramita o processo, à(s) parte(s) que provocou(ram)
+						o incidente e àqueles que forem expressamente
+						incluídos - 4: sigilo intenso, acessível a classes
+						de servidores qualificados (magistrado, diretor de
+						secretaria/escrivão, oficial de gabinete/assessor)
+						do órgão em que tramita o processo, às partes que
+						provocaram o incidente e àqueles que forem
+						expressamente incluídos - 5: sigilo absoluto,
+						acessível apenas ao magistrado do órgão em que
+						tramita, aos servidores e demais usuários por ele
+						indicado e às partes que provocaram o incidente.
+					</documentation>
+				</annotation>
+			</attribute>
+		 */
+		
+		TipoProcessoJudicial processoNaoSigiloso = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
+		assertEquals(0, processoNaoSigiloso.getDadosBasicos().getNivelSigilo());
+		
+		TipoProcessoJudicial processoSigiloso = retornaDadosProcesso(2, "0020583-31.2014.5.04.0017");
+		assertEquals(5, processoSigiloso.getDadosBasicos().getNivelSigilo());
+	}
+	
+	@Test
+	public void testCampoCodigoLocalidade() throws Exception {
+		
+		/*
+			<attribute name="codigoLocalidade" type="string"
+				use="required">
+				<annotation>
+					<documentation>
+						Código identificador da localidade a que pertence ou
+						deve pertencer o processo. O atributo é obrigatório,
+						especialmente para permitir a distribuição de
+						processos iniciais por meio do uso desse serviço.
+					</documentation>
+				</annotation>
+			</attribute>
+		 */
+		
+		TipoProcessoJudicial processo2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
+		assertEquals("4314902", processo2G.getDadosBasicos().getCodigoLocalidade()); // 4314902: Porto Alegre
+		
+		TipoProcessoJudicial processo1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791");
+		assertEquals("4306809", processo1G.getDadosBasicos().getCodigoLocalidade()); // 4306809: ENCANTADO
+	}
+	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
 		
 		Op_2_GeraXMLs baixaDados = new Op_2_GeraXMLs(grau);
@@ -181,6 +249,7 @@ public class Op_2_GeraXMLsTest {
 			// SQL que fará a consulta de um processo específico
 			String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processos.sql");
 			sqlConsultaProcessos += " AND nr_processo = :nr_processo";
+			System.out.println(sqlConsultaProcessos);
 			try (NamedParameterStatement nsConsultaProcessos = new NamedParameterStatement(baixaDados.getConexaoBasePrincipal(), sqlConsultaProcessos)) {
 				nsConsultaProcessos.setString("nr_processo", numeroProcesso);
 				try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
