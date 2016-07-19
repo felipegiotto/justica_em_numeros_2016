@@ -33,14 +33,22 @@ public class Op_2_GeraXMLsTest {
 		
 		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
 
-	    //TESTANDO: protected TipoCabecalhoProcesso dadosBasicos;
+	    // TESTES DE protected TipoCabecalhoProcesso dadosBasicos;
 		TipoCabecalhoProcesso dadosBasicos = processoJudicial.getDadosBasicos();
-	    //  TESTAR: TipoProcessoJudicial protected List<TipoPoloProcessual> polo;
-	    //  TESTAR: TipoProcessoJudicial protected List<TipoAssuntoProcessual> assunto;
-	    //  TESTAR: TipoProcessoJudicial protected List<String> magistradoAtuante;
-	    //  TESTAR: TipoProcessoJudicial protected List<TipoVinculacaoProcessual> processoVinculado;
-	    //  TESTAR: TipoProcessoJudicial protected List<String> prioridade;
-	    //  TESTAR: TipoProcessoJudicial protected List<TipoParametro> outroParametro;
+	    testarDadosBasicosProcesso00208215420135040221(dadosBasicos);
+		
+	    // TODO: TESTAR: protected List<TipoMovimentoProcessual> movimento;
+	    // CAMPO NAO PREENCHIDO: protected List<TipoDocumento> documento;
+		
+	}
+
+	public void testarDadosBasicosProcesso00208215420135040221(TipoCabecalhoProcesso dadosBasicos) {
+		//  TODO: TESTAR: TipoProcessoJudicial protected List<TipoPoloProcessual> polo;
+	    //  TODO: TESTAR: TipoProcessoJudicial protected List<TipoAssuntoProcessual> assunto;
+	    //  TODO: TESTAR: TipoProcessoJudicial protected List<String> magistradoAtuante;
+	    //  TODO: TESTAR: TipoProcessoJudicial protected List<TipoVinculacaoProcessual> processoVinculado;
+	    //  TODO: TESTAR: TipoProcessoJudicial protected List<String> prioridade;
+	    //  TODO: TESTAR: TipoProcessoJudicial protected List<TipoParametro> outroParametro;
 		
 		// Valor da Causa
 		/*
@@ -52,7 +60,7 @@ public class Op_2_GeraXMLsTest {
 		 */
 		assertEquals(50000.0, dadosBasicos.getValorCausa());
 		
-	    //  TESTAR: TipoProcessoJudicial protected TipoOrgaoJulgador orgaoJulgador;
+	    //  TODO: TESTAR: TipoProcessoJudicial protected TipoOrgaoJulgador orgaoJulgador;
 		
 		// Número do processo
 		/*
@@ -71,7 +79,7 @@ public class Op_2_GeraXMLsTest {
 		 */
 		assertEquals("00208215420135040221", dadosBasicos.getNumero());
 		
-	    //  TESTAR: TipoProcessoJudicial protected Integer competencia; // Opcional
+	    // CAMPO NAO PREENCHIDO: TipoProcessoJudicial protected Integer competencia; // Opcional
 		
 	    // Classe Processual
 		/*
@@ -136,8 +144,8 @@ public class Op_2_GeraXMLsTest {
 		 */
 		assertEquals(0, dadosBasicos.getNivelSigilo());
 		
-	    //  TESTAR: TipoProcessoJudicial protected Boolean intervencaoMP; // Opcional
-	    //  TESTAR: TipoProcessoJudicial protected Integer tamanhoProcesso; // Opcional
+	    // CAMPO NAO PREENCHIDO: TipoProcessoJudicial protected Boolean intervencaoMP; // Opcional
+	    // CAMPO NAO PREENCHIDO: TipoProcessoJudicial protected Integer tamanhoProcesso; // Opcional
 		
 		// Data Ajuizamento
 		/*
@@ -160,10 +168,6 @@ public class Op_2_GeraXMLsTest {
 		*/
 		//            AAAAMMDDHHMMSS
 		assertEquals("20150922083157", dadosBasicos.getDataAjuizamento());
-		
-	    //TESTAR: protected List<TipoMovimentoProcessual> movimento;
-	    //TESTAR: protected List<TipoDocumento> documento;
-		
 	}
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
