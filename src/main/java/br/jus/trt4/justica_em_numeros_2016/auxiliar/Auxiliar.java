@@ -2,6 +2,7 @@ package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -142,23 +143,28 @@ public class Auxiliar {
 		if (configs == null) {
 
 			try {
-				if (!arquivoConfiguracoes.exists()) {
-					throw new RuntimeException("Crie o arquivo '" + arquivoConfiguracoes + "' com os parâmetros necessários! Utilize como modelo o arquivo '" + arquivoModeloConfiguracoes + "'");
-				}
-				Properties p = new Properties();
-
-				FileInputStream fis = new FileInputStream(arquivoConfiguracoes);
-				try {
-					p.load(fis);
-				} finally {
-					fis.close();
-				}
-				configs = p;
+				configs = carregarPropertiesDoArquivo(arquivoConfiguracoes);
 			} catch (IOException ex) {
 				throw new RuntimeException("Erro ao ler arquivo de configurações (" + arquivoConfiguracoes + "): " + ex.getLocalizedMessage(), ex);
 			}
 		}
 		return configs;
+	}
+
+
+	public static Properties carregarPropertiesDoArquivo(File arquivo) throws IOException {
+		if (!arquivo.exists()) {
+			throw new RuntimeException("O arquivo '" + arquivo + "' não existe!");
+		}
+		Properties p = new Properties();
+
+		FileInputStream fis = new FileInputStream(arquivo);
+		try {
+			p.load(fis);
+		} finally {
+			fis.close();
+		}
+		return p;
 	}
 
 	
