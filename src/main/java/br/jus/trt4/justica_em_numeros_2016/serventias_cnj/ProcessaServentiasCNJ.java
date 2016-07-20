@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,14 +51,17 @@ public class ProcessaServentiasCNJ {
 				String codigoServentiaCNJ = partes[1];
 				String nomeServentiaCNJ = partes[2];
 				
-				// Verifica se não há OJs/OJCs declarados em duplicidade
-				if (serventiasCNJ.containsKey(orgaoJulgadorPJe)) {
-					LOGGER.warn("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': o órgão julgador '" + orgaoJulgadorPJe + "' está definido mais de uma vez.");
+				if (!StringUtils.isBlank(orgaoJulgadorPJe)) {
+					
+					// Verifica se não há OJs/OJCs declarados em duplicidade
+					if (serventiasCNJ.containsKey(orgaoJulgadorPJe)) {
+						LOGGER.warn("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': o órgão julgador '" + orgaoJulgadorPJe + "' está definido mais de uma vez.");
+					}
+					
+					// Adiciona o OJ/OJC na lista de serventias conhecidas
+					ServentiaCNJ serventia = new ServentiaCNJ(codigoServentiaCNJ, nomeServentiaCNJ);
+					serventiasCNJ.put(orgaoJulgadorPJe, serventia);
 				}
-				
-				// Adiciona o OJ/OJC na lista de serventias conhecidas
-				ServentiaCNJ serventia = new ServentiaCNJ(codigoServentiaCNJ, nomeServentiaCNJ);
-				serventiasCNJ.put(orgaoJulgadorPJe, serventia);
 			}
 		} finally {
 			scanner.close();

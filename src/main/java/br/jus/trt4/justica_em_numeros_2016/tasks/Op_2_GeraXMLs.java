@@ -220,9 +220,20 @@ public class Op_2_GeraXMLs {
 						//   END IF;
 						TipoPessoa pessoa = new TipoPessoa();
 						parte.setPessoa(pessoa);
-						pessoa.setNome(Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome"));
-						pessoa.setTipoPessoa(TipoQualificacaoPessoa.fromValue(Auxiliar.getCampoStringNotNull(rsPartes, "in_tipo_pessoa")));
+						String nomePessoa = Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome");
+						pessoa.setNome(nomePessoa);
 						pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(Auxiliar.getCampoStringNotNull(rsPartes, "tp_sexo")));
+						
+						// Tipo de pessoa (física / jurídica / outros)
+						String tipoPessoaPJe = Auxiliar.getCampoStringNotNull(rsPartes, "in_tipo_pessoa");
+						if ("F".equals(tipoPessoaPJe)) {
+							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
+						} else if ("J".equals(tipoPessoaPJe)) {
+							pessoa.setTipoPessoa(TipoQualificacaoPessoa.JURIDICA);
+						} else {
+							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomePessoa + "': " + tipoPessoaPJe);
+							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
+						}
 						
 						// Consulta os documentos da parte
 						nsDocumentos.setInt("id_pessoa", rsPartes.getInt("id_pessoa"));

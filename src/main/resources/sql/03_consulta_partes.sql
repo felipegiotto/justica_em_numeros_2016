@@ -5,7 +5,8 @@
           /* nome */
           ul.ds_nome, 
           /* tipoPessoa */
-          case when pes.in_tipo_pessoa = 'J' then 'juridica' else 'fisica' end in_tipo_pessoa, 
+          --case when pes.in_tipo_pessoa = 'J' then 'juridica' else 'fisica' end in_tipo_pessoa,
+          pes.in_tipo_pessoa,
           /* sexo */
           coalesce(pf.in_sexo, 'D') tp_sexo
         from tb_processo_parte pp

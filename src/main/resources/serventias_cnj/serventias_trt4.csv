@@ -3,15 +3,15 @@ VARA DO TRABALHO DE ALVORADA;46878;VT Alvorada
 VARA DO TRABALHO DE ARROIO GRANDE;46879;VT Arroio Grande
 1A VARA DO TRABALHO DE BAGÉ;46880;1ª Bagé
 2A VARA DO TRABALHO DE BAGÉ;46881;2ª Bagé
-TODO;46882;Posto de Dom Pedrito
+;46882;Posto de Dom Pedrito
 1A VARA DO TRABALHO DE BENTO GONÇALVES;46883;1ª Bento Gonçalves
 2A VARA DO TRABALHO DE BENTO GONÇALVES;46884;2ª Bento Gonçalves
-TODO;46885;Posto de Nova Prata
+;46885;Posto de Nova Prata
 VARA DO TRABALHO DE CACHOEIRA DO SUL;46886;VT Cachoeira do Sul
 1A VARA DO TRABALHO DE CACHOEIRINHA;46887;1ª Cachoeirinha
 2A VARA DO TRABALHO DE CACHOEIRINHA;46888;2ª Cachoeirinha
 VARA DO TRABALHO DE CAMAQUA;46889;VT Camaquã
-TODO;46890;Posto de São Lourenço do Sul
+;46890;Posto de São Lourenço do Sul
 1A VARA DO TRABALHO DE CANOAS;46891;1ª Canoas
 2A VARA DO TRABALHO DE CANOAS;46892;2ª Canoas
 3A VARA DO TRABALHO DE CANOAS;46893;3ª Canoas
@@ -54,14 +54,14 @@ VARA DO TRABALHO DE MONTENEGRO;46926;VT Montenegro
 4A VARA DO TRABALHO DE NOVO HAMBURGO;46930;4ª Novo Hamburgo
 5A VARA DO TRABALHO DE NOVO HAMBURGO;46931;5ª Novo Hamburgo
 VARA DO TRABALHO DE OSORIO;46932;VT Osorio
-TODO;46933;Posto de Tramandaí
+;46933;Posto de Tramandaí
 VARA DO TRABALHO DE PALMEIRA DAS MISSOES;46934;VT Palmeira das Missões
-TODO;46935;Posto de Panambi
+;46935;Posto de Panambi
 1A VARA DO TRABALHO DE PASSO FUNDO;46936;1ª Passo Fundo
 2A VARA DO TRABALHO DE PASSO FUNDO;46937;2ª Passo Fundo
 3A VARA DO TRABALHO DE PASSO FUNDO;46938;3ª Passo Fundo
 4A VARA DO TRABALHO DE PASSO FUNDO;46939;4ª Passo Fundo
-TODO;46940;Posto de Marau
+;46940;Posto de Marau
 1A VARA DO TRABALHO DE PELOTAS;46941;1ª Pelotas
 2A VARA DO TRABALHO DE PELOTAS;46942;2ª Pelotas
 3A VARA DO TRABALHO DE PELOTAS;46943;3ª Pelotas
@@ -112,7 +112,7 @@ VARA DO TRABALHO DE SANTANA DO LIVRAMENTO;46985;VT Santana do Livramento
 VARA DO TRABALHO DE SANTA VITORIA DO PALMAR;46988;VT Santa Vitória do Palmar
 VARA DO TRABALHO DE SANTIAGO;46989;VT Santiago
 VARA DO TRABALHO DE SANTO ANGELO;46990;VT Santo Ângelo
-TODO;46991;Posto de Itaqui
+;46991;Posto de Itaqui
 VARA DO TRABALHO DE SAO BORJA;46992;VT Sao Borja
 VARA DO TRABALHO DE SAO GABRIEL;46993;VT Sao Gabriel
 VARA DO TRABALHO DE SÃO JERONIMO;46994;VT São Jerônimo
@@ -120,7 +120,7 @@ VARA DO TRABALHO DE SÃO JERONIMO;46994;VT São Jerônimo
 2A VARA DO TRABALHO DE SAO LEOPOLDO;46996;2ª Sao Leopoldo
 3A VARA DO TRABALHO DE SAO LEOPOLDO;46997;3ª Sao Leopoldo
 4A VARA DO TRABALHO DE SAO LEOPOLDO;46998;4ª Sao Leopoldo
-TODO;46999;Posto de São Sebastião do Caí
+;46999;Posto de São Sebastião do Caí
 1A VARA DO TRABALHO DE SAPIRANGA;47000;1ª Sapiranga
 2A VARA DO TRABALHO DE SAPIRANGA;47001;2ª Sapiranga
 3A VARA DO TRABALHO DE SAPIRANGA;47002;3ª Sapiranga
@@ -131,10 +131,10 @@ VARA DO TRABALHO DE SOLEDADE;47005;VT Soledade
 2A VARA DO TRABALHO DE TAQUARA;47007;2ª Taquara
 3A VARA DO TRABALHO DE TAQUARA;47008;3ª Taquara
 4A VARA DO TRABALHO DE TAQUARA;47009;4ª Taquara
-TODO;47010;Posto de Capão da Canoa
+;47010;Posto de Capão da Canoa
 VARA DO TRABALHO DE TORRES;47011;VT Torres
 VARA DO TRABALHO DE TRES PASSOS;47012;VT Três Passos
-TODO;47013;Posto de Taquari
+;47013;Posto de Taquari
 VARA DO TRABALHO DE TRIUNFO;47014;VT Triunfo
 1A VARA DO TRABALHO DE URUGUAIANA;47015;1ª Uruguaiana
 2A VARA DO TRABALHO DE URUGUAIANA;47016;2ª Uruguaiana
@@ -208,98 +208,98 @@ GABINETE WILSON CARVALHO DIAS;47075;GABINETE WILSON CARVALHO DIAS
 7A TURMA;47084;7ª Turma
 8A TURMA;47085;8ª Turma
 9A TURMA;47086;9ª Turma
-TODO;47087;Assessoria Administrativa da Secretaria da Corregedoria
-TODO;47088;Assessoria de Recurso de Revista
-TODO;47089;Assessoria Juridica da Presidência
-TODO;47090;Assessoria Juridica da Secretaria da Corregedoria
-TODO;47091;Assessoria Tecnico-Operacional da Secretaria da Corregedoria
-TODO;47092;Central de Mandados de Bage
-TODO;47093;Central de Mandados de Bento Goncalves
-TODO;47094;Central de Mandados de Cachoeirinha
-TODO;47095;Central de Mandados de Canoas
-TODO;47096;Central de Mandados de Caxias do Sul
-TODO;47097;Central de Mandados de Erechim
-TODO;47098;Central de Mandados de Esteio
-TODO;47099;Central de Mandados de Estrela
-TODO;47100;Central de Mandados de Gramado
-TODO;47101;Central de Mandados de Gravatai
-TODO;47102;Central de Mandados de Lajeado
-TODO;47103;Central de Mandados de Novo Hamburgo
-TODO;47104;Central de Mandados de Passo Fundo
-TODO;47105;Central de Mandados de Pelotas
-TODO;47106;Central de Mandados de Porto Alegre
-TODO;47107;Central de Mandados de Rio Grande
-TODO;47108;Central de Mandados de Santa Cruz do Sul
-TODO;47109;Central de Mandados de Santa Maria
-TODO;47110;Central de Mandados de Santa Rosa
-TODO;47111;Central de Mandados de Sao Leopoldo
-TODO;47112;Central de Mandados de Sapiranga
-TODO;47113;Central de Mandados de Sapucaia do Sul
-TODO;47114;Central de Mandados de Taquara
-TODO;47115;Central de Mandados de Uruguaiana
-TODO;47116;Coordenadoria de Agravos e Certidoes
-TODO;47117;Coordenadoria de Cadastramento Processual
-TODO;47118;Coordenadoria de Controle da Direcao do Foro de Bage
-TODO;47119;Coordenadoria de Controle da Direcao do Foro de Bento Goncalves
-TODO;47120;Coordenadoria de Controle da Direcao do Foro de Cachoeirinha
-TODO;47121;Coordenadoria de Controle da Direcao do Foro de Canoas
-TODO;47122;Coordenadoria de Controle da Direcao do Foro de Caxias do Sul
-TODO;47123;Coordenadoria de Controle da Direcao do Foro de Erechim
-TODO;47124;Coordenadoria de Controle da Direcao do Foro de Esteio
-TODO;47125;Coordenadoria de Controle da Direcao do Foro de Estrela
-TODO;47126;Coordenadoria de Controle da Direcao do Foro de Gramado
-TODO;47127;Coordenadoria de Controle da Direcao do Foro de Gravatai
-TODO;47128;Coordenadoria de Controle da Direcao do Foro de Lajeado
-TODO;47129;Coordenadoria de Controle da Direcao do Foro de Novo Hamburgo
-TODO;47130;Coordenadoria de Controle da Direcao do Foro de Passo Fundo
-TODO;47131;Coordenadoria de Controle da Direcao do Foro de Pelotas
-TODO;47132;Coordenadoria de Controle da Direcao do Foro de Porto Alegre
-TODO;47133;Coordenadoria de Controle da Direcao do Foro de Rio Grande
-TODO;47134;Coordenadoria de Controle da Direcao do Foro de Santa Cruz do Sul
-TODO;47135;Coordenadoria de Controle da Direcao do Foro de Santa Maria
-TODO;47136;Coordenadoria de Controle da Direcao do Foro de Santa Rosa
-TODO;47137;Coordenadoria de Controle da Direcao do Foro de Sao Leopoldo
-TODO;47138;Coordenadoria de Controle da Direcao do Foro de Sapiranga
-TODO;47139;Coordenadoria de Controle da Direcao do Foro de Sapucaia do Sul
-TODO;47140;Coordenadoria de Controle da Direcao do Foro de Taquara
-TODO;47141;Coordenadoria de Controle da Direcao do Foro de Uruguaiana
-TODO;47142;Coordenadoria de Execucao de Mandados do Foro de Porto Alegre
-TODO;47143;Coordenadoria de Recursos
-TODO;47144;Protocolo Geral do Foro da Jt de Primeira Instancia de Porto Alegre
-TODO;47145;Secao de Agravos de Instrumento
-TODO;47146;Secao de Apoio da Ccdf de Porto Alegre
-TODO;47147;Secao de Apoio Processual
-TODO;47148;Secao de Cadastramento de Iniciais da Ccdf de Porto Alegre
-TODO;47149;Secao de Certidoes e Conferencias
-TODO;47150;Secao de Classificacao e Autuacao
-TODO;47151;Secao de Conciliacao
-TODO;47152;Secao de Conservacao e Consulta de Documentos Judiciais
-TODO;47153;Secao de Controle e Movimentacao
-TODO;47154;Secao de Digitalizacao
-TODO;47155;Secao de Distribuicao
-TODO;47156;Secao de Execucao e Pesquisa Patrimonial
-TODO;47157;Secao de Expedicao
-TODO;47158;Secao de Pericias
-TODO;47159;Secao de Precatorios
-TODO;47160;Secao de Protocolo
-TODO;47161;Secao de Publicacao
-TODO;47162;Secao de Triagem de Processos Arquivados
-TODO;47163;Secretaria da 1a Secao de Dissidios Individuais
-TODO;47164;Secretaria da 2a Secao de Dissidios Individuais
-TODO;47165;Secretaria da Corregedoria
-TODO;47166;Secretaria da Secao Especializada Em Execucao
-TODO;47167;Secretaria do Tribunal Pleno, do Orgao Especial e da Secao de Dissidios Coletivos
-TODO;47168;Secretaria-Geral da Presidencia
-TODO;47169;Secretaria-Geral Judiciaria
-TODO;47170;Secretaria Processual
-TODO;47171;Servico de Apoio Aos Gabinetes
-TODO;47172;Setor de Cartas Precatorias do Sdf de Porto Alegre
-TODO;47173;Setor de Certidoes do Sdf de Porto Alegre
-TODO;47174;Setor de Controle do Foro de Porto Alegre
-TODO;47175;Gabinete da Vice Corregedoria
-TODO;47176;Gabinete da Vice Presidência
-TODO;47177;Juízo Auxiliar de Conciliação, Execução e Precatórios
-TODO;48137;Secao de Dissidios Coletivos
-TODO;48138;Orgao Especial
-TODO;48139;Tribunal Pleno
+;47087;Assessoria Administrativa da Secretaria da Corregedoria
+;47088;Assessoria de Recurso de Revista
+;47089;Assessoria Juridica da Presidência
+;47090;Assessoria Juridica da Secretaria da Corregedoria
+;47091;Assessoria Tecnico-Operacional da Secretaria da Corregedoria
+;47092;Central de Mandados de Bage
+;47093;Central de Mandados de Bento Goncalves
+;47094;Central de Mandados de Cachoeirinha
+;47095;Central de Mandados de Canoas
+;47096;Central de Mandados de Caxias do Sul
+;47097;Central de Mandados de Erechim
+;47098;Central de Mandados de Esteio
+;47099;Central de Mandados de Estrela
+;47100;Central de Mandados de Gramado
+;47101;Central de Mandados de Gravatai
+;47102;Central de Mandados de Lajeado
+;47103;Central de Mandados de Novo Hamburgo
+;47104;Central de Mandados de Passo Fundo
+;47105;Central de Mandados de Pelotas
+;47106;Central de Mandados de Porto Alegre
+;47107;Central de Mandados de Rio Grande
+;47108;Central de Mandados de Santa Cruz do Sul
+;47109;Central de Mandados de Santa Maria
+;47110;Central de Mandados de Santa Rosa
+;47111;Central de Mandados de Sao Leopoldo
+;47112;Central de Mandados de Sapiranga
+;47113;Central de Mandados de Sapucaia do Sul
+;47114;Central de Mandados de Taquara
+;47115;Central de Mandados de Uruguaiana
+;47116;Coordenadoria de Agravos e Certidoes
+;47117;Coordenadoria de Cadastramento Processual
+;47118;Coordenadoria de Controle da Direcao do Foro de Bage
+;47119;Coordenadoria de Controle da Direcao do Foro de Bento Goncalves
+;47120;Coordenadoria de Controle da Direcao do Foro de Cachoeirinha
+;47121;Coordenadoria de Controle da Direcao do Foro de Canoas
+;47122;Coordenadoria de Controle da Direcao do Foro de Caxias do Sul
+;47123;Coordenadoria de Controle da Direcao do Foro de Erechim
+;47124;Coordenadoria de Controle da Direcao do Foro de Esteio
+;47125;Coordenadoria de Controle da Direcao do Foro de Estrela
+;47126;Coordenadoria de Controle da Direcao do Foro de Gramado
+;47127;Coordenadoria de Controle da Direcao do Foro de Gravatai
+;47128;Coordenadoria de Controle da Direcao do Foro de Lajeado
+;47129;Coordenadoria de Controle da Direcao do Foro de Novo Hamburgo
+;47130;Coordenadoria de Controle da Direcao do Foro de Passo Fundo
+;47131;Coordenadoria de Controle da Direcao do Foro de Pelotas
+;47132;Coordenadoria de Controle da Direcao do Foro de Porto Alegre
+;47133;Coordenadoria de Controle da Direcao do Foro de Rio Grande
+;47134;Coordenadoria de Controle da Direcao do Foro de Santa Cruz do Sul
+;47135;Coordenadoria de Controle da Direcao do Foro de Santa Maria
+;47136;Coordenadoria de Controle da Direcao do Foro de Santa Rosa
+;47137;Coordenadoria de Controle da Direcao do Foro de Sao Leopoldo
+;47138;Coordenadoria de Controle da Direcao do Foro de Sapiranga
+;47139;Coordenadoria de Controle da Direcao do Foro de Sapucaia do Sul
+;47140;Coordenadoria de Controle da Direcao do Foro de Taquara
+;47141;Coordenadoria de Controle da Direcao do Foro de Uruguaiana
+;47142;Coordenadoria de Execucao de Mandados do Foro de Porto Alegre
+;47143;Coordenadoria de Recursos
+;47144;Protocolo Geral do Foro da Jt de Primeira Instancia de Porto Alegre
+;47145;Secao de Agravos de Instrumento
+;47146;Secao de Apoio da Ccdf de Porto Alegre
+;47147;Secao de Apoio Processual
+;47148;Secao de Cadastramento de Iniciais da Ccdf de Porto Alegre
+;47149;Secao de Certidoes e Conferencias
+;47150;Secao de Classificacao e Autuacao
+;47151;Secao de Conciliacao
+;47152;Secao de Conservacao e Consulta de Documentos Judiciais
+;47153;Secao de Controle e Movimentacao
+;47154;Secao de Digitalizacao
+;47155;Secao de Distribuicao
+;47156;Secao de Execucao e Pesquisa Patrimonial
+;47157;Secao de Expedicao
+;47158;Secao de Pericias
+;47159;Secao de Precatorios
+;47160;Secao de Protocolo
+;47161;Secao de Publicacao
+;47162;Secao de Triagem de Processos Arquivados
+;47163;Secretaria da 1a Secao de Dissidios Individuais
+;47164;Secretaria da 2a Secao de Dissidios Individuais
+;47165;Secretaria da Corregedoria
+;47166;Secretaria da Secao Especializada Em Execucao
+;47167;Secretaria do Tribunal Pleno, do Orgao Especial e da Secao de Dissidios Coletivos
+;47168;Secretaria-Geral da Presidencia
+;47169;Secretaria-Geral Judiciaria
+;47170;Secretaria Processual
+;47171;Servico de Apoio Aos Gabinetes
+;47172;Setor de Cartas Precatorias do Sdf de Porto Alegre
+;47173;Setor de Certidoes do Sdf de Porto Alegre
+;47174;Setor de Controle do Foro de Porto Alegre
+;47175;Gabinete da Vice Corregedoria
+;47176;Gabinete da Vice Presidência
+;47177;Juízo Auxiliar de Conciliação, Execução e Precatórios
+;48137;Secao de Dissidios Coletivos
+;48138;Orgao Especial
+;48139;Tribunal Pleno
 GABINETE FABIANO HOLZ BESERRA;70797;GABINETE FABIANO HOLZ BESERRA
