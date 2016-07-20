@@ -7,8 +7,9 @@
           /* tipoPessoa */
           case when pes.in_tipo_pessoa = 'J' then 'juridica' else 'fisica' end in_tipo_pessoa, 
           /* sexo */
-          coalesce(pf.in_sexo, 'D') tp_sexo, 
+          coalesce(pf.in_sexo, 'D') tp_sexo
           /* numeroDocumentoPrincipal */
+          /*
           (
             select lpad(regexp_replace(nr_documento_identificacao, '[_\.\-/]','','g'), 11 + case when cd_tp_documento_identificacao = 'CPJ' then 3 end, '0') as nr_doc  
             from tb_pess_doc_identificacao 
@@ -16,7 +17,8 @@
               and id_pessoa = pp.id_pessoa 
               and cd_tp_documento_identificacao IN ('CPF', 'CPJ', 'RIC')
             limit 1
-          ) as nr_documento 
+          ) as nr_documento
+          */ 
         from tb_processo_parte pp
         inner join tb_usuario_login ul on 1=1
           and pp.id_pessoa = ul.id_usuario 

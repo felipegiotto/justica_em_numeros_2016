@@ -20,6 +20,13 @@
         </dependency>
   
         <!-- Utilizado como ferramenta auxiliar em diversas classes -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>LATEST</version>
+        </dependency>
+    
+        <!-- Utilizado como ferramenta auxiliar em diversas classes -->
         <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
         <dependency>
             <groupId>commons-io</groupId>

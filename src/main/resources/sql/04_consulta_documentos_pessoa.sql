@@ -5,8 +5,12 @@
               /* emissorDocumento */
               coalesce(ds_orgao_expedidor, 'Não informado') ds_emissor,
               /* tipoDocumento */
-              tpd.tp_doc_selo tp_documento
+              --tpd.tp_doc_selo tp_documento,
+              pdi.cd_tp_documento_identificacao,
+              
+              pdi.in_principal
             from tb_pess_doc_identificacao pdi
+            /*
             inner join 
             (
               select 'CNH' tp_doc_pje, 'CNH' tp_doc_selo union 
@@ -26,5 +30,6 @@
               select 'CRP' tp_doc_pje, 'CP' tp_doc_selo 
             ) tpd on 1=1
               and tpd.tp_doc_pje = pdi.cd_tp_documento_identificacao
+              */
             where 1=1
               and pdi.id_pessoa = :id_pessoa

@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
@@ -16,6 +17,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
 import br.jus.cnj.intercomunicacao_2_2.TipoParte;
+import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
 import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -314,10 +316,38 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	@Test
 	public void testCamposPartes() throws Exception {
 		
-		TipoPoloProcessual polo = getPolo(ModalidadePoloProcessual.AT, retornaDadosProcesso(1, "0021654-68.2014.5.04.0405").getDadosBasicos().getPolo());
-		TipoParte parte = polo.getParte().get(0);
-		assertEquals("RAQUEL ABREU DA SILVA", parte.getPessoa().getNome());
+		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(1, "0020591-86.2014.5.04.0282");
+		TipoPoloProcessual poloAtivo = getPolo(ModalidadePoloProcessual.AT, processoJudicial.getDadosBasicos().getPolo());
+		TipoPoloProcessual poloPassivo = getPolo(ModalidadePoloProcessual.PA, processoJudicial.getDadosBasicos().getPolo());
+	    // TODO: Testar campo: protected TipoPessoa pessoa;
+		// TODO: Testar campo: protected String interessePublico;
+		// TODO: Testar campo: protected List<TipoRepresentanteProcessual> advogado;
+		// TODO: Testar campo: protected List<TipoParte> pessoaProcessualRelacionada;
+		// TODO: Testar campo: protected Boolean assistenciaJudiciaria;
+		// TODO: Testar campo: protected Integer intimacaoPendente;
+		// TODO: Testar campo: protected ModalidadeRelacionamentoProcessual relacionamentoProcessual;
 		
+		
+		TipoParte parteAtivo = getParteComNome("ROGERIO MELO DE CASTRO", poloAtivo.getParte());
+		TipoPessoa pessoaAtivo = parteAtivo.getPessoa();
+		TipoParte partePassivo = getParteComNome("FAMF CONSTRUTORA LTDA", poloPassivo.getParte());
+		TipoPessoa pessoaPassivo = partePassivo.getPessoa();
+		// TODO: Testar campo: protected List<TipoDocumentoIdentificacao> documento;
+		// TODO: Testar campo: protected List<TipoEndereco> endereco;
+		// TODO: Testar campo: protected List<TipoRelacionamentoPessoal> pessoaRelacionada;
+		// TODO: Testar campo: protected TipoPessoa pessoaVinculada;
+		// TODO: Testar campo: protected String nome;
+		// TODO: Testar campo: protected String nomeGenitor;
+		// TODO: Testar campo: protected String nomeGenitora;
+		// TODO: Testar campo: protected String dataNascimento;
+		// TODO: Testar campo: protected String dataObito;
+		// TODO: Testar campo: protected String numeroDocumentoPrincipal;
+		// TODO: Testar campo: protected TipoQualificacaoPessoa tipoPessoa;
+		// TODO: Testar campo: protected String cidadeNatural;
+		// TODO: Testar campo: protected String estadoNatural;
+		// TODO: Testar campo: protected String nacionalidade;
+		
+		// Documento principal
 		/*
 			<attribute name="numeroDocumentoPrincipal" type="cnj:tipoCadastroIdentificador"
 				use="optional">
@@ -351,6 +381,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				</restriction>
 			</simpleType>
 		 */
+		assertEquals("57310009053", pessoaAtivo.getNumeroDocumentoPrincipal());
+		assertEquals("17640725000147", pessoaPassivo.getNumeroDocumentoPrincipal());
 		
 		// TODO: Trazer CPF e CNPJ preferencialmente
 		// TODO: Testar formato do número do documento
@@ -371,9 +403,25 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				</restriction>
 			</simpleType>
 		 */
-		assertEquals(ModalidadeGeneroPessoa.F, parte.getPessoa().getSexo());
+		assertEquals(ModalidadeGeneroPessoa.M, pessoaAtivo.getSexo());
+	}
+	
+	
+	private TipoParte getParteComNome(String nome, List<TipoParte> partes) {
+		
+		ArrayList<String> nomes = new ArrayList<>();
+		for (TipoParte parte: partes) {
+			String nomeParte = parte.getPessoa().getNome();
+			if (nome.equals(nomeParte)) {
+				return parte;
+			}
+			nomes.add(nomeParte);
+		}
+		fail("A pessoa '" + nome + "' não está na lista de partes (" + nomes + ")");
+		return null;
 	}
 
+	
 	private TipoPoloProcessual getPolo(ModalidadePoloProcessual siglaPolo, List<TipoPoloProcessual> polos) {
 		for (TipoPoloProcessual polo: polos) {
 			if (siglaPolo.equals(polo.getPolo())) {

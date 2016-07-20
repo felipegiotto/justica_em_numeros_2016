@@ -3,14 +3,17 @@ package br.jus.trt4.justica_em_numeros_2016.tasks;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.TreeSet;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,7 +52,7 @@ public class Op_2_GeraXMLs {
 	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLs.class);
 	private int grau;
 	private Connection conexaoBasePrincipal;
-	private NamedParameterStatement nsConsultaProcessos;
+	private PreparedStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPolos;
 	private NamedParameterStatement nsPartes;
 	private NamedParameterStatement nsDocumentos;
@@ -58,6 +61,7 @@ public class Op_2_GeraXMLs {
 	private NamedParameterStatement nsComplementos;
 	private int codigoMunicipioIBGETRT;
 	private static ProcessaServentiasCNJ processaServentiasCNJ;
+	private static Properties tiposDocumentosPJeCNJ;
 	private TreeSet<String> processosAnalisados = new TreeSet<>();
 
 	public Op_2_GeraXMLs(int grau) {
@@ -220,22 +224,41 @@ public class Op_2_GeraXMLs {
 						pessoa.setTipoPessoa(TipoQualificacaoPessoa.fromValue(Auxiliar.getCampoStringNotNull(rsPartes, "in_tipo_pessoa")));
 						pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(Auxiliar.getCampoStringNotNull(rsPartes, "tp_sexo")));
 						
-						// TODO: conferir formato do documento principal!
-						pessoa.setNumeroDocumentoPrincipal(rsPartes.getString("nr_documento"));
-
 						// Consulta os documentos da parte
 						nsDocumentos.setInt("id_pessoa", rsPartes.getInt("id_pessoa"));
 						try (ResultSet rsDocumentos = nsDocumentos.executeQuery()) {
+							
 							while (rsDocumentos.next()) {
 
 								// Script TRT14:
 								// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
 								//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
-								TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
-								documento.setCodigoDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento"));
-								documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(Auxiliar.getCampoStringNotNull(rsDocumentos, "tp_documento")));
-								documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
-								pessoa.getDocumento().add(documento);
+								String tipoDocumentoPJe = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao");
+								String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento");
+								if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
+									TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
+									documento.setCodigoDocumento(numeroDocumento);
+									documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
+
+									// Carrega o tipo de documento do CNJ a partir do tipo do PJe
+									documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe)));
+									pessoa.getDocumento().add(documento);
+									
+								} else if (!tipoDocumentoPJe.equals("CPF") && !tipoDocumentoPJe.equals("CPJ")) {
+									
+									// Documentos CPF e CNPJ não possuem correspondente na tabela do CNJ!
+									LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' não possui correspondente na tabela do CNJ!");
+								}
+								
+								// Considera CPF, CNPJ ou RIC como documentos principais
+								if (tipoDocumentoPJe.equals("CPF") || tipoDocumentoPJe.equals("CPJ") || tipoDocumentoPJe.equals("RIC")) {
+									if (tipoDocumentoPJe.equals("CPF")) {
+										numeroDocumento = StringUtils.leftPad(numeroDocumento, 11, '0');
+									} else {
+										numeroDocumento = StringUtils.leftPad(numeroDocumento, 14, '0');
+									}
+									pessoa.setNumeroDocumentoPrincipal(numeroDocumento);
+								}
 							}
 						}
 					}
@@ -396,20 +419,32 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			processaServentiasCNJ = new ProcessaServentiasCNJ();
 		}
 		
+		// Objeto que fará o de/para dos tipos de documentos do PJe para os do CNJ
+		if (tiposDocumentosPJeCNJ == null) {
+			tiposDocumentosPJeCNJ = Auxiliar.carregarPropertiesDoArquivo(new File("src/main/resources/tipos_de_documentos.properties"));
+		}
+		
 		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
+		conexaoBasePrincipal.setAutoCommit(false);
 
 		// SQL que fará a consulta de todos os processos
 		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processos.sql");
 
 		// Em ambiente de testes, processa somente um lote menor, para ficar mais rápido
-		if ("TESTES".equals(Auxiliar.getParametroConfiguracao("tipo_carga_xml", true))) {
+		String tipoCarga = Auxiliar.getParametroConfiguracao("tipo_carga_xml", true);
+		if ("TESTES".equals(tipoCarga)) {
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
-			sqlConsultaProcessos += " LIMIT 30";
+			sqlConsultaProcessos += "\n AND nr_ano = 2016 LIMIT 30";
+		} else if (tipoCarga.matches("\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}")) {
+			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + tipoCarga + "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
+			sqlConsultaProcessos += "\n AND p.nr_processo = '" + tipoCarga + "'";
+		} else {
+			throw new RuntimeException("Valor desconhecido para o parâmetro '" + tipoCarga + "'!");
 		}
 
-		// PreparedStatement que fará a consulta de todos os processos
-		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos);
+		// PreparedStatement que fará a consulta de todos os processos, com parâmetros para acelerar a consulta.
+		nsConsultaProcessos = conexaoBasePrincipal.prepareStatement(sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 
 		// SQL que fará a consulta de todos os polos
 		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/02_consulta_polos.sql");
