@@ -303,23 +303,32 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// -- orgaoJulgador
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
-		String nomeServentiaPJe = rsProcesso.getString("nome_oj_ojc");
+		String nomeServentiaPJe;
+		if (grau == 2 && rsProcesso.getBoolean("possui_sessao")) {
+			nomeServentiaPJe = rsProcesso.getString("ds_orgao_julgador_colegiado");
+		} else {
+			nomeServentiaPJe = rsProcesso.getString("ds_orgao_julgador");
+		}
 		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeServentiaPJe);
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
+		cabecalhoProcesso.setOrgaoJulgador(orgaoJulgador);
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
 		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
-		orgaoJulgador.setInstancia(rsProcesso.getString("tp_instancia"));
 		if (grau == 1) {
 			
 			// Em 1G, pega como localidade do OJ o município do OJ do processo
 			orgaoJulgador.setCodigoMunicipioIBGE(Auxiliar.getCampoIntNotNull(rsProcesso, "id_municipio_ibge_atual"));
+			
+			// Em 1G, instância será sempre originária
+			orgaoJulgador.setInstancia("ORIG");
 		} else {
 			
 			// Em 2G, pega como localidade do OJ o município do TRT, que está definido no arquivo de configurações
 			orgaoJulgador.setCodigoMunicipioIBGE(codigoMunicipioIBGETRT);
+			
+			// Em 2G, instância poderá ser originária ou não
+			orgaoJulgador.setInstancia("2".equals(rsProcesso.getString("nr_instancia")) ? "ORIG" : "REV");
 		}
-
-		cabecalhoProcesso.setOrgaoJulgador(orgaoJulgador);
 
 		// Consulta os movimentos processuais desse processo
 		nsMovimentos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));

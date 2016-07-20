@@ -20,15 +20,16 @@ SELECT
       to_char(pt.dt_autuacao, 'yyyymmddhh24miss') dt_autuacao,  -- TODO: Definir formato para mostrar a data/hora da autuação
       
       /*** orgaoJulgador ***/
-      upper(to_ascii(case when ps.id_processo_trf is null then ojc.ds_orgao_julgador_colegiado else oj.ds_orgao_julgador end)) nome_oj_ojc,
-      --upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
+      case when ps.id_processo_trf is null then false else true end possui_sessao,
+      upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
 /*
       -- codigoOrgao 
       case when ps.id_processo_trf is null then serv_ojc.cod_serventia else serv_oj.cod_serventia end ds_sigla,
       -- nomeOrgao
       case when ps.id_processo_trf is null then serv_ojc.nom_org_julg else serv_oj.nom_org_julg end ds_orgao_julgador,
       -- instancia   */
-      case when pt.nr_instancia = '2' then 'ORIG' else 'REV' end tp_instancia, 
+      --case when pt.nr_instancia = '2' then 'ORIG' else 'REV' end tp_instancia,
+      pt.nr_instancia, 
       /* codigoMunicipioIBGE */
       ib.id_municipio_ibge id_municipio_ibge_atual,
       

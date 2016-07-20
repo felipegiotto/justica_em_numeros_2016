@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import org.junit.Test;
 
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
+import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
@@ -236,6 +237,72 @@ public class Op_2_GeraXMLsTest {
 		
 		TipoProcessoJudicial processo1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791");
 		assertEquals("4306809", processo1G.getDadosBasicos().getCodigoLocalidade()); // 4306809: ENCANTADO
+	}
+	
+	@Test
+	public void testCampoOrgaoJulgadorServentiaCNJ() throws Exception {
+		
+		/*
+		 * Órgãos Julgadores
+Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
+Em <codigoOrgao> deverão ser informados os mesmos códigos das serventias judiciárias cadastradas no Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009).
+Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judiciárias cadastradas no Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009)
+			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
+		 */
+		/*
+			10. Como preencher o campo “Órgão Julgador”? 
+			    R: Os Tribunais deverão seguir os mesmos códigos e descrições utilizadas no módulo de produtividade.
+			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
+		 */
+		
+		// Processo 2G, responsabilidade do gabinete: GABINETE VANIA MATTOS;47074;GABINETE VANIA MARIA CUNHA MATTOS
+		TipoOrgaoJulgador orgaoJulgador2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getDadosBasicos().getOrgaoJulgador(); 
+		assertEquals("47074", orgaoJulgador2G.getCodigoOrgao()); 
+		assertEquals("GABINETE VANIA MARIA CUNHA MATTOS", orgaoJulgador2G.getNomeOrgao());
+		
+		// Processo 1G, responsabilidade da vara: 46904;VT Encantado
+		TipoOrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
+		assertEquals("46904", orgaoJulgador1G.getCodigoOrgao());
+		assertEquals("VT Encantado", orgaoJulgador1G.getNomeOrgao());
+	}
+	
+	@Test
+	public void testCampoOrgaoJulgadorTipoInstancia() throws Exception {
+		
+		/*
+		<attribute name="instancia" use="required">
+            <annotation>
+            	<documentation>Os tipos de instância podem ser:
+- ORIG: instância originária em que o processo teve início;
+- REV: instância de revisão direta de um processo originariamente proposto em outra instância;
+- ESP: instância de revisão especial de processo submetido ou não à revisão direta;
+- EXT: instância de revisão extraordinária
+- ADM: instância administrativa de análise.
+</documentation>
+            </annotation>
+            <simpleType>
+				<restriction base="string">
+					<enumeration value="ORIG"></enumeration>
+					<enumeration value="REV"></enumeration>
+					<enumeration value="ESP"></enumeration>
+					<enumeration value="EXT"></enumeration>
+					<enumeration value="ADM"></enumeration>
+				</restriction>
+			</simpleType>
+		</attribute>
+		 */
+		
+		// Processo 1G
+		TipoOrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
+		assertEquals("ORIG", orgaoJulgador1G.getInstancia());
+		
+		// Processo 2G, Recurso ordinário
+		TipoOrgaoJulgador orgaoJulgador2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getDadosBasicos().getOrgaoJulgador(); 
+		assertEquals("REV", orgaoJulgador2G.getInstancia());
+		
+		// Processo 2G, originário
+		TipoOrgaoJulgador orgaoJulgador2GOrig = retornaDadosProcesso(2, "0020970-29.2016.5.04.0000").getDadosBasicos().getOrgaoJulgador(); 
+		assertEquals("ORIG", orgaoJulgador2GOrig.getInstancia());
 	}
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
