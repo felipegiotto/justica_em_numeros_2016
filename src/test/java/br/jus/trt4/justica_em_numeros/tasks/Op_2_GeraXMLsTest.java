@@ -11,9 +11,11 @@ import java.util.List;
 
 import org.junit.Test;
 
+import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
+import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
 import br.jus.cnj.intercomunicacao_2_2.TipoParte;
@@ -384,8 +386,11 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("57310009053", pessoaAtivo.getNumeroDocumentoPrincipal());
 		assertEquals("17640725000147", pessoaPassivo.getNumeroDocumentoPrincipal());
 		
-		// TODO: Trazer CPF e CNPJ preferencialmente
-		// TODO: Testar formato do número do documento
+		// Outros documentos
+		TipoDocumentoIdentificacao documento = pessoaAtivo.getDocumento().get(0);
+		assertEquals(ModalidadeDocumentoIdentificador.TE, documento.getTipoDocumento()); // Título de Eleitor
+		assertEquals("0059509160434", documento.getCodigoDocumento());
+		assertEquals("Tribunal Superior Eleitoral", documento.getEmissorDocumento());
 		
 		// Gênero:
 		/*

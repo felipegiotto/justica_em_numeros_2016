@@ -230,34 +230,43 @@ public class Op_2_GeraXMLs {
 							
 							while (rsDocumentos.next()) {
 
-								// Script TRT14:
-								// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
-								//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
+								// Considera CPF, CNPJ e RIC como documentos principais da pessoa, que ficam em um campo separado
+								// (fora da lista de documentos)
 								String tipoDocumentoPJe = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao");
 								String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento");
-								if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
-									TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
-									documento.setCodigoDocumento(numeroDocumento);
-									documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
-
-									// Carrega o tipo de documento do CNJ a partir do tipo do PJe
-									documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe)));
-									pessoa.getDocumento().add(documento);
-									
-								} else if (!tipoDocumentoPJe.equals("CPF") && !tipoDocumentoPJe.equals("CPJ")) {
-									
-									// Documentos CPF e CNPJ não possuem correspondente na tabela do CNJ!
-									LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' não possui correspondente na tabela do CNJ!");
-								}
-								
-								// Considera CPF, CNPJ ou RIC como documentos principais
 								if (tipoDocumentoPJe.equals("CPF") || tipoDocumentoPJe.equals("CPJ") || tipoDocumentoPJe.equals("RIC")) {
+									
 									if (tipoDocumentoPJe.equals("CPF")) {
 										numeroDocumento = StringUtils.leftPad(numeroDocumento, 11, '0');
 									} else {
 										numeroDocumento = StringUtils.leftPad(numeroDocumento, 14, '0');
 									}
 									pessoa.setNumeroDocumentoPrincipal(numeroDocumento);
+								} else {
+									
+									// Script TRT14:
+									// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
+									//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
+									if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
+										TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
+										documento.setCodigoDocumento(numeroDocumento);
+										documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
+										
+										// Carrega o tipo de documento do CNJ a partir do tipo do PJe
+										documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe)));
+										
+										// Nome do documento, conforme documentação do XSD:
+										// Nome existente no documento. Deve ser utilizado apenas se existente nome diverso daquele ordinariamente usado.
+										String nomePessoaDocumento = rsDocumentos.getString("ds_nome_pessoa");
+										if (!pessoa.getNome().equals(nomePessoaDocumento)) {
+											documento.setNome(nomePessoaDocumento);
+										}
+										
+										pessoa.getDocumento().add(documento);
+										
+									} else {
+										LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' não possui correspondente na tabela do CNJ!");
+									}
 								}
 							}
 						}

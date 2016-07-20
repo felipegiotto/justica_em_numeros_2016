@@ -8,7 +8,7 @@
               --tpd.tp_doc_selo tp_documento,
               pdi.cd_tp_documento_identificacao,
               
-              pdi.in_principal
+              pdi.ds_nome_pessoa
             from tb_pess_doc_identificacao pdi
             /*
             inner join 
