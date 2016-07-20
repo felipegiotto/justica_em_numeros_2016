@@ -303,13 +303,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// -- orgaoJulgador
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
-		String nomeServentiaPJe;
-		if (grau == 2 && rsProcesso.getBoolean("possui_sessao")) {
-			nomeServentiaPJe = rsProcesso.getString("ds_orgao_julgador_colegiado");
-		} else {
-			nomeServentiaPJe = rsProcesso.getString("ds_orgao_julgador");
-		}
-		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeServentiaPJe);
+		// TODO: Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(rsProcesso.getString("ds_orgao_julgador"));
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
 		cabecalhoProcesso.setOrgaoJulgador(orgaoJulgador);
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());

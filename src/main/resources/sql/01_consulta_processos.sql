@@ -11,24 +11,17 @@ SELECT
       /* nivelSigilo */
       case when pt.in_segredo_justica = 'S' then 5 else 0 end as nivelSigilo, -- TODO: avaliar melhor
       /* numero */
-      regexp_replace(p.nr_processo, '[\.\-]', '', 'g') nr_processo, -- TODO: Revisar o motivo do número do processo estar sem os pontos e traços
+      regexp_replace(p.nr_processo, '[\.\-]', '', 'g') nr_processo,
       /* classeProcessual */
       cj.cd_classe_judicial,
       /* codigoLocalidade */
       ib.id_municipio_ibge id_municipio_ibge_origem,
       /* dataAjuizamento */
-      to_char(pt.dt_autuacao, 'yyyymmddhh24miss') dt_autuacao,  -- TODO: Definir formato para mostrar a data/hora da autuação
+      to_char(pt.dt_autuacao, 'yyyymmddhh24miss') dt_autuacao,
       
       /*** orgaoJulgador ***/
-      case when ps.id_processo_trf is null then false else true end possui_sessao,
       upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
-/*
-      -- codigoOrgao 
-      case when ps.id_processo_trf is null then serv_ojc.cod_serventia else serv_oj.cod_serventia end ds_sigla,
-      -- nomeOrgao
-      case when ps.id_processo_trf is null then serv_ojc.nom_org_julg else serv_oj.nom_org_julg end ds_orgao_julgador,
-      -- instancia   */
-      --case when pt.nr_instancia = '2' then 'ORIG' else 'REV' end tp_instancia,
+      -- instancia
       pt.nr_instancia, 
       /* codigoMunicipioIBGE */
       ib.id_municipio_ibge id_municipio_ibge_atual,
@@ -36,37 +29,13 @@ SELECT
       /* TRT4 */
       pt.vl_causa
     FROM tb_processo_trf pt
-    INNER JOIN tb_processo p ON 1=1
-     and p.id_processo = pt.id_processo_trf
-    INNER JOIN tb_classe_judicial cj ON 1=1
-      and cj.id_classe_judicial = pt.id_classe_judicial
-    LEFT JOIN tb_orgao_julgador oj ON 1=1
-      and oj.id_orgao_julgador = pt.id_orgao_julgador
-    LEFT JOIN tb_orgao_julgador_colgiado ojc ON 1=1
-      and ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado
-    INNER JOIN tb_jurisdicao_municipio jm ON 1=1
-      and jm.id_jurisdicao = oj.id_jurisdicao
-      AND jm.in_sede        = 'S'
-    INNER JOIN tb_municipio_ibge ib ON 1=1
-      and ib.id_municipio = jm.id_municipio
+    INNER JOIN tb_processo p ON p.id_processo = pt.id_processo_trf
+    INNER JOIN tb_classe_judicial cj ON cj.id_classe_judicial = pt.id_classe_judicial
+    LEFT JOIN tb_orgao_julgador oj ON oj.id_orgao_julgador = pt.id_orgao_julgador
+    LEFT JOIN tb_orgao_julgador_colgiado ojc ON ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado
+    INNER JOIN tb_jurisdicao_municipio jm ON jm.id_jurisdicao = oj.id_jurisdicao AND jm.in_sede = 'S'
+    INNER JOIN tb_municipio_ibge ib ON ib.id_municipio = jm.id_municipio
 /*      
-    LEFT JOIN 
-    (
-      -- exemplo de preenchimento: 
-      -- <int> cod_serventia: o código da serventia no CNJ
-      -- <int> num_org_julg: o código do órgão julgador no PJe
-      -- <string> nom_org_julg: nome da serventia no CNJ
-      select 30405 cod_serventia, 48 num_org_julg, 'GABINETE DO DESEMBARGADOR DO TRABALHO CARLOS AUGUSTO GOMES LÔBO' nom_org_julg
-    ) serv_oj on 1=1
-      and serv_oj.num_org_julg  = oj.id_orgao_julgador
-    LEFT JOIN
-    (
-      -- exemplo de preenchimento: 
-      -- <int> cod_serventia: o código da serventia no CNJ
-      -- <int> num_org_julg: o código do órgão julgador no PJe
-      -- <string> nom_org_julg: nome da serventia no CNJ 
-    ) serv_ojc on 1=1
-      and serv_ojc.num_org_julg = ojc.id_orgao_julgador_colegiado
     INNER JOIN 
     (
       -- item 92.220
