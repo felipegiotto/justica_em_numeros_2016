@@ -29,12 +29,12 @@ SELECT
       /* TRT4 */
       pt.vl_causa
     FROM tb_processo_trf pt
-    INNER JOIN tb_processo p ON p.id_processo = pt.id_processo_trf
-    INNER JOIN tb_classe_judicial cj ON cj.id_classe_judicial = pt.id_classe_judicial
-    LEFT JOIN tb_orgao_julgador oj ON oj.id_orgao_julgador = pt.id_orgao_julgador
-    LEFT JOIN tb_orgao_julgador_colgiado ojc ON ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado
-    INNER JOIN tb_jurisdicao_municipio jm ON jm.id_jurisdicao = oj.id_jurisdicao AND jm.in_sede = 'S'
-    INNER JOIN tb_municipio_ibge ib ON ib.id_municipio = jm.id_municipio
+    INNER JOIN tb_processo p ON (p.id_processo = pt.id_processo_trf)
+    INNER JOIN tb_classe_judicial cj ON (cj.id_classe_judicial = pt.id_classe_judicial)
+    LEFT  JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = pt.id_orgao_julgador)
+    LEFT  JOIN tb_orgao_julgador_colgiado ojc ON (ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado)
+    INNER JOIN tb_jurisdicao_municipio jm ON (jm.id_jurisdicao = oj.id_jurisdicao AND jm.in_sede = 'S')
+    INNER JOIN tb_municipio_ibge ib ON (ib.id_municipio = jm.id_municipio)
 /*      
     INNER JOIN 
     (
