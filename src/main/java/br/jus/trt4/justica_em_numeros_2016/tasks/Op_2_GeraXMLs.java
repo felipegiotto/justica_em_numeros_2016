@@ -390,7 +390,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				movimento.setMovimentoNacional(movimentoNacional);
 
 				// Consulta os complementos desse movimento processual
-				nsComplementos.setInt("id_processo_evento", rsMovimentos.getInt("id_processo_evento"));
+				int idMovimento = rsMovimentos.getInt("id_processo_evento");
+				nsComplementos.setInt("id_processo_evento", idMovimento);
 				try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
 					while (rsComplementos.next()) {
 
@@ -423,7 +424,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 								    <código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>							 * 
 							 */
 							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
-							LOGGER.warn("Há um complemento que não possui código: " + sb);
+							LOGGER.warn("Há um complemento que não possui código no movimento com id_processo_evento=" + idMovimento + ": " + sb);
 						}
 						movimento.getComplemento().add(sb.toString());
 					}
