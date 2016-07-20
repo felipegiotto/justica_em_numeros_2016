@@ -4,11 +4,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
@@ -39,6 +42,8 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLs;
  */
 public class Op_2_GeraXMLsTest {
 
+	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLsTest.class);
+	
 	@Test
 	public void testarCamposProcesso2G() throws Exception {
 		
@@ -493,18 +498,20 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			// SQL que fará a consulta de um processo específico
 			String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processos.sql");
 			sqlConsultaProcessos += " AND nr_processo = :nr_processo";
-			//System.out.println(sqlConsultaProcessos);
+			System.out.println(sqlConsultaProcessos);
 			try (NamedParameterStatement nsConsultaProcessos = new NamedParameterStatement(baixaDados.getConexaoBasePrincipal(), sqlConsultaProcessos)) {
+				nsConsultaProcessos.setDate("dt_inicio_periodo", new Date(System.currentTimeMillis()));
+				nsConsultaProcessos.setDate("dt_fim_periodo", new Date(System.currentTimeMillis()));
 				nsConsultaProcessos.setString("nr_processo", numeroProcesso);
+				nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 0);
+				LOGGER.info("Carregando dados do processo " + numeroProcesso);
 				try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
 					if (!rsProcessos.next()) {
 						fail("Não retornou dados do processo!");
 					}
 					
 					// Chama o método que preenche um TipoProcessoJudicial a partir de um ResultSet
-					TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
-					baixaDados.preencheDadosProcesso(processoJudicial, rsProcessos);
-					return processoJudicial;					
+					return baixaDados.analisarProcessoJudicialCompleto(rsProcessos);
 				}
 			}
 		} finally {

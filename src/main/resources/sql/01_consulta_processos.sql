@@ -43,9 +43,13 @@ SELECT
       inner join tb_processo_evento ad on 1=1
         and ad.id_processo = pr.id_processo_trf
         and ad.id_processo_evento_excludente IS NULL
-      where 1=1
+      where :filtrar_por_movimentacoes = 1 
         and ad.dt_atualizacao >= :dt_inicio_periodo
-        and ad.dt_atualizacao <  :dt_fim_periodo 
+        and ad.dt_atualizacao <  :dt_fim_periodo
+      UNION
+      select distinct pr.id_processo_trf
+      from tb_processo_trf pr
+      where :filtrar_por_movimentacoes = 0
     ) pc on 1=1
       and pc.id_processo_trf = pt.id_processo_trf
     WHERE 1=1

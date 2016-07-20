@@ -4,10 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Properties;
 import java.util.TreeSet;
 
@@ -41,7 +42,7 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ProcessaServentiasCNJ;
 import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
 
 /**
- * Consulta os processos no banco de dados do PJe e gera os arquivo XML na pasta "output".
+ * Consulta os processos no banco de dados do PJe e gera os arquivo XML para o "Justiça em Números" na pasta "output".
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
@@ -49,11 +50,10 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
  */
 public class Op_2_GeraXMLs {
 
-	private final File arquivoSaida;
-
 	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLs.class);
 	private int grau;
 	private Connection conexaoBasePrincipal;
+	private final File arquivoSaida;
 	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPolos;
 	private NamedParameterStatement nsPartes;
@@ -65,11 +65,6 @@ public class Op_2_GeraXMLs {
 	private static ProcessaServentiasCNJ processaServentiasCNJ;
 	private static Properties tiposDocumentosPJeCNJ;
 	private TreeSet<String> processosAnalisados = new TreeSet<>();
-
-	public Op_2_GeraXMLs(int grau) {
-		this.grau = grau;
-		this.arquivoSaida = new File("output/dados_" + grau + "g.xml");
-	}
 
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
@@ -101,11 +96,16 @@ public class Op_2_GeraXMLs {
 		}
 	}
 
+	public Op_2_GeraXMLs(int grau) {
+		this.grau = grau;
+		this.arquivoSaida = new File("output/dados_" + grau + "g.xml");
+	}
+	
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
 		
-		// Objetos auxiliares para gerar o XML
+		// Objetos auxiliares para gerar o XML a partir das classes Java
 		ObjectFactory factory = new ObjectFactory();
 		JAXBContext context = JAXBContext.newInstance(Processos.class);
 		Marshaller jaxbMarshaller = context.createMarshaller();
@@ -113,18 +113,6 @@ public class Op_2_GeraXMLs {
 		Processos processos = factory.createProcessos();
 
 		// Executa a consulta no banco de dados do PJe
-		// TODO: Restringir a consulta de processos, conforme regra do CNJ:
-		// * Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 
-		//   31 de julho de 2016, bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
-		// * Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização 
-		// no mês de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar 
-		// perda de algum tipo de informação.
-		// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
-		// 3. Quais processos devem ser enviados? 
-		// R: Todos os processos em tramitação na data de 31/07/2016 e todos os baixados no período de 01/01/2016 a 31/07/2016 deverão ser encaminhados, com todas os movimentos desde o seu ajuizamento.
-		// 4. E nas cargas mensais? 
-		// R: Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês de agosto de 2016, com todos os dados e movimentos destes processos, desde o seu início, de forma a evitar perda de alguma informação em relação ao processo.		
-		// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
 		LOGGER.info("Executando consulta no banco de dados...");
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
 			int i=0;
@@ -132,8 +120,7 @@ public class Op_2_GeraXMLs {
 				String numeroCompletoProcesso = rsProcessos.getString("numero_completo_processo");
 				LOGGER.debug("Analisando processo " + numeroCompletoProcesso + " (" + (++i) + ")");
 
-				TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
-				preencheDadosProcesso(processoJudicial, rsProcessos);
+				TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(rsProcessos);
 				processos.getProcesso().add(processoJudicial);
 				
 				// Gera um WARNING se o mesmo processo for analisado duas vezes
@@ -145,11 +132,9 @@ public class Op_2_GeraXMLs {
 			}
 		}
 
-		// Arquivo onde o XML será gravado
-		arquivoSaida.getParentFile().mkdirs();
-
 		// Gera o arquivo XML
 		LOGGER.info("Gerando arquivo XML: " + arquivoSaida + "...");
+		arquivoSaida.getParentFile().mkdirs();
 		jaxbMarshaller.marshal(processos, arquivoSaida);
 		LOGGER.info("Arquivo XML do " + grau + "o Grau gerado!");
 	}
@@ -163,18 +148,31 @@ public class Op_2_GeraXMLs {
 	 * @throws SQLException 
 	 * @throws IOException 
 	 */
-	public void preencheDadosProcesso(TipoProcessoJudicial processoJudicial, ResultSet rsProcesso) throws SQLException, IOException {
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ResultSet rsProcesso) throws SQLException, IOException {
 
+		// Objeto que será retornado
+		TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
+		
 		// Cabeçalho com dados básicos do processo:
-		TipoCabecalhoProcesso cabecalhoProcesso = new TipoCabecalhoProcesso();
-		processoJudicial.setDadosBasicos(cabecalhoProcesso);
+		processoJudicial.setDadosBasicos(analisarCabecalhoProcesso(rsProcesso));
 
+		// Movimentos processuais
+		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(rsProcesso.getInt("id_processo_trf")));
+		
+		return processoJudicial;
+	}
+
+	private TipoCabecalhoProcesso analisarCabecalhoProcesso(ResultSet rsProcesso) throws SQLException {
+		
 		// Script TRT14:
 		// raise notice '<dadosBasicos nivelSigilo="%" numero="%" classeProcessual="%" codigoLocalidade="%" dataAjuizamento="%">' 
 		//  , proc.nivelSigilo, proc.nr_processo, proc.cd_classe_judicial, proc.id_municipio_ibge_origem, proc.dt_autuacao;
+		TipoCabecalhoProcesso cabecalhoProcesso = new TipoCabecalhoProcesso();
 		cabecalhoProcesso.setNivelSigilo(Auxiliar.getCampoIntNotNull(rsProcesso, "nivelSigilo"));
 		cabecalhoProcesso.setNumero(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
 		cabecalhoProcesso.setClasseProcessual(Auxiliar.getCampoIntNotNull(rsProcesso, "cd_classe_judicial"));
+		cabecalhoProcesso.setDataAjuizamento(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
+		cabecalhoProcesso.setValorCausa(Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa")); 
 		if (grau == 1) {
 			
 			// Em 1G, pega como localidade o município do OJ do processo
@@ -184,13 +182,25 @@ public class Op_2_GeraXMLs {
 			// Em 2G, pega como localidade o município do TRT, que está definido no arquivo de configurações
 			cabecalhoProcesso.setCodigoLocalidade(Integer.toString(codigoMunicipioIBGETRT));
 		}
-		cabecalhoProcesso.setDataAjuizamento(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
-		
-		// TRT4:
-		cabecalhoProcesso.setValorCausa(Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa")); 
 
 		// Consulta todos os polos do processo
-		nsPolos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
+		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(rsProcesso.getInt("id_processo_trf")));
+
+		// Consulta todos os assuntos desse processo
+		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(rsProcesso.getInt("id_processo_trf")));
+
+		// Preenche dados do órgão julgador do processo
+		cabecalhoProcesso.setOrgaoJulgador(analisarOrgaoJulgadorProcesso(rsProcesso));
+		
+		return cabecalhoProcesso;
+	}
+
+	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso) throws SQLException {
+		
+		List<TipoPoloProcessual> polos = new ArrayList<TipoPoloProcessual>();
+		
+		// Consulta todos os polos do processo
+		nsPolos.setInt("id_processo", idProcesso);
 		try (ResultSet rsPolos = nsPolos.executeQuery()) {
 			while (rsPolos.next()) {
 
@@ -198,10 +208,10 @@ public class Op_2_GeraXMLs {
 				// raise notice '<polo polo="%">', polo.in_polo_participacao;
 				TipoPoloProcessual polo = new TipoPoloProcessual();
 				polo.setPolo(ModalidadePoloProcessual.valueOf(rsPolos.getString("in_polo_participacao")));
-				cabecalhoProcesso.getPolo().add(polo);
+				polos.add(polo);
 
 				// Consulta as partes de um determinado polo no processo
-				nsPartes.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
+				nsPartes.setInt("id_processo", idProcesso);
 				nsPartes.setString("in_participacao", rsPolos.getString("in_participacao"));
 				try (ResultSet rsPartes = nsPartes.executeQuery()) {
 					while (rsPartes.next()) {
@@ -287,9 +297,16 @@ public class Op_2_GeraXMLs {
 				}
 			}
 		}
+		
+		return polos;
+	}
 
-		// Consulta os assuntos desse processo
-		nsAssuntos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
+	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(int idProcesso) throws SQLException {
+		
+		List<TipoAssuntoProcessual> assuntos = new ArrayList<TipoAssuntoProcessual>();
+		
+		// Consulta todos os assuntos do processo
+		nsAssuntos.setInt("id_processo", idProcesso);
 		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
 			boolean jaEncontrouAssunto = false;
 			boolean jaEncontrouAssuntoPrincipal = false;
@@ -301,7 +318,7 @@ public class Op_2_GeraXMLs {
 				// raise notice '</assunto>';
 				TipoAssuntoProcessual assunto = new TipoAssuntoProcessual();
 				assunto.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf"));
-				cabecalhoProcesso.getAssunto().add(assunto);
+				assuntos.add(assunto);
 
 				// Trata o campo "assunto principal", verificando também se há mais de um assunto principal no processo.
 				boolean assuntoPrincipal = "S".equals(rsAssuntos.getString("in_assunto_principal"));
@@ -331,13 +348,16 @@ public class Op_2_GeraXMLs {
 				LOGGER.warn("Processo sem assunto principal!");
 			}
 		}
+		
+		return assuntos;
+	}
 
-		// Órgão julgador:
+	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ResultSet rsProcesso) throws SQLException {
 		/*
 		 * Órgãos Julgadores
-Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
-Em <codigoOrgao> deverão ser informados os mesmos códigos das serventias judiciárias cadastradas no Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009).
-Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judiciárias cadastradas no Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009)
+				Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
+				Em <codigoOrgao> deverão ser informados os mesmos códigos das serventias judiciárias cadastradas no Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009).
+				Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judiciárias cadastradas no Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009)
 			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 		 */
 		/*
@@ -352,7 +372,6 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
 		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(rsProcesso.getString("ds_orgao_julgador"));
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
-		cabecalhoProcesso.setOrgaoJulgador(orgaoJulgador);
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
 		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
 		if (grau == 1) {
@@ -370,9 +389,16 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			// Em 2G, instância poderá ser originária ou não
 			orgaoJulgador.setInstancia("2".equals(rsProcesso.getString("nr_instancia")) ? "ORIG" : "REV");
 		}
+		
+		return orgaoJulgador;
+	}
 
-		// Consulta os movimentos processuais desse processo
-		nsMovimentos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
+	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(int idProcesso) throws SQLException {
+		
+		ArrayList<TipoMovimentoProcessual> movimentos = new ArrayList<>();
+		
+		// Consulta todos os movimentos do processo
+		nsMovimentos.setInt("id_processo", idProcesso);
 		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
 			while (rsMovimentos.next()) {
 
@@ -381,7 +407,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
 				movimento.setDataHora(rsMovimentos.getString("dta_ocorrencia"));
 				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
-				processoJudicial.getMovimento().add(movimento);
+				movimentos.add(movimento);
 
 				// Script TRT14:
 				// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
@@ -431,6 +457,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				}	
 			}
 		}
+		
+		return movimentos;
 	}
 
 	public void prepararConexao() throws SQLException, IOException {
@@ -480,6 +508,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
 			dataInicial.set(2015, Calendar.JANUARY, 1, 0, 0, 0);
 			dataFinal.set(2016, Calendar.JULY, 31, 23, 59, 59);
+			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 1);
 			
 		} else if ("MENSAL".equals(tipoCarga)) {
 			// CNJ: Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
@@ -487,11 +516,11 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			// algum tipo de informação.
 			dataInicial.set(2016, Calendar.AUGUST, 1, 0, 0, 0);
 			dataFinal.set(2016, Calendar.AUGUST, 31, 23, 59, 59);
+			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 1);
 			
 		} else {
-			// Para outros filtros, não considera as datas das movimentações (inserindo um período bem amplo)
-			dataInicial.set(2000, Calendar.JANUARY, 1, 0, 0, 0);
-			dataFinal.set(3000, Calendar.JANUARY, 1, 0, 0, 0);
+			// Para outros filtros, não considera as datas das movimentações
+			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 0);
 		}
 		dataInicial.set(Calendar.MILLISECOND, 0);
 		dataFinal.set(Calendar.MILLISECOND, 999);

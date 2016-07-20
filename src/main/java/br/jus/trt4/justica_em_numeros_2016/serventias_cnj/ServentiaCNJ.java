@@ -1,5 +1,10 @@
 package br.jus.trt4.justica_em_numeros_2016.serventias_cnj;
 
+/**
+ * Representa uma serventia judiciária no padrão CNJ, com código e nome
+ * 
+ * @author fgiotto
+ */
 public class ServentiaCNJ {
 
 	private String codigo;

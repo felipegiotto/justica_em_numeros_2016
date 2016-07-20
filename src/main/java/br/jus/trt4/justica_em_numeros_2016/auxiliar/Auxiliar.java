@@ -2,7 +2,6 @@ package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -24,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 public class Auxiliar {
 
 	private static final File arquivoConfiguracoes = new File("config.properties");
-	private static final File arquivoModeloConfiguracoes = new File("config_modelo.properties");
 
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;

@@ -9,10 +9,10 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
+ * IMPORTANTE!! Essa classe só precisará ser executada novamente se houver alguma alteração no arquivo XSD.
+ * 
  * Processa o arquivo XSD recebido do CNJ (src/main/resources/replicacao-nacional.xsd) e gera as classes
  * Java correspondentes, para permitir a geração dos arquivos XML.
- * 
- * Essa classe só precisará ser executada novamente se houver alguma alteração no arquivo XSD.
  * 
  * Fonte: https://sanaulla.info/2010/08/29/using-jaxb-to-generate-xml-from-the-java-xsd-2/
  * 
