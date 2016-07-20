@@ -106,10 +106,6 @@ public class Op_2_GeraXMLs {
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 		Processos processos = factory.createProcessos();
 
-		// TODO: Verificar se CNJ irá disponibilizar ferramenta para extrair dados do PJe:
-		// Para extrair os dados do PJE ou MNI, o CNJ disponibilizará um programa capaz de gerar as informações segundo o modelo MNI. Para tanto, o tribunal deverá prover listagens com os números dos processos, separados entre 2º grau, 1º grau, Juizados Especiais e Turmas Recursais.
-		// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
-
 		// Executa a consulta no banco de dados do PJe
 		// TODO: Restringir a consulta de processos, conforme regra do CNJ:
 		// * Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 
@@ -194,9 +190,6 @@ public class Op_2_GeraXMLs {
 
 				// Script TRT14:
 				// raise notice '<polo polo="%">', polo.in_polo_participacao;
-				// TODO: IMPORTANTE: não estão sendo tratados os casos em que a parte é considerada um interesse público abstrato cuja defesa está a cargo do Ministério Público ou da Defensoria Pública
-				// TODO: IMPORTANTE: não estão sendo tratados os casos de representação e assistência dos pais, representação ou substituição processual em ações coletivas, tutela e curatela
-				// TODO: IMPORTANTE: não está sendo preenchido o elemento opcional 'advogado'
 				TipoPoloProcessual polo = new TipoPoloProcessual();
 				polo.setPolo(ModalidadePoloProcessual.valueOf(rsPolos.getString("in_polo_participacao")));
 				cabecalhoProcesso.getPolo().add(polo);
@@ -251,7 +244,8 @@ public class Op_2_GeraXMLs {
 		// Consulta os assuntos desse processo
 		nsAssuntos.setInt("id_processo", rsProcesso.getInt("id_processo_trf"));
 		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
-			boolean encontrouAssunto = false;
+			boolean jaEncontrouAssunto = false;
+			boolean jaEncontrouAssuntoPrincipal = false;
 			while (rsAssuntos.next()) {
 
 				// Script TRT14:
@@ -262,9 +256,19 @@ public class Op_2_GeraXMLs {
 				assunto.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf"));
 				cabecalhoProcesso.getAssunto().add(assunto);
 
-				encontrouAssunto = true;
+				boolean assuntoPrincipal = "S".equals(rsAssuntos.getString("in_assunto_principal"));
+				assunto.setPrincipal(assuntoPrincipal);
+				if (assuntoPrincipal) {
+					if (jaEncontrouAssuntoPrincipal) {
+						LOGGER.warn("Este processo possui mais de um assunto principal!");
+					} else {
+						jaEncontrouAssuntoPrincipal = true;
+					}
+				}
+				
+				jaEncontrouAssunto = true;
 			}
-
+			
 			// Script TRT14:
 			// -- se não tiver assunto? 
 			// IF fl_assunto = 0 THEN 
@@ -273,18 +277,12 @@ public class Op_2_GeraXMLs {
 			//   raise notice '<codigoNacional>2546</codigoNacional>'; -- Verbas Rescisórias
 			//   raise notice '</assunto>';
 			// END IF;				
-			if (!encontrouAssunto) {
-				// TODO: Decidir o que fazer quando não tiver assunto!
+			if (!jaEncontrouAssunto) {
 				LOGGER.warn("Processo sem assunto cadastrado! Decidir o que fazer!");
+			} else if (!jaEncontrouAssuntoPrincipal) {
+				LOGGER.warn("Processo sem assunto principal!");
 			}
 		}
-
-		// TODO: Campo "Competência"
-		/*
-		11. Como preencher o campo “Competência”? 
-			    R: Os tribunais poderão utilizar seus próprios descritivos internos.
-			    Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
-		 */		
 
 		// Órgão julgador:
 		/*
@@ -303,7 +301,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// -- orgaoJulgador
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
-		// TODO: Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
+		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
 		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(rsProcesso.getString("ds_orgao_julgador"));
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
 		cabecalhoProcesso.setOrgaoJulgador(orgaoJulgador);
@@ -361,14 +359,13 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 						sb.append(":");
 						sb.append(rsComplementos.getString("ds_nome"));
 						boolean existeCodigoComplemento = !"".equals(rsComplementos.getString("cd_complemento").trim());
-						if (existeCodigoComplemento) { // TODO: Conferir se o cd_complemento realmente vem antes do nm_complemento
+						if (existeCodigoComplemento) {
 							sb.append(":");
 							sb.append(rsComplementos.getString("cd_complemento"));
 						}
 						sb.append(":");
 						sb.append(rsComplementos.getString("nm_complemento"));
 						if (!existeCodigoComplemento) {
-							// TODO: Verificar complemento de movimento sem cd_complemento!
 							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 							/*
 								5. Como devo informar o complemento de um movimento, visto que ele é composto de duas informações e o modelo só tem um campo? 

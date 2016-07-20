@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import org.junit.Test;
 
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
+import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -305,6 +306,52 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("ORIG", orgaoJulgador2GOrig.getInstancia());
 	}
 	
+	@Test
+	public void testCampoMovimentoProcessual() throws Exception {
+		
+		// Código nacional do movimento
+		/*
+			<complexType name="tipoMovimentoProcessual">
+				<annotation>
+					<documentation>
+						Tipo de elemento destinado a permitir apresentar
+						informações relativas à movimentação processual.
+					</documentation>
+				</annotation>
+		 */
+		TipoMovimentoProcessual movimento2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getMovimento().get(0);
+		assertEquals(26, movimento2G.getMovimentoNacional().getCodigoNacional());
+		
+		// Data/Hora
+		/*
+			<simpleType name="tipoDataHora">
+				<annotation>
+					<documentation>Tipo de elemento destinado a permitir a indicação de
+						data e hora no formato
+						AAAAMMDDHHMMSS
+					</documentation>
+				</annotation>
+				<restriction base="string">
+					<pattern value="\d{4}[0-1]\d[0-3]\d[0-2]\d[0-6]\d[0-6]\d"></pattern>
+				</restriction>
+			</simpleType>
+		 */
+		//            AAAAMMDDHHMMSS
+		assertEquals("20150922083157", movimento2G.getDataHora());
+		
+		/*
+			<element name="complemento" type="string" maxOccurs="unbounded"
+				minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a inclusão dos
+						complementos de movimentação.
+					</documentation>
+				</annotation>
+			</element>
+		 */
+	}
+	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
 		
 		Op_2_GeraXMLs baixaDados = new Op_2_GeraXMLs(grau);
@@ -316,7 +363,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			// SQL que fará a consulta de um processo específico
 			String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processos.sql");
 			sqlConsultaProcessos += " AND nr_processo = :nr_processo";
-			System.out.println(sqlConsultaProcessos);
+			//System.out.println(sqlConsultaProcessos);
 			try (NamedParameterStatement nsConsultaProcessos = new NamedParameterStatement(baixaDados.getConexaoBasePrincipal(), sqlConsultaProcessos)) {
 				nsConsultaProcessos.setString("nr_processo", numeroProcesso);
 				try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {

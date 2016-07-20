@@ -9,7 +9,7 @@ SELECT
 
       /*** dadosBasicos ***/
       /* nivelSigilo */
-      case when pt.in_segredo_justica = 'S' then 5 else 0 end as nivelSigilo, -- TODO: avaliar melhor
+      case when pt.in_segredo_justica = 'S' then 5 else 0 end as nivelSigilo,
       /* numero */
       regexp_replace(p.nr_processo, '[\.\-]', '', 'g') nr_processo,
       /* classeProcessual */
@@ -50,17 +50,5 @@ SELECT
     ) pc on 1=1
       and pc.id_processo_trf = pt.id_processo_trf
       */
-    LEFT JOIN -- TODO: Conferir se não está duplicando os registros de processos que tiveram mais de uma sessão
-    (
-      select ps.id_processo_trf 
-      from tb_pauta_sessao ps
-      inner join tb_tipo_situacao_pauta sp on 1=1
-        and sp.in_classificacao = 'A'
-        and sp.in_ativo = 'S'
-        and sp.id_tipo_situacao_pauta = ps.id_tipo_situacao_pauta
-      where 1=1
-        -- and ps.id_processo_trf = 2001
-    ) ps on 1=1
-      and ps.id_processo_trf = pt.id_processo_trf 
     WHERE 1=1
       and length(p.nr_processo) = 25

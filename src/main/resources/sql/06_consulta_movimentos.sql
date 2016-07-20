@@ -3,9 +3,9 @@
         
         /*** movimento ***/
         /* dataHora */
-        to_char(pe.dt_atualizacao, 'yyyymmddhh24miss') AS dta_ocorrencia, -- TODO: Verificar formato da data
+        to_char(pe.dt_atualizacao, 'yyyymmddhh24miss') AS dta_ocorrencia,
         /* nivelSigilo */
-        case when pe.in_visibilidade_externa = true then 0 else 5 end AS in_visibilidade_externa, -- TODO: Verificar formato do sigilo
+        case when pe.in_visibilidade_externa = true then 0 else 5 end AS in_visibilidade_externa,
         /* identificadorMovimento */
         -- pe.id_processo_evento,
         
