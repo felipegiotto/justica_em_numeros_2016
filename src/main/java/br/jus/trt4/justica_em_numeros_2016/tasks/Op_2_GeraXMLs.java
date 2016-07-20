@@ -3,9 +3,11 @@ package br.jus.trt4.justica_em_numeros_2016.tasks;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Calendar;
 import java.util.Properties;
 import java.util.TreeSet;
 
@@ -52,7 +54,7 @@ public class Op_2_GeraXMLs {
 	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLs.class);
 	private int grau;
 	private Connection conexaoBasePrincipal;
-	private PreparedStatement nsConsultaProcessos;
+	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPolos;
 	private NamedParameterStatement nsPartes;
 	private NamedParameterStatement nsDocumentos;
@@ -456,15 +458,44 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		if ("TESTES".equals(tipoCarga)) {
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			sqlConsultaProcessos += "\n AND nr_ano = 2016 LIMIT 30";
+			
 		} else if (tipoCarga.matches("\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}")) {
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + tipoCarga + "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			sqlConsultaProcessos += "\n AND p.nr_processo = '" + tipoCarga + "'";
-		} else {
+			
+		} else if (!"MENSAL".equals(tipoCarga) && !"COMPLETA".equals(tipoCarga)) {
 			throw new RuntimeException("Valor desconhecido para o parâmetro '" + tipoCarga + "'!");
 		}
 
-		// PreparedStatement que fará a consulta de todos os processos, com parâmetros para acelerar a consulta.
-		nsConsultaProcessos = conexaoBasePrincipal.prepareStatement(sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+		// SQL que fará a consulta de todos os processos, com parâmetros para acelerar a consulta.
+		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+		
+		// Preenche os parâmetros referentes ao período de movimentação dos processos
+		// TODO: Conferir, com área de negócio, qual o critério exato para selecionar os processos conforme regras do CNJ
+		Calendar dataInicial = Calendar.getInstance();
+		Calendar dataFinal = Calendar.getInstance();
+		if ("COMPLETA".equals(tipoCarga)) {
+			// CNJ: Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
+			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
+			dataInicial.set(2015, Calendar.JANUARY, 1, 0, 0, 0);
+			dataFinal.set(2016, Calendar.JULY, 31, 23, 59, 59);
+			
+		} else if ("MENSAL".equals(tipoCarga)) {
+			// CNJ: Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
+			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
+			// algum tipo de informação.
+			dataInicial.set(2016, Calendar.AUGUST, 1, 0, 0, 0);
+			dataFinal.set(2016, Calendar.AUGUST, 31, 23, 59, 59);
+			
+		} else {
+			// Para outros filtros, não considera as datas das movimentações (inserindo um período bem amplo)
+			dataInicial.set(2000, Calendar.JANUARY, 1, 0, 0, 0);
+			dataFinal.set(3000, Calendar.JANUARY, 1, 0, 0, 0);
+		}
+		dataInicial.set(Calendar.MILLISECOND, 0);
+		dataFinal.set(Calendar.MILLISECOND, 999);
+		nsConsultaProcessos.setDate("dt_inicio_periodo", new Date(dataInicial.getTimeInMillis()));
+		nsConsultaProcessos.setDate("dt_fim_periodo", new Date(dataFinal.getTimeInMillis()));
 
 		// SQL que fará a consulta de todos os polos
 		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/02_consulta_polos.sql");

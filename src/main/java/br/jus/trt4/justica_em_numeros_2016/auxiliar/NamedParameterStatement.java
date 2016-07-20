@@ -59,6 +59,15 @@ public class NamedParameterStatement implements AutoCloseable {
 		statement = connection.prepareStatement(parsedQuery);
 	}
 	
+	public NamedParameterStatement(Connection connection, 
+			String query, 
+			int resultSetType,
+			int resultSetConcurrency,
+			int resultSetHoldability) throws SQLException {
+		indexMap = new HashMap<String, List<Integer>>();
+		String parsedQuery = parse(query);
+		statement = connection.prepareStatement(parsedQuery, resultSetType, resultSetConcurrency, resultSetHoldability);
+	}
 	/**
 	 * Parses a query with named parameters. The parameter-index mappings are put into the map, and the
 	 * parsed query is returned. DO NOT CALL FROM CLIENT CODE. This method is non-private so JUnit code can

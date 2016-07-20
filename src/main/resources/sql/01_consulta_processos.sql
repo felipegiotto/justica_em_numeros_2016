@@ -35,7 +35,6 @@ SELECT
     LEFT  JOIN tb_orgao_julgador_colgiado ojc ON (ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado)
     INNER JOIN tb_jurisdicao_municipio jm ON (jm.id_jurisdicao = oj.id_jurisdicao AND jm.in_sede = 'S')
     INNER JOIN tb_municipio_ibge ib ON (ib.id_municipio = jm.id_municipio)
-/*      
     INNER JOIN 
     (
       -- item 92.220
@@ -45,10 +44,9 @@ SELECT
         and ad.id_processo = pr.id_processo_trf
         and ad.id_processo_evento_excludente IS NULL
       where 1=1
-        and ad.dt_atualizacao >= dt_inicio_periodo
-        and ad.dt_atualizacao <  dt_fim_periodo 
+        and ad.dt_atualizacao >= :dt_inicio_periodo
+        and ad.dt_atualizacao <  :dt_fim_periodo 
     ) pc on 1=1
       and pc.id_processo_trf = pt.id_processo_trf
-      */
     WHERE 1=1
       and length(p.nr_processo) = 25
