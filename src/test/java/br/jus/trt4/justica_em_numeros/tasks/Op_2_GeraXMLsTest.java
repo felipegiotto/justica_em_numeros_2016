@@ -6,12 +6,17 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import org.junit.Test;
 
+import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
+import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
+import br.jus.cnj.intercomunicacao_2_2.TipoParte;
+import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
@@ -306,6 +311,78 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("ORIG", orgaoJulgador2GOrig.getInstancia());
 	}
 	
+	@Test
+	public void testCamposPartes() throws Exception {
+		
+		TipoPoloProcessual polo = getPolo(ModalidadePoloProcessual.AT, retornaDadosProcesso(1, "0021654-68.2014.5.04.0405").getDadosBasicos().getPolo());
+		TipoParte parte = polo.getParte().get(0);
+		assertEquals("RAQUEL ABREU DA SILVA", parte.getPessoa().getNome());
+		
+		/*
+			<attribute name="numeroDocumentoPrincipal" type="cnj:tipoCadastroIdentificador"
+				use="optional">
+				<annotation>
+					<documentation>
+						Número do documento principal da pessoa
+						individualizada, devendo ser utilizado o RIC ou o
+						CPF para pessoas
+						físicas, nessa ordem, ou o CNPJ
+						para pessoas jurídicas. O atributo é
+						opcional em
+						razão da possibilidade de haver pessoas sem
+						documentos ou
+						cujos dados não estão disponíveis.
+					</documentation>
+				</annotation>
+			</attribute>
+	
+			<simpleType name="tipoCadastroIdentificador">
+				<annotation>
+					<documentation>
+						Tipo de dados destinado a limitar a entrada de dados relativos a
+						cadastros no Ministério da Fazenda Brasileiro (CPF e CNPJ) e/ou ao
+						registro individual do cidadão (riC). A restrição imposta é que o
+						dado qualificado por este tipo seja integralmente numérico, com 11
+						(CPF e riC) ou 14 (CNPJ) dígitos.
+					</documentation>
+				</annotation>
+				<restriction base="string">
+					<pattern value="(\d{11})|(\d{14})"></pattern>
+				</restriction>
+			</simpleType>
+		 */
+		
+		// TODO: Trazer CPF e CNPJ preferencialmente
+		// TODO: Testar formato do número do documento
+		
+		// Gênero:
+		/*
+			<simpleType name="modalidadeGeneroPessoa">
+		        <annotation>
+		        	<documentation>Tipo destinado a permitir a identificação do gẽnero de uma dada pessoa, podendo ser:
+		- M: masculino
+		- F: feminido
+		- D: desconhecido</documentation>
+		        </annotation>
+		        <restriction base="string">
+					<enumeration value="M" />
+					<enumeration value="F" />
+					<enumeration value="D" />
+				</restriction>
+			</simpleType>
+		 */
+		assertEquals(ModalidadeGeneroPessoa.F, parte.getPessoa().getSexo());
+	}
+
+	private TipoPoloProcessual getPolo(ModalidadePoloProcessual siglaPolo, List<TipoPoloProcessual> polos) {
+		for (TipoPoloProcessual polo: polos) {
+			if (siglaPolo.equals(polo.getPolo())) {
+				return polo;
+			}
+		}
+		return null;
+	}
+
 	@Test
 	public void testCampoMovimentoProcessual() throws Exception {
 		

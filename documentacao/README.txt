@@ -32,6 +32,8 @@ Abrir o pacote "br.jus.trt4.justica_em_numeros_2016.tasks", analisar as classes 
 
 * Parte/Relacionamentos: não estão sendo tratados os casos de representação e assistência dos pais, representação ou substituição 
   processual em ações coletivas, tutela e curatela. Esse campo é opcional no XSD.
+  
+* Parte: não estão sendo tratados os casos de representação ou substituição processual em ações coletivas, tutela e curatela.
 
 * Parte/Advogado: não está sendo preenchido o elemento opcional 'advogado'.
 

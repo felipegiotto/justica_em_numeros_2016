@@ -219,6 +219,8 @@ public class Op_2_GeraXMLs {
 						pessoa.setNome(Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome"));
 						pessoa.setTipoPessoa(TipoQualificacaoPessoa.fromValue(Auxiliar.getCampoStringNotNull(rsPartes, "in_tipo_pessoa")));
 						pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(Auxiliar.getCampoStringNotNull(rsPartes, "tp_sexo")));
+						
+						// TODO: conferir formato do documento principal!
 						pessoa.setNumeroDocumentoPrincipal(rsPartes.getString("nr_documento"));
 
 						// Consulta os documentos da parte
@@ -256,6 +258,7 @@ public class Op_2_GeraXMLs {
 				assunto.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf"));
 				cabecalhoProcesso.getAssunto().add(assunto);
 
+				// Trata o campo "assunto principal", verificando também se há mais de um assunto principal no processo.
 				boolean assuntoPrincipal = "S".equals(rsAssuntos.getString("in_assunto_principal"));
 				assunto.setPrincipal(assuntoPrincipal);
 				if (assuntoPrincipal) {
@@ -276,7 +279,7 @@ public class Op_2_GeraXMLs {
 			//   raise notice '<assunto>'; 
 			//   raise notice '<codigoNacional>2546</codigoNacional>'; -- Verbas Rescisórias
 			//   raise notice '</assunto>';
-			// END IF;				
+			// END IF;
 			if (!jaEncontrouAssunto) {
 				LOGGER.warn("Processo sem assunto cadastrado! Decidir o que fazer!");
 			} else if (!jaEncontrouAssuntoPrincipal) {
