@@ -437,21 +437,18 @@ public class Op_2_GeraXMLs {
 						if (existeCodigoComplemento) {
 							sb.append(":");
 							sb.append(rsComplementos.getString("cd_complemento"));
+							/*
+							O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
+							<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>
+								
+							Ex.: no movimento 123, seria
+								18:motivo_da_remessa:38:em grau de recurso
+								7:destino:1ª Vara Cível
+							 */
+							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 						}
 						sb.append(":");
 						sb.append(rsComplementos.getString("nm_complemento"));
-						if (!existeCodigoComplemento) {
-							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
-							/*
-								5. Como devo informar o complemento de um movimento, visto que ele é composto de duas informações e o modelo só tem um campo? 
-
-								    R: O complemento é composto pelo seu código e descrição, do complemento e do complemento tabela deverá ser colocado no formato:
-
-								    <código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>							 * 
-							 */
-							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
-							LOGGER.warn("Há um complemento que não possui código no movimento com id_processo_evento=" + idMovimento + ": " + sb);
-						}
 						movimento.getComplemento().add(sb.toString());
 					}
 				}	

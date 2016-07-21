@@ -417,6 +417,27 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	}
 	
 	
+	private TipoPoloProcessual getPolo(ModalidadePoloProcessual siglaPolo, List<TipoPoloProcessual> polos) {
+		for (TipoPoloProcessual polo: polos) {
+			if (siglaPolo.equals(polo.getPolo())) {
+				return polo;
+			}
+		}
+		return null;
+	}
+
+	
+	private TipoMovimentoProcessual getMovimentoComData(String data, List<TipoMovimentoProcessual> movimentos) {
+		for (TipoMovimentoProcessual movimento: movimentos) {
+			if (data.equals(movimento.getDataHora())) {
+				return movimento;
+			}
+		}
+		fail("O movimento com data '" + data + "' não está na lista de movimentos.");
+		return null;
+	}
+
+	
 	private TipoParte getParteComNome(String nome, List<TipoParte> partes) {
 		
 		ArrayList<String> nomes = new ArrayList<>();
@@ -428,16 +449,6 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			nomes.add(nomeParte);
 		}
 		fail("A pessoa '" + nome + "' não está na lista de partes (" + nomes + ")");
-		return null;
-	}
-
-	
-	private TipoPoloProcessual getPolo(ModalidadePoloProcessual siglaPolo, List<TipoPoloProcessual> polos) {
-		for (TipoPoloProcessual polo: polos) {
-			if (siglaPolo.equals(polo.getPolo())) {
-				return polo;
-			}
-		}
 		return null;
 	}
 
@@ -473,6 +484,12 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		 */
 		//            AAAAMMDDHHMMSS
 		assertEquals("20150922083157", movimento2G.getDataHora());
+	}
+	
+	@Test
+	public void testCampoMovimentoProcessualComplemento() throws Exception {
+		
+		TipoMovimentoProcessual movimento = getMovimentoComData("20160204145720", retornaDadosProcesso(1, "0020063-73.2016.5.04.0123").getMovimento());
 		
 		/*
 			<element name="complemento" type="string" maxOccurs="unbounded"
@@ -484,7 +501,16 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 					</documentation>
 				</annotation>
 			</element>
+			O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
+			<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>
+				
+			Ex.: no movimento 123, seria
+				18:motivo_da_remessa:38:em grau de recurso
+				7:destino:1ª Vara Cível
+			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 		 */
+		assertEquals("5050:nome do magistrado:GRACIELA MAFFEI", movimento.getComplemento().get(0)); // Complemento sem código
+		assertEquals("3:tipo de conclusão:5:despacho", movimento.getComplemento().get(1)); // Complemento com código
 	}
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
