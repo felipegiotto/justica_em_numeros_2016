@@ -242,6 +242,8 @@ public class Op_2_GeraXMLs {
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
 						} else if ("J".equals(tipoPessoaPJe)) {
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.JURIDICA);
+						} else if ("A".equals(tipoPessoaPJe)) {
+							pessoa.setTipoPessoa(TipoQualificacaoPessoa.AUTORIDADE);
 						} else {
 							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomePessoa + "': " + tipoPessoaPJe);
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
@@ -255,7 +257,7 @@ public class Op_2_GeraXMLs {
 
 								// Considera CPF, CNPJ e RIC como documentos principais da pessoa, que ficam em um campo separado
 								// (fora da lista de documentos)
-								String tipoDocumentoPJe = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao");
+								String tipoDocumentoPJe = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao").trim();
 								String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento");
 								if (tipoDocumentoPJe.equals("CPF") || tipoDocumentoPJe.equals("CPJ") || tipoDocumentoPJe.equals("RIC")) {
 									

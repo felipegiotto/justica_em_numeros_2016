@@ -41,8 +41,6 @@ Abrir o pacote "br.jus.trt4.justica_em_numeros_2016.tasks", analisar as classes 
   apesar do assunto estar marcado como obrigatório. 
   OBS: está sendo gerado um warning nos logs quando processo não tiver assunto.
 
-* Movimentos/Complementos: Decidir o que fazer quando os complementos não tiverem código!
-  OBS: está sendo gerado um warning nos logs quando movimento não tiver complemento.
 
 
 
