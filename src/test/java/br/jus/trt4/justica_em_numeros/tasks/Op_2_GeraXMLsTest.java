@@ -51,14 +51,7 @@ public class Op_2_GeraXMLsTest {
 
 	    // TESTES DE protected TipoCabecalhoProcesso dadosBasicos;
 		TipoCabecalhoProcesso dadosBasicos = processoJudicial.getDadosBasicos();
-	    testarDadosBasicosProcesso00208215420135040221(dadosBasicos);
 		
-	    // TODO: TESTAR: protected List<TipoMovimentoProcessual> movimento;
-	    // CAMPO NAO PREENCHIDO: protected List<TipoDocumento> documento;
-		
-	}
-
-	public void testarDadosBasicosProcesso00208215420135040221(TipoCabecalhoProcesso dadosBasicos) {
 		//  TODO: TESTAR: TipoProcessoJudicial protected List<TipoPoloProcessual> polo;
 	    //  TODO: TESTAR: TipoProcessoJudicial protected List<TipoAssuntoProcessual> assunto;
 	    //  TODO: TESTAR: TipoProcessoJudicial protected List<String> magistradoAtuante;
@@ -465,8 +458,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 					</documentation>
 				</annotation>
 		 */
-		TipoMovimentoProcessual movimento2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getMovimento().get(0);
-		assertEquals(26, movimento2G.getMovimentoNacional().getCodigoNacional());
+		TipoMovimentoProcessual movimento = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getMovimento().get(0);
+		assertEquals(26, movimento.getMovimentoNacional().getCodigoNacional());
 		
 		// Data/Hora
 		/*
@@ -483,7 +476,10 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			</simpleType>
 		 */
 		//            AAAAMMDDHHMMSS
-		assertEquals("20150922083157", movimento2G.getDataHora());
+		assertEquals("20150922083157", movimento.getDataHora());
+		
+		// Nível de sigilo
+		assertEquals(0, movimento.getNivelSigilo());
 	}
 	
 	@Test
