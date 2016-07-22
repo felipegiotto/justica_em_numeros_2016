@@ -39,16 +39,16 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ProcessaServentiasCNJ;
 import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
 
 /**
- * Carrega as listas de processos geradas pela classe {@link Op_2_BaixaListaDeNumerosDeProcessos} e,
+ * Carrega as listas de processos geradas pela classe {@link Op_1_BaixaListaDeNumerosDeProcessos} e,
  * para cada processo, gera seu arquivo XML na pasta "output/xmls_individuais/(grau)/PJe".
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
  * @author fgiotto
  */
-public class Op_3_GeraXMLsIndividuais {
+public class Op_2_GeraXMLsIndividuais {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_3_GeraXMLsIndividuais.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLsIndividuais.class);
 	private int grau;
 	private Connection conexaoBasePrincipal;
 	private NamedParameterStatement nsConsultaProcessos;
@@ -79,7 +79,7 @@ public class Op_3_GeraXMLsIndividuais {
 	}
 
 	private static void gerarXMLs(int grau) throws Exception {
-		Op_3_GeraXMLsIndividuais baixaDados = new Op_3_GeraXMLsIndividuais(grau);
+		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);
 		try {
 
 			// Abre conexões com o PJe e prepara consultas a serem realizadas
@@ -92,7 +92,7 @@ public class Op_3_GeraXMLsIndividuais {
 		}
 	}
 
-	public Op_3_GeraXMLsIndividuais(int grau) {
+	public Op_2_GeraXMLsIndividuais(int grau) {
 		this.grau = grau;
 	}
 	

@@ -18,9 +18,9 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
  * 
  * @author fgiotto
  */
-public class Op_1_ParseArquivoXSD {
+public class Op_0_ParseArquivoXSD {
 	
-	private static final Logger LOGGER = LogManager.getLogger(Op_1_ParseArquivoXSD.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_0_ParseArquivoXSD.class);
 	
 	public static void main(String[] args) throws Exception {
 		

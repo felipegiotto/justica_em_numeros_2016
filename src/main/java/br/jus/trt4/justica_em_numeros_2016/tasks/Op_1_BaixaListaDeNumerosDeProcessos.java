@@ -19,9 +19,9 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
  * 
  * @author fgiotto
  */
-public class Op_2_BaixaListaDeNumerosDeProcessos {
+public class Op_1_BaixaListaDeNumerosDeProcessos {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_2_BaixaListaDeNumerosDeProcessos.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_1_BaixaListaDeNumerosDeProcessos.class);
 	private int grau;
 	private final File arquivoSaida;
 	private Connection conexaoBasePrincipal;
@@ -42,7 +42,7 @@ public class Op_2_BaixaListaDeNumerosDeProcessos {
 	}
 
 	private static void gerarListaProcessos(int grau) throws SQLException, IOException {
-		Op_2_BaixaListaDeNumerosDeProcessos baixaDados = new Op_2_BaixaListaDeNumerosDeProcessos(grau);
+		Op_1_BaixaListaDeNumerosDeProcessos baixaDados = new Op_1_BaixaListaDeNumerosDeProcessos(grau);
 		try {
 
 			// Abre conexões com o PJe e prepara consultas a serem realizadas
@@ -55,7 +55,7 @@ public class Op_2_BaixaListaDeNumerosDeProcessos {
 		}
 	}
 	
-	public Op_2_BaixaListaDeNumerosDeProcessos(int grau) {
+	public Op_1_BaixaListaDeNumerosDeProcessos(int grau) {
 		this.grau = grau;
 		this.arquivoSaida = Auxiliar.getArquivoListaProcessos(grau);
 	}

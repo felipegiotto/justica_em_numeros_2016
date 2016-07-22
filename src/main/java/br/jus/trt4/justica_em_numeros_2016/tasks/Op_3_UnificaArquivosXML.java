@@ -12,6 +12,7 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -22,9 +23,9 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
  * 
  * @author fgiotto
  */
-public class Op_4_UnificaArquivosXML {
+public class Op_3_UnificaArquivosXML {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_4_UnificaArquivosXML.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_3_UnificaArquivosXML.class);
 	private int grau;
 	private final File arquivoSaida;
 	
@@ -44,11 +45,11 @@ public class Op_4_UnificaArquivosXML {
 	}
 
 	private static void unificarArquivosXML(int grau) throws JAXBException {
-		Op_4_UnificaArquivosXML baixaDados = new Op_4_UnificaArquivosXML(grau);
+		Op_3_UnificaArquivosXML baixaDados = new Op_3_UnificaArquivosXML(grau);
 		baixaDados.unificarArquivosXML();
 	}
 	
-	public Op_4_UnificaArquivosXML(int grau) {
+	public Op_3_UnificaArquivosXML(int grau) {
 		this.grau = grau;
 		this.arquivoSaida = new File("output/dados_processos_" + grau + "G.xml");
 		this.arquivoSaida.getParentFile().mkdirs();
@@ -76,8 +77,10 @@ public class Op_4_UnificaArquivosXML {
 			// Objeto que conterá os dados de um único processo
 			Processos processoIndividual = (Processos) jaxbUnmarshaller.unmarshal(arquivoXML);
 			
-			// Adiciona os dados desse único processo na lista "global"
-			todosProcessos.getProcesso().add(processoIndividual.getProcesso().get(0));
+			// Adiciona os dados lidos do XML na lista "global"
+			for (TipoProcessoJudicial processo: processoIndividual.getProcesso()) {
+				todosProcessos.getProcesso().add(processo);
+			}
 		}
 		
 		// Objetos auxiliares para gerar o XML a partir das classes Java
