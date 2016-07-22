@@ -48,11 +48,6 @@ Funcionamento "avançado":
   NOME_SISTEMA pode ser qualquer identificador) antes de executar o passo 4. 
 
 
-* Se a estrutura do arquivo XSD do CNJ for alterado, gravar o novo arquivo XSD na pasta 
-  "src/main/resources" e executar o método "main" da classe "Op_0_ParseArquivoXSD".
-  Provavelmente será necessário alterar a lógica das rotinas que leem e gravam arquivos XML.
-
-
 
 == Características / Pendências ==
 

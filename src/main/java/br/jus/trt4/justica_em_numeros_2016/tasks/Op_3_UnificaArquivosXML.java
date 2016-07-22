@@ -79,10 +79,9 @@ public class Op_3_UnificaArquivosXML {
 		for (File arquivoXML: arquivosParaProcessar) {
 			LOGGER.debug("Processando arquivo " + arquivoXML + " (" + (++i) + "/" + arquivosParaProcessar.size() + ")");
 			
-			// Objeto que conterá os dados de um único processo
-			
 			try (FileInputStream fis = new FileInputStream(arquivoXML)) {
 			
+				// Objeto que conterá os dados de um único processo
 				Source source = new StreamSource(fis);
 				JAXBElement<Intercomunicacao> root = jaxbUnmarshaller.unmarshal(source, Intercomunicacao.class);
 				Intercomunicacao processoIndividual = root.getValue();			
