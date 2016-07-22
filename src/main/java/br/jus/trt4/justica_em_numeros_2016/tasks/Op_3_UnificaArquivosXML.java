@@ -1,20 +1,23 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
-import br.jus.cnj.replicacao_nacional.ObjectFactory;
-import br.jus.cnj.replicacao_nacional.Processos;
+import br.jus.cnj.intercomunicacao.beans.Intercomunicacao;
+import br.jus.cnj.intercomunicacao.beans.ProcessoJudicial;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
@@ -30,7 +33,7 @@ public class Op_3_UnificaArquivosXML {
 	private int grau;
 	private final File arquivoSaida;
 	
-	public static void main(String[] args) throws JAXBException {
+	public static void main(String[] args) throws JAXBException, IOException {
 		
 		// Verifica se deve gerar XML para 1o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
@@ -45,7 +48,7 @@ public class Op_3_UnificaArquivosXML {
 		LOGGER.info("Fim!");
 	}
 
-	private static void unificarArquivosXML(int grau) throws JAXBException {
+	private static void unificarArquivosXML(int grau) throws JAXBException, IOException {
 		Op_3_UnificaArquivosXML baixaDados = new Op_3_UnificaArquivosXML(grau);
 		baixaDados.unificarArquivosXML();
 	}
@@ -56,7 +59,7 @@ public class Op_3_UnificaArquivosXML {
 		this.arquivoSaida.getParentFile().mkdirs();
 	}
 
-	private void unificarArquivosXML() throws JAXBException {
+	private void unificarArquivosXML() throws JAXBException, IOException {
 		
 		// Pesquisando todos os arquivos que serão unificados
 		LOGGER.info("Pesquisando todos os arquivos que serão unificados...");
@@ -65,10 +68,11 @@ public class Op_3_UnificaArquivosXML {
 		localizaTodosArquivosXMLRecursivamente(pastaRaiz, arquivosParaProcessar);
 		
 		// Objetos responsáveis por ler os arquivos XML
-		ObjectFactory factory = new ObjectFactory();
-		JAXBContext jaxbContext = JAXBContext.newInstance(Processos.class);
+		JAXBContext jaxbContext = JAXBContext.newInstance(Intercomunicacao.class);
 		Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-		Processos todosProcessos = factory.createProcessos();
+		
+		// Objeto que conterá todos os dados de todos os processos
+		Intercomunicacao todosProcessos = Auxiliar.getObjectFactory().createIntercomunicacao();
 		
 		// Itera sobre todos os XMLs que existem na pasta "output/xmls_individuais/(grau)"
 		int i=0;
@@ -76,19 +80,24 @@ public class Op_3_UnificaArquivosXML {
 			LOGGER.debug("Processando arquivo " + arquivoXML + " (" + (++i) + "/" + arquivosParaProcessar.size() + ")");
 			
 			// Objeto que conterá os dados de um único processo
-			Processos processoIndividual = (Processos) jaxbUnmarshaller.unmarshal(arquivoXML);
 			
-			// Adiciona os dados lidos do XML na lista "global"
-			for (TipoProcessoJudicial processo: processoIndividual.getProcesso()) {
-				todosProcessos.getProcesso().add(processo);
+			try (FileInputStream fis = new FileInputStream(arquivoXML)) {
+			
+				Source source = new StreamSource(fis);
+				JAXBElement<Intercomunicacao> root = jaxbUnmarshaller.unmarshal(source, Intercomunicacao.class);
+				Intercomunicacao processoIndividual = root.getValue();			
+			
+				// Adiciona os dados lidos do XML na lista "global"
+				for (ProcessoJudicial processo: processoIndividual.getProcessojudicial()) {
+					todosProcessos.getProcessojudicial().add(processo);
+				}
 			}
 		}
 		
 		// Objetos auxiliares para gerar o XML a partir das classes Java
-		Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-		jaxbMarshaller.marshal(todosProcessos, arquivoSaida);
-		LOGGER.info("Arquivo gerado: " + arquivoSaida);
+		LOGGER.info("Gerando arquivo " + arquivoSaida + "...");
+		Auxiliar.salvarObjetoEmArquivoXML(arquivoSaida, todosProcessos);
+		LOGGER.info("Arquivo gerado!");
 	}
 	
 	private void localizaTodosArquivosXMLRecursivamente(File file, List<File> lista) {

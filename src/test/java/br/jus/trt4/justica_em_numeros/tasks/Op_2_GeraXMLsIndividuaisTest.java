@@ -10,17 +10,17 @@ import java.util.List;
 
 import org.junit.Test;
 
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
-import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
-import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
-import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
-import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
-import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
-import br.jus.cnj.intercomunicacao_2_2.TipoParte;
-import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
-import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
-import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
+import br.jus.cnj.intercomunicacao.beans.CabecalhoProcessual;
+import br.jus.cnj.intercomunicacao.beans.DocumentoIdentificacao;
+import br.jus.cnj.intercomunicacao.beans.ModalidadeDocumentoIdentificador;
+import br.jus.cnj.intercomunicacao.beans.ModalidadeGeneroPessoa;
+import br.jus.cnj.intercomunicacao.beans.ModalidadePoloProcessual;
+import br.jus.cnj.intercomunicacao.beans.MovimentacaoProcessual;
+import br.jus.cnj.intercomunicacao.beans.OrgaoJulgador;
+import br.jus.cnj.intercomunicacao.beans.Parte;
+import br.jus.cnj.intercomunicacao.beans.Pessoa;
+import br.jus.cnj.intercomunicacao.beans.PoloProcessual;
+import br.jus.cnj.intercomunicacao.beans.ProcessoJudicial;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
 
 /**
@@ -39,10 +39,10 @@ public class Op_2_GeraXMLsIndividuaisTest {
 	@Test
 	public void testarCamposProcesso2G() throws Exception {
 		
-		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
+		ProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
 
 	    // TESTES DE protected TipoCabecalhoProcesso dadosBasicos;
-		TipoCabecalhoProcesso dadosBasicos = processoJudicial.getDadosBasicos();
+		CabecalhoProcessual dadosBasicos = processoJudicial.getDadosBasicos();
 		
 		//  TODO: TESTAR: TipoProcessoJudicial protected List<TipoPoloProcessual> polo;
 	    //  TODO: TESTAR: TipoProcessoJudicial protected List<TipoAssuntoProcessual> assunto;
@@ -78,7 +78,7 @@ public class Op_2_GeraXMLsIndividuaisTest {
 				</restriction>
 			</simpleType>
 		 */
-		assertEquals("00208215420135040221", dadosBasicos.getNumero());
+		assertEquals("00208215420135040221", dadosBasicos.getNumero().getValue());
 		
 	    // CAMPO NAO PREENCHIDO: TipoProcessoJudicial protected Integer competencia; // Opcional
 		
@@ -168,7 +168,7 @@ public class Op_2_GeraXMLsIndividuaisTest {
 			</simpleType>
 		*/
 		//            AAAAMMDDHHMMSS
-		assertEquals("20150922083157", dadosBasicos.getDataAjuizamento());
+		assertEquals("20150922083157", dadosBasicos.getDataAjuizamento().getValue());
 	}
 	
 	@Test
@@ -208,10 +208,10 @@ public class Op_2_GeraXMLsIndividuaisTest {
 			</attribute>
 		 */
 		
-		TipoProcessoJudicial processoNaoSigiloso = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
+		ProcessoJudicial processoNaoSigiloso = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
 		assertEquals(0, processoNaoSigiloso.getDadosBasicos().getNivelSigilo());
 		
-		TipoProcessoJudicial processoSigiloso = retornaDadosProcesso(2, "0020583-31.2014.5.04.0017");
+		ProcessoJudicial processoSigiloso = retornaDadosProcesso(2, "0020583-31.2014.5.04.0017");
 		assertEquals(5, processoSigiloso.getDadosBasicos().getNivelSigilo());
 	}
 	
@@ -232,10 +232,10 @@ public class Op_2_GeraXMLsIndividuaisTest {
 			</attribute>
 		 */
 		
-		TipoProcessoJudicial processo2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
+		ProcessoJudicial processo2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
 		assertEquals("4314902", processo2G.getDadosBasicos().getCodigoLocalidade()); // 4314902: Porto Alegre
 		
-		TipoProcessoJudicial processo1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791");
+		ProcessoJudicial processo1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791");
 		assertEquals("4306809", processo1G.getDadosBasicos().getCodigoLocalidade()); // 4306809: ENCANTADO
 	}
 	
@@ -256,12 +256,12 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		 */
 		
 		// Processo 2G, responsabilidade do gabinete: GABINETE VANIA MATTOS;47074;GABINETE VANIA MARIA CUNHA MATTOS
-		TipoOrgaoJulgador orgaoJulgador2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getDadosBasicos().getOrgaoJulgador(); 
+		OrgaoJulgador orgaoJulgador2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getDadosBasicos().getOrgaoJulgador(); 
 		assertEquals("47074", orgaoJulgador2G.getCodigoOrgao()); 
 		assertEquals("GABINETE VANIA MARIA CUNHA MATTOS", orgaoJulgador2G.getNomeOrgao());
 		
 		// Processo 1G, responsabilidade da vara: 46904;VT Encantado
-		TipoOrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
+		OrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
 		assertEquals("46904", orgaoJulgador1G.getCodigoOrgao());
 		assertEquals("VT Encantado", orgaoJulgador1G.getNomeOrgao());
 	}
@@ -293,24 +293,24 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		 */
 		
 		// Processo 1G
-		TipoOrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
+		OrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
 		assertEquals("ORIG", orgaoJulgador1G.getInstancia());
 		
 		// Processo 2G, Recurso ordinário
-		TipoOrgaoJulgador orgaoJulgador2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getDadosBasicos().getOrgaoJulgador(); 
+		OrgaoJulgador orgaoJulgador2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getDadosBasicos().getOrgaoJulgador(); 
 		assertEquals("REV", orgaoJulgador2G.getInstancia());
 		
 		// Processo 2G, originário
-		TipoOrgaoJulgador orgaoJulgador2GOrig = retornaDadosProcesso(2, "0020970-29.2016.5.04.0000").getDadosBasicos().getOrgaoJulgador(); 
+		OrgaoJulgador orgaoJulgador2GOrig = retornaDadosProcesso(2, "0020970-29.2016.5.04.0000").getDadosBasicos().getOrgaoJulgador(); 
 		assertEquals("ORIG", orgaoJulgador2GOrig.getInstancia());
 	}
 	
 	@Test
 	public void testCamposPartes() throws Exception {
 		
-		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(1, "0020591-86.2014.5.04.0282");
-		TipoPoloProcessual poloAtivo = getPolo(ModalidadePoloProcessual.AT, processoJudicial.getDadosBasicos().getPolo());
-		TipoPoloProcessual poloPassivo = getPolo(ModalidadePoloProcessual.PA, processoJudicial.getDadosBasicos().getPolo());
+		ProcessoJudicial processoJudicial = retornaDadosProcesso(1, "0020591-86.2014.5.04.0282");
+		PoloProcessual poloAtivo = getPolo(ModalidadePoloProcessual.AT, processoJudicial.getDadosBasicos().getPolo());
+		PoloProcessual poloPassivo = getPolo(ModalidadePoloProcessual.PA, processoJudicial.getDadosBasicos().getPolo());
 	    // TODO: Testar campo: protected TipoPessoa pessoa;
 		// TODO: Testar campo: protected String interessePublico;
 		// TODO: Testar campo: protected List<TipoRepresentanteProcessual> advogado;
@@ -320,10 +320,10 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// TODO: Testar campo: protected ModalidadeRelacionamentoProcessual relacionamentoProcessual;
 		
 		
-		TipoParte parteAtivo = getParteComNome("ROGERIO MELO DE CASTRO", poloAtivo.getParte());
-		TipoPessoa pessoaAtivo = parteAtivo.getPessoa();
-		TipoParte partePassivo = getParteComNome("FAMF CONSTRUTORA LTDA", poloPassivo.getParte());
-		TipoPessoa pessoaPassivo = partePassivo.getPessoa();
+		Parte parteAtivo = getParteComNome("ROGERIO MELO DE CASTRO", poloAtivo.getParte());
+		Pessoa pessoaAtivo = parteAtivo.getPessoa();
+		Parte partePassivo = getParteComNome("FAMF CONSTRUTORA LTDA", poloPassivo.getParte());
+		Pessoa pessoaPassivo = partePassivo.getPessoa();
 		// TODO: Testar campo: protected List<TipoDocumentoIdentificacao> documento;
 		// TODO: Testar campo: protected List<TipoEndereco> endereco;
 		// TODO: Testar campo: protected List<TipoRelacionamentoPessoal> pessoaRelacionada;
@@ -373,11 +373,11 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				</restriction>
 			</simpleType>
 		 */
-		assertEquals("57310009053", pessoaAtivo.getNumeroDocumentoPrincipal());
-		assertEquals("17640725000147", pessoaPassivo.getNumeroDocumentoPrincipal());
+		assertEquals("57310009053", pessoaAtivo.getNumeroDocumentoPrincipal().getValue());
+		assertEquals("17640725000147", pessoaPassivo.getNumeroDocumentoPrincipal().getValue());
 		
 		// Outros documentos
-		TipoDocumentoIdentificacao documento = pessoaAtivo.getDocumento().get(0);
+		DocumentoIdentificacao documento = pessoaAtivo.getDocumento().get(0);
 		assertEquals(ModalidadeDocumentoIdentificador.TE, documento.getTipoDocumento()); // Título de Eleitor
 		assertEquals("0059509160434", documento.getCodigoDocumento());
 		assertEquals("Tribunal Superior Eleitoral", documento.getEmissorDocumento());
@@ -402,8 +402,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	}
 	
 	
-	private TipoPoloProcessual getPolo(ModalidadePoloProcessual siglaPolo, List<TipoPoloProcessual> polos) {
-		for (TipoPoloProcessual polo: polos) {
+	private PoloProcessual getPolo(ModalidadePoloProcessual siglaPolo, List<PoloProcessual> polos) {
+		for (PoloProcessual polo: polos) {
 			if (siglaPolo.equals(polo.getPolo())) {
 				return polo;
 			}
@@ -412,9 +412,9 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	}
 
 	
-	private TipoMovimentoProcessual getMovimentoComData(String data, List<TipoMovimentoProcessual> movimentos) {
-		for (TipoMovimentoProcessual movimento: movimentos) {
-			if (data.equals(movimento.getDataHora())) {
+	private MovimentacaoProcessual getMovimentoComData(String data, List<MovimentacaoProcessual> movimentos) {
+		for (MovimentacaoProcessual movimento: movimentos) {
+			if (data.equals(movimento.getDataHora().getValue())) {
 				return movimento;
 			}
 		}
@@ -423,10 +423,10 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	}
 
 	
-	private TipoParte getParteComNome(String nome, List<TipoParte> partes) {
+	private Parte getParteComNome(String nome, List<Parte> partes) {
 		
 		ArrayList<String> nomes = new ArrayList<>();
-		for (TipoParte parte: partes) {
+		for (Parte parte: partes) {
 			String nomeParte = parte.getPessoa().getNome();
 			if (nome.equals(nomeParte)) {
 				return parte;
@@ -450,7 +450,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 					</documentation>
 				</annotation>
 		 */
-		TipoMovimentoProcessual movimento = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getMovimento().get(0);
+		MovimentacaoProcessual movimento = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getMovimento().get(0);
 		assertEquals(26, movimento.getMovimentoNacional().getCodigoNacional());
 		
 		// Data/Hora
@@ -468,7 +468,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			</simpleType>
 		 */
 		//            AAAAMMDDHHMMSS
-		assertEquals("20150922083157", movimento.getDataHora());
+		assertEquals("20150922083157", movimento.getDataHora().getValue());
 		
 		// Nível de sigilo
 		assertEquals(0, movimento.getNivelSigilo());
@@ -477,7 +477,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	@Test
 	public void testCampoMovimentoProcessualComplemento() throws Exception {
 		
-		TipoMovimentoProcessual movimento = getMovimentoComData("20160204145720", retornaDadosProcesso(1, "0020063-73.2016.5.04.0123").getMovimento());
+		MovimentacaoProcessual movimento = getMovimentoComData("20160204145720", retornaDadosProcesso(1, "0020063-73.2016.5.04.0123").getMovimento());
 		
 		/*
 			<element name="complemento" type="string" maxOccurs="unbounded"
@@ -501,7 +501,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("3:tipo de conclusão:5:despacho", movimento.getComplemento().get(1)); // Complemento com código
 	}
 	
-	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
+	public ProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
 		
 		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);
 		try {

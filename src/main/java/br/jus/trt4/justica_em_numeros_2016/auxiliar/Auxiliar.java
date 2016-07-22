@@ -11,9 +11,17 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Scanner;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import br.jus.cnj.intercomunicacao.beans.Intercomunicacao;
+import br.jus.cnj.intercomunicacao.beans.ObjectFactory;
 
 /**
  * Classe que contém métodos auxiliares utilizados nesse projeto.
@@ -262,5 +270,42 @@ public class Auxiliar {
 	 */
 	public static File getArquivoListaProcessos(int grau) {
 		return new File("output/" + grau + "g/lista_processos.txt");
+	}
+	
+
+	/**
+	 * ObjetFactory utilizada para fazer conversões entre classes e arquivos XML
+	 */
+	private static ObjectFactory objectFactory;
+	public static ObjectFactory getObjectFactory() {
+		if (objectFactory == null) {
+			objectFactory = new ObjectFactory();
+		}
+		return objectFactory;
+	}
+	
+	
+	/**
+	 * Serializa o conteúdo de uma classe em arquivo XML
+	 */
+	private static Marshaller jaxbMarshaller;
+	public static void salvarObjetoEmArquivoXML(File arquivoXML, Intercomunicacao processos) throws JAXBException {
+		
+		// Objetos auxiliares para gerar o XML a partir das classes Java
+		if (jaxbMarshaller == null) {
+	        JAXBContext jaxbContext = JAXBContext.newInstance(Intercomunicacao.class);
+	        jaxbMarshaller = jaxbContext.createMarshaller();
+	        jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+		}
+		
+		// Cria pasta para gravar o arquivo
+		arquivoXML.getParentFile().mkdirs();
+		
+		// Solução de contorno para a classe Intercomunicacao que não possui anotação @XmlRootElement
+		// Fonte: http://anarayanan.blogspot.com.br/2012/08/jaxb-marshalling-entity-with-missing.html
+		JAXBElement<Intercomunicacao> jaxbWrappedHeader = getObjectFactory().createIntercomunicacao(processos);
+		
+		// Grava o arquivo XML
+		jaxbMarshaller.marshal(jaxbWrappedHeader, arquivoXML);
 	}
 }

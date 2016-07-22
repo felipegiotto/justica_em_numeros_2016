@@ -9,31 +9,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
-import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
-import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
-import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
-import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
-import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoNacional;
-import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
-import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
-import br.jus.cnj.intercomunicacao_2_2.TipoParte;
-import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
-import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
-import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
-import br.jus.cnj.intercomunicacao_2_2.TipoQualificacaoPessoa;
-import br.jus.cnj.replicacao_nacional.ObjectFactory;
-import br.jus.cnj.replicacao_nacional.Processos;
+import br.jus.cnj.intercomunicacao.beans.AssuntoProcessual;
+import br.jus.cnj.intercomunicacao.beans.CabecalhoProcessual;
+import br.jus.cnj.intercomunicacao.beans.CadastroIdentificador;
+import br.jus.cnj.intercomunicacao.beans.DataHora;
+import br.jus.cnj.intercomunicacao.beans.DocumentoIdentificacao;
+import br.jus.cnj.intercomunicacao.beans.Intercomunicacao;
+import br.jus.cnj.intercomunicacao.beans.ModalidadeDocumentoIdentificador;
+import br.jus.cnj.intercomunicacao.beans.ModalidadeGeneroPessoa;
+import br.jus.cnj.intercomunicacao.beans.ModalidadePoloProcessual;
+import br.jus.cnj.intercomunicacao.beans.MovimentacaoProcessual;
+import br.jus.cnj.intercomunicacao.beans.MovimentoNacional;
+import br.jus.cnj.intercomunicacao.beans.NumeroUnico;
+import br.jus.cnj.intercomunicacao.beans.OrgaoJulgador;
+import br.jus.cnj.intercomunicacao.beans.Parte;
+import br.jus.cnj.intercomunicacao.beans.Pessoa;
+import br.jus.cnj.intercomunicacao.beans.PoloProcessual;
+import br.jus.cnj.intercomunicacao.beans.ProcessoJudicial;
+import br.jus.cnj.intercomunicacao.beans.TipoQualificacaoPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ProcessaServentiasCNJ;
@@ -105,12 +105,6 @@ public class Op_2_GeraXMLsIndividuais {
 
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
 		
-		// Objetos auxiliares para gerar o XML a partir das classes Java
-		ObjectFactory factory = new ObjectFactory();
-		JAXBContext context = JAXBContext.newInstance(Processos.class);
-		Marshaller jaxbMarshaller = context.createMarshaller();
-		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-		
 		// Variável auxiliar para tentar calcular o tempo total da carga
 		long inicio = System.currentTimeMillis();
 		
@@ -132,23 +126,21 @@ public class Op_2_GeraXMLsIndividuais {
 			LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + (++i) + "/" + listaProcessos.size() + (tempoPrevisto == 0 ? "" : ", restante: " + tempoPrevisto + "s") + ")");
 
 			// Executa a consulta desse processo no banco de dados do PJe
-			TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
+			ProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
 			
 			// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
 			// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
 			// processo serão unificados, junto com os XMLs dos outros sistemas legados.
-			Processos processos = factory.createProcessos();
-			processos.getProcesso().add(processoJudicial);
+			Intercomunicacao processos = Auxiliar.getObjectFactory().createIntercomunicacao();
+			processos.getProcessojudicial().add(processoJudicial);
 			
-			// Gera o arquivo XML
-			arquivoXML.getParentFile().mkdirs();
-			jaxbMarshaller.marshal(processos, arquivoXML);
+			Auxiliar.salvarObjetoEmArquivoXML(arquivoXML, processos);
 		}
 		
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerado!");
 	}
 
-	
+
 	/**
 	 * Consulta os dados do processo informado no banco de dados e gera um objeto da classe
 	 * {@link TipoProcessoJudicial}
@@ -158,7 +150,7 @@ public class Op_2_GeraXMLsIndividuais {
 	 * @throws SQLException
 	 * @throws IOException
 	 */
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException {
+	public ProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException {
 		
 		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
@@ -180,10 +172,10 @@ public class Op_2_GeraXMLsIndividuais {
 	 * @throws SQLException 
 	 * @throws IOException 
 	 */
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ResultSet rsProcesso) throws SQLException {
+	public ProcessoJudicial analisarProcessoJudicialCompleto(ResultSet rsProcesso) throws SQLException {
 
 		// Objeto que será retornado
-		TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
+		ProcessoJudicial processoJudicial = new ProcessoJudicial();
 		
 		// Cabeçalho com dados básicos do processo:
 		processoJudicial.setDadosBasicos(analisarCabecalhoProcesso(rsProcesso));
@@ -195,16 +187,20 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private TipoCabecalhoProcesso analisarCabecalhoProcesso(ResultSet rsProcesso) throws SQLException {
+	private CabecalhoProcessual analisarCabecalhoProcesso(ResultSet rsProcesso) throws SQLException {
 		
 		// Script TRT14:
 		// raise notice '<dadosBasicos nivelSigilo="%" numero="%" classeProcessual="%" codigoLocalidade="%" dataAjuizamento="%">' 
 		//  , proc.nivelSigilo, proc.nr_processo, proc.cd_classe_judicial, proc.id_municipio_ibge_origem, proc.dt_autuacao;
-		TipoCabecalhoProcesso cabecalhoProcesso = new TipoCabecalhoProcesso();
+		CabecalhoProcessual cabecalhoProcesso = new CabecalhoProcessual();
 		cabecalhoProcesso.setNivelSigilo(Auxiliar.getCampoIntNotNull(rsProcesso, "nivelSigilo"));
-		cabecalhoProcesso.setNumero(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
+		NumeroUnico numeroUnico = new NumeroUnico();
+		numeroUnico.setValue(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
+		cabecalhoProcesso.setNumero(numeroUnico);
 		cabecalhoProcesso.setClasseProcessual(Auxiliar.getCampoIntNotNull(rsProcesso, "cd_classe_judicial"));
-		cabecalhoProcesso.setDataAjuizamento(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
+		DataHora dataAutuacao = new DataHora();
+		dataAutuacao.setValue(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
+		cabecalhoProcesso.setDataAjuizamento(dataAutuacao);
 		cabecalhoProcesso.setValorCausa(Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa")); 
 		if (grau == 1) {
 			
@@ -229,9 +225,9 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso) throws SQLException {
+	private List<PoloProcessual> analisarPolosProcesso(int idProcesso) throws SQLException {
 		
-		List<TipoPoloProcessual> polos = new ArrayList<TipoPoloProcessual>();
+		List<PoloProcessual> polos = new ArrayList<PoloProcessual>();
 		
 		// Consulta todos os polos do processo
 		nsPolos.setInt("id_processo", idProcesso);
@@ -240,7 +236,7 @@ public class Op_2_GeraXMLsIndividuais {
 
 				// Script TRT14:
 				// raise notice '<polo polo="%">', polo.in_polo_participacao;
-				TipoPoloProcessual polo = new TipoPoloProcessual();
+				PoloProcessual polo = new PoloProcessual();
 				polo.setPolo(ModalidadePoloProcessual.valueOf(rsPolos.getString("in_polo_participacao")));
 				polos.add(polo);
 
@@ -252,7 +248,7 @@ public class Op_2_GeraXMLsIndividuais {
 
 						// Script TRT14:
 						// raise notice '<parte>';
-						TipoParte parte = new TipoParte();
+						Parte parte = new Parte();
 						polo.getParte().add(parte);
 
 						// Script TRT4:
@@ -264,7 +260,7 @@ public class Op_2_GeraXMLsIndividuais {
 						//     raise notice '<pessoa nome="%" tipoPessoa="%" sexo="%">'
 						//     , parte.ds_nome, parte.in_tipo_pessoa, parte.tp_sexo;
 						//   END IF;
-						TipoPessoa pessoa = new TipoPessoa();
+						Pessoa pessoa = new Pessoa();
 						parte.setPessoa(pessoa);
 						String nomePessoa = Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome");
 						pessoa.setNome(nomePessoa);
@@ -300,14 +296,16 @@ public class Op_2_GeraXMLsIndividuais {
 									} else {
 										numeroDocumento = StringUtils.leftPad(numeroDocumento, 14, '0');
 									}
-									pessoa.setNumeroDocumentoPrincipal(numeroDocumento);
+									CadastroIdentificador cadastro = new CadastroIdentificador();
+									cadastro.setValue(numeroDocumento);
+									pessoa.setNumeroDocumentoPrincipal(cadastro);
 								} else {
 									
 									// Script TRT14:
 									// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
 									//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
 									if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
-										TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
+										DocumentoIdentificacao documento = new DocumentoIdentificacao();
 										documento.setCodigoDocumento(numeroDocumento);
 										documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
 										
@@ -337,9 +335,9 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(int idProcesso) throws SQLException {
+	private List<AssuntoProcessual> analisarAssuntosProcesso(int idProcesso) throws SQLException {
 		
-		List<TipoAssuntoProcessual> assuntos = new ArrayList<TipoAssuntoProcessual>();
+		List<AssuntoProcessual> assuntos = new ArrayList<AssuntoProcessual>();
 		
 		// Consulta todos os assuntos do processo
 		nsAssuntos.setInt("id_processo", idProcesso);
@@ -352,7 +350,7 @@ public class Op_2_GeraXMLsIndividuais {
 				// raise notice '<assunto>'; -- principal="%">', assunto.in_assunto_principal;
 				// raise notice '<codigoNacional>%</codigoNacional>', assunto.cd_assunto_trf;
 				// raise notice '</assunto>';
-				TipoAssuntoProcessual assunto = new TipoAssuntoProcessual();
+				AssuntoProcessual assunto = new AssuntoProcessual();
 				assunto.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf"));
 				assuntos.add(assunto);
 
@@ -389,7 +387,7 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ResultSet rsProcesso) throws SQLException {
+	private OrgaoJulgador analisarOrgaoJulgadorProcesso(ResultSet rsProcesso) throws SQLException {
 		/*
 		 * Órgãos Julgadores
 				Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
@@ -408,7 +406,7 @@ public class Op_2_GeraXMLsIndividuais {
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
 		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(rsProcesso.getString("ds_orgao_julgador"));
-		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
+		OrgaoJulgador orgaoJulgador = new OrgaoJulgador();
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
 		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
 		if (grau == 1) {
@@ -431,9 +429,9 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(int idProcesso) throws SQLException {
+	private List<MovimentacaoProcessual> analisarMovimentosProcesso(int idProcesso) throws SQLException {
 		
-		ArrayList<TipoMovimentoProcessual> movimentos = new ArrayList<>();
+		ArrayList<MovimentacaoProcessual> movimentos = new ArrayList<>();
 		
 		// Consulta todos os movimentos do processo
 		nsMovimentos.setInt("id_processo", idProcesso);
@@ -442,14 +440,16 @@ public class Op_2_GeraXMLsIndividuais {
 
 				// Script TRT14:
 				// raise notice '<movimento dataHora="%" nivelSigilo="%">', mov.dta_ocorrencia, mov.in_visibilidade_externa;
-				TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
-				movimento.setDataHora(rsMovimentos.getString("dta_ocorrencia"));
+				MovimentacaoProcessual movimento = new MovimentacaoProcessual();
+				DataHora dataMovimento = new DataHora();
+				dataMovimento.setValue(rsMovimentos.getString("dta_ocorrencia"));
+				movimento.setDataHora(dataMovimento);
 				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
 				movimentos.add(movimento);
 
 				// Script TRT14:
 				// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
-				TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
+				MovimentoNacional movimentoNacional = new MovimentoNacional();
 				movimentoNacional.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"));
 				movimento.setMovimentoNacional(movimentoNacional);
 
@@ -621,7 +621,7 @@ public class Op_2_GeraXMLsIndividuais {
 	
 	
 	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws IOException {
-		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada);
+		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
 		LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
 		return listaProcessos;
 	}
