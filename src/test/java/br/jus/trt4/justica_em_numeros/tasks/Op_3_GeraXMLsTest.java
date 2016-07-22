@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.sql.Date;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +23,6 @@ import br.jus.cnj.intercomunicacao_2_2.TipoParte;
 import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
 import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_3_GeraXMLs;
 
 /**
@@ -513,29 +509,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		
 		Op_3_GeraXMLs baixaDados = new Op_3_GeraXMLs(grau);
 		try {
-
-			// Abre conexões com o PJe e prepara consultas a serem realizadas
 			baixaDados.prepararConexao();
-
-			// SQL que fará a consulta de um processo específico
-			String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processos.sql");
-			sqlConsultaProcessos += " AND nr_processo = :nr_processo";
-			System.out.println(sqlConsultaProcessos);
-			try (NamedParameterStatement nsConsultaProcessos = new NamedParameterStatement(baixaDados.getConexaoBasePrincipal(), sqlConsultaProcessos)) {
-				nsConsultaProcessos.setDate("dt_inicio_periodo", new Date(System.currentTimeMillis()));
-				nsConsultaProcessos.setDate("dt_fim_periodo", new Date(System.currentTimeMillis()));
-				nsConsultaProcessos.setString("nr_processo", numeroProcesso);
-				nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 0);
-				LOGGER.info("Carregando dados do processo " + numeroProcesso);
-				try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
-					if (!rsProcessos.next()) {
-						fail("Não retornou dados do processo!");
-					}
-					
-					// Chama o método que preenche um TipoProcessoJudicial a partir de um ResultSet
-					return baixaDados.analisarProcessoJudicialCompleto(rsProcessos);
-				}
-			}
+			return baixaDados.analisarProcessoJudicialCompleto(numeroProcesso);
 		} finally {
 			baixaDados.close();
 		}

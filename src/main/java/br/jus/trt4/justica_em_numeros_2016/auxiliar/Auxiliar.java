@@ -2,15 +2,18 @@ package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -240,6 +243,29 @@ public class Auxiliar {
 		} else {
 			return result;
 		}
+	}
+	
+	public static File getArquivoListaProcessos(int grau) {
+		return new File("output/lista_processos_" + grau + "g.txt");
+	}
+	
+	public static void gravarListaProcessosEmArquivo(List<String> listaProcessos, File arquivoSaida) throws IOException {
+		FileWriter fw = new FileWriter(arquivoSaida);
+		try {
+			for (String processo: listaProcessos) {
+				fw.append(processo);
+				fw.append("\r\n");
+			}
+		} finally {
+			fw.close();
+		}
+		LOGGER.info("Arquivo gerado com lista de " + listaProcessos.size() + " processo(s): " + arquivoSaida);
+	}
+	
+	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws IOException {
+		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada);
+		LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
+		return listaProcessos;
 	}
 	
 }

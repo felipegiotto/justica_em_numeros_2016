@@ -1,14 +1,12 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,7 +57,7 @@ public class Op_2_BaixaListaDeNumerosDeProcessos {
 	
 	public Op_2_BaixaListaDeNumerosDeProcessos(int grau) {
 		this.grau = grau;
-		this.arquivoSaida = getArquivoListaProcessos(grau);
+		this.arquivoSaida = Auxiliar.getArquivoListaProcessos(grau);
 	}
 
 	private void baixarListaProcessos() throws IOException, SQLException {
@@ -115,6 +113,34 @@ public class Op_2_BaixaListaDeNumerosDeProcessos {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + tipoCarga);
 		}
 		
+//		// Preenche os parâmetros referentes ao período de movimentação dos processos
+//		// TODO: Conferir, com área de negócio, qual o critério exato para selecionar os processos conforme regras do CNJ
+//		Calendar dataInicial = Calendar.getInstance();
+//		Calendar dataFinal = Calendar.getInstance();
+//		if ("COMPLETA".equals(tipoCarga)) {
+//			// CNJ: Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
+//			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
+//			dataInicial.set(2015, Calendar.JANUARY, 1, 0, 0, 0);
+//			dataFinal.set(2016, Calendar.JULY, 31, 23, 59, 59);
+//			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 1);
+//			
+//		} else if ("MENSAL".equals(tipoCarga)) {
+//			// CNJ: Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
+//			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
+//			// algum tipo de informação.
+//			dataInicial.set(2016, Calendar.AUGUST, 1, 0, 0, 0);
+//			dataFinal.set(2016, Calendar.AUGUST, 31, 23, 59, 59);
+//			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 1);
+//			
+//		} else {
+//			// Para outros filtros, não considera as datas das movimentações
+//			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 0);
+//		}
+//		dataInicial.set(Calendar.MILLISECOND, 0);
+//		dataFinal.set(Calendar.MILLISECOND, 999);
+//		nsConsultaProcessos.setDate("dt_inicio_periodo", new Date(dataInicial.getTimeInMillis()));
+//		nsConsultaProcessos.setDate("dt_fim_periodo", new Date(dataFinal.getTimeInMillis()));
+
 		// Itera sobre os processos encontrados
 		try {
 			while (rsConsultaProcessos.next()) {
@@ -124,27 +150,8 @@ public class Op_2_BaixaListaDeNumerosDeProcessos {
 			rsConsultaProcessos.close();
 		}
 		
-		
 		// Salva a lista de processos em um arquivo "properties"
-		gravarListaProcessosEmArquivo(listaProcessos);
-	}
-	
-	private void gravarListaProcessosEmArquivo(List<String> listaProcessos) throws IOException {
-		FileWriter fw = new FileWriter(arquivoSaida);
-		try {
-			for (String processo: listaProcessos) {
-				fw.append(processo);
-				fw.append("\r\n");
-			}
-		} finally {
-			fw.close();
-		}
-		
-		LOGGER.info("Arquivo gerado com lista de " + listaProcessos.size() + " processo(s): " + arquivoSaida);
-	}
-
-	public static File getArquivoListaProcessos(int grau) {
-		return new File("output/lista_processos_" + grau + "g.txt");
+		Auxiliar.gravarListaProcessosEmArquivo(listaProcessos, arquivoSaida);
 	}
 	
 	public void prepararConexao() throws SQLException, IOException {

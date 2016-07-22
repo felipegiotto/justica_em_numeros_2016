@@ -3,14 +3,11 @@ package br.jus.trt4.justica_em_numeros_2016.tasks;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Properties;
-import java.util.TreeSet;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -42,7 +39,8 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ProcessaServentiasCNJ;
 import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
 
 /**
- * Consulta os processos no banco de dados do PJe e gera os arquivo XML para o "Justiça em Números" na pasta "output".
+ * Carrega as listas de processos geradas pela classe {@link Op_2_BaixaListaDeNumerosDeProcessos} e,
+ * para cada processo, gera seu arquivo XML na pasta "output/xmls_individuais/(grau)/PJe".
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
@@ -53,7 +51,6 @@ public class Op_3_GeraXMLs {
 	private static final Logger LOGGER = LogManager.getLogger(Op_3_GeraXMLs.class);
 	private int grau;
 	private Connection conexaoBasePrincipal;
-	private final File arquivoSaida;
 	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPolos;
 	private NamedParameterStatement nsPartes;
@@ -64,7 +61,6 @@ public class Op_3_GeraXMLs {
 	private int codigoMunicipioIBGETRT;
 	private static ProcessaServentiasCNJ processaServentiasCNJ;
 	private static Properties tiposDocumentosPJeCNJ;
-	private TreeSet<String> processosAnalisados = new TreeSet<>();
 
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
@@ -98,7 +94,6 @@ public class Op_3_GeraXMLs {
 
 	public Op_3_GeraXMLs(int grau) {
 		this.grau = grau;
-		this.arquivoSaida = new File("output/dados_" + grau + "g.xml");
 	}
 	
 	private void gerarXML() throws IOException, SQLException, JAXBException {
@@ -110,33 +105,54 @@ public class Op_3_GeraXMLs {
 		JAXBContext context = JAXBContext.newInstance(Processos.class);
 		Marshaller jaxbMarshaller = context.createMarshaller();
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-		Processos processos = factory.createProcessos();
+		
+		// Variável auxiliar para tentar calcular o tempo total da carga
+		long inicio = System.currentTimeMillis();
+		
+		// Carrega a lista de processos que precisará ser analisada
+		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
+		int i=0;
+		for (String numeroProcesso: listaProcessos) {
 
-		// Executa a consulta no banco de dados do PJe
-		LOGGER.info("Executando consulta no banco de dados...");
-		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
-			int i=0;
-			while (rsProcessos.next()) {
-				String numeroCompletoProcesso = rsProcessos.getString("numero_completo_processo");
-				LOGGER.debug("Analisando processo " + numeroCompletoProcesso + " (" + (++i) + ")");
-
-				TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(rsProcessos);
-				processos.getProcesso().add(processoJudicial);
-				
-				// Gera um WARNING se o mesmo processo for analisado duas vezes
-				if (processosAnalisados.contains(numeroCompletoProcesso)) {
-					LOGGER.warn("O processo '" + numeroCompletoProcesso + "' foi inserido no XML mais do que uma vez! Confira as consultas que estão sendo realizadas.");
-				} else {
-					processosAnalisados.add(numeroCompletoProcesso);
-				}
+			// Arquivo XML que conterá os dados do processo
+			File arquivoXML = new File("output/xmls_individuais/" + grau + "G/PJe/" + numeroProcesso + ".xml");
+			
+			// Calcula estatísticas do tempo restante
+			long agora = System.currentTimeMillis();
+			long tempoAteAgora = agora - inicio;
+			long tempoPrevisto = 0;
+			if (i > 0) {
+				tempoPrevisto = (tempoAteAgora / i) * (listaProcessos.size() - i) / 1000;
 			}
-		}
+			LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + (++i) + "/" + listaProcessos.size() + (tempoPrevisto == 0 ? "" : ", restante: " + tempoPrevisto + "s") + ")");
 
-		// Gera o arquivo XML
-		LOGGER.info("Gerando arquivo XML: " + arquivoSaida + "...");
-		arquivoSaida.getParentFile().mkdirs();
-		jaxbMarshaller.marshal(processos, arquivoSaida);
-		LOGGER.info("Arquivo XML do " + grau + "o Grau gerado!");
+			// Executa a consulta desse processo no banco de dados do PJe
+			TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
+			
+			// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
+			// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
+			// processo serão unificados, junto com os XMLs dos outros sistemas legados.
+			Processos processos = factory.createProcessos();
+			processos.getProcesso().add(processoJudicial);
+			
+			// Gera o arquivo XML
+			arquivoXML.getParentFile().mkdirs();
+			jaxbMarshaller.marshal(processos, arquivoXML);
+		}
+		
+		LOGGER.info("Arquivos XML do " + grau + "o Grau gerado!");
+	}
+
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, IOException {
+		
+		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
+		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
+			if (!rsProcessos.next()) {
+				throw new RuntimeException("O processo " + numeroProcesso + " não foi encontrado na base " + grau + "G!");
+			}
+			
+			return analisarProcessoJudicialCompleto(rsProcessos);
+		}
 	}
 
 	/**
@@ -478,54 +494,10 @@ public class Op_3_GeraXMLs {
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
 		conexaoBasePrincipal.setAutoCommit(false);
 
-		// SQL que fará a consulta de todos os processos
-		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processos.sql");
-
-		// Em ambiente de testes, processa somente um lote menor, para ficar mais rápido
-		String tipoCarga = Auxiliar.getParametroConfiguracao("tipo_carga_xml", true);
-		if ("TESTES".equals(tipoCarga)) {
-			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
-			sqlConsultaProcessos += "\n AND nr_ano = 2016 LIMIT 30";
-			
-		} else if (tipoCarga.matches("\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}")) {
-			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + tipoCarga + "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
-			sqlConsultaProcessos += "\n AND p.nr_processo = '" + tipoCarga + "'";
-			
-		} else if (!"MENSAL".equals(tipoCarga) && !"COMPLETA".equals(tipoCarga)) {
-			throw new RuntimeException("Valor desconhecido para o parâmetro '" + tipoCarga + "'!");
-		}
-
-		// SQL que fará a consulta de todos os processos, com parâmetros para acelerar a consulta.
+		// SQL que fará a consulta de um processo
+		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processo.sql");
 		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 		
-		// Preenche os parâmetros referentes ao período de movimentação dos processos
-		// TODO: Conferir, com área de negócio, qual o critério exato para selecionar os processos conforme regras do CNJ
-		Calendar dataInicial = Calendar.getInstance();
-		Calendar dataFinal = Calendar.getInstance();
-		if ("COMPLETA".equals(tipoCarga)) {
-			// CNJ: Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
-			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
-			dataInicial.set(2015, Calendar.JANUARY, 1, 0, 0, 0);
-			dataFinal.set(2016, Calendar.JULY, 31, 23, 59, 59);
-			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 1);
-			
-		} else if ("MENSAL".equals(tipoCarga)) {
-			// CNJ: Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
-			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
-			// algum tipo de informação.
-			dataInicial.set(2016, Calendar.AUGUST, 1, 0, 0, 0);
-			dataFinal.set(2016, Calendar.AUGUST, 31, 23, 59, 59);
-			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 1);
-			
-		} else {
-			// Para outros filtros, não considera as datas das movimentações
-			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 0);
-		}
-		dataInicial.set(Calendar.MILLISECOND, 0);
-		dataFinal.set(Calendar.MILLISECOND, 999);
-		nsConsultaProcessos.setDate("dt_inicio_periodo", new Date(dataInicial.getTimeInMillis()));
-		nsConsultaProcessos.setDate("dt_fim_periodo", new Date(dataFinal.getTimeInMillis()));
-
 		// SQL que fará a consulta de todos os polos
 		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/02_consulta_polos.sql");
 		nsPolos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPolos);		

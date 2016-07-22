@@ -1,5 +1,4 @@
 -- Trecho de SQL adaptado do script do TRT14: trt14_original__pje2grau_script.sql
-
 SELECT 
       p.nr_processo as numero_completo_processo,
       pt.id_processo_trf,
@@ -35,22 +34,4 @@ SELECT
     LEFT  JOIN tb_orgao_julgador_colgiado ojc ON (ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado)
     INNER JOIN tb_jurisdicao_municipio jm ON (jm.id_jurisdicao = oj.id_jurisdicao AND jm.in_sede = 'S')
     INNER JOIN tb_municipio_ibge ib ON (ib.id_municipio = jm.id_municipio)
-    INNER JOIN 
-    (
-      -- item 92.220
-      select distinct pr.id_processo_trf
-      from tb_processo_trf pr 
-      inner join tb_processo_evento ad on 1=1
-        and ad.id_processo = pr.id_processo_trf
-        and ad.id_processo_evento_excludente IS NULL
-      where :filtrar_por_movimentacoes = 1 
-        and ad.dt_atualizacao >= :dt_inicio_periodo
-        and ad.dt_atualizacao <  :dt_fim_periodo
-      UNION
-      select distinct pr.id_processo_trf
-      from tb_processo_trf pr
-      where :filtrar_por_movimentacoes = 0
-    ) pc on 1=1
-      and pc.id_processo_trf = pt.id_processo_trf
-    WHERE 1=1
-      and length(p.nr_processo) = 25
+    WHERE p.nr_processo = :numero_processo
