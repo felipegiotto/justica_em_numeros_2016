@@ -48,9 +48,9 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
  * 
  * @author fgiotto
  */
-public class Op_2_GeraXMLs {
+public class Op_3_GeraXMLs {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLs.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_3_GeraXMLs.class);
 	private int grau;
 	private Connection conexaoBasePrincipal;
 	private final File arquivoSaida;
@@ -83,7 +83,7 @@ public class Op_2_GeraXMLs {
 	}
 
 	private static void gerarXMLs(int grau) throws Exception {
-		Op_2_GeraXMLs baixaDados = new Op_2_GeraXMLs(grau);
+		Op_3_GeraXMLs baixaDados = new Op_3_GeraXMLs(grau);
 		try {
 
 			// Abre conexões com o PJe e prepara consultas a serem realizadas
@@ -96,7 +96,7 @@ public class Op_2_GeraXMLs {
 		}
 	}
 
-	public Op_2_GeraXMLs(int grau) {
+	public Op_3_GeraXMLs(int grau) {
 		this.grau = grau;
 		this.arquivoSaida = new File("output/dados_" + grau + "g.xml");
 	}

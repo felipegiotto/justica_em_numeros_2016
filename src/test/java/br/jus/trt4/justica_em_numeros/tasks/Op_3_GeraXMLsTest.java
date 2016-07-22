@@ -27,7 +27,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLs;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_3_GeraXMLs;
 
 /**
  * Testa a geração dos campos nos formatos exigidos pelo CNJ.
@@ -40,9 +40,9 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLs;
  * 
  * @author fgiotto
  */
-public class Op_2_GeraXMLsTest {
+public class Op_3_GeraXMLsTest {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLsTest.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_3_GeraXMLsTest.class);
 	
 	@Test
 	public void testarCamposProcesso2G() throws Exception {
@@ -511,7 +511,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
 		
-		Op_2_GeraXMLs baixaDados = new Op_2_GeraXMLs(grau);
+		Op_3_GeraXMLs baixaDados = new Op_3_GeraXMLs(grau);
 		try {
 
 			// Abre conexões com o PJe e prepara consultas a serem realizadas
