@@ -35,7 +35,7 @@ public class Auxiliar {
 	 * @throws SQLException
 	 */
 	public static Connection getConexaoPJe1G() throws SQLException {
-		LOGGER.info("Abrindo conexão com o PJe 2G");
+		LOGGER.info("Abrindo conexão com o PJe 1G");
 		Connection connection = getConexaoDasConfiguracoes("url_jdbc_1g");
 		return connection;
 	}

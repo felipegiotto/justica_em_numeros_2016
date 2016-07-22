@@ -9,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
- * IMPORTANTE!! Essa classe só precisará ser executada novamente se houver alguma alteração no arquivo XSD.
+ * IMPORTANTE!! Essa classe só precisará ser executada novamente se houver alguma alteração no arquivo XSD do CNJ.
  * 
  * Processa o arquivo XSD recebido do CNJ (src/main/resources/replicacao-nacional.xsd) e gera as classes
  * Java correspondentes, para permitir a geração dos arquivos XML.
