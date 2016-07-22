@@ -18,8 +18,9 @@ import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
- * Lê todos os arquivos XML na pasta "output/xmls_individuais/(grau)", tanto do PJe quanto dos
- * sistemas legados, e gera arquivos XML unificados na pasta "output".
+ * Lê todos os arquivos XML na pasta "output/xmls_individuais/(grau)g", tanto do PJe quanto dos
+ * sistemas legados, e gera arquivos XML unificados na pasta "output", nos arquivos com 
+ * formato "dados_processos_Xg.xml", onde 'X' representa o número da instância (1 ou 2)
  * 
  * @author fgiotto
  */
@@ -51,7 +52,7 @@ public class Op_3_UnificaArquivosXML {
 	
 	public Op_3_UnificaArquivosXML(int grau) {
 		this.grau = grau;
-		this.arquivoSaida = new File("output/dados_processos_" + grau + "G.xml");
+		this.arquivoSaida = new File("output/dados_processos_" + grau + "g.xml");
 		this.arquivoSaida.getParentFile().mkdirs();
 	}
 

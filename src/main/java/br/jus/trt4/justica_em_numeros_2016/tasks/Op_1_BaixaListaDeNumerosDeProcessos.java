@@ -1,12 +1,14 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,8 +16,9 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
- * Monta uma lista de processos e grava em um arquivo "properties", para que posteriormente seus 
- * XMLs possam ser baixados do PJe.
+ * Monta uma lista de processos, conforme o parâmetro "tipo_carga_xml" do arquivo "config.properites",
+ * e grava na pasta "output", em arquivos com nome "lista_processos_Xg.txt", onde X é o número
+ * da instância do PJe (1 ou 2)
  * 
  * @author fgiotto
  */
@@ -25,6 +28,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	private int grau;
 	private final File arquivoSaida;
 	private Connection conexaoBasePrincipal;
+	
 	
 	public static void main(String[] args) throws SQLException, IOException {
 		
@@ -41,6 +45,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		LOGGER.info("Fim!");
 	}
 
+	
 	private static void gerarListaProcessos(int grau) throws SQLException, IOException {
 		Op_1_BaixaListaDeNumerosDeProcessos baixaDados = new Op_1_BaixaListaDeNumerosDeProcessos(grau);
 		try {
@@ -55,11 +60,13 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		}
 	}
 	
+	
 	public Op_1_BaixaListaDeNumerosDeProcessos(int grau) {
 		this.grau = grau;
 		this.arquivoSaida = Auxiliar.getArquivoListaProcessos(grau);
 	}
 
+	
 	private void baixarListaProcessos() throws IOException, SQLException {
 		
 		ArrayList<String> listaProcessos = new ArrayList<>();
@@ -151,19 +158,43 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		}
 		
 		// Salva a lista de processos em um arquivo "properties"
-		Auxiliar.gravarListaProcessosEmArquivo(listaProcessos, arquivoSaida);
+		gravarListaProcessosEmArquivo(listaProcessos, arquivoSaida);
 	}
 	
-	public void prepararConexao() throws SQLException, IOException {
+	
+	/**
+	 * Abre conexão com o banco de dados do PJe
+	 * 
+	 * @throws SQLException
+	 * @throws IOException
+	 */
+	public void prepararConexao() throws SQLException {
 
-		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
 		conexaoBasePrincipal.setAutoCommit(false);
 	}
 	
+	
+	public static void gravarListaProcessosEmArquivo(List<String> listaProcessos, File arquivoSaida) throws IOException {
+		arquivoSaida.getParentFile().mkdirs();
+		FileWriter fw = new FileWriter(arquivoSaida);
+		try {
+			for (String processo: listaProcessos) {
+				fw.append(processo);
+				fw.append("\r\n");
+			}
+		} finally {
+			fw.close();
+		}
+		LOGGER.info("Arquivo gerado com lista de " + listaProcessos.size() + " processo(s): " + arquivoSaida);
+	}
+
+	
+	/**
+	 * Fecha conexão com o PJe
+	 */
 	public void close() {
 
-		// Fecha conexão com o PJe
 		if (conexaoBasePrincipal != null) {
 			try {
 				conexaoBasePrincipal.close();

@@ -8,8 +8,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
@@ -36,10 +34,8 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
  * 
  * @author fgiotto
  */
-public class Op_3_GeraXMLsIndividuaisTest {
+public class Op_2_GeraXMLsIndividuaisTest {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_3_GeraXMLsIndividuaisTest.class);
-	
 	@Test
 	public void testarCamposProcesso2G() throws Exception {
 		

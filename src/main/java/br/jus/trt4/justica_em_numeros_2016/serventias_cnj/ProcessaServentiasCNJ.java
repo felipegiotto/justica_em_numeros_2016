@@ -24,7 +24,7 @@ public class ProcessaServentiasCNJ {
 
 	private static final Logger LOGGER = LogManager.getLogger(ProcessaServentiasCNJ.class);
 	private Map<String, ServentiaCNJ> serventiasCNJ = new HashMap<>();
-	File arquivoServentias;
+	private File arquivoServentias;
 	
 	public ProcessaServentiasCNJ() throws IOException {
 		

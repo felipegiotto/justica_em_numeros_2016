@@ -13,6 +13,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +41,7 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
 
 /**
  * Carrega as listas de processos geradas pela classe {@link Op_1_BaixaListaDeNumerosDeProcessos} e,
- * para cada processo, gera seu arquivo XML na pasta "output/xmls_individuais/(grau)/PJe".
+ * para cada processo, gera seu arquivo XML na pasta "output/xmls_individuais/(grau)g/PJe".
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
@@ -62,6 +63,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private static ProcessaServentiasCNJ processaServentiasCNJ;
 	private static Properties tiposDocumentosPJeCNJ;
 
+	
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
 	 */
@@ -78,6 +80,7 @@ public class Op_2_GeraXMLsIndividuais {
 		}
 	}
 
+	
 	private static void gerarXMLs(int grau) throws Exception {
 		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);
 		try {
@@ -92,9 +95,11 @@ public class Op_2_GeraXMLsIndividuais {
 		}
 	}
 
+	
 	public Op_2_GeraXMLsIndividuais(int grau) {
 		this.grau = grau;
 	}
+	
 	
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
@@ -110,12 +115,12 @@ public class Op_2_GeraXMLsIndividuais {
 		long inicio = System.currentTimeMillis();
 		
 		// Carrega a lista de processos que precisará ser analisada
-		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
+		List<String> listaProcessos = carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		int i=0;
 		for (String numeroProcesso: listaProcessos) {
 
 			// Arquivo XML que conterá os dados do processo
-			File arquivoXML = new File("output/xmls_individuais/" + grau + "G/PJe/" + numeroProcesso + ".xml");
+			File arquivoXML = new File("output/xmls_individuais/" + grau + "g/PJe/" + numeroProcesso + ".xml");
 			
 			// Calcula estatísticas do tempo restante
 			long agora = System.currentTimeMillis();
@@ -143,7 +148,17 @@ public class Op_2_GeraXMLsIndividuais {
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerado!");
 	}
 
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, IOException {
+	
+	/**
+	 * Consulta os dados do processo informado no banco de dados e gera um objeto da classe
+	 * {@link TipoProcessoJudicial}
+	 * 
+	 * @param numeroProcesso
+	 * @return
+	 * @throws SQLException
+	 * @throws IOException
+	 */
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException {
 		
 		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
@@ -155,6 +170,7 @@ public class Op_2_GeraXMLsIndividuais {
 		}
 	}
 
+	
 	/**
 	 * Método criado com base no script recebido do TRT14
 	 * para preencher os dados de um processo judicial dentro das classes que gerarão o XML.
@@ -164,7 +180,7 @@ public class Op_2_GeraXMLsIndividuais {
 	 * @throws SQLException 
 	 * @throws IOException 
 	 */
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ResultSet rsProcesso) throws SQLException, IOException {
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ResultSet rsProcesso) throws SQLException {
 
 		// Objeto que será retornado
 		TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
@@ -178,6 +194,7 @@ public class Op_2_GeraXMLsIndividuais {
 		return processoJudicial;
 	}
 
+	
 	private TipoCabecalhoProcesso analisarCabecalhoProcesso(ResultSet rsProcesso) throws SQLException {
 		
 		// Script TRT14:
@@ -211,6 +228,7 @@ public class Op_2_GeraXMLsIndividuais {
 		return cabecalhoProcesso;
 	}
 
+	
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso) throws SQLException {
 		
 		List<TipoPoloProcessual> polos = new ArrayList<TipoPoloProcessual>();
@@ -315,10 +333,10 @@ public class Op_2_GeraXMLsIndividuais {
 				}
 			}
 		}
-		
 		return polos;
 	}
 
+	
 	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(int idProcesso) throws SQLException {
 		
 		List<TipoAssuntoProcessual> assuntos = new ArrayList<TipoAssuntoProcessual>();
@@ -370,6 +388,7 @@ public class Op_2_GeraXMLsIndividuais {
 		return assuntos;
 	}
 
+	
 	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ResultSet rsProcesso) throws SQLException {
 		/*
 		 * Órgãos Julgadores
@@ -411,6 +430,7 @@ public class Op_2_GeraXMLsIndividuais {
 		return orgaoJulgador;
 	}
 
+	
 	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(int idProcesso) throws SQLException {
 		
 		ArrayList<TipoMovimentoProcessual> movimentos = new ArrayList<>();
@@ -476,6 +496,7 @@ public class Op_2_GeraXMLsIndividuais {
 		return movimentos;
 	}
 
+	
 	public void prepararConexao() throws SQLException, IOException {
 
 		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
@@ -526,6 +547,7 @@ public class Op_2_GeraXMLsIndividuais {
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao("codigo_municipio_ibge_trt");		
 	}
 
+	
 	public void close() {
 
 		// Fecha PreparedStatements
@@ -597,7 +619,10 @@ public class Op_2_GeraXMLsIndividuais {
 		}
 	}
 	
-	public Connection getConexaoBasePrincipal() {
-		return conexaoBasePrincipal;
+	
+	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws IOException {
+		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada);
+		LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
+		return listaProcessos;
 	}
 }

@@ -2,18 +2,15 @@ package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +27,7 @@ public class Auxiliar {
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
 
+	
 	/**
 	 * Cria uma conexão com o banco de dados de 1o Grau do PJe, a partir do parâmetro "url_jdbc_1g"
 	 * do arquivo "config.properties"
@@ -48,7 +46,6 @@ public class Auxiliar {
 	 * Cria uma conexão com o banco de dados de 2o Grau do PJe, a partir do parâmetro "url_jdbc_2g"
 	 * do arquivo "config.properties"
 	 * 
-	 * @return
 	 * @throws SQLException
 	 */
 	public static Connection getConexaoPJe2G() throws SQLException {
@@ -58,6 +55,11 @@ public class Auxiliar {
 	}
 	
 	
+	/**
+	 * Cria uma conexão com o banco de dados do PJe, conforme a instância selecionada (1 ou 2)
+	 * 
+	 * @throws SQLException
+	 */
 	public static Connection getConexaoPJe(int grau) throws SQLException {
 		if (grau == 1) {
 			return getConexaoPJe1G();
@@ -137,8 +139,6 @@ public class Auxiliar {
 	
 	/**
 	 * Carrega e mantém em cache as configurações definidas no arquivo "config.properties"
-	 * 
-	 * @return
 	 */
 	private static Properties getConfigs() {
 		if (configs == null) {
@@ -153,6 +153,11 @@ public class Auxiliar {
 	}
 
 
+	/**
+	 * Carrega os dados de um arquivo ".properties"
+	 *  
+	 * @throws IOException
+	 */
 	public static Properties carregarPropertiesDoArquivo(File arquivo) throws IOException {
 		if (!arquivo.exists()) {
 			throw new RuntimeException("O arquivo '" + arquivo + "' não existe!");
@@ -202,6 +207,12 @@ public class Auxiliar {
 		}
 	}
 	
+	/**
+	 * Lê todo o conteúdo de um arquivo UTF-8 e retorna em uma String
+	 * 
+	 * @param arquivo
+	 * @throws IOException
+	 */
 	public static String lerConteudoDeArquivo(String arquivo) throws IOException {
 		return FileUtils.readFileToString(new File(arquivo), "UTF-8");
 	}
@@ -245,27 +256,11 @@ public class Auxiliar {
 		}
 	}
 	
+	/**
+	 * Retorna o arquivo onde deve ser gravada e lida a lista de processos de uma determinada
+	 * instância do PJe.
+	 */
 	public static File getArquivoListaProcessos(int grau) {
 		return new File("output/lista_processos_" + grau + "g.txt");
 	}
-	
-	public static void gravarListaProcessosEmArquivo(List<String> listaProcessos, File arquivoSaida) throws IOException {
-		FileWriter fw = new FileWriter(arquivoSaida);
-		try {
-			for (String processo: listaProcessos) {
-				fw.append(processo);
-				fw.append("\r\n");
-			}
-		} finally {
-			fw.close();
-		}
-		LOGGER.info("Arquivo gerado com lista de " + listaProcessos.size() + " processo(s): " + arquivoSaida);
-	}
-	
-	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws IOException {
-		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada);
-		LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
-		return listaProcessos;
-	}
-	
 }

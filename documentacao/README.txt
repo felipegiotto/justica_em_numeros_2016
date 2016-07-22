@@ -2,15 +2,56 @@
 
 Ferramenta para extrair, do PJe, os XMLs para o Selo Justiça em Números 2016 do CNJ.
 
+Também é possível unir esses arquivos do PJe com arquivos XMLs de sistemas legados, para enviar
+de uma vez só ao CNJ. 
+
 Author: felipe.giotto@trt4.jus.br
 
 
 
 == Instruções ==
 
-Criar um arquivo "config.properties", na raiz do projeto, a partir do arquivo "config.properties_modelo", preenchendo os dados corretos.
+Funcionamento "básico":
 
-Abrir o pacote "br.jus.trt4.justica_em_numeros_2016.tasks", analisar as classes nele contidas e executar as operações desejadas.
+IMPORTANTE: Confira sempre a saída do Console, prestando atenção especialmente nas linhas 
+            com "WARN" ou "ERROR". Pode ser necessária alguma intervenção!
+
+1. Criar um arquivo "config.properties", na raiz do projeto, a partir do arquivo 
+   "config.properties_modelo", preenchendo os dados corretos.
+
+2. Executar o método "main" da classe "Op_1_BaixaListaDeNumerosDeProcessos", para localizar os números
+   dos processos que precisarão ser exportados para arquivos XML.
+   OBS: Os números dos processos serão gravados na pasta "output", nos arquivos 
+        "lista_processos_Xg.txt", conforme as instâncias configuradas no passo 1.
+   
+3. Executar o método "main" da classe "Op_2_GeraXMLsIndividuais", para gerar os arquivos XML dos
+   processos identificados no passo anterior.
+   OBS: Será gerado um arquivo XML para cada processo, nas pastas "output\xmls_individuais\Xg",
+        conforme as instâncias configuradas no passo 1.
+   
+4. Executar o método "main" da classe "Op_3_UnificaArquivosXML", para unificar todos os arquivos XML
+   gerados no passo anterior. Esses arquivos poderão ser enviados ao CNJ.
+   OBS: Serão gerados arquivos na pasta "output", com nome "dados_processos_Xg.xml", conforme as 
+        instâncias configuradas no passo 1.
+   IMPORTANTE: Essa classe unificará TODOS os arquivos XML da referida pasta, inclusive os que 
+               foram gerados em execuções anteriores!! 
+               Por isso, antes de gerar o arquivo XML definitivo para enviar ao CNJ, recomenda-se 
+               limpar a pasta "ouput", e seguir todos os passos novamente, desde o início.
+               
+
+
+Funcionamento "avançado":
+
+* Essa ferramenta também permite a unificação de arquivos XML de processos de sistemas legados.
+  Obviamente, esses arquivos devem ser gerados utilizando alguma outra ferramenta. 
+  Para tanto, grave os arquivos XML dos sistemas legados na pasta 
+  "output\xmls_individuais\Xg\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
+  NOME_SISTEMA pode ser qualquer identificador) antes de executar o passo 4. 
+
+
+* Se a estrutura do arquivo XSD do CNJ for alterado, gravar o novo arquivo XSD na pasta 
+  "src/main/resources" e executar o método "main" da classe "Op_0_ParseArquivoXSD".
+  Provavelmente será necessário alterar a lógica das rotinas que leem e gravam arquivos XML.
 
 
 
