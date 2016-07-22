@@ -41,7 +41,7 @@ import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
 
 /**
  * Carrega as listas de processos geradas pela classe {@link Op_1_BaixaListaDeNumerosDeProcessos} e,
- * para cada processo, gera seu arquivo XML na pasta "output/xmls_individuais/(grau)g/PJe".
+ * para cada processo, gera seu arquivo XML na pasta "output/Xg/xmls_individuais/PJe".
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
@@ -120,7 +120,7 @@ public class Op_2_GeraXMLsIndividuais {
 		for (String numeroProcesso: listaProcessos) {
 
 			// Arquivo XML que conterá os dados do processo
-			File arquivoXML = new File("output/xmls_individuais/" + grau + "g/PJe/" + numeroProcesso + ".xml");
+			File arquivoXML = new File("output/" + grau + "g/xmls_individuais/PJe/" + numeroProcesso + ".xml");
 			
 			// Calcula estatísticas do tempo restante
 			long agora = System.currentTimeMillis();

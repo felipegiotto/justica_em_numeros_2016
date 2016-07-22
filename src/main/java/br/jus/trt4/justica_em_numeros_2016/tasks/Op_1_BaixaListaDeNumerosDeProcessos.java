@@ -16,9 +16,9 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
- * Monta uma lista de processos, conforme o parâmetro "tipo_carga_xml" do arquivo "config.properites",
- * e grava na pasta "output", em arquivos com nome "lista_processos_Xg.txt", onde X é o número
- * da instância do PJe (1 ou 2)
+ * Monta uma lista de processos, conforme o parâmetro "tipo_carga_xml" do arquivo "config.properties",
+ * e grava na pasta "output/Xg" (onde 'X' representa o número da instância - '1' ou '2'), 
+ * em arquivos com nome "lista_processos.txt".
  * 
  * @author fgiotto
  */
@@ -74,6 +74,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		// Verifica quais os critérios selecionados pelo usuário, no arquivo "config.properties",
 		// pra escolher os processos que serão analisados.
 		String tipoCarga = Auxiliar.getParametroConfiguracao("tipo_carga_xml", true);
+		LOGGER.info("Executando consulta " + tipoCarga + "...");
 		ResultSet rsConsultaProcessos;
 		
 		if ("TESTES".equals(tipoCarga)) {
@@ -114,7 +115,13 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// regras definidas pelo CNJ:
 			// Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
 			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
-			throw new RuntimeException("Falta implementar!!!!");
+			String sql = "SELECT DISTINCT nr_processo " +
+					"FROM tb_processo p " +
+					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
+					"INNER JOIN tb_processo_evento pe ON (pe.id_processo = p.id_processo) " +
+					"WHERE (dt_atualizacao BETWEEN '2016-08-01 00:00:00.000' AND '2016-08-31 23:59:59.999')";
+			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
+			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + tipoCarga);

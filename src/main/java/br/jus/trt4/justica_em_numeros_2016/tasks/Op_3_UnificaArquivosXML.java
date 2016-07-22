@@ -18,9 +18,9 @@ import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
- * Lê todos os arquivos XML na pasta "output/xmls_individuais/(grau)g", tanto do PJe quanto dos
- * sistemas legados, e gera arquivos XML unificados na pasta "output", nos arquivos com 
- * formato "dados_processos_Xg.xml", onde 'X' representa o número da instância (1 ou 2)
+ * Lê todos os arquivos XML na pasta "output/Xg/xmls_individuais", tanto do PJe quanto dos
+ * sistemas legados, e gera arquivos XML unificados na pasta "output/Xg", no arquivo 
+ * "xmls_unificados.xml".
  * 
  * @author fgiotto
  */
@@ -52,7 +52,7 @@ public class Op_3_UnificaArquivosXML {
 	
 	public Op_3_UnificaArquivosXML(int grau) {
 		this.grau = grau;
-		this.arquivoSaida = new File("output/dados_processos_" + grau + "g.xml");
+		this.arquivoSaida = new File("output/" + grau + "g/xmls_unificados.xml");
 		this.arquivoSaida.getParentFile().mkdirs();
 	}
 
@@ -61,7 +61,7 @@ public class Op_3_UnificaArquivosXML {
 		// Pesquisando todos os arquivos que serão unificados
 		LOGGER.info("Pesquisando todos os arquivos que serão unificados...");
 		List<File> arquivosParaProcessar = new ArrayList<>();
-		File pastaRaiz = new File("output/xmls_individuais/" + grau + "G");
+		File pastaRaiz = new File("output/" + grau + "g/xmls_individuais");
 		localizaTodosArquivosXMLRecursivamente(pastaRaiz, arquivosParaProcessar);
 		
 		// Objetos responsáveis por ler os arquivos XML

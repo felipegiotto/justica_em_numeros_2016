@@ -261,6 +261,6 @@ public class Auxiliar {
 	 * instância do PJe.
 	 */
 	public static File getArquivoListaProcessos(int grau) {
-		return new File("output/lista_processos_" + grau + "g.txt");
+		return new File("output/" + grau + "g/lista_processos.txt");
 	}
 }

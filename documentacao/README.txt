@@ -21,18 +21,17 @@ IMPORTANTE: Confira sempre a saída do Console, prestando atenção especialment
 
 2. Executar o método "main" da classe "Op_1_BaixaListaDeNumerosDeProcessos", para localizar os números
    dos processos que precisarão ser exportados para arquivos XML.
-   OBS: Os números dos processos serão gravados na pasta "output", nos arquivos 
-        "lista_processos_Xg.txt", conforme as instâncias configuradas no passo 1.
+   OBS: Os números dos processos serão gravados na pasta "output\Xg" (onde 'X' representa o número 
+        da instância - '1' ou '2') no arquivo "lista_processos.txt".
    
 3. Executar o método "main" da classe "Op_2_GeraXMLsIndividuais", para gerar os arquivos XML dos
    processos identificados no passo anterior.
-   OBS: Será gerado um arquivo XML para cada processo, nas pastas "output\xmls_individuais\Xg",
-        conforme as instâncias configuradas no passo 1.
+   OBS: Será gerado um arquivo XML para cada processo, nas pastas "output\Xg\xmls_individuais\PJe",
+        (onde 'X' representa o número da instância - '1' ou '2').
    
 4. Executar o método "main" da classe "Op_3_UnificaArquivosXML", para unificar todos os arquivos XML
    gerados no passo anterior. Esses arquivos poderão ser enviados ao CNJ.
-   OBS: Serão gerados arquivos na pasta "output", com nome "dados_processos_Xg.xml", conforme as 
-        instâncias configuradas no passo 1.
+   OBS: Serão gerados arquivos na pasta "output\Xg", com nome "xmls_unificados.xml".
    IMPORTANTE: Essa classe unificará TODOS os arquivos XML da referida pasta, inclusive os que 
                foram gerados em execuções anteriores!! 
                Por isso, antes de gerar o arquivo XML definitivo para enviar ao CNJ, recomenda-se 
@@ -45,7 +44,7 @@ Funcionamento "avançado":
 * Essa ferramenta também permite a unificação de arquivos XML de processos de sistemas legados.
   Obviamente, esses arquivos devem ser gerados utilizando alguma outra ferramenta. 
   Para tanto, grave os arquivos XML dos sistemas legados na pasta 
-  "output\xmls_individuais\Xg\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
+  "output\Xg\xmls_individuais\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
   NOME_SISTEMA pode ser qualquer identificador) antes de executar o passo 4. 
 
 
