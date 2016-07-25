@@ -1,4 +1,4 @@
-package br.jus.trt4.justica_em_numeros_2016.serventias_cnj;
+package br.jus.trt4.justica_em_numeros_2016.tabelas_cnj;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,13 +20,13 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
  * 
  * @author fgiotto
  */
-public class ProcessaServentiasCNJ {
+public class AnalisaServentiasCNJ {
 
-	private static final Logger LOGGER = LogManager.getLogger(ProcessaServentiasCNJ.class);
+	private static final Logger LOGGER = LogManager.getLogger(AnalisaServentiasCNJ.class);
 	private Map<String, ServentiaCNJ> serventiasCNJ = new HashMap<>();
 	private File arquivoServentias;
 	
-	public ProcessaServentiasCNJ() throws IOException {
+	public AnalisaServentiasCNJ() throws IOException {
 		
 		// Arquivo de onde os dados das serventias serão lidos, conforme configuração.
 		arquivoServentias = new File("src/main/resources/serventias_cnj/" + Auxiliar.getParametroConfiguracao("arquivo_serventias_cnj", true));

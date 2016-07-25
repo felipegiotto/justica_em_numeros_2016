@@ -34,11 +34,11 @@ import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.cnj.intercomunicacao_2_2.TipoQualificacaoPessoa;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
-import br.jus.trt4.justica_em_numeros_2016.assuntos_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
-import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ProcessaServentiasCNJ;
-import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ServentiaCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
 
 /**
  * Carrega as listas de processos geradas pela classe {@link Op_1_BaixaListaDeNumerosDeProcessos} e,
@@ -61,7 +61,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private NamedParameterStatement nsMovimentos;
 	private NamedParameterStatement nsComplementos;
 	private int codigoMunicipioIBGETRT;
-	private static ProcessaServentiasCNJ processaServentiasCNJ;
+	private static AnalisaServentiasCNJ processaServentiasCNJ;
 	private static Properties tiposDocumentosPJeCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
 
@@ -507,7 +507,7 @@ public class Op_2_GeraXMLsIndividuais {
 		
 		// Objeto que fará o de/para dos OJ e OJC do PJe para os do CNJ
 		if (processaServentiasCNJ == null) {
-			processaServentiasCNJ = new ProcessaServentiasCNJ();
+			processaServentiasCNJ = new AnalisaServentiasCNJ();
 		}
 		
 		// Objeto que fará o de/para dos tipos de documentos do PJe para os do CNJ

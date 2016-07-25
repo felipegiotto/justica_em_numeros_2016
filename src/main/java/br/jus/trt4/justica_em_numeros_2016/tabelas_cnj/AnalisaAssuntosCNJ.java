@@ -1,4 +1,4 @@
-package br.jus.trt4.justica_em_numeros_2016.assuntos_cnj;
+package br.jus.trt4.justica_em_numeros_2016.tabelas_cnj;
 
 import java.io.File;
 import java.io.IOException;
