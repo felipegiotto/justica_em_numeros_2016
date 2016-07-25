@@ -11,7 +11,10 @@
         
         /*** movimentoNacional ***/
         /* codigoNacional */
-        pe.id_evento AS cd_movimento_cnj
+        pe.id_evento AS cd_movimento_cnj,
+        
+        /* TRT4 */
+        pe.ds_texto_final_interno
       FROM tb_processo_evento pe 
       INNER JOIN tb_evento ev ON 1=1
         AND ev.id_evento = pe.id_evento

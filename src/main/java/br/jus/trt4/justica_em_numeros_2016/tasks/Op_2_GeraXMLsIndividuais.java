@@ -24,7 +24,6 @@ import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
-import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoNacional;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
 import br.jus.cnj.intercomunicacao_2_2.TipoParte;
@@ -37,6 +36,7 @@ import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
 
@@ -64,6 +64,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private static AnalisaServentiasCNJ processaServentiasCNJ;
 	private static Properties tiposDocumentosPJeCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
+	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
 
 	
 	/**
@@ -446,16 +447,12 @@ public class Op_2_GeraXMLsIndividuais {
 
 				// Script TRT14:
 				// raise notice '<movimento dataHora="%" nivelSigilo="%">', mov.dta_ocorrencia, mov.in_visibilidade_externa;
+				// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
 				TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
 				movimento.setDataHora(rsMovimentos.getString("dta_ocorrencia"));
 				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
+				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), Auxiliar.getCampoStringNotNull(rsMovimentos, "ds_texto_final_interno"));
 				movimentos.add(movimento);
-
-				// Script TRT14:
-				// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
-				TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
-				movimentoNacional.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"));
-				movimento.setMovimentoNacional(movimentoNacional);
 
 				// Consulta os complementos desse movimento processual
 				int idMovimento = rsMovimentos.getInt("id_processo_evento");
@@ -550,14 +547,25 @@ public class Op_2_GeraXMLsIndividuais {
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao("codigo_municipio_ibge_trt");
 		
-		// Objeto que identificará os assuntos processuais das tabelas nacionais do CNJ
+		// Objeto que identificará os assuntos e movimentos processuais das tabelas nacionais do CNJ
 		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal);
+		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(grau, conexaoBasePrincipal);
 	}
 
 	
 	public void close() {
 
-		// Fecha objeto que analisa os assuntos processuais do CNJ
+		// Fecha objeto que analisa os movimentos processuais do CNJ
+		if (analisaMovimentosCNJ != null) {
+			try {
+				analisaMovimentosCNJ.close();
+				analisaMovimentosCNJ = null;
+			} catch (SQLException e) {
+				LOGGER.warn("Erro fechando 'analisaMovimentosCNJ': " + e.getLocalizedMessage(), e);
+			}
+		}
+				
+				// Fecha objeto que analisa os assuntos processuais do CNJ
 		if (analisaAssuntosCNJ != null) {
 			try {
 				analisaAssuntosCNJ.close();

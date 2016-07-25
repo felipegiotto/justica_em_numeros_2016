@@ -20,8 +20,8 @@ import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
  * Classe que montará um objeto do tipo {@link TipoAssuntoProcessual}, conforme o dado no PJe:
  * 
  * Se o assunto estiver na lista das tabelas nacionais do CNJ (que foi extraída do site
- * http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A e gravada nos arquivos da pasta
- * "src/main/resources/assuntos_processuais_cnj"), gerará um assunto que possui somente
+ * http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A e gravada nos arquivos 
+ * "src/main/resources/tabelas_cnj/assuntos_*"), gerará um assunto que possui somente
  * o campo "<codigoNacional>".
  * 
  * Se o assunto NÃO estiver na lista das tabelas nacionais do CNJ, gera um objeto "<assuntoLocal>"
@@ -34,7 +34,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaAssuntosCNJ.class);
 	private List<Integer> assuntosProcessuaisCNJ;
-	private PreparedStatement psConsultaAssuntoPorCodigo;
+	private PreparedStatement psConsultaAssuntoPorCodigo; // TODO: remover essa consulta, dá pra fazer direto em 05_consulta_assuntos
 	private PreparedStatement psConsultaAssuntoPorID;
 	
 	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException {
