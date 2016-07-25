@@ -34,6 +34,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.cnj.intercomunicacao_2_2.TipoQualificacaoPessoa;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
+import br.jus.trt4.justica_em_numeros_2016.assuntos_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.serventias_cnj.ProcessaServentiasCNJ;
@@ -62,6 +63,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private int codigoMunicipioIBGETRT;
 	private static ProcessaServentiasCNJ processaServentiasCNJ;
 	private static Properties tiposDocumentosPJeCNJ;
+	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
 
 	
 	/**
@@ -352,8 +354,10 @@ public class Op_2_GeraXMLsIndividuais {
 				// raise notice '<assunto>'; -- principal="%">', assunto.in_assunto_principal;
 				// raise notice '<codigoNacional>%</codigoNacional>', assunto.cd_assunto_trf;
 				// raise notice '</assunto>';
-				TipoAssuntoProcessual assunto = new TipoAssuntoProcessual();
-				assunto.setCodigoNacional(Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf"));
+				
+				// Analisa o assunto, que pode ou não estar nas tabelas processuais unificadas do CNJ.
+				int codigo = Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf");
+				TipoAssuntoProcessual assunto = analisaAssuntosCNJ.getAssunto(codigo);
 				assuntos.add(assunto);
 
 				// Trata o campo "assunto principal", verificando também se há mais de um assunto principal no processo.
@@ -544,12 +548,25 @@ public class Op_2_GeraXMLsIndividuais {
 		nsComplementos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaComplementos);
 
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
-		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao("codigo_municipio_ibge_trt");		
+		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao("codigo_municipio_ibge_trt");
+		
+		// Objeto que identificará os assuntos processuais das tabelas nacionais do CNJ
+		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal);
 	}
 
 	
 	public void close() {
 
+		// Fecha objeto que analisa os assuntos processuais do CNJ
+		if (analisaAssuntosCNJ != null) {
+			try {
+				analisaAssuntosCNJ.close();
+				analisaAssuntosCNJ = null;
+			} catch (SQLException e) {
+				LOGGER.warn("Erro fechando 'analisaAssuntosCNJ': " + e.getLocalizedMessage(), e);
+			}
+		}
+		
 		// Fecha PreparedStatements
 		if (nsConsultaProcessos != null) {
 			try {
@@ -621,7 +638,7 @@ public class Op_2_GeraXMLsIndividuais {
 	
 	
 	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws IOException {
-		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada);
+		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
 		LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
 		return listaProcessos;
 	}
