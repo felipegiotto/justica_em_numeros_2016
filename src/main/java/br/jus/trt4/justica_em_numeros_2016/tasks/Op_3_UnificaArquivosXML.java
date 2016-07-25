@@ -92,6 +92,12 @@ public class Op_3_UnificaArquivosXML {
 	}
 	
 	private void localizaTodosArquivosXMLRecursivamente(File file, List<File> lista) {
+		
+		if (file.getName().startsWith("_")) {
+			LOGGER.warn("Este arquivo não será processado pois seu nome começa com '_': " + file);
+			return;
+		}
+		
 		if (file.isDirectory()) {
 			for (File filho: file.listFiles()) {
 				localizaTodosArquivosXMLRecursivamente(filho, lista);
