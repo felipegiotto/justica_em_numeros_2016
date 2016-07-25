@@ -44,7 +44,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 		// deverá ser registrado com as tags "<assunto><codigoNacional>" ou "<assunto><assuntoLocal>"
 		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
 		this.assuntosProcessuaisCNJ = new ArrayList<>();
-		for (String assuntoString: FileUtils.readLines(new File("src/main/resources/assuntos_processuais_cnj/assuntos_" + grau + "g.csv"), "UTF-8")) {
+		for (String assuntoString: FileUtils.readLines(new File("src/main/resources/tabelas_cnj/assuntos_" + grau + "g.csv"), "UTF-8")) {
 			assuntosProcessuaisCNJ.add(Integer.parseInt(assuntoString));
 		}
 		
