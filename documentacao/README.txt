@@ -90,6 +90,7 @@ Funcionamento "avançado":
   processual em ações coletivas, tutela e curatela. Esse campo é opcional no XSD.
   
 * Parte/Advogado: não está sendo preenchido o elemento opcional 'advogado'.
+  TODO: analisar como devem ser tratados os procuradores, que hoje estão sendo ignorados no arquivo "03_consulta_partes.sql"
 
 * Parte/Documentos: somente estão sendo inseridos nos arquivos XML os documentos que possuem correspondência
   nos tipos do CNJ, conforme arquivo "tipos_de_documentos.properties". Os documentos do PJe que não possuírem

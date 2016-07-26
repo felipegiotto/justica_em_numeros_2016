@@ -21,3 +21,6 @@
           and pp.id_tipo_parte <> 7 -- advogado
           and pp.in_participacao = :in_participacao
           and pp.id_processo_trf = :id_processo
+
+          -- TRT4:
+          and pp.id_tipo_parte <> 9 -- Procurador -- TODO: Definir se procuradores deverão aparecer na consulta ou não!
