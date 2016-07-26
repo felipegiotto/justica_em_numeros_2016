@@ -113,7 +113,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 					"FROM tb_processo p " +
 					"INNER JOIN tb_processo_evento pe ON (p.id_processo = pe.id_processo) " +
 					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"WHERE dt_atualizacao BETWEEN '2016-01-01 00:00:00.000' AND '2016-12-31 23:59:59.999'";
+					"WHERE (pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-07-31 23:59:59.999')";
 			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			
 		} else if ("MENSAL".equals(tipoCarga)) {
@@ -126,7 +126,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 					"FROM tb_processo p " +
 					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
 					"INNER JOIN tb_processo_evento pe ON (pe.id_processo = p.id_processo) " +
-					"WHERE (dt_atualizacao BETWEEN '2016-08-01 00:00:00.000' AND '2016-08-31 23:59:59.999')";
+					"WHERE (pe.dt_atualizacao BETWEEN '2016-08-01 00:00:00.000' AND '2016-08-31 23:59:59.999')";
 			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			
@@ -182,7 +182,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 								int idOJ = rsLocalizaOJs.getInt("id_orgao_julgador");
 								String nomeOJ = rsLocalizaOJs.getString("ds_orgao_julgador");
 								lista.add(idOJ);
-								LOGGER.info("* Todos os processos do OJ '" + nomeOJ + "' (id=" + idOJ + ") serão ignorados!");
+								LOGGER.warn("* Todos os processos do OJ '" + nomeOJ + "' (id=" + idOJ + ") serão ignorados!");
 							}
 						}
 					}
