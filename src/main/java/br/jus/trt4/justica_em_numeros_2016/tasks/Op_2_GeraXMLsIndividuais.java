@@ -72,14 +72,14 @@ public class Op_2_GeraXMLsIndividuais {
 	 */
 	public static void main(String[] args) throws SQLException, Exception {
 
-		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
-			gerarXMLs(1);
-		}
-		
 		// Verifica se deve gerar XML para 2o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_2G")) {
 			gerarXMLs(2);
+		}
+		
+		// Verifica se deve gerar XML para 1o Grau
+		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
+			gerarXMLs(1);
 		}
 	}
 
@@ -327,7 +327,7 @@ public class Op_2_GeraXMLsIndividuais {
 										pessoa.getDocumento().add(documento);
 										
 									} else {
-										LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' não possui correspondente na tabela do CNJ!");
+										LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomePessoa + "' não possui correspondente na tabela do CNJ!");
 									}
 								}
 							}

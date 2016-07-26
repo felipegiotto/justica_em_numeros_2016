@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +25,7 @@ public class AnalisaServentiasCNJ {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaServentiasCNJ.class);
 	private Map<String, ServentiaCNJ> serventiasCNJ = new HashMap<>();
+	private TreeSet<String> serventiasComWarningEmitido = new TreeSet<>();
 	private File arquivoServentias;
 	
 	public AnalisaServentiasCNJ() throws IOException {
@@ -72,7 +74,11 @@ public class AnalisaServentiasCNJ {
 		if (serventiasCNJ.containsKey(nomePJe)) {
 			return serventiasCNJ.get(nomePJe);
 		} else {
-			LOGGER.warn("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe. Para evitar interrupção da rotina, será utilizada uma serventia temporária.");
+			
+			if (!serventiasComWarningEmitido.contains(nomePJe)) {
+				serventiasComWarningEmitido.add(nomePJe);
+				LOGGER.warn("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe. Para evitar interrupção da rotina, será utilizada uma serventia temporária.");
+			}
 			return new ServentiaCNJ("CODIGO_INEXISTENTE", "SERVENTIA INEXISTENTE");
 		}
 	}

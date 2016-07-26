@@ -32,14 +32,14 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	
 	public static void main(String[] args) throws SQLException, IOException {
 		
-		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
-			gerarListaProcessos(1);
-		}
-		
 		// Verifica se deve gerar XML para 2o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_2G")) {
 			gerarListaProcessos(2);
+		}
+		
+		// Verifica se deve gerar XML para 1o Grau
+		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
+			gerarListaProcessos(1);
 		}
 		
 		LOGGER.info("Fim!");
@@ -107,7 +107,11 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// regras definidas pelo CNJ:
 			// Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
 			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
-			throw new RuntimeException("Falta implementar!!!!");
+			String sql = "SELECT DISTINCT nr_processo " +
+					"FROM tb_processo p " +
+					"INNER JOIN tb_processo_evento pe ON (p.id_processo = pe.id_processo) " +
+					"WHERE dt_atualizacao BETWEEN '2016-01-01 00:00:00.000' AND '2016-12-31 23:59:59.999'";
+			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			
 		} else if ("MENSAL".equals(tipoCarga)) {
 			

@@ -80,7 +80,12 @@ Funcionamento "avançado":
 * Assuntos: Decidir o que fazer quando o processo não tiver assunto cadastrado! Atualmente o processo fica sem assunto no XML,
   apesar do assunto estar marcado como obrigatório. 
   OBS: está sendo gerado um warning nos logs quando processo não tiver assunto.
+  TODO: Verificar processo sem assunto em 2G: 0020001-67.2014.5.04.0781
 
+
+TODO: Verificar se o envio será somente um arquivo por instância (2 arquivos no total) ou podemos enviar diversos arquivos.
+      Ao enviar diversos arquivos, os anteriores são cancelados ou são "acumulados"?
+      Como fazer a limpeza dos antigos?
 
 
 
