@@ -1,7 +1,7 @@
             select 
               /*** documento ***/
               /* codigoDocumento */
-              regexp_replace(pdi.nr_documento_identificacao, '[_\.\-/]','','g') nr_documento,
+              pdi.nr_documento_identificacao nr_documento,
               /* emissorDocumento */
               coalesce(ds_orgao_expedidor, 'Não informado') ds_emissor,
               /* tipoDocumento */

@@ -303,7 +303,7 @@ public class Op_2_GeraXMLsIndividuais {
 								// Considera CPF, CNPJ e RIC como documentos principais da pessoa, que ficam em um campo separado
 								// (fora da lista de documentos)
 								String tipoDocumentoPJe = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao").trim();
-								String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento");
+								String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento").replaceAll("[^0-9a-zA-Z]", "");
 								if (tipoDocumentoPJe.equals("CPF") || tipoDocumentoPJe.equals("CPJ") || tipoDocumentoPJe.equals("RIC")) {
 									
 									if (tipoDocumentoPJe.equals("CPF")) {
