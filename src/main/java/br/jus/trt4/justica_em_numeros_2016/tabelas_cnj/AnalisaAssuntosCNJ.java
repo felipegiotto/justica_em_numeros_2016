@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
  * Classe que montará um objeto do tipo {@link TipoAssuntoProcessual}, conforme o dado no PJe:
@@ -78,7 +79,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			psConsultaAssuntoPorCodigo.setString(1, Integer.toString(codigoAssunto));
 			try (ResultSet rs = psConsultaAssuntoPorCodigo.executeQuery()) {
 				if (rs.next()) {
-					assuntoLocal.setDescricao(rs.getString("ds_assunto_trf"));
+					assuntoLocal.setDescricao(Auxiliar.getCampoStringNotNull(rs, "ds_assunto_trf"));
 					
 					int assuntoPai = procurarRecursivamenteAssuntoPaiNaTabelaNacional(rs.getInt("id_assunto_trf"));
 					assuntoLocal.setCodigoPaiNacional(assuntoPai);

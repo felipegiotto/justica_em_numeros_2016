@@ -449,7 +449,7 @@ public class Op_2_GeraXMLsIndividuais {
 				// raise notice '<movimento dataHora="%" nivelSigilo="%">', mov.dta_ocorrencia, mov.in_visibilidade_externa;
 				// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
 				TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
-				movimento.setDataHora(rsMovimentos.getString("dta_ocorrencia"));
+				movimento.setDataHora(Auxiliar.getCampoStringNotNull(rsMovimentos, "dta_ocorrencia"));
 				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
 				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), Auxiliar.getCampoStringNotNull(rsMovimentos, "ds_texto_final_interno"));
 				movimentos.add(movimento);
