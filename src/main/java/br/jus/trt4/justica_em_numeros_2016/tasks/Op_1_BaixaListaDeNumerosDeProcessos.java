@@ -76,7 +76,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		String tipoCarga = Auxiliar.getParametroConfiguracao("tipo_carga_xml", true);
 		LOGGER.info("Executando consulta " + tipoCarga + "...");
 		ResultSet rsConsultaProcessos;
-		
 		if ("TESTES".equals(tipoCarga)) {
 			
 			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um lote qualquer
@@ -130,34 +129,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + tipoCarga);
 		}
-		
-//		// Preenche os parâmetros referentes ao período de movimentação dos processos
-//		// TODO: Conferir, com área de negócio, qual o critério exato para selecionar os processos conforme regras do CNJ
-//		Calendar dataInicial = Calendar.getInstance();
-//		Calendar dataFinal = Calendar.getInstance();
-//		if ("COMPLETA".equals(tipoCarga)) {
-//			// CNJ: Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
-//			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
-//			dataInicial.set(2015, Calendar.JANUARY, 1, 0, 0, 0);
-//			dataFinal.set(2016, Calendar.JULY, 31, 23, 59, 59);
-//			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 1);
-//			
-//		} else if ("MENSAL".equals(tipoCarga)) {
-//			// CNJ: Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
-//			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
-//			// algum tipo de informação.
-//			dataInicial.set(2016, Calendar.AUGUST, 1, 0, 0, 0);
-//			dataFinal.set(2016, Calendar.AUGUST, 31, 23, 59, 59);
-//			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 1);
-//			
-//		} else {
-//			// Para outros filtros, não considera as datas das movimentações
-//			nsConsultaProcessos.setInt("filtrar_por_movimentacoes", 0);
-//		}
-//		dataInicial.set(Calendar.MILLISECOND, 0);
-//		dataFinal.set(Calendar.MILLISECOND, 999);
-//		nsConsultaProcessos.setDate("dt_inicio_periodo", new Date(dataInicial.getTimeInMillis()));
-//		nsConsultaProcessos.setDate("dt_fim_periodo", new Date(dataFinal.getTimeInMillis()));
 
 		// Itera sobre os processos encontrados
 		try {

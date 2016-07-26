@@ -56,6 +56,21 @@ Funcionamento "avançado":
 
 == Características / Pendências ==
 
+* Período de extração dos dados: Há uma divergência, na página do CNJ, a respeito do período dos dados que precisam ser extraídos:
+  A página "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes" 
+  descreve que devem ser extraídos dados de processos baixados a partir de 01/01/2016.
+  A página "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25" 
+  descreve que devem ser extraídos dados de processos baixados a partir de 01/01/2015.
+  TODO: Definir qual o período correto.
+
+* Seleção de processos
+  A orientação do CNJ, para a carga "completa" de processos, é esta:
+  Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de 
+  julho de 2016, bem como daqueles que foram baixados de 1° de janeiro de  2015 até 31 de julho de 2016. 
+  Gostaríamos de esclarecer exatamente o conceito de processos "em tramitação" e processos "baixados". 
+  Em ambos os casos, o PJe gera movimentos processuais. Por isso, não seria suficiente localizar 
+  todos os processos que possuem algum movimento processual no período? TODO!
+
 * Órgão Julgador/Serventia: O arquivo XSD do CNJ orienta a utilização dos códigos e nomes de órgãos julgadores das serventias judiciárias cadastradas no 
   Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009). Essas serventias incluem tanto os gabinetes (OJs dos processos)
   quanto as turmas e seções especializadas (OJCs do processo). A rotina utilizará, entretanto, SEMPRE o número e o nome da serventia
@@ -100,10 +115,33 @@ Funcionamento "avançado":
       18:motivo_da_remessa:38:em grau de recurso
       7:destino:1ª Vara Cível
 
+* TOOD: Cumulatividade dos arquivos enviados
+  O CNJ disponibilizou a ferramenta "replicacao-client" para que os tribunais possam validar seus 
+  arquivos XML e enviar ao CNJ. Temos algumas dúvidas a respeito deste procedimento:
+  * Como faremos para diferenciar os arquivos que foram enviados somente para testes e os arquivos 
+    que devem ser apreciados pelo CNJ? Temos como fazer uma limpeza desses dados antigos quando a 
+    rotina estiver pronta?
+  * No TRT4, temos processos no PJe (1G e 2G), no inFOR e no NovaJus4. Qual o procedimento que 
+    devemos seguir? Acredito que o correto seja gerar vários arquivos XML para cada um dos 4 sistemas
+    (já que são muitos processos) e rodar, uma vez, o aplicativo "replicacao-client", para enviar 
+    todos ao CNJ. Estou correto?
+  * A página "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25" 
+    fala que devemos gravar os arquivos seguindo o padrão "<Sigla do Tribunal>_<Grau de Jurisdição>_<data e hora de transmissão>". 
+    Como temos diversos sistemas, como será feita esta diferenciação?
 
-TODO: Verificar se o envio será somente um arquivo por instância (2 arquivos no total) ou podemos enviar diversos arquivos.
-      Ao enviar diversos arquivos, os anteriores são cancelados ou são "acumulados"?
-      Como fazer a limpeza dos antigos?
+* Estrutura do arquivo XML: há uma divergência, na página do CNJ, a respeito da estrutura dos 
+  arquivos XML que deve ser seguida:
+  * As páginas "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes" 
+    e "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25" 
+    falam somente que deve ser utilizado o XSD de intercomunicação-2.2.2, sem definir o elemento "raiz". 
+    Nesse caso, subentende-se que deve ser utilizado um objeto "intercomunicacao".
+  * O manual de replicação (manual-replicacao-nacional_1.3.docx) fala que deve ser utilizado um 
+    elemento raiz "processos", conforme arquivo "replicacao-nacional.xsd". (http://www.cnj.jus.br/intercomunicacao-2.2.2)
+  * A página "http://www.cnj.jus.br/tecnologia-da-informacao/comite-nacional-da-tecnologia-da-informacao-e-comunicacao-do-poder-judiciario/modelo-nacional-de-interoperabilidade/arquivos-do-modelo-nacional-de-interoperabilidade" 
+    contém, ainda, um link "Modelo Nacional de Interoperabilidade (Compactado)", que aponta para o 
+    arquivo "intercomunicacao-2.2.2.zip". Dentro desse arquivo, há uma JAR "cnj-interop-2.2.2.jar", 
+    que possui ainda uma terceira estrutura de classes para gerar os arquivos XML.
+  TODO: definir qual o formato exato que devemos seguir
 
 
 
