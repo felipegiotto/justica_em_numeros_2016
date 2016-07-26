@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,6 +29,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	private int grau;
 	private final File arquivoSaida;
 	private Connection conexaoBasePrincipal;
+	private List<Integer> listaIdOrgaoJulgadorParaIgnorar;
 	
 	
 	public static void main(String[] args) throws SQLException, IOException {
@@ -80,7 +82,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			
 			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um lote qualquer
 			// de 30 processos
-			String sql = "SELECT nr_processo " +
+			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
 					"FROM tb_processo p " +
 					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
 					"WHERE nr_ano = 2016 " +
@@ -92,8 +94,9 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			
 			// Se usuário preencheu um número de processo no parâmetro "tipo_carga_xml", carrega
 			// somente os dados dele
-			String sql = "SELECT nr_processo " +
+			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
 					"FROM tb_processo p " +
+					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
 					"WHERE nr_processo = ?";
 			PreparedStatement ps = conexaoBasePrincipal.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			ps.setString(1, tipoCarga);
@@ -106,9 +109,10 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// regras definidas pelo CNJ:
 			// Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
 			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
-			String sql = "SELECT DISTINCT nr_processo " +
+			String sql = "SELECT DISTINCT nr_processo, ptrf.id_orgao_julgador " +
 					"FROM tb_processo p " +
 					"INNER JOIN tb_processo_evento pe ON (p.id_processo = pe.id_processo) " +
+					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
 					"WHERE dt_atualizacao BETWEEN '2016-01-01 00:00:00.000' AND '2016-12-31 23:59:59.999'";
 			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			
@@ -118,7 +122,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// regras definidas pelo CNJ:
 			// Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
 			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
-			String sql = "SELECT DISTINCT nr_processo " +
+			String sql = "SELECT DISTINCT nr_processo, ptrf.id_orgao_julgador " +
 					"FROM tb_processo p " +
 					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
 					"INNER JOIN tb_processo_evento pe ON (pe.id_processo = p.id_processo) " +
@@ -133,7 +137,12 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		// Itera sobre os processos encontrados
 		try {
 			while (rsConsultaProcessos.next()) {
-				listaProcessos.add(rsConsultaProcessos.getString("nr_processo"));
+				String nrProcesso = rsConsultaProcessos.getString("nr_processo");
+				if (deveIgnorarIdOrgaoJulgador(rsConsultaProcessos.getInt("id_orgao_julgador"))) {
+					LOGGER.info("XML do processo " + nrProcesso + " não será gerado pois pertence a um OJ que está sendo ignorado conforme parâmetro 'orgaos_julgadores_ignorados'");
+				} else {
+					listaProcessos.add(nrProcesso);
+				}
 			}
 		} finally {
 			rsConsultaProcessos.close();
@@ -144,6 +153,48 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	}
 	
 	
+	/**
+	 * Verifica se o órgão julgador do processo faz parte da lista que deve ser ignorada, 
+	 * conforme parâmetro 'orgaos_julgadores_ignorados', nas configurações
+	 */
+	private boolean deveIgnorarIdOrgaoJulgador(int idOrgaoJulgador) throws SQLException {
+		
+		// Carrega uma vez a lista de IDs de órgãos julgadores cujos processos devem ser ignorados
+		if (listaIdOrgaoJulgadorParaIgnorar == null) {
+			
+			// Essa configuração é opcional. Verifica se ela realmente precisará ser analisada
+			List<Integer> lista = new ArrayList<>();
+			String nomesOJsParaIgnorar = Auxiliar.getParametroConfiguracao("orgaos_julgadores_ignorados_" + grau + "G", false);
+			if (nomesOJsParaIgnorar != null) {
+			
+				// Monta um SQL para consultar os IDs dos órgãos julgadores a serem ignorados
+				LOGGER.info("Carregando lista de OJs que serão ignorados...");
+				String[] nomesOJsParaIgnorarArray = StringUtils.split(nomesOJsParaIgnorar, ',');
+				StringBuilder sbLocalizaOJs = new StringBuilder();
+				sbLocalizaOJs.append("SELECT id_orgao_julgador, ds_orgao_julgador FROM tb_orgao_julgador WHERE upper(to_ascii(ds_orgao_julgador)) = ?");
+				try (PreparedStatement psLocalizaOJs = conexaoBasePrincipal.prepareStatement(sbLocalizaOJs.toString())) {
+					
+					// Consulta todos os OJs informados no parâmetro
+					for (String nomeOrgaoJulgador: nomesOJsParaIgnorarArray) {
+						psLocalizaOJs.setString(1, nomeOrgaoJulgador);
+						try (ResultSet rsLocalizaOJs = psLocalizaOJs.executeQuery()) {
+							while (rsLocalizaOJs.next()) {
+								int idOJ = rsLocalizaOJs.getInt("id_orgao_julgador");
+								String nomeOJ = rsLocalizaOJs.getString("ds_orgao_julgador");
+								lista.add(idOJ);
+								LOGGER.info("* Todos os processos do OJ '" + nomeOJ + "' (id=" + idOJ + ") serão ignorados!");
+							}
+						}
+					}
+				}
+			}
+			
+			listaIdOrgaoJulgadorParaIgnorar = lista;
+		}
+		return listaIdOrgaoJulgadorParaIgnorar.contains(idOrgaoJulgador);
+	}
+
+
 	/**
 	 * Abre conexão com o banco de dados do PJe
 	 * 
