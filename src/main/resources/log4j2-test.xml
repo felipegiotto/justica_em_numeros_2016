@@ -3,7 +3,7 @@
 
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">
-			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
+			<PatternLayout pattern="%d{ISO8601} %-5level [%t] %msg%n" />
 			<!-- <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY" /> --> <!-- Na tela, mostra somente ERROR para cima -->
 		</Console>
 		
@@ -11,7 +11,7 @@
 			<Policies>
 				<OnStartupTriggeringPolicy />
 			</Policies>
-			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
+			<PatternLayout pattern="%d{ISO8601} %-5level [%t] %msg%n" />
 		</RollingFile>
 	</Appenders>
 	

@@ -3,8 +3,6 @@ package br.jus.trt4.justica_em_numeros.tasks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -501,7 +499,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("3:tipo de conclusão:5:despacho", movimento.getComplemento().get(1)); // Complemento com código
 	}
 	
-	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {
+	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws Exception {
 		
 		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);
 		try {

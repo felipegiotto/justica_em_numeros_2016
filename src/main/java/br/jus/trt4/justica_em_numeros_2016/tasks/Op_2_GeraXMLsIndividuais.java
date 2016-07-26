@@ -35,6 +35,7 @@ import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProdutorConsumidorMultiThread;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
@@ -65,6 +66,8 @@ public class Op_2_GeraXMLsIndividuais {
 	private static Properties tiposDocumentosPJeCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
 	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
+	private ObjectFactory factory;
+	private Marshaller jaxbMarshaller;
 
 	
 	/**
@@ -108,47 +111,62 @@ public class Op_2_GeraXMLsIndividuais {
 
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
 		
-		// Objetos auxiliares para gerar o XML a partir das classes Java
-		ObjectFactory factory = new ObjectFactory();
-		JAXBContext context = JAXBContext.newInstance(Processos.class);
-		Marshaller jaxbMarshaller = context.createMarshaller();
-		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-		
-		// Variável auxiliar para tentar calcular o tempo total da carga
-		long inicio = System.currentTimeMillis();
-		
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		int i=0;
-		for (String numeroProcesso: listaProcessos) {
-
-			// Arquivo XML que conterá os dados do processo
-			File arquivoXML = new File("output/" + grau + "g/xmls_individuais/PJe/" + numeroProcesso + ".xml");
-			
-			// Calcula estatísticas do tempo restante
-			long agora = System.currentTimeMillis();
-			long tempoAteAgora = agora - inicio;
-			long tempoPrevisto = 0;
-			if (i > 0) {
-				tempoPrevisto = (tempoAteAgora / i) * (listaProcessos.size() - i) / 1000;
+		
+		// Por padrão, se o número de threads não foi personalizado, faz um "loop" tradicional,
+		// para simplificar a depuração
+		int qtdThreads = Auxiliar.getParametroInteiroConfiguracao("numero_threads", 1);
+		if (qtdThreads == 1) {
+			for (String numeroProcesso: listaProcessos) {
+				LOGGER.debug("Baixando dados do processo " + numeroProcesso + " (" + (++i) + "/" + listaProcessos.size() + ": " + (i * 100 / listaProcessos.size()) + "%)");
+				gerarXMLProcesso(numeroProcesso);
 			}
-			LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + (++i) + "/" + listaProcessos.size() + (tempoPrevisto == 0 ? "" : ", restante: " + tempoPrevisto + "s") + ")");
-
-			// Executa a consulta desse processo no banco de dados do PJe
-			TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
 			
-			// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
-			// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
-			// processo serão unificados, junto com os XMLs dos outros sistemas legados.
-			Processos processos = factory.createProcessos();
-			processos.getProcesso().add(processoJudicial);
+		} else {
 			
-			// Gera o arquivo XML
-			arquivoXML.getParentFile().mkdirs();
-			jaxbMarshaller.marshal(processos, arquivoXML);
+			// Objeto que tratará, de forma multi-thread, a geração de arquivos XML
+			ProdutorConsumidorMultiThread<String> produtorConsumidor = new ProdutorConsumidorMultiThread<String>(1, qtdThreads, Thread.NORM_PRIORITY) {
+				@Override
+				public void consumir(String numeroProcesso) {
+					try {
+						gerarXMLProcesso(numeroProcesso);
+					} catch (SQLException | JAXBException ex) {
+						throw new RuntimeException(ex);
+					}
+				}
+			};
+			
+			// Coloca todos os processos na fila de processamento
+			for (String numeroProcesso: listaProcessos) {
+				LOGGER.debug("Baixando dados do processo " + numeroProcesso + " (" + (++i) + "/" + listaProcessos.size() + ": " + (i * 100 / listaProcessos.size()) + "%)");
+				produtorConsumidor.consumir(numeroProcesso);
+			}
+			
+			// Aguarda a geração de todos os XMLs
+			produtorConsumidor.aguardarTermino();
 		}
 		
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerado!");
+	}
+
+
+	public void gerarXMLProcesso(String numeroProcesso) throws SQLException, JAXBException {
+		
+		// Executa a consulta desse processo no banco de dados do PJe
+		TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
+		
+		// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
+		// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
+		// processo serão unificados, junto com os XMLs dos outros sistemas legados.
+		Processos processos = factory.createProcessos();
+		processos.getProcesso().add(processoJudicial);
+		
+		// Gera o arquivo XML
+		File arquivoXML = new File("output/" + grau + "g/xmls_individuais/PJe/" + numeroProcesso + ".xml");
+		arquivoXML.getParentFile().mkdirs();
+		jaxbMarshaller.marshal(processos, arquivoXML);
 	}
 
 	
@@ -498,7 +516,7 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	public void prepararConexao() throws SQLException, IOException {
+	public void prepararConexao() throws SQLException, IOException, JAXBException {
 
 		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
 		
@@ -550,6 +568,12 @@ public class Op_2_GeraXMLsIndividuais {
 		// Objeto que identificará os assuntos e movimentos processuais das tabelas nacionais do CNJ
 		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal);
 		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(grau, conexaoBasePrincipal);
+		
+		// Objetos auxiliares para gerar o XML a partir das classes Java
+		factory = new ObjectFactory();
+		JAXBContext context = JAXBContext.newInstance(Processos.class);
+		jaxbMarshaller = context.createMarshaller();
+		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 	}
 
 	
