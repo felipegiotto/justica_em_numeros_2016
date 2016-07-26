@@ -223,7 +223,7 @@ public class Op_2_GeraXMLsIndividuais {
 		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(rsProcesso.getInt("id_processo_trf")));
 
 		// Consulta todos os assuntos desse processo
-		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(rsProcesso.getInt("id_processo_trf")));
+		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(rsProcesso.getString("numero_completo_processo")));
 
 		// Preenche dados do órgão julgador do processo
 		cabecalhoProcesso.setOrgaoJulgador(analisarOrgaoJulgadorProcesso(rsProcesso));
@@ -327,7 +327,7 @@ public class Op_2_GeraXMLsIndividuais {
 										pessoa.getDocumento().add(documento);
 										
 									} else {
-										LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomePessoa + "' não possui correspondente na tabela do CNJ!");
+										LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomePessoa + "' não possui correspondente na tabela do CNJ. Esse documento não constará no XML.");
 									}
 								}
 							}
@@ -340,12 +340,12 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(int idProcesso) throws SQLException {
+	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(String nrProcesso) throws SQLException {
 		
 		List<TipoAssuntoProcessual> assuntos = new ArrayList<TipoAssuntoProcessual>();
 		
 		// Consulta todos os assuntos do processo
-		nsAssuntos.setInt("id_processo", idProcesso);
+		nsAssuntos.setString("nr_processo", nrProcesso);
 		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
 			boolean jaEncontrouAssunto = false;
 			boolean jaEncontrouAssuntoPrincipal = false;
@@ -366,7 +366,7 @@ public class Op_2_GeraXMLsIndividuais {
 				assunto.setPrincipal(assuntoPrincipal);
 				if (assuntoPrincipal) {
 					if (jaEncontrouAssuntoPrincipal) {
-						LOGGER.warn("Este processo possui mais de um assunto principal!");
+						LOGGER.warn("Processo possui mais de um assunto principal: " + nrProcesso);
 					} else {
 						jaEncontrouAssuntoPrincipal = true;
 					}
@@ -384,9 +384,9 @@ public class Op_2_GeraXMLsIndividuais {
 			//   raise notice '</assunto>';
 			// END IF;
 			if (!jaEncontrouAssunto) {
-				LOGGER.warn("Processo sem assunto cadastrado! Decidir o que fazer!");
+				LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
 			} else if (!jaEncontrouAssuntoPrincipal) {
-				LOGGER.warn("Processo sem assunto principal!");
+				LOGGER.warn("Processo sem assunto principal: " + nrProcesso);
 			}
 		}
 		

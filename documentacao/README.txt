@@ -45,7 +45,7 @@ Funcionamento "avançado":
   Obviamente, esses arquivos devem ser gerados utilizando alguma outra ferramenta. 
   Para tanto, grave os arquivos XML dos sistemas legados na pasta 
   "output\Xg\xmls_individuais\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
-  NOME_SISTEMA pode ser qualquer identificador) antes de executar o passo 4. 
+  NOME_SISTEMA pode ser qualquer identificador) antes de executar o passo 4, acima.
 
 
 * Se a estrutura do arquivo XSD do CNJ for alterado, gravar o novo arquivo XSD na pasta 
@@ -60,11 +60,12 @@ Funcionamento "avançado":
   Módulo de Produtividade Mensal (Resolução CNJ nº 76/2009). Essas serventias incluem tanto os gabinetes (OJs dos processos)
   quanto as turmas e seções especializadas (OJCs do processo). A rotina utilizará, entretanto, SEMPRE o número e o nome da serventia
   do Órgão Julgador (gabinete), ignorando o OJC.
-  PARA AVALIAR: verificar preenchimento do elemento orgaoJulgador pois, por exemplo, um processo de 1º grau com recurso ao 2º grau constará, 
-                no XML da 1ª instância, no orgaoJulgador referente à vara ou ao tribunal? Atualmente consta como VARA.
+  OBS: No arquivo XSD do CNJ, o campo "orgaoJulgador" deve aparecer obrigatoriamente uma única vez em cada processo.
   
 * Processo/Sigilo e Movimento/Sigilo: O arquivo XSD do CNJ orienta a utilização de diferentes níveis de sigilo (de 0 a 5), para o processo
   e para os movimentos. Como o PJe não possui essa distinção, serão utilizados somente os valores "0" (sem sigilo) ou "5" (sigilo absoluto).
+
+* Parte: não estão sendo tratados os casos de representação ou substituição processual em ações coletivas, tutela e curatela.
 
 * Parte/Interesse público: não estão sendo tratados os casos em que a parte é considerada um interesse público abstrato cuja defesa 
   está a cargo do Ministério Público ou da Defensoria Pública, conforme campo "interessePublico" das partes do processo.
@@ -73,14 +74,31 @@ Funcionamento "avançado":
 * Parte/Relacionamentos: não estão sendo tratados os casos de representação e assistência dos pais, representação ou substituição 
   processual em ações coletivas, tutela e curatela. Esse campo é opcional no XSD.
   
-* Parte: não estão sendo tratados os casos de representação ou substituição processual em ações coletivas, tutela e curatela.
-
 * Parte/Advogado: não está sendo preenchido o elemento opcional 'advogado'.
 
-* Assuntos: Decidir o que fazer quando o processo não tiver assunto cadastrado! Atualmente o processo fica sem assunto no XML,
-  apesar do assunto estar marcado como obrigatório. 
+* Parte/Documentos: somente estão sendo inseridos nos arquivos XML os documentos que possuem correspondência
+  nos tipos do CNJ, conforme arquivo "tipos_de_documentos.properties". Os documentos do PJe que não possuírem
+  correspondência serão ignorados, ex: "RGE".
+  OBS: está sendo gerado um warning nos logs ao encontrar um documento que não possuem correspondência.
+
+* Assuntos: Quando o processo não tiver assunto cadastrado no PJe, ficará sem assunto no arquivo XML.
   OBS: está sendo gerado um warning nos logs quando processo não tiver assunto.
-  TODO: Verificar processo sem assunto em 2G: 0020001-67.2014.5.04.0781
+  
+* Assuntos CNJ: O arquivo XSD do CNJ explicita que os assuntos devem ser preenchidos de forma diferente
+  se fizerem ou não parte das tabelas nacionais. Por isso, os arquivos "assuntos_1g.csv" e "assuntos_2g.csv", 
+  na pasta "src/main/resources/tabelas_cnj", contém listas com todos os assuntos do CNJ. Essa lista
+  foi baixada de http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A .
+
+* Movimentos CNJ: A mesma regra dos assuntos (que devem fazer parte da lista do CNJ) também se aplica
+  aos movimentos processuais. Por isso, a lista dos movimentos processuais do CNJ foi gravada nos arquivos 
+  "movimentos_1g.csv" e "movimentos_2g.csv". na pasta "src/main/resources/tabelas_cnj", depois de 
+  serem baixadas de http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=M .
+  
+* Movimentos/Complementos: Alguns complementos de movimentos possuem código, outros não. A página do CNJ
+  "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25"
+  exibe um exemplo de complemento com código e sem código: Ex.: no movimento 123, seria
+      18:motivo_da_remessa:38:em grau de recurso
+      7:destino:1ª Vara Cível
 
 
 TODO: Verificar se o envio será somente um arquivo por instância (2 arquivos no total) ou podemos enviar diversos arquivos.
