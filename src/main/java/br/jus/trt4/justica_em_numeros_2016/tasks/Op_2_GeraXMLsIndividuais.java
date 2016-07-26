@@ -65,6 +65,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private static Properties tiposDocumentosPJeCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
 	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
+	private List<Integer> classesProcessuaisCNJ;
 
 	
 	/**
@@ -206,7 +207,14 @@ public class Op_2_GeraXMLsIndividuais {
 		TipoCabecalhoProcesso cabecalhoProcesso = new TipoCabecalhoProcesso();
 		cabecalhoProcesso.setNivelSigilo(Auxiliar.getCampoIntNotNull(rsProcesso, "nivelSigilo"));
 		cabecalhoProcesso.setNumero(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
-		cabecalhoProcesso.setClasseProcessual(Auxiliar.getCampoIntNotNull(rsProcesso, "cd_classe_judicial"));
+		
+		// Grava a classe processual, conferindo se ela está na tabela nacional do CNJ
+		int codigoClasseProcessual = Auxiliar.getCampoIntNotNull(rsProcesso, "cd_classe_judicial");
+		cabecalhoProcesso.setClasseProcessual(codigoClasseProcessual);
+		if (!classesProcessuaisCNJ.contains(codigoClasseProcessual)) {
+			LOGGER.warn("Processo '" + rsProcesso.getString("numero_completo_processo") + "' possui uma classe processual que não existe nas tabelas do CNJ: " + codigoClasseProcessual + " - " + rsProcesso.getString("ds_classe_judicial"));
+		}
+		
 		cabecalhoProcesso.setDataAjuizamento(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
 		cabecalhoProcesso.setValorCausa(Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa")); 
 		if (grau == 1) {
@@ -512,6 +520,17 @@ public class Op_2_GeraXMLsIndividuais {
 			tiposDocumentosPJeCNJ = Auxiliar.carregarPropertiesDoArquivo(new File("src/main/resources/tipos_de_documentos.properties"));
 		}
 		
+		if (classesProcessuaisCNJ == null) {
+			
+			// Lista de classes processuais do CNJ. Essa lista servirá para garantir que as classes
+			// informadas no arquivo XML sejam válidas.
+			// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=C
+			this.classesProcessuaisCNJ = new ArrayList<>();
+			for (String classeString: FileUtils.readLines(new File("src/main/resources/tabelas_cnj/classes_" + grau + "g.csv"), "UTF-8")) {
+				classesProcessuaisCNJ.add(Integer.parseInt(classeString));
+			}
+			
+		}
 		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
 		conexaoBasePrincipal.setAutoCommit(false);

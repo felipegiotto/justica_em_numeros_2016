@@ -13,6 +13,7 @@ SELECT
       regexp_replace(p.nr_processo, '[\.\-]', '', 'g') nr_processo,
       /* classeProcessual */
       cj.cd_classe_judicial,
+      cj.ds_classe_judicial,
       /* codigoLocalidade */
       ib.id_municipio_ibge id_municipio_ibge_origem,
       /* dataAjuizamento */

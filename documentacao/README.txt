@@ -85,6 +85,11 @@ Funcionamento "avançado":
        o OJ do processo.
   
   
+* Processo/Classe Processual: O arquivo XSD do CNJ orienta a utilização de classes processuais padronizadas,
+  conforme "Resolução 46". Por isso, se alguma classe processual for diferente das definidas pelo CNJ,
+  será gerado um WARNING. De qualquer forma, mesmo com o aviso, o código da classe será inserido no XML. 
+  
+  
 * Processo/Sigilo e Movimento/Sigilo: O arquivo XSD do CNJ orienta a utilização de diferentes níveis de sigilo (de 0 a 5), para o processo
   e para os movimentos. Como o PJe não possui essa distinção, serão utilizados somente os valores "0" (sem sigilo) ou "5" (sigilo absoluto).
 
