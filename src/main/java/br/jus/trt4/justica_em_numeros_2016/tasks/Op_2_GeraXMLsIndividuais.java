@@ -125,7 +125,7 @@ public class Op_2_GeraXMLsIndividuais {
 		long tempoGasto = 0;
 		
 		// Pasta onde serão gerados os arquivos XML
-		File pastaRaiz = new File(Auxiliar.getPastaXMLsIndividuais(grau), "PJe");
+		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
 		
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));

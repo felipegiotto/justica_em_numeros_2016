@@ -62,8 +62,7 @@ public class Op_3_UnificaArquivosXML {
 	
 	public Op_3_UnificaArquivosXML(int grau) {
 		this.grau = grau;
-		this.pastaSaida = new File("output/xmls_unificados");
-		this.pastaSaida.mkdirs();
+		this.pastaSaida = Auxiliar.getPastaXMLsUnificados();
 	}
 
 	private void unificarArquivosXML() throws JAXBException {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -200,7 +201,7 @@ public class Auxiliar {
 	 * @throws IOException
 	 */
 	public static void consumirStream(InputStream inputStream, String prefix) throws IOException {
-		try (Scanner scanner = new Scanner(inputStream)) {
+		try (Scanner scanner = new Scanner(inputStream, "LATIN1")) {
 			while(scanner.hasNextLine()) {
 				String line = scanner.nextLine();
 				LOGGER.debug(prefix + line);
@@ -289,5 +290,16 @@ public class Auxiliar {
 	 */
 	public static File getPastaXMLsIndividuais(int grau) {
 		return new File("output/" + grau + "g/xmls_individuais");
+	}
+
+
+	/**
+	 * Retorna a pasta raiz onde serão gravados e lidos os arquivos XML unificados para serem
+	 * enviados ao CNJ
+	 */
+	public static File getPastaXMLsUnificados() {
+		File pasta = new File("output/xmls_unificados");
+		pasta.mkdirs();
+		return pasta;
 	}
 }
