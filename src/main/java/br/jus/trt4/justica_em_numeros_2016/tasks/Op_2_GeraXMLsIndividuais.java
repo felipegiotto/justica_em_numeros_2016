@@ -15,6 +15,7 @@ import javax.xml.bind.Marshaller;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -119,6 +120,10 @@ public class Op_2_GeraXMLsIndividuais {
 		Marshaller jaxbMarshaller = context.createMarshaller();
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 		
+		// Variáveis auxiliares para calcular o tempo estimado
+		int qtdXMLGerados = 0;
+		long tempoGasto = 0;
+		
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		int i=0;
@@ -137,13 +142,24 @@ public class Op_2_GeraXMLsIndividuais {
 				continue;
 			}
 			
-			// Calcula estatísticas do tempo restante
-			LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%)");
+			// Calcula tempo restante
+			if (LOGGER.isDebugEnabled()) {
+				int xmlsRestantes = listaProcessos.size() - i;
+				long tempoRestante = 0;
+				if (qtdXMLGerados > 0) {
+					tempoRestante = xmlsRestantes * tempoGasto / qtdXMLGerados;
+				}
+				
+				LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + ")");
+			}
 
 			// Executa a consulta desse processo no banco de dados do PJe
 			TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
 			if (processoJudicial != null) {
 			
+				// Cálculo do tempo restante
+				long antes = System.currentTimeMillis();
+				
 				// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
 				// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
 				// processo serão unificados, junto com os XMLs dos outros sistemas legados.
@@ -157,6 +173,10 @@ public class Op_2_GeraXMLsIndividuais {
 				// Copia o XML temporário sobre o definitivo e exclui o temporário
 				FileUtils.copyFile(arquivoXMLTemporario, arquivoXML);
 				arquivoXMLTemporario.delete();
+				
+				// Cálculo do tempo restante
+				tempoGasto += System.currentTimeMillis() - antes;
+				qtdXMLGerados++;
 				
 			} else {
 				LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado na base " + grau + "G!");
