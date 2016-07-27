@@ -192,7 +192,6 @@ Funcionamento "avançado":
          diferente, por exemplo, TJRS_1_20072016-X.zip, em que "X" é um número sequencial e incremental.
 
 
-
 * Quanto à estrutura do arquivo XML:
   Pergunta enviada ao CNJ:
     Há uma divergência, na página do CNJ, a respeito da estrutura dos arquivos XML que deve ser seguida:
@@ -210,6 +209,32 @@ Funcionamento "avançado":
     Seguir o modelo replicação-nacional.xsd. Esse encapsula o intercomunicação-2.2.2.xsd.
     O arquivo está disponível em "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi"
 
+
+* Processos sem assunto cadastrado (ou sem assunto principal) poderão gerar erros no envio dos dados
+  ao CNJ. Por isso, é possível executar a consulta abaixo, para identificar processos que estejam
+  sem assunto ou sem assunto principal:
+        WITH processos AS (
+           SELECT 
+              proc.nr_processo, 
+              EXISTS(SELECT 1 FROM tb_processo_assunto pa WHERE pa.id_processo_trf = proc.id_processo) as existe_assunto,
+              EXISTS(SELECT 1 FROM tb_processo_assunto pa WHERE pa.id_processo_trf = proc.id_processo AND pa.in_assunto_principal='S') as existe_assunto_principal
+           FROM tb_processo proc
+           WHERE length(proc.nr_processo) = 25
+              AND EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE proc.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-12-31 23:59:59.999') -- Condição para que o processo seja exportado ao CNJ
+        )
+        SELECT nr_processo, 
+          CASE WHEN NOT existe_assunto THEN 
+            'NENHUM ASSUNTO' 
+          ELSE 
+            CASE WHEN NOT existe_assunto_principal THEN 
+              'SEM ASSUNTO PRINCIPAL'
+            ELSE
+              'OK'
+            END
+          END as problema
+        FROM processos
+        WHERE existe_assunto = false OR existe_assunto_principal = false
+  
 
 
 ========== Referências ==========
