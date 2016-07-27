@@ -124,17 +124,23 @@ public class Op_2_GeraXMLsIndividuais {
 		int qtdXMLGerados = 0;
 		long tempoGasto = 0;
 		
+		// Pasta onde serão gerados os arquivos XML
+		File pastaRaiz = new File(Auxiliar.getPastaXMLsIndividuais(grau), "PJe");
+		
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		int i=0;
 		for (String numeroProcesso: listaProcessos) {
+			
+			// Cálculo do tempo restante
+			long antes = System.currentTimeMillis();
 			i++;
 
 			// Arquivo XML que conterá os dados do processo
 			// Depois da geração do XML temporário, visando garantir a integridade do arquivo XML 
 			// definitivo, o temporário só será excluído depois da gravação completa do definitivo.
-			File arquivoXMLTemporario = new File("output/" + grau + "g/xmls_individuais/PJe/" + numeroProcesso + ".temp");
-			File arquivoXML = new File("output/" + grau + "g/xmls_individuais/PJe/" + numeroProcesso + ".xml");
+			File arquivoXMLTemporario = new File(pastaRaiz, numeroProcesso + ".temp");
+			File arquivoXML = new File(pastaRaiz, numeroProcesso + ".xml");
 			
 			// Se a geração incremental estiver habilitada, verifica se o XML do processo já foi gerado.
 			if (gerarIncrementalmente && arquivoXML.exists() && !arquivoXMLTemporario.exists()) {
@@ -157,9 +163,6 @@ public class Op_2_GeraXMLsIndividuais {
 			TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
 			if (processoJudicial != null) {
 			
-				// Cálculo do tempo restante
-				long antes = System.currentTimeMillis();
-				
 				// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
 				// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
 				// processo serão unificados, junto com os XMLs dos outros sistemas legados.

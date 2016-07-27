@@ -61,7 +61,7 @@ public class Op_3_UnificaArquivosXML {
 		// Pesquisando todos os arquivos que serão unificados
 		LOGGER.info("Pesquisando todos os arquivos que serão unificados...");
 		List<File> arquivosParaProcessar = new ArrayList<>();
-		File pastaRaiz = new File("output/" + grau + "g/xmls_individuais");
+		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
 		localizaTodosArquivosXMLRecursivamente(pastaRaiz, arquivosParaProcessar);
 		
 		// Objetos responsáveis por ler os arquivos XML

@@ -281,4 +281,13 @@ public class Auxiliar {
 	public static File getArquivoListaProcessos(int grau) {
 		return new File("output/" + grau + "g/lista_processos.txt");
 	}
+	
+	
+	/**
+	 * Retorna a pasta raiz onde serão gravados e lidos os arquivos XML de uma determinada
+	 * instância do PJe.
+	 */
+	public static File getPastaXMLsIndividuais(int grau) {
+		return new File("output/" + grau + "g/xmls_individuais");
+	}
 }
