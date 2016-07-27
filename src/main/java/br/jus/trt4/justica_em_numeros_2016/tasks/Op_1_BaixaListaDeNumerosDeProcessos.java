@@ -113,7 +113,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
 					"FROM tb_processo p " +
 					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"WHERE EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE p.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-07-31 23:59:59.999')";
+					"WHERE EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE p.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-07-31 23:59:59.999' LIMIT 1)";
 			Statement statement = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			statement.setFetchSize(100);
 			rsConsultaProcessos = statement.executeQuery(sql);
@@ -127,7 +127,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
 					"FROM tb_processo p " +
 					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"WHERE EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE p.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2016-08-01 00:00:00.000' AND '2016-08-31 23:59:59.999')";
+					"WHERE EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE p.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2016-08-01 00:00:00.000' AND '2016-08-31 23:59:59.999' LIMIT 1)";
 			Statement statement = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			statement.setFetchSize(100);
 			rsConsultaProcessos = statement.executeQuery(sql);
