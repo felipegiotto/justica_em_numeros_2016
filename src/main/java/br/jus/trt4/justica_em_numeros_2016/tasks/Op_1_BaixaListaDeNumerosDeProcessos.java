@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -109,12 +110,13 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// regras definidas pelo CNJ:
 			// Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
 			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
-			String sql = "SELECT DISTINCT nr_processo, ptrf.id_orgao_julgador " +
+			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
 					"FROM tb_processo p " +
-					"INNER JOIN tb_processo_evento pe ON (p.id_processo = pe.id_processo) " +
 					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"WHERE (pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-07-31 23:59:59.999')";
-			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
+					"WHERE EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE p.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-07-31 23:59:59.999')";
+			Statement statement = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			statement.setFetchSize(100);
+			rsConsultaProcessos = statement.executeQuery(sql);
 			
 		} else if ("MENSAL".equals(tipoCarga)) {
 			
@@ -122,13 +124,13 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// regras definidas pelo CNJ:
 			// Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
 			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
-			String sql = "SELECT DISTINCT nr_processo, ptrf.id_orgao_julgador " +
+			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
 					"FROM tb_processo p " +
 					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"INNER JOIN tb_processo_evento pe ON (pe.id_processo = p.id_processo) " +
-					"WHERE (pe.dt_atualizacao BETWEEN '2016-08-01 00:00:00.000' AND '2016-08-31 23:59:59.999')";
-			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
-			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
+					"WHERE EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE p.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2016-08-01 00:00:00.000' AND '2016-08-31 23:59:59.999')";
+			Statement statement = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			statement.setFetchSize(100);
+			rsConsultaProcessos = statement.executeQuery(sql);
 			
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + tipoCarga);
@@ -136,12 +138,22 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 
 		// Itera sobre os processos encontrados
 		try {
+			int qtdProcessos = 0;
+			long tempo = System.currentTimeMillis();
+			LOGGER.info("Iterando sobre a lista de processos...");
 			while (rsConsultaProcessos.next()) {
+				qtdProcessos++;
 				String nrProcesso = rsConsultaProcessos.getString("nr_processo");
 				if (deveIgnorarIdOrgaoJulgador(rsConsultaProcessos.getInt("id_orgao_julgador"))) {
 					LOGGER.info("XML do processo " + nrProcesso + " não será gerado pois pertence a um OJ que está sendo ignorado conforme parâmetro 'orgaos_julgadores_ignorados'");
 				} else {
 					listaProcessos.add(nrProcesso);
+				}
+				
+				// Mostra a quantidade de processos analisados a cada 15 segundos
+				if (System.currentTimeMillis() - tempo > 15_000) {
+					tempo = System.currentTimeMillis();
+					LOGGER.info("Processos até agora: " + qtdProcessos);
 				}
 			}
 		} finally {

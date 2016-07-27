@@ -108,6 +108,10 @@ public class Op_2_GeraXMLsIndividuais {
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
+		boolean gerarIncrementalmente = Auxiliar.getParametroBooleanConfiguracao("baixa_incremental", false);
+		if (gerarIncrementalmente) {
+			LOGGER.info("OBS: geração incremental!! Os processos que já foram baixados não serão baixados novamente!");
+		}
 		
 		// Objetos auxiliares para gerar o XML a partir das classes Java
 		ObjectFactory factory = new ObjectFactory();
@@ -115,38 +119,48 @@ public class Op_2_GeraXMLsIndividuais {
 		Marshaller jaxbMarshaller = context.createMarshaller();
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 		
-		// Variável auxiliar para tentar calcular o tempo total da carga
-		long inicio = System.currentTimeMillis();
-		
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		int i=0;
 		for (String numeroProcesso: listaProcessos) {
+			i++;
 
 			// Arquivo XML que conterá os dados do processo
+			// Depois da geração do XML temporário, visando garantir a integridade do arquivo XML 
+			// definitivo, o temporário só será excluído depois da gravação completa do definitivo.
+			File arquivoXMLTemporario = new File("output/" + grau + "g/xmls_individuais/PJe/" + numeroProcesso + ".temp");
 			File arquivoXML = new File("output/" + grau + "g/xmls_individuais/PJe/" + numeroProcesso + ".xml");
 			
-			// Calcula estatísticas do tempo restante
-			long agora = System.currentTimeMillis();
-			long tempoAteAgora = agora - inicio;
-			long tempoPrevisto = 0;
-			if (i > 0) {
-				tempoPrevisto = (tempoAteAgora / i) * (listaProcessos.size() - i) / 1000;
+			// Se a geração incremental estiver habilitada, verifica se o XML do processo já foi gerado.
+			if (gerarIncrementalmente && arquivoXML.exists() && !arquivoXMLTemporario.exists()) {
+				LOGGER.debug("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
+				continue;
 			}
-			LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + (++i) + "/" + listaProcessos.size() + (tempoPrevisto == 0 ? "" : ", restante: " + tempoPrevisto + "s") + ")");
+			
+			// Calcula estatísticas do tempo restante
+			LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%)");
 
 			// Executa a consulta desse processo no banco de dados do PJe
 			TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
+			if (processoJudicial != null) {
 			
-			// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
-			// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
-			// processo serão unificados, junto com os XMLs dos outros sistemas legados.
-			Processos processos = factory.createProcessos();
-			processos.getProcesso().add(processoJudicial);
-			
-			// Gera o arquivo XML
-			arquivoXML.getParentFile().mkdirs();
-			jaxbMarshaller.marshal(processos, arquivoXML);
+				// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
+				// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
+				// processo serão unificados, junto com os XMLs dos outros sistemas legados.
+				Processos processos = factory.createProcessos();
+				processos.getProcesso().add(processoJudicial);
+				
+				// Gera o arquivo XML temporário
+				arquivoXML.getParentFile().mkdirs();
+				jaxbMarshaller.marshal(processos, arquivoXMLTemporario);
+				
+				// Copia o XML temporário sobre o definitivo e exclui o temporário
+				FileUtils.copyFile(arquivoXMLTemporario, arquivoXML);
+				arquivoXMLTemporario.delete();
+				
+			} else {
+				LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado na base " + grau + "G!");
+			}
 		}
 		
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerado!");
@@ -166,11 +180,11 @@ public class Op_2_GeraXMLsIndividuais {
 		
 		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
-			if (!rsProcessos.next()) {
-				throw new RuntimeException("O processo " + numeroProcesso + " não foi encontrado na base " + grau + "G!");
+			if (rsProcessos.next()) {
+				return analisarProcessoJudicialCompleto(rsProcessos);
+			} else {
+				return null;
 			}
-			
-			return analisarProcessoJudicialCompleto(rsProcessos);
 		}
 	}
 
@@ -480,10 +494,10 @@ public class Op_2_GeraXMLsIndividuais {
 						sb.append(rsComplementos.getString("cd_tipo_complemento"));
 						sb.append(":");
 						sb.append(rsComplementos.getString("ds_nome"));
-						boolean existeCodigoComplemento = !"".equals(rsComplementos.getString("cd_complemento").trim());
-						if (existeCodigoComplemento) {
+						String codigoComplemento = rsComplementos.getString("cd_complemento");
+						if (!StringUtils.isBlank(codigoComplemento)) {
 							sb.append(":");
-							sb.append(rsComplementos.getString("cd_complemento"));
+							sb.append(codigoComplemento);
 							/*
 							O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
 							<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>

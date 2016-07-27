@@ -105,6 +105,24 @@ public class Auxiliar {
 	
 	
 	/**
+	 * Carrega um parâmetro booleano do arquivo "config.properties". Se o parâmetro não existir ou não for "SIM" ou "NAO", retorna um valor padrão
+	 * 
+	 * @param parametro
+	 * @return
+	 */
+	public static boolean getParametroBooleanConfiguracao(String parametro, boolean valorPadrao) {
+		String valor = getParametroConfiguracao(parametro, false);
+		if ("SIM".equals(valor)) {
+			return true;
+		}
+		if ("NAO".equals(valor)) {
+			return false;
+		}
+		return valorPadrao;
+	}
+	
+	
+	/**
 	 * Carrega um parâmetro numérico do arquivo "config.properties". Se o parâmetro não existir ou não for numérico, lança uma exceção.
 	 * 
 	 * @param parametro
