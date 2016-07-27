@@ -1,22 +1,47 @@
-Para validar os arquivos XML gerados e enviar ao CNJ, iniciar um terminal, acessar a pasta raiz 
-desse projeto e executar o comando abaixo, seguindo as instruções:
+
+========== Instruções preliminares ==========
+
+A seguir, serão apresentados comandos que serão executados em um terminal.
+
+Atentar ao parâmetro "SIGLA_REGIONAL", que deve ser substituído pelo dado correto (ex: TRT99)
+
+Atentar ao nome do arquivo "JAR", que deverá corresponder ao baixado da página do CNJ (instruções
+serão descritas a seguir) 
+
+OBS: caso tenha problemas com proxy, adicionar os parâmetros abaixo ao final dos comandos sugeridos:
+-Dhttp.proxyHost=HOST -Dhttp.proxyPort=PORTA -Dhttp.proxyUser=USUARIO -Dhttp.proxyPassword=SENHA
+
+O arquivo "JAR" do cnj (replicacao-client) gera, na saída padrão, um grande número de informações.
+Se necessário, direcione a saída dos comandos para um arquivo, adicionando, ao final da linha, 
+o sufixo a seguir: "> arquivo_saida.txt"
 
 
-1. Substitua o parâmetro "SIGLA_REGIONAL" pelo valor correto (ex: "TRT99"), conforme atributo
-   "sigla_tribunal" do arquivo de configuração.
+========== Instruções para validar arquivos XML gerados e enviar ao CNJ ==========
+
+
+1. Baixar a versão mais recente do arquivo "replicacao-client-X.Y.Z.jar" a partir da página
+   "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi" e salvar dentro da 
+   pasta "lib/replicacaoNacional".
+
    
-2. Execute o comando referente à instância que se deseja validar (1o ou 2o graus)
-
-# Comando para validar os XMLs unificados de ambas as instâncias (útil para enviar as remessas ao CNJ em lotes de 5000 processos)
-java -jar lib\replicacaoNacional\replicacao-client-1.4.1.jar SIGLA_REGIONAL output\xmls_unificados
-
-# Comando para validar os XMLs individuais no 1o Grau (útil para identificar processos com problemas):
-java -jar lib\replicacaoNacional\replicacao-client-1.4.1.jar SIGLA_REGIONAL output\1g\xmls_individuais 
-
-# Comando para validar os XMLs individuais no 2o Grau (útil para identificar processos com problemas):
-java -jar lib\replicacaoNacional\replicacao-client-1.4.1.jar SIGLA_REGIONAL output\2g\xmls_individuais 
+2. Iniciar um terminal (cmd.exe) e acessar a pasta raiz desse projeto (justica_em_numeros_2016).
 
 
-OBS: Se o comando indicar que a versão do replicacao-client está desatualizada, baixar a versão
-     mais recente em "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi", gravar na pasta
-     "lib\replicacaoNacional" e atualizar os scripts acima!
+3. Executar os comandos abaixo (conforme a instância desejada), para validar os arquivos XML
+   INDIVIDUAIS que foram gerados para cada processo. Esse passo não é obrigatório, mas facilitará
+   a identificação de problemas que podem ter ocorrido, pois o nome do arquivo com defeito será exibido.
+   É recomendável executar o comando e autorizar a validação e conversão dos arquivos, mas NÃO
+   enviar os arquivos individuais ao CNJ!
+   
+   # Comando para validar os XMLs individuais no 1o Grau:
+   java -jar lib\replicacaoNacional\replicacao-client-1.4.1.jar SIGLA_REGIONAL output\1g\xmls_individuais 
+
+   # Comando para validar os XMLs individuais no 2o Grau:
+   java -jar lib\replicacaoNacional\replicacao-client-1.4.1.jar SIGLA_REGIONAL output\2g\xmls_individuais > saida.txt
+   
+
+4. Executar o comando abaixo para validar e enviar os arquivos XML unificados (em lotes de 5000) ao CNJ
+
+   # Comando para validar os XMLs unificados de ambas as instâncias (útil para enviar as remessas ao CNJ em lotes de 5000 processos)
+   java -jar lib\replicacaoNacional\replicacao-client-1.4.1.jar SIGLA_REGIONAL output\xmls_unificados
+

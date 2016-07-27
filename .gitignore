@@ -1,4 +1,5 @@
 /target
 /log
 /output
-config.properties
+/config.properties
+/saida.txt
