@@ -13,6 +13,7 @@ import org.junit.Test;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
+import br.jus.cnj.intercomunicacao_2_2.ModalidadeRepresentanteProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
@@ -21,6 +22,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoParte;
 import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
 import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
+import br.jus.cnj.intercomunicacao_2_2.TipoRepresentanteProcessual;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
 
 /**
@@ -37,7 +39,7 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
 public class Op_2_GeraXMLsIndividuaisTest {
 
 	@Test
-	public void testarCamposProcesso2G() throws Exception {
+	public void testCamposProcesso2G() throws Exception {
 		
 		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221");
 
@@ -311,6 +313,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(1, "0020591-86.2014.5.04.0282");
 		TipoPoloProcessual poloAtivo = getPolo(ModalidadePoloProcessual.AT, processoJudicial.getDadosBasicos().getPolo());
 		TipoPoloProcessual poloPassivo = getPolo(ModalidadePoloProcessual.PA, processoJudicial.getDadosBasicos().getPolo());
+		
+		// Campos de TipoParte
 	    // TODO: Testar campo: protected TipoPessoa pessoa;
 		// TODO: Testar campo: protected String interessePublico;
 		// TODO: Testar campo: protected List<TipoRepresentanteProcessual> advogado;
@@ -320,10 +324,12 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// TODO: Testar campo: protected ModalidadeRelacionamentoProcessual relacionamentoProcessual;
 		
 		
-		TipoParte parteAtivo = getParteComNome("ROGERIO MELO DE CASTRO", poloAtivo.getParte());
-		TipoPessoa pessoaAtivo = parteAtivo.getPessoa();
-		TipoParte partePassivo = getParteComNome("FAMF CONSTRUTORA LTDA", poloPassivo.getParte());
-		TipoPessoa pessoaPassivo = partePassivo.getPessoa();
+		TipoParte parteAtivoRogerio = getParteComNome("ROGERIO MELO DE CASTRO", poloAtivo.getParte());
+		TipoPessoa pessoaAtivoRogerio = parteAtivoRogerio.getPessoa();
+		TipoParte partePassivoFAMF = getParteComNome("FAMF CONSTRUTORA LTDA", poloPassivo.getParte());
+		TipoPessoa pessoaPassivoFAMF = partePassivoFAMF.getPessoa();
+		
+		// Campos de TipoPessoa
 		// TODO: Testar campo: protected List<TipoDocumentoIdentificacao> documento;
 		// TODO: Testar campo: protected List<TipoEndereco> endereco;
 		// TODO: Testar campo: protected List<TipoRelacionamentoPessoal> pessoaRelacionada;
@@ -373,11 +379,11 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				</restriction>
 			</simpleType>
 		 */
-		assertEquals("57310009053", pessoaAtivo.getNumeroDocumentoPrincipal());
-		assertEquals("17640725000147", pessoaPassivo.getNumeroDocumentoPrincipal());
+		assertEquals("57310009053", pessoaAtivoRogerio.getNumeroDocumentoPrincipal());
+		assertEquals("17640725000147", pessoaPassivoFAMF.getNumeroDocumentoPrincipal());
 		
 		// Outros documentos
-		TipoDocumentoIdentificacao documento = pessoaAtivo.getDocumento().get(0);
+		TipoDocumentoIdentificacao documento = pessoaAtivoRogerio.getDocumento().get(0);
 		assertEquals(ModalidadeDocumentoIdentificador.TE, documento.getTipoDocumento()); // Título de Eleitor
 		assertEquals("0059509160434", documento.getCodigoDocumento());
 		assertEquals("Tribunal Superior Eleitoral", documento.getEmissorDocumento());
@@ -398,9 +404,43 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				</restriction>
 			</simpleType>
 		 */
-		assertEquals(ModalidadeGeneroPessoa.M, pessoaAtivo.getSexo());
+		assertEquals(ModalidadeGeneroPessoa.M, pessoaAtivoRogerio.getSexo());
+		
+		// Polo ATIVO possui somente o ROGERIO MELO DE CASTRO com seus DOIS advogados
+		// Os advogados não devem entrar como parte, mas como representantes dos autores e réus.
+		assertEquals(1, poloAtivo.getParte().size());
+		
+		// Advogados de ROGERIO MELO DE CASTRO - CPF: 573.100.090-53:
+		// * LIDIANE DA SILVA DANIEL - OAB: RS85590
+		// * ANDERSON ALZENIR DE JESUS - OAB: RS69004
+		assertEquals(2, parteAtivoRogerio.getAdvogado().size());
+		
+		// Confere os dados da advogada LIDIANE
+		// TODO: Testar campos de TipoRepresentanteProcessual
+		TipoRepresentanteProcessual repLidiane = getRepresentanteComNome("LIDIANE DA SILVA DANIEL", parteAtivoRogerio.getAdvogado());
+		assertEquals(true, repLidiane.isIntimacao()); // Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
+		// TODO: Testar campo List<TipoEndereco> endereco;
+		// TODO: Testar campo String inscricao;
+		assertEquals("00374625042", repLidiane.getNumeroDocumentoPrincipal());
+		assertEquals(ModalidadeRepresentanteProcessual.A, repLidiane.getTipoRepresentante());
 	}
 	
+	
+	@Test
+	public void testProcessoAdvogadoRepresentandoMaisDeUmaParte() throws Exception {
+		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0021080-28.2016.5.04.0000");
+		
+		TipoPoloProcessual poloAtivo = getPolo(ModalidadePoloProcessual.AT, processoJudicial.getDadosBasicos().getPolo());
+		
+		TipoParte parteAtivoRui = getParteComNome("RUI MARTINS FLORES", poloAtivo.getParte());
+		TipoParte parteAtivoAirton = getParteComNome("AIRTON PAULO DE ARAUJO", poloAtivo.getParte());
+		
+		// Advogada DANIELA RODRIGUES DALLA LANA - OAB: RS71777 representa duas partes do polo ativo:
+		// * RUI MARTINS FLORES - CPF: 125.892.840-04
+		// * AIRTON PAULO DE ARAUJO - CPF: 123.989.260-87
+		getRepresentanteComNome("DANIELA RODRIGUES DALLA LANA", parteAtivoRui.getAdvogado());
+		getRepresentanteComNome("DANIELA RODRIGUES DALLA LANA", parteAtivoAirton.getAdvogado());
+	}
 	
 	private TipoPoloProcessual getPolo(ModalidadePoloProcessual siglaPolo, List<TipoPoloProcessual> polos) {
 		for (TipoPoloProcessual polo: polos) {
@@ -434,6 +474,20 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 			nomes.add(nomeParte);
 		}
 		fail("A pessoa '" + nome + "' não está na lista de partes (" + nomes + ")");
+		return null;
+	}
+	
+	private TipoRepresentanteProcessual getRepresentanteComNome(String nome, List<TipoRepresentanteProcessual> partes) {
+		
+		ArrayList<String> nomes = new ArrayList<>();
+		for (TipoRepresentanteProcessual parte: partes) {
+			String nomeParte = parte.getNome();
+			if (nome.equals(nomeParte)) {
+				return parte;
+			}
+			nomes.add(nomeParte);
+		}
+		fail("A pessoa '" + nome + "' não está na lista de representantes (" + nomes + ")");
 		return null;
 	}
 

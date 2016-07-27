@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -22,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
+import br.jus.cnj.intercomunicacao_2_2.ModalidadeRepresentanteProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
@@ -32,6 +34,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
 import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.cnj.intercomunicacao_2_2.TipoQualificacaoPessoa;
+import br.jus.cnj.intercomunicacao_2_2.TipoRepresentanteProcessual;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -296,12 +299,44 @@ public class Op_2_GeraXMLsIndividuais {
 				nsPartes.setInt("id_processo", idProcesso);
 				nsPartes.setString("in_participacao", rsPolos.getString("in_participacao"));
 				try (ResultSet rsPartes = nsPartes.executeQuery()) {
+					
+					// O PJe considera, como partes, tanto os autores e réus quanto seus advogados.
+					// Por isso, a identificação das partes será feita em etapas:
+					// 1. Todas as partes e advogados serão identificados e gravados no HashMap
+					//    "partesPorIdParte"
+					// 2. As partes representadas e seus representantes serão gravados no HashMap
+					//    "partesERepresentantes"
+					// 2. As partes identificadas que forem representantes de alguma outra parte 
+					//    serão removidas de "partesPorIdParte" e registradas efetivamente como 
+					//    representantes no atributo "advogado" da classe TipoParte
+					// 3. As partes que "restarem" no HashMap, então, serão inseridas no XML.
+					HashMap<Integer, TipoParte> partesPorIdParte = new HashMap<>(); // id_processo_parte -> TipoParte
+					HashMap<Integer, List<Integer>> partesERepresentantes = new HashMap<>(); // id_processo_parte -> lista dos id_processo_parte dos seus representantes
+					HashMap<Integer, ModalidadeRepresentanteProcessual> tiposRepresentantes = new HashMap<>(); // id_processo_parte -> Modalidade do representante (advogado, procurador, etc).
 					while (rsPartes.next()) {
 
+						String nomeParte = Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome");
+						
 						// Script TRT14:
 						// raise notice '<parte>';
 						TipoParte parte = new TipoParte();
-						polo.getParte().add(parte);
+						int idProcessoParte = rsPartes.getInt("id_processo_parte");
+						int idProcessoParteRepresentante = rsPartes.getInt("id_parte_representante");
+						partesPorIdParte.put(idProcessoParte, parte);
+						if (idProcessoParteRepresentante > 0) {
+							if (!partesERepresentantes.containsKey(idProcessoParte)) {
+								partesERepresentantes.put(idProcessoParte, new ArrayList<Integer>());
+							}
+							partesERepresentantes.get(idProcessoParte).add(idProcessoParteRepresentante);
+							
+							String tipoParteRepresentante = rsPartes.getString("ds_tipo_parte_representante");
+							if ("ADVOGADO".equals(tipoParteRepresentante)) {
+								tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.A);
+								
+							} else {
+								LOGGER.warn("O representante da parte '" + nomeParte + "' (id_processo_parte=" + idProcessoParte + ") possui um tipo de parte que ainda não foi tratado: " + tipoParteRepresentante);
+							}
+						}
 
 						// Script TRT4:
 						// -- pessoa
@@ -314,8 +349,7 @@ public class Op_2_GeraXMLsIndividuais {
 						//   END IF;
 						TipoPessoa pessoa = new TipoPessoa();
 						parte.setPessoa(pessoa);
-						String nomePessoa = Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome");
-						pessoa.setNome(nomePessoa);
+						pessoa.setNome(nomeParte);
 						pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(Auxiliar.getCampoStringNotNull(rsPartes, "tp_sexo")));
 						
 						// Tipo de pessoa (física / jurídica / outros)
@@ -327,7 +361,7 @@ public class Op_2_GeraXMLsIndividuais {
 						} else if ("A".equals(tipoPessoaPJe)) {
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.AUTORIDADE);
 						} else {
-							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomePessoa + "': " + tipoPessoaPJe);
+							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomeParte + "': " + tipoPessoaPJe);
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
 						}
 						
@@ -356,6 +390,8 @@ public class Op_2_GeraXMLsIndividuais {
 									//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
 									if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
 										TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
+										pessoa.getDocumento().add(documento);
+										
 										documento.setCodigoDocumento(numeroDocumento);
 										documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
 										
@@ -369,14 +405,45 @@ public class Op_2_GeraXMLsIndividuais {
 											documento.setNome(nomePessoaDocumento);
 										}
 										
-										pessoa.getDocumento().add(documento);
-										
 									} else {
-										LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomePessoa + "' não possui correspondente na tabela do CNJ. Esse documento não constará no XML.");
+										LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomeParte + "' não possui correspondente na tabela do CNJ. Esse documento não constará no XML.");
 									}
 								}
 							}
 						}
+					}
+					
+					// Para cada parte identificada, localiza todos os seus representantes
+					for (int idProcessoParte: partesERepresentantes.keySet()) {
+						for (int idProcessoParteRepresentante : partesERepresentantes.get(idProcessoParte)) {
+							
+							// Isola a parte e seu representante
+							TipoParte parte = partesPorIdParte.get(idProcessoParte);
+							TipoParte representante = partesPorIdParte.get(idProcessoParteRepresentante);
+							
+							// Cria um objeto TipoRepresentanteProcessual a partir dos dados do representante
+							TipoRepresentanteProcessual representanteProcessual = new TipoRepresentanteProcessual();
+							parte.getAdvogado().add(representanteProcessual);
+							representanteProcessual.setNome(representante.getPessoa().getNome());
+							representanteProcessual.setIntimacao(true);
+							representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
+							if (tiposRepresentantes.containsKey(idProcessoParteRepresentante)) {
+								representanteProcessual.setTipoRepresentante(tiposRepresentantes.get(idProcessoParteRepresentante));
+							}
+						}
+					}
+					
+					// Retira, da lista de partes do processo, as partes que são representantes
+					// (e, por isso, já estão constando dentro das suas partes representadas)
+					for (List<Integer> idProcessoParteRepresentantes: partesERepresentantes.values()) {
+						for (int idProcessoParteRepresentante: idProcessoParteRepresentantes) {
+							partesPorIdParte.remove(idProcessoParteRepresentante);
+						}
+					}
+					
+					// Insere as partes "restantes" no XML
+					for (TipoParte parte: partesPorIdParte.values()) {
+						polo.getParte().add(parte);
 					}
 				}
 			}
