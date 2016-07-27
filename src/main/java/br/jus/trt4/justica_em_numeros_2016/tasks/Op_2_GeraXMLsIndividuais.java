@@ -35,6 +35,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoQualificacaoPessoa;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
@@ -67,6 +68,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
 	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
 	private List<Integer> classesProcessuaisCNJ;
+	private BenchmarkVariasOperacoes benchmark;
 
 	
 	/**
@@ -157,6 +159,10 @@ public class Op_2_GeraXMLsIndividuais {
 				}
 				
 				LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + ")");
+				
+				if (i % 100 == 0) {
+					LOGGER.debug("Tempos parciais para cada consulta: \n" + benchmark);
+				}
 			}
 
 			// Executa a consulta desse processo no banco de dados do PJe
@@ -202,7 +208,9 @@ public class Op_2_GeraXMLsIndividuais {
 	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException {
 		
 		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
+		benchmark.inicioOperacao("nsConsultaProcessos");
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
+			benchmark.fimOperacao();
 			if (rsProcessos.next()) {
 				return analisarProcessoJudicialCompleto(rsProcessos);
 			} else {
@@ -283,7 +291,9 @@ public class Op_2_GeraXMLsIndividuais {
 		
 		// Consulta todos os polos do processo
 		nsPolos.setInt("id_processo", idProcesso);
+		benchmark.inicioOperacao("nsPolos");
 		try (ResultSet rsPolos = nsPolos.executeQuery()) {
+			benchmark.fimOperacao();
 			while (rsPolos.next()) {
 
 				// Script TRT14:
@@ -295,7 +305,9 @@ public class Op_2_GeraXMLsIndividuais {
 				// Consulta as partes de um determinado polo no processo
 				nsPartes.setInt("id_processo", idProcesso);
 				nsPartes.setString("in_participacao", rsPolos.getString("in_participacao"));
+				benchmark.inicioOperacao("nsPartes");
 				try (ResultSet rsPartes = nsPartes.executeQuery()) {
+					benchmark.fimOperacao();
 					while (rsPartes.next()) {
 
 						// Script TRT14:
@@ -333,7 +345,9 @@ public class Op_2_GeraXMLsIndividuais {
 						
 						// Consulta os documentos da parte
 						nsDocumentos.setInt("id_pessoa", rsPartes.getInt("id_pessoa"));
+						benchmark.inicioOperacao("nsDocumentos");
 						try (ResultSet rsDocumentos = nsDocumentos.executeQuery()) {
+							benchmark.fimOperacao();
 							
 							while (rsDocumentos.next()) {
 
@@ -391,7 +405,9 @@ public class Op_2_GeraXMLsIndividuais {
 		
 		// Consulta todos os assuntos do processo
 		nsAssuntos.setString("nr_processo", nrProcesso);
+		benchmark.inicioOperacao("nsAssuntos");
 		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
+			benchmark.fimOperacao();
 			boolean jaEncontrouAssunto = false;
 			boolean jaEncontrouAssuntoPrincipal = false;
 			while (rsAssuntos.next()) {
@@ -487,7 +503,9 @@ public class Op_2_GeraXMLsIndividuais {
 		
 		// Consulta todos os movimentos do processo
 		nsMovimentos.setInt("id_processo", idProcesso);
+		benchmark.inicioOperacao("nsMovimentos");
 		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
+			benchmark.fimOperacao();
 			while (rsMovimentos.next()) {
 
 				// Script TRT14:
@@ -502,7 +520,9 @@ public class Op_2_GeraXMLsIndividuais {
 				// Consulta os complementos desse movimento processual
 				int idMovimento = rsMovimentos.getInt("id_processo_evento");
 				nsComplementos.setInt("id_processo_evento", idMovimento);
+				benchmark.inicioOperacao("nsComplementos");
 				try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
+					benchmark.fimOperacao();
 					while (rsComplementos.next()) {
 
 						// Script TRT14:
@@ -532,7 +552,8 @@ public class Op_2_GeraXMLsIndividuais {
 							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 						}
 						sb.append(":");
-						sb.append(rsComplementos.getString("nm_complemento"));
+						//sb.append(rsComplementos.getString("nm_complemento"));
+						sb.append(rsComplementos.getString("ds_valor_complemento").replaceAll("[\\r\\n]", ""));
 						movimento.getComplemento().add(sb.toString());
 					}
 				}	
@@ -606,6 +627,8 @@ public class Op_2_GeraXMLsIndividuais {
 		// Objeto que identificará os assuntos e movimentos processuais das tabelas nacionais do CNJ
 		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal);
 		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(grau, conexaoBasePrincipal);
+		
+		benchmark = new BenchmarkVariasOperacoes(true);
 	}
 
 	
