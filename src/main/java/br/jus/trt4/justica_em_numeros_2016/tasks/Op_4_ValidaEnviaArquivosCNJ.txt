@@ -15,6 +15,10 @@ O arquivo "JAR" do cnj (replicacao-client) gera, na saída padrão, um grande n�
 Se necessário, direcione a saída dos comandos para um arquivo, adicionando, ao final da linha, 
 o sufixo a seguir: "> arquivo_saida.txt"
 
+Para maiores detalhes sobre o funcionamento do "replicacao-client", consultar o manual do CNJ,
+disponível em "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi".
+
+
 
 ========== Instruções para validar arquivos XML gerados e enviar ao CNJ ==========
 
