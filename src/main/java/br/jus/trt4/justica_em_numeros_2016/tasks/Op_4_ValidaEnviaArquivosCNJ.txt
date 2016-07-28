@@ -41,7 +41,7 @@ disponível em "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi".
    java -jar lib\replicacaoNacional\replicacao-client-2.0.0.jar SIGLA_REGIONAL output\1g\xmls_individuais 
 
    # Comando para validar os XMLs individuais no 2o Grau:
-   java -jar lib\replicacaoNacional\replicacao-client-2.0.0.jar SIGLA_REGIONAL output\2g\xmls_individuais > saida.txt
+   java -jar lib\replicacaoNacional\replicacao-client-2.0.0.jar SIGLA_REGIONAL output\2g\xmls_individuais
    
 
 4. Executar o comando abaixo para validar e enviar os arquivos XML unificados (em lotes de 5000) ao CNJ

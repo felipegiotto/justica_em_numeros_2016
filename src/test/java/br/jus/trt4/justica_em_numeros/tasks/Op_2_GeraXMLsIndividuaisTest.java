@@ -562,8 +562,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				7:destino:1ª Vara Cível
 			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 		 */
-		assertEquals("5050:nome do magistrado:GRACIELA MAFFEI", movimento.getComplemento().get(0)); // Complemento sem código
-		assertEquals("3:tipo de conclusão:5:despacho", movimento.getComplemento().get(1)); // Complemento com código
+		assertEquals("5050:nome do magistrado:GRACIELA MAFFEI", movimento.getMovimentoNacional().getComplemento().get(0)); // Complemento sem código
+		assertEquals("3:tipo de conclusão:5:despacho", movimento.getMovimentoNacional().getComplemento().get(1)); // Complemento com código
 	}
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException {

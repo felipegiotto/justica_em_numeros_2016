@@ -27,6 +27,7 @@ import br.jus.cnj.intercomunicacao_2_2.ModalidadeRepresentanteProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
+import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoNacional;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
 import br.jus.cnj.intercomunicacao_2_2.TipoParte;
@@ -46,7 +47,7 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
 
 /**
  * Carrega as listas de processos geradas pela classe {@link Op_1_BaixaListaDeNumerosDeProcessos} e,
- * para cada processo, gera seu arquivo XML na pasta "output/Xg/xmls_individuais/PJe".
+ * para cada processo, gera seu arquivo XML na pasta "output/Xg/xmls_individuais".
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
@@ -142,8 +143,9 @@ public class Op_2_GeraXMLsIndividuais {
 			// Arquivo XML que conterá os dados do processo
 			// Depois da geração do XML temporário, visando garantir a integridade do arquivo XML 
 			// definitivo, o temporário só será excluído depois da gravação completa do definitivo.
-			File arquivoXMLTemporario = new File(pastaRaiz, numeroProcesso + ".temp");
-			File arquivoXML = new File(pastaRaiz, numeroProcesso + ".xml");
+			String prefixo = Auxiliar.getPrefixoArquivoXML(grau) + "-" + numeroProcesso;
+			File arquivoXMLTemporario = new File(pastaRaiz, prefixo + ".temp");
+			File arquivoXML = new File(pastaRaiz, prefixo + ".xml");
 			
 			// Se a geração incremental estiver habilitada, verifica se o XML do processo já foi gerado.
 			if (gerarIncrementalmente && arquivoXML.exists() && !arquivoXMLTemporario.exists()) {
@@ -584,43 +586,47 @@ public class Op_2_GeraXMLsIndividuais {
 				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), Auxiliar.getCampoStringNotNull(rsMovimentos, "ds_texto_final_interno"));
 				movimentos.add(movimento);
 
-				// Consulta os complementos desse movimento processual
-				int idMovimento = rsMovimentos.getInt("id_processo_evento");
-				nsComplementos.setInt("id_processo_evento", idMovimento);
-				try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
-					while (rsComplementos.next()) {
-
-						// Script TRT14:
-						//  IF '' = trim(compl.cd_complemento) THEN
-						//    raise notice '<complemento>%:%:%</complemento>'
-						//    , compl.cd_tipo_complemento, compl.ds_nome, compl.nm_complemento;
-						//  ELSE
-						//    raise notice '<complemento>%:%:%:%</complemento>'
-						//    , compl.cd_tipo_complemento, compl.ds_nome, compl.cd_complemento, compl.nm_complemento;
-						//  END IF;
-						StringBuilder sb = new StringBuilder();
-						sb.append(rsComplementos.getString("cd_tipo_complemento"));
-						sb.append(":");
-						sb.append(rsComplementos.getString("ds_nome"));
-						String codigoComplemento = rsComplementos.getString("cd_complemento");
-						if (!StringUtils.isBlank(codigoComplemento)) {
+				// Consulta os complementos desse movimento processual.
+				// OBS: os complementos só existem no MovimentoNacional
+				TipoMovimentoNacional movimentoNacional = movimento.getMovimentoNacional();
+				if (movimentoNacional != null) {
+					int idMovimento = rsMovimentos.getInt("id_processo_evento");
+					nsComplementos.setInt("id_processo_evento", idMovimento);
+					try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
+						while (rsComplementos.next()) {
+	
+							// Script TRT14:
+							//  IF '' = trim(compl.cd_complemento) THEN
+							//    raise notice '<complemento>%:%:%</complemento>'
+							//    , compl.cd_tipo_complemento, compl.ds_nome, compl.nm_complemento;
+							//  ELSE
+							//    raise notice '<complemento>%:%:%:%</complemento>'
+							//    , compl.cd_tipo_complemento, compl.ds_nome, compl.cd_complemento, compl.nm_complemento;
+							//  END IF;
+							StringBuilder sb = new StringBuilder();
+							sb.append(rsComplementos.getString("cd_tipo_complemento"));
 							sb.append(":");
-							sb.append(codigoComplemento);
-							/*
-							O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
-							<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>
-								
-							Ex.: no movimento 123, seria
-								18:motivo_da_remessa:38:em grau de recurso
-								7:destino:1ª Vara Cível
-							 */
-							// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
+							sb.append(rsComplementos.getString("ds_nome"));
+							String codigoComplemento = rsComplementos.getString("cd_complemento");
+							if (!StringUtils.isBlank(codigoComplemento)) {
+								sb.append(":");
+								sb.append(codigoComplemento);
+								/*
+								O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
+								<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>
+									
+								Ex.: no movimento 123, seria
+									18:motivo_da_remessa:38:em grau de recurso
+									7:destino:1ª Vara Cível
+								 */
+								// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
+							}
+							sb.append(":");
+							sb.append(rsComplementos.getString("nm_complemento"));
+							movimentoNacional.getComplemento().add(sb.toString());
 						}
-						sb.append(":");
-						sb.append(rsComplementos.getString("nm_complemento"));
-						movimento.getComplemento().add(sb.toString());
 					}
-				}	
+				}
 			}
 		}
 		

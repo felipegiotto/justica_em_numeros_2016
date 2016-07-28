@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -26,6 +28,7 @@ public class Auxiliar {
 
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
+	private static final String diaMesAno = new SimpleDateFormat("ddMMyyyy").format(new Date());
 
 	
 	/**
@@ -300,5 +303,15 @@ public class Auxiliar {
 		File pasta = new File("output/xmls_unificados");
 		pasta.mkdirs();
 		return pasta;
+	}
+
+	
+	/**
+	 * Retorna o prefixo que os arquivos XML a serem enviados ao CNJ devem possuir, conforme 
+	 * formato definido no site do CNJ:
+	 * <SIGLA_TRIBUNAL>_<GRAU_JURISDICAO>_<DIAMESANO>
+	 */
+	public static String getPrefixoArquivoXML(int grau) {
+		return Auxiliar.getParametroConfiguracao("sigla_tribunal", true) + "_G" + grau + "_" + diaMesAno;
 	}
 }

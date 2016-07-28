@@ -38,7 +38,6 @@ public class Op_3_UnificaArquivosXML {
 	private int grau;
 	private final File pastaSaida;
 	private int numeroLoteAtual = 0;
-	private String diaMesAno = new SimpleDateFormat("ddMMyyyy").format(new Date());
 	
 	public static void main(String[] args) throws JAXBException {
 		
@@ -122,7 +121,7 @@ public class Op_3_UnificaArquivosXML {
 	 */
 	private void gravarProximoLoteXML(Marshaller jaxbMarshaller, Processos listaProcessos) throws JAXBException {
 		numeroLoteAtual++;
-		File arquivoSaida = new File(pastaSaida, Auxiliar.getParametroConfiguracao("sigla_tribunal", true) + "_" + grau + "_" + diaMesAno + "-" + numeroLoteAtual + ".xml");
+		File arquivoSaida = new File(pastaSaida, Auxiliar.getPrefixoArquivoXML(grau) + "-" + numeroLoteAtual + ".xml");
 		LOGGER.info("Gerando arquivo " + arquivoSaida + "...");
 		jaxbMarshaller.marshal(listaProcessos, arquivoSaida);
 	}
