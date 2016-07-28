@@ -110,8 +110,10 @@ Funcionamento "avançado":
 
 
 * Assuntos: Quando o processo não tiver assunto cadastrado no PJe, ficará sem assunto no arquivo XML.
-  OBS: está sendo gerado um warning nos logs quando processo não tiver assunto ou quando nenhum
-       dos assuntos estiver marcado como "principal".
+  OBS: Se nenhum dos assuntos do processo estiver marcado como principal no PJe, a ferramenta marcará
+       o primeiro assunto como principal no arquivo XML (orientação de Jeferson, via
+       e-mail, em 28 de julho de 2016 12:43, no e-mail "Processos sem assunto")
+  OBS: Éstá sendo gerado um warning nos logs quando processo não tiver assunto.
   TODO: Definir o que fazer com processos sem assunto, já que os arquivos são negados no CNJ.
   
   

@@ -476,8 +476,8 @@ public class Op_2_GeraXMLsIndividuais {
 		// Consulta todos os assuntos do processo
 		nsAssuntos.setString("nr_processo", nrProcesso);
 		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
-			boolean jaEncontrouAssunto = false;
-			boolean jaEncontrouAssuntoPrincipal = false;
+			boolean encontrouAlgumAssunto = false;
+			boolean encontrouAssuntoPrincipal = false;
 			while (rsAssuntos.next()) {
 
 				// Script TRT14:
@@ -489,19 +489,18 @@ public class Op_2_GeraXMLsIndividuais {
 				int codigo = Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf");
 				TipoAssuntoProcessual assunto = analisaAssuntosCNJ.getAssunto(codigo);
 				assuntos.add(assunto);
+				encontrouAlgumAssunto = true;
 
 				// Trata o campo "assunto principal", verificando também se há mais de um assunto principal no processo.
 				boolean assuntoPrincipal = "S".equals(rsAssuntos.getString("in_assunto_principal"));
 				assunto.setPrincipal(assuntoPrincipal);
 				if (assuntoPrincipal) {
-					if (jaEncontrouAssuntoPrincipal) {
+					if (encontrouAssuntoPrincipal) {
 						LOGGER.warn("Processo possui mais de um assunto principal: " + nrProcesso);
 					} else {
-						jaEncontrouAssuntoPrincipal = true;
+						encontrouAssuntoPrincipal = true;
 					}
 				}
-				
-				jaEncontrouAssunto = true;
 			}
 			
 			// Script TRT14:
@@ -512,10 +511,12 @@ public class Op_2_GeraXMLsIndividuais {
 			//   raise notice '<codigoNacional>2546</codigoNacional>'; -- Verbas Rescisórias
 			//   raise notice '</assunto>';
 			// END IF;
-			if (!jaEncontrouAssunto) {
+			if (!encontrouAlgumAssunto) {
 				LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
-			} else if (!jaEncontrouAssuntoPrincipal) {
-				LOGGER.warn("Processo sem assunto principal: " + nrProcesso);
+				
+			} else if (!encontrouAssuntoPrincipal) {
+				LOGGER.info("Processo sem assunto principal: " + nrProcesso + ". O primeiro assunto será marcado como principal.");
+				assuntos.get(0).setPrincipal(true);
 			}
 		}
 		
