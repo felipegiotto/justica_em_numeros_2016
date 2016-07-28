@@ -90,6 +90,13 @@ Funcionamento "avançado":
   coletivas, tutela e curatela.
 
 
+* Parte/Sexo: O PJe possui uma falha na remessa de processos entre instâncias, que faz com que grande parte das
+  pessoas sejam remetidas sem informação de gênero/sexo (masculino / feminino). Por isso, o cadastro
+  das pessoas, no 2o Grau, muitas vezes não possui essa informação.
+  É possível, nas configurações, habilitar o parâmetro "contornar_falta_de_genero" para fazer com
+  que a ferramenta tente consultar as informações do gênero na outra instância.
+
+
 * Parte/Interesse público: não estão sendo tratados os casos em que a parte é considerada um interesse 
   público abstrato cuja defesa está a cargo do Ministério Público ou da Defensoria Pública, conforme 
   campo "interessePublico" das partes do processo. No XSD, esse campo não é obrigatório.
