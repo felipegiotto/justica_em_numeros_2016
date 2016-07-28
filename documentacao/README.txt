@@ -241,7 +241,7 @@ Funcionamento "avançado":
               EXISTS(SELECT 1 FROM tb_processo_assunto pa WHERE pa.id_processo_trf = proc.id_processo AND pa.in_assunto_principal='S') as existe_assunto_principal
            FROM tb_processo proc
            WHERE length(proc.nr_processo) = 25
-              AND EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE proc.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-12-31 23:59:59.999') -- Condição para que o processo seja exportado ao CNJ
+              --AND EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE proc.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-12-31 23:59:59.999') -- Condição para que o processo seja exportado ao CNJ
         )
         SELECT nr_processo, 
           CASE WHEN NOT existe_assunto THEN 
@@ -255,6 +255,7 @@ Funcionamento "avançado":
           END as problema
         FROM processos
         WHERE existe_assunto = false OR existe_assunto_principal = false
+        ORDER BY nr_processo
   
 
 
