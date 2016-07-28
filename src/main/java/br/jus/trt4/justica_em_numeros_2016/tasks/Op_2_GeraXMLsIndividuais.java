@@ -155,11 +155,13 @@ public class Op_2_GeraXMLsIndividuais {
 			if (LOGGER.isDebugEnabled()) {
 				int xmlsRestantes = listaProcessos.size() - i;
 				long tempoRestante = 0;
+				long mediaPorProcesso = 0;
 				if (qtdXMLGerados > 0) {
-					tempoRestante = xmlsRestantes * tempoGasto / qtdXMLGerados;
+					mediaPorProcesso = tempoGasto / qtdXMLGerados;
+					tempoRestante = xmlsRestantes * mediaPorProcesso;
 				}
 				
-				LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + ")");
+				LOGGER.debug("Baixando dados do processo " + numeroProcesso + " no arquivo " + arquivoXML + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + ")");
 			}
 
 			// Executa a consulta desse processo no banco de dados do PJe
@@ -205,7 +207,7 @@ public class Op_2_GeraXMLsIndividuais {
 	 * 
 	 * @param numeroProcesso
 	 * @return
-	 * @throws SQLException
+	 * @throws SQLException 
 	 * @throws IOException
 	 */
 	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException {
@@ -238,7 +240,7 @@ public class Op_2_GeraXMLsIndividuais {
 		// Cabeçalho com dados básicos do processo:
 		processoJudicial.setDadosBasicos(analisarCabecalhoProcesso(rsProcesso));
 
-		// Movimentos processuais
+		// Movimentos processuais e complementos
 		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(rsProcesso.getInt("id_processo_trf")));
 		
 		return processoJudicial;
