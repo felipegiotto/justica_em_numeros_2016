@@ -442,6 +442,17 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		getRepresentanteComNome("DANIELA RODRIGUES DALLA LANA", parteAtivoAirton.getAdvogado());
 	}
 	
+	@Test
+	public void testProcessoAdvogadoInativoRepresentandoUmaParte() throws Exception {
+		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0020570-59.2015.5.04.0029");
+		
+		// Processo tem duas partes no polo passivo:
+		// * ADRIANA BRAUCH WANOWSCHEK - CPF: 834.395.010-00
+		// * BANCO BRADESCO SA - CNPJ: 60.746.948/0001-12
+		TipoPoloProcessual poloPassivo = getPolo(ModalidadePoloProcessual.PA, processoJudicial.getDadosBasicos().getPolo());
+		assertEquals(2, poloPassivo.getParte().size());
+	}
+	
 	private TipoPoloProcessual getPolo(ModalidadePoloProcessual siglaPolo, List<TipoPoloProcessual> polos) {
 		for (TipoPoloProcessual polo: polos) {
 			if (siglaPolo.equals(polo.getPolo())) {

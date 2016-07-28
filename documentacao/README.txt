@@ -110,7 +110,9 @@ Funcionamento "avançado":
 
 
 * Assuntos: Quando o processo não tiver assunto cadastrado no PJe, ficará sem assunto no arquivo XML.
-  OBS: está sendo gerado um warning nos logs quando processo não tiver assunto.
+  OBS: está sendo gerado um warning nos logs quando processo não tiver assunto ou quando nenhum
+       dos assuntos estiver marcado como "principal".
+  TODO: Definir o que fazer com processos sem assunto, já que os arquivos são negados no CNJ.
   
   
 * Assuntos CNJ: O arquivo XSD do CNJ explicita que os assuntos devem ser preenchidos de forma diferente
@@ -135,6 +137,23 @@ Funcionamento "avançado":
 
 ========== Dúvidas / Esclarecimentos / Pendências ==========
 
+* TODO: Documentos do tipo "RGE". Esclarecer o que fazer.
+
+* TODO: Classe processual que não existe nas tabelas do CNJ: 11886 - RECURSO ORDINÁRIO EM PROCEDIMENTO SUMARÍSSIMO
+
+* TODO: Definir como tratar partes de tipos que não estejam mapeadas no CNJ, ex: 
+  * O representante da parte 'CLINSUL MAO DE OBRA E REPRESENTACAO LTDA' (id_processo_parte=173621) possui um tipo de parte que ainda não foi tratado: ADMINISTRADOR
+  * O representante da parte 'FERNANDA CRISTINA DE SOUZA LIMA' (id_processo_parte=2780966) possui um tipo de parte que ainda não foi tratado: ASSISTENTE
+  * O representante da parte 'LUIZ PAULO FERREIRA' (id_processo_parte=466618) possui um tipo de parte que ainda não foi tratado: CURADOR
+  * O representante da parte 'VILMAR DOS REIS' (id_processo_parte=2220300) possui um tipo de parte que ainda não foi tratado: REPRESENTANTE
+  * O representante da parte 'NISYO STROIEKE' (id_processo_parte=245410) possui um tipo de parte que ainda não foi tratado: INVENTARIANTE
+  * O representante da parte 'MELISSA CAVALHEIRO GRAVINA' (id_processo_parte=2436733) possui um tipo de parte que ainda não foi tratado: TUTOR
+  * Comando para identificar problemas com tipos de parte desconhecidos:
+    grep "O representante da parte" justica_em_numeros.log | grep --invert-match ": ADMINISTRADOR" | grep --invert-match ": ASSISTENTE" | grep --invert-match ": CURADOR" | grep --invert-match ": REPRESENTANTE" | grep --invert-match ": INVENTARIANTE" | grep --invert-match ": TUTOR" | less
+  
+* Comando para identificar warnings nos arquivos de log:
+  grep " WARN " justica_em_numeros.log | grep --invert-match "'RGE'" | grep --invert-match "EM PROCEDIMENTO SUMAR" | grep --invert-match "GABINETE JUDICIARIO" | grep --invert-match "foi gerado na base" | grep --invert-match "sem assunto" | grep --invert-match "representante da parte" | grep --invert-match "'PFP'" | grep --invert-match "connection has been closed" | less  
+  
 * Quanto ao período de extração dos dados:
   Pergunta enviada ao CNJ: 
     Há uma divergência, na página do CNJ, a respeito do período dos dados que precisam ser extraídos:

@@ -163,7 +163,13 @@ public class Op_2_GeraXMLsIndividuais {
 			}
 
 			// Executa a consulta desse processo no banco de dados do PJe
-			TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
+			TipoProcessoJudicial processoJudicial = null;
+			try {
+				processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
+			} catch (Exception ex) {
+				LOGGER.warn("Erro gerando XML do processo " + numeroProcesso + ": " + ex.getLocalizedMessage(), ex);
+			}
+			
 			if (processoJudicial != null) {
 			
 				// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
@@ -185,11 +191,11 @@ public class Op_2_GeraXMLsIndividuais {
 				qtdXMLGerados++;
 				
 			} else {
-				LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado na base " + grau + "G!");
+				LOGGER.warn("O XML do processo " + numeroProcesso + " não foi gerado na base " + grau + "G!");
 			}
 		}
 		
-		LOGGER.info("Arquivos XML do " + grau + "o Grau gerado!");
+		LOGGER.info("Arquivos XML do " + grau + "o Grau gerados!");
 	}
 
 	
@@ -333,6 +339,9 @@ public class Op_2_GeraXMLsIndividuais {
 							if ("ADVOGADO".equals(tipoParteRepresentante)) {
 								tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.A);
 								
+							} else if ("PROCURADOR".equals(tipoParteRepresentante)) {
+								tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.P);
+								
 							} else {
 								LOGGER.warn("O representante da parte '" + nomeParte + "' (id_processo_parte=" + idProcessoParte + ") possui um tipo de parte que ainda não foi tratado: " + tipoParteRepresentante);
 							}
@@ -421,14 +430,20 @@ public class Op_2_GeraXMLsIndividuais {
 							TipoParte parte = partesPorIdParte.get(idProcessoParte);
 							TipoParte representante = partesPorIdParte.get(idProcessoParteRepresentante);
 							
-							// Cria um objeto TipoRepresentanteProcessual a partir dos dados do representante
-							TipoRepresentanteProcessual representanteProcessual = new TipoRepresentanteProcessual();
-							parte.getAdvogado().add(representanteProcessual);
-							representanteProcessual.setNome(representante.getPessoa().getNome());
-							representanteProcessual.setIntimacao(true);
-							representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
-							if (tiposRepresentantes.containsKey(idProcessoParteRepresentante)) {
-								representanteProcessual.setTipoRepresentante(tiposRepresentantes.get(idProcessoParteRepresentante));
+							// Pode ocorrer de a parte estar ATIVA e possuir um advogado cujo registro 
+							// em tb_processo_parte está INATIVO. Nesse caso, não insere o advogado
+							// como representante.
+							if (representante != null) {
+								
+								// Cria um objeto TipoRepresentanteProcessual a partir dos dados do representante
+								TipoRepresentanteProcessual representanteProcessual = new TipoRepresentanteProcessual();
+								parte.getAdvogado().add(representanteProcessual);
+								representanteProcessual.setNome(representante.getPessoa().getNome());
+								representanteProcessual.setIntimacao(true);
+								representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
+								if (tiposRepresentantes.containsKey(idProcessoParteRepresentante)) {
+									representanteProcessual.setTipoRepresentante(tiposRepresentantes.get(idProcessoParteRepresentante));
+								}
 							}
 						}
 					}
