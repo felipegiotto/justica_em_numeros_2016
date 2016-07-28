@@ -31,8 +31,10 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 	private NamedParameterStatement nsConsultaGeneroOutraInstancia;
 	private HashMap<String, ModalidadeGeneroPessoa> cacheGenerosOutraInstancia = new HashMap<>();
 	private Connection conexaoBasePrincipalOutraInstancia;
+	private int grau;
 
 	public IdentificaGeneroPessoa(int grau) {
+		this.grau = grau;
 		
 		// Abre conexão com o outro banco de dados do PJe, para localizar o sexo de pessoas que podem
 		// estar sem essa informação
@@ -81,10 +83,10 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 					if (rs.next()) {
 						ModalidadeGeneroPessoa sexo = ModalidadeGeneroPessoa.valueOf(rs.getString("in_sexo"));
 						cacheGenerosOutraInstancia.put(chaveCache, sexo);
-						LOGGER.warn("Sexo da pessoa " + pessoa.getNome() + " baixado da outra instância: " + sexo);
+						LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " foi identificado na outra instância (" + grau + "G): " + sexo);
 					} else {
 						cacheGenerosOutraInstancia.put(chaveCache, ModalidadeGeneroPessoa.D);
-						LOGGER.warn("Sexo da pessoa " + pessoa.getNome() + " não existe e não foi localizado na outra instância");
+						LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " não existe em nenhuma instância");
 					}
 				}
 			}
