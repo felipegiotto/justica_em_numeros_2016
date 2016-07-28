@@ -23,6 +23,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
 import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.cnj.intercomunicacao_2_2.TipoRepresentanteProcessual;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
 
 /**
@@ -577,4 +578,21 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		}
 	}
 
+	/**
+	 * No processo 0021149-65.2015.5.04.0333 no 2o Grau, a pessoa "PETRONILO ROSA DA SILVA" não possui
+	 * informação de gênero.
+	 */
+	@Test
+	public void testCacheGeneroPessoa() throws Exception {
+		
+		// O parâmetro deve estar preenchido!!
+		Auxiliar.getParametroBooleanConfiguracao("contornar_falta_de_genero");
+		
+		// Ao consultar o processo no 2o Grau, essa informação deverá ser retornada
+		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0021149-65.2015.5.04.0333");
+		TipoPoloProcessual poloPassivo = getPolo(ModalidadePoloProcessual.PA, processoJudicial.getDadosBasicos().getPolo());
+		TipoParte parte = getParteComNome("PETRONILO ROSA DA SILVA", poloPassivo.getParte());
+		TipoPessoa pessoa = parte.getPessoa();
+		assertEquals(ModalidadeGeneroPessoa.M, pessoa.getSexo());
+	}
 }

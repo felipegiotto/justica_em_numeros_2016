@@ -3,11 +3,12 @@ select
   
   /*** pessoa ***/
   /* nome */
-  ul.ds_nome, 
+  ul.ds_nome,
+  ul.ds_nome_consulta,
   /* tipoPessoa */
   pes.in_tipo_pessoa,
   /* sexo */
-  coalesce(pf.in_sexo, 'D') tp_sexo,
+  pf.in_sexo,
   
   pp.id_processo_parte,
   ppr.id_parte_representante,

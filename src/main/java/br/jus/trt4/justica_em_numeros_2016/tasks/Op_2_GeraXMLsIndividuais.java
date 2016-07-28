@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.TreeSet;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -39,6 +40,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoRepresentanteProcessual;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
@@ -71,7 +73,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
 	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
 	private List<Integer> classesProcessuaisCNJ;
-
+	private IdentificaGeneroPessoa identificaGeneroPessoa;
 	
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
@@ -363,7 +365,6 @@ public class Op_2_GeraXMLsIndividuais {
 						TipoPessoa pessoa = new TipoPessoa();
 						parte.setPessoa(pessoa);
 						pessoa.setNome(nomeParte);
-						pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(Auxiliar.getCampoStringNotNull(rsPartes, "tp_sexo")));
 						
 						// Tipo de pessoa (física / jurídica / outros)
 						String tipoPessoaPJe = Auxiliar.getCampoStringNotNull(rsPartes, "in_tipo_pessoa");
@@ -424,6 +425,8 @@ public class Op_2_GeraXMLsIndividuais {
 								}
 							}
 						}
+						
+						identificaGeneroPessoa.preencherSexoPessoa(pessoa, rsPartes.getString("in_sexo"), rsPartes.getString("ds_nome_consulta"));
 					}
 					
 					// Para cada parte identificada, localiza todos os seus representantes
@@ -659,10 +662,16 @@ public class Op_2_GeraXMLsIndividuais {
 			}
 			
 		}
+		
 		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
 		conexaoBasePrincipal.setAutoCommit(false);
 
+		// Objeto que auxiliará na identificação do sexo das pessoas na OUTRA INSTANCIA, quando 
+		// essa informação estiver ausente na instância atual.
+		int outraInstancia = grau == 1 ? 2 : 1;
+		identificaGeneroPessoa = new IdentificaGeneroPessoa(outraInstancia);
+		
 		// SQL que fará a consulta de um processo
 		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processo.sql");
 		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
@@ -780,14 +789,18 @@ public class Op_2_GeraXMLsIndividuais {
 			}
 		}
 
-		// Fecha conexão com o PJe
 		if (conexaoBasePrincipal != null) {
 			try {
 				conexaoBasePrincipal.close();
 				conexaoBasePrincipal = null;
 			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando conexão com o PJe: " + e.getLocalizedMessage(), e);
+				LOGGER.warn("Erro fechando 'conexaoBasePrincipal': " + e.getLocalizedMessage(), e);
 			}
+		}
+		
+		if (identificaGeneroPessoa != null) {
+			identificaGeneroPessoa.close();
+			identificaGeneroPessoa = null;
 		}
 	}
 	
