@@ -1,12 +1,13 @@
 package br.jus.trt4.justica_em_numeros_2016.tabelas_cnj;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.sql.Connection;
 
 import org.junit.Test;
 
-import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;

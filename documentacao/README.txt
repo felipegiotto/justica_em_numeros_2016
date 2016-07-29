@@ -113,15 +113,20 @@ Funcionamento "avançado":
 * Parte/Documentos: somente estão sendo inseridos nos arquivos XML os documentos que possuem correspondência
   nos tipos do CNJ, conforme arquivo "tipos_de_documentos.properties". Os documentos do PJe que não possuírem
   correspondência serão ignorados, ex: "RGE".
-  OBS: está sendo gerado um warning nos logs ao encontrar um documento que não possuem correspondência.
+  OBS: está sendo gerado um warning nos logs ao encontrar um documento que não possua correspondência nas
+       tabelas do CNJ
+  OBS: alguns documentos podem existir somente no PJe e não existirem no CNJ, por exemplo, PFP  (Programa 
+       de Formação de Patrimônio). Esses tipos podem ser inseridos no arquivo "properties" sem nenhum
+       correspondende do "lado" do CNJ, para que sejam descartados na hora de enviar o arquivo XML.
 
 
 * Assuntos: Quando o processo não tiver assunto cadastrado no PJe, ficará sem assunto no arquivo XML.
   OBS: Se nenhum dos assuntos do processo estiver marcado como principal no PJe, a ferramenta marcará
        o primeiro assunto como principal no arquivo XML (orientação de Jeferson, via
        e-mail, em 28 de julho de 2016 12:43, no e-mail "Processos sem assunto")
-  OBS: Éstá sendo gerado um warning nos logs quando processo não tiver assunto.
-  TODO: Definir o que fazer com processos sem assunto, já que os arquivos são negados no CNJ.
+  OBS: É possível definir um assunto "padrão", a ser inserido nos processos que não tiverem nenhum
+       assunto cadastrado. Ver documentação dos parâmetros "assunto_padrao_1G" e "assunto_padrao_2G".
+  OBS: Está sendo gerado um warning nos logs quando processo não tiver assunto.
   
   
 * Assuntos CNJ: O arquivo XSD do CNJ explicita que os assuntos devem ser preenchidos de forma diferente
