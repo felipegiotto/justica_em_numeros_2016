@@ -450,7 +450,7 @@ public class Op_2_GeraXMLsIndividuais {
 						// para pessoas jurídicas. O atributo é opcional em razão da possibilidade 
 						// de haver pessoas sem documentos ou cujos dados não estão disponíveis.
 						if (StringUtils.isEmpty(pessoa.getNumeroDocumentoPrincipal())) {
-							LOGGER.info("Pessoa '" + nomeParte + "' não possui documento principal!");
+							// LOGGER.debug("Pessoa '" + nomeParte + "' não possui documento principal!");
 						}
 						
 						// Identifica os endereços da parte

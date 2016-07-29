@@ -83,10 +83,10 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 					if (rs.next()) {
 						ModalidadeGeneroPessoa sexo = ModalidadeGeneroPessoa.valueOf(rs.getString("in_sexo"));
 						cacheGenerosOutraInstancia.put(chaveCache, sexo);
-						LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " foi identificado na outra instância (" + grau + "G): " + sexo);
+						// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " foi identificado na outra instância (" + grau + "G): " + sexo);
 					} else {
 						cacheGenerosOutraInstancia.put(chaveCache, ModalidadeGeneroPessoa.D);
-						LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " não existe em nenhuma instância");
+						// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " não existe em nenhuma instância");
 					}
 				}
 			}
