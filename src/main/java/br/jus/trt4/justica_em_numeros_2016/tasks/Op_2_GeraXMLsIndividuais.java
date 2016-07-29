@@ -302,7 +302,7 @@ public class Op_2_GeraXMLsIndividuais {
 				// Script TRT14:
 				// raise notice '<polo polo="%">', polo.in_polo_participacao;
 				TipoPoloProcessual polo = new TipoPoloProcessual();
-				String tipoPoloPJe = rsPolos.getString("in_polo_participacao");
+				String tipoPoloPJe = rsPolos.getString("in_participacao");
 				if ("A".equals(tipoPoloPJe)) {
 					polo.setPolo(ModalidadePoloProcessual.AT); // AT: polo ativo
 				} else if ("P".equals(tipoPoloPJe)) {
