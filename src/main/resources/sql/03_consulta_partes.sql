@@ -12,7 +12,9 @@ select
   
   pp.id_processo_parte,
   ppr.id_parte_representante,
-  tprep.ds_tipo_parte ds_tipo_parte_representante
+  tprep.ds_tipo_parte ds_tipo_parte_representante,
+  
+  pf.dt_nascimento, pf.dt_obito, pf.nm_genitora, pf.nm_genitor
 from tb_processo_parte pp
 inner join tb_usuario_login ul on (pp.id_pessoa = ul.id_usuario) 
 left join tb_pessoa pes on (pp.id_pessoa = pes.id_pessoa) 

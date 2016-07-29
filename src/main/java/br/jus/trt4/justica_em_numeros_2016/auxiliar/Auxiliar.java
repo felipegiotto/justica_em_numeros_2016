@@ -29,6 +29,7 @@ public class Auxiliar {
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
 	private static final String diaMesAno = new SimpleDateFormat("ddMMyyyy").format(new Date());
+	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
 
 	
 	/**
@@ -313,5 +314,13 @@ public class Auxiliar {
 	 */
 	public static String getPrefixoArquivoXML(int grau) {
 		return Auxiliar.getParametroConfiguracao("sigla_tribunal", true) + "_G" + grau + "_" + diaMesAno;
+	}
+	
+	
+	/**
+	 * Formata uma data conforme estabelecido no arquivo de intercomunicação: AAAAMMDD
+	 */
+	public static String formataDataAAAAMMDD(Date data) {
+		return dfDataNascimento.format(data);
 	}
 }

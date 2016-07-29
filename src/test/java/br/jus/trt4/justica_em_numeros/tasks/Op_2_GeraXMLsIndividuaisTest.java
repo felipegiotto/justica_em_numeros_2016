@@ -1,6 +1,7 @@
 package br.jus.trt4.justica_em_numeros.tasks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -19,6 +20,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
+import br.jus.cnj.intercomunicacao_2_2.TipoEndereco;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
 import br.jus.cnj.intercomunicacao_2_2.TipoParte;
@@ -645,4 +647,23 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("Contrato Individual de Trabalho", assuntoLocal3.getDescricao());
 		assertTrue(processoJudicial3.getDadosBasicos().getAssunto().get(0).isPrincipal());
 	}
+	
+	@Test
+	public void testEnderecos() throws Exception {
+		
+		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(1, "0020591-86.2014.5.04.0282");
+		TipoPoloProcessual poloAtivo = getPolo(ModalidadePoloProcessual.AT, processoJudicial.getDadosBasicos().getPolo());
+		TipoParte parteAtivoRogerio = getParteComNome("ROGERIO MELO DE CASTRO", poloAtivo.getParte());
+		
+		assertEquals(1, parteAtivoRogerio.getPessoa().getEndereco().size());
+		TipoEndereco endereco = parteAtivoRogerio.getPessoa().getEndereco().get(0);
+		assertEquals("RUA SAPIRANGA", endereco.getLogradouro());
+		assertEquals("221", endereco.getNumero());
+		//assertNull(endereco.getComplemento());
+		assertEquals("CAPAO DA CRUZ", endereco.getBairro());
+		assertEquals("SAPUCAIA DO SUL", endereco.getCidade());
+		assertEquals("93226476", endereco.getCep());
+		assertNull(endereco.getEstado());
+		assertNull(endereco.getPais());
+	}	
 }

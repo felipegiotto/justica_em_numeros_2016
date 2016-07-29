@@ -26,6 +26,7 @@ import br.jus.cnj.intercomunicacao_2_2.ModalidadeRepresentanteProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
+import br.jus.cnj.intercomunicacao_2_2.TipoEndereco;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoNacional;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
@@ -62,6 +63,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private NamedParameterStatement nsPolos;
 	private NamedParameterStatement nsPartes;
 	private NamedParameterStatement nsDocumentos;
+	private NamedParameterStatement nsEnderecos;
 	private NamedParameterStatement nsAssuntos;
 	private NamedParameterStatement nsMovimentos;
 	private NamedParameterStatement nsComplementos;
@@ -450,6 +452,77 @@ public class Op_2_GeraXMLsIndividuais {
 						if (StringUtils.isEmpty(pessoa.getNumeroDocumentoPrincipal())) {
 							LOGGER.info("Pessoa '" + nomeParte + "' não possui documento principal!");
 						}
+						
+						// Identifica os endereços da parte
+						nsEnderecos.setInt("id_processo_parte", rsPartes.getInt("id_processo_parte"));
+						try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
+							while (rsEnderecos.next()) {
+								TipoEndereco endereco = new TipoEndereco();
+								
+								// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
+								// tais como rua, praça, quadra etc. O elemento é opcional para permitir 
+								// que as implementações acatem a indicação de endereço exclusivamente 
+								// pelo CEP, quando o CEP já encerrar o dado respectivo.
+								endereco.setLogradouro(rsEnderecos.getString("nm_logradouro"));
+								
+								// intercomunicacao-2.2.2: O número vinculado a este endereço. O elemento 
+								// é opcional para permitir que as implementações acatem a indicação de 
+								// endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+								endereco.setNumero(rsEnderecos.getString("nr_endereco"));
+								
+								// intercomunicacao-2.2.2: O complemento vinculado a este endereço. 
+								// O elemento é opcional em razão de sua própria natureza.
+								endereco.setComplemento(rsEnderecos.getString("ds_complemento"));
+								
+								// intercomunicacao-2.2.2: O bairro vinculado a este endereço. O elemento 
+								// é opcional para permitir que as implementações acatem a indicação 
+								// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+								endereco.setBairro(rsEnderecos.getString("nm_bairro"));
+								
+								// intercomunicacao-2.2.2: A cidade vinculada a este endereço. O elemento 
+								// é opcional para permitir que as implementações acatem a indicação 
+								// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+								endereco.setCidade(rsEnderecos.getString("ds_municipio"));
+								
+								// intercomunicacao-2.2.2: Atributo indicador do código de endereçamento 
+								// postal do endereço no diretório nacional de endereços da ECT. O 
+								// valor deverá ser uma sequência de 8 dígitos, sem qualquer separador. 
+								// O atributo é opcional para permitir a apresentação de endereços 
+								// desprovidos de CEP e de endereços internacionais.
+								// <restriction base="string"><pattern value="\d{8}"></pattern></restriction>
+								String cep = rsEnderecos.getString("nr_cep");
+								if (!StringUtils.isBlank(cep)) {
+									endereco.setCep(cep.replaceAll("[^0-9]", ""));
+								} else {
+								
+									// intercomunicacao-2.2.2: O estado federativo vinculado a este endereço. 
+									// O elemento é opcional para permitir que as implementações acatem 
+									// a indicação de endereço exclusivamente pelo CEP, quando o CEP já 
+									// encerrar o dado respectivo. A implementação de codificação e decodificação 
+									// deverão IGNORAR o elemento quando indicado um CEP válido.
+									endereco.setEstado(rsEnderecos.getString("cd_estado")); 
+									
+									// intercomunicacao-2.2.2: O país vinculado a este endereço. 
+									// Dever-se-á utilizar, preferencialmente, o código ISO-3166-1-alpha-2 
+									// (http://www.iso.org/iso/english_country_names_and_code_elements) 
+									// pertinente ao país respectivo. A implementação deverá IGNORAR 
+									// esse elemento caso tenha sido indicado um CEP válido.
+									//endereco.setPais(""); 
+								}
+								
+								pessoa.getEndereco().add(endereco);
+							}
+						}
+						
+						// Outras dados da pessoa
+						if (rsPartes.getDate("dt_nascimento") != null) {
+							pessoa.setDataNascimento(Auxiliar.formataDataAAAAMMDD(rsPartes.getDate("dt_nascimento")));
+						}
+						if (rsPartes.getDate("dt_obito") != null) {
+							pessoa.setDataObito(Auxiliar.formataDataAAAAMMDD(rsPartes.getDate("dt_obito")));
+						}
+						pessoa.setNomeGenitor(rsPartes.getString("nm_genitor"));
+						pessoa.setNomeGenitora(rsPartes.getString("nm_genitora"));
 					}
 					
 					// Para cada parte identificada, localiza todos os seus representantes
@@ -469,7 +542,7 @@ public class Op_2_GeraXMLsIndividuais {
 								TipoRepresentanteProcessual representanteProcessual = new TipoRepresentanteProcessual();
 								parte.getAdvogado().add(representanteProcessual);
 								representanteProcessual.setNome(representante.getPessoa().getNome());
-								representanteProcessual.setIntimacao(true);
+								representanteProcessual.setIntimacao(true); // intercomunicacao-2.2.2: Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
 								representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
 								if (tiposRepresentantes.containsKey(idProcessoParteRepresentante)) {
 									representanteProcessual.setTipoRepresentante(tiposRepresentantes.get(idProcessoParteRepresentante));
@@ -719,6 +792,10 @@ public class Op_2_GeraXMLsIndividuais {
 		// SQL que fará a consulta dos documentos da pessoa
 		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/04_consulta_documentos_pessoa.sql");
 		nsDocumentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaDocumentos);
+		
+		// SQL que fará a consulta dos endereços da parte
+		String sqlConsultaEnderecos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/04_consulta_enderecos_pessoa.sql");
+		nsEnderecos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaEnderecos);
 
 		// SQL que fará a consulta dos assuntos do processo
 		String sqlConsultaAssuntos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/05_consulta_assuntos.sql");
@@ -794,6 +871,14 @@ public class Op_2_GeraXMLsIndividuais {
 				nsDocumentos = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsDocumentos': " + e.getLocalizedMessage(), e);
+			}
+		}
+		if (nsEnderecos != null) {
+			try {
+				nsEnderecos.close();
+				nsEnderecos = null;
+			} catch (SQLException e) {
+				LOGGER.warn("Erro fechando consulta 'nsEnderecos': " + e.getLocalizedMessage(), e);
 			}
 		}
 		if (nsAssuntos != null) {
