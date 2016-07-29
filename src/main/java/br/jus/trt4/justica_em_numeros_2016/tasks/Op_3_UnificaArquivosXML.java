@@ -1,9 +1,7 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.xml.bind.JAXBContext;

@@ -515,7 +515,16 @@ public class Op_2_GeraXMLsIndividuais {
 			//   raise notice '</assunto>';
 			// END IF;
 			if (!encontrouAlgumAssunto) {
-				LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
+				
+				// Se não há nenhum assunto no processo, verifica se deve ser utilizando um assunto
+				// padrão, conforme arquivo de configuração.
+				TipoAssuntoProcessual assuntoPadrao = analisaAssuntosCNJ.getAssuntoProcessualPadrao();
+				if (assuntoPadrao != null) {
+					assuntos.add(assuntoPadrao);
+					
+				} else {
+					LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
+				}
 				
 			} else if (!encontrouAssuntoPrincipal) {
 				LOGGER.info("Processo sem assunto principal: " + nrProcesso + ". O primeiro assunto será marcado como principal.");

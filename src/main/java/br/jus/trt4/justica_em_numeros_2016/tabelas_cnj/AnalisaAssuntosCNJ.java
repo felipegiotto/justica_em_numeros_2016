@@ -37,6 +37,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	private List<Integer> assuntosProcessuaisCNJ;
 	private PreparedStatement psConsultaAssuntoPorCodigo; // TODO: remover essa consulta, dá pra fazer direto em 05_consulta_assuntos
 	private PreparedStatement psConsultaAssuntoPorID;
+	private TipoAssuntoProcessual assuntoProcessualPadrao;
 	
 	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException {
 		super();
@@ -52,6 +53,19 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 		// PreparedStatements que localizarão assuntos no banco de dados do PJe
 		this.psConsultaAssuntoPorCodigo = conexaoPJe.prepareStatement("SELECT * FROM tb_assunto_trf WHERE cd_assunto_trf=?");
 		this.psConsultaAssuntoPorID = conexaoPJe.prepareStatement("SELECT * FROM tb_assunto_trf WHERE id_assunto_trf=?");
+		
+		// Se o arquivo de configuração especificar um assunto padrão, tenta carregá-lo.
+		// Posteriormente, se necessário, o assunto padrão será carregado do banco de dados.
+		String codigoAssuntoPadraoString = Auxiliar.getParametroConfiguracao("assunto_padrao_" + grau + "G", false);
+		if (codigoAssuntoPadraoString != null) {
+			int codigo = Integer.parseInt(codigoAssuntoPadraoString);
+			this.assuntoProcessualPadrao = getAssunto(codigo);
+			if (this.assuntoProcessualPadrao != null) {
+				this.assuntoProcessualPadrao.setPrincipal(true);
+			} else {
+				LOGGER.warn("Foi definido um assunto padrão com código '" + codigoAssuntoPadraoString + "', mas esse assunto não foi localizado no PJe!");
+			}
+		}
 	}
 	
 	
@@ -124,6 +138,16 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 		return 0;
 	}
 
+	
+	/**
+	 * Se os parâmetros "assunto_padrao_1G" e "assunto_padrao_2G" estiverem habilitados,
+	 * permite a utilização de assuntos "padrão" nos processos, quando os processos não tiverem
+	 * assuntos no PJe.
+	 */
+	public TipoAssuntoProcessual getAssuntoProcessualPadrao() {
+		return assuntoProcessualPadrao;
+	}
+	
 	
 	public boolean assuntoExisteNasTabelasNacionais(int codigoAssunto) {
 		return assuntosProcessuaisCNJ.contains(codigoAssunto);

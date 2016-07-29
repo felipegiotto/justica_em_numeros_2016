@@ -1,6 +1,9 @@
 package br.jus.trt4.justica_em_numeros.tasks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -14,6 +17,8 @@ import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeRepresentanteProcessual;
+import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoLocal;
+import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
@@ -503,6 +508,26 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		return null;
 	}
 
+	private TipoAssuntoLocal getAssuntoLocalComCodigo(int codigo, List<TipoAssuntoProcessual> assuntos) {
+		
+		for (TipoAssuntoProcessual assunto: assuntos) {
+			if (assunto.getAssuntoLocal() != null && codigo == assunto.getAssuntoLocal().getCodigoAssunto()) {
+				return assunto.getAssuntoLocal();
+			}
+		}
+		fail("O assunto local com código '" + codigo + "' não está na lista de assuntos");
+		return null;
+	}
+	
+	private boolean existeAssuntoNacionalComCodigo(int codigo, List<TipoAssuntoProcessual> assuntos) {
+		for (TipoAssuntoProcessual assunto: assuntos) {
+			if (assunto.getCodigoNacional() != null && codigo == assunto.getCodigoNacional()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	@Test
 	public void testCampoMovimentoProcessual() throws Exception {
 		
@@ -594,5 +619,32 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoParte parte = getParteComNome("PETRONILO ROSA DA SILVA", poloPassivo.getParte());
 		TipoPessoa pessoa = parte.getPessoa();
 		assertEquals(ModalidadeGeneroPessoa.M, pessoa.getSexo());
+	}
+	
+	@Test
+	public void testAssuntos() throws Exception {
+		
+		// Processo que possui um assunto que PERTENCE às tabelas nacionais (deve ser lançado
+		// somente com codigoNacional
+		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0000006-97.2012.5.04.0406");
+		assertTrue(existeAssuntoNacionalComCodigo(8809, processoJudicial.getDadosBasicos().getAssunto()));
+		
+		// Processo que possui um assunto que NÃO PERTENCE às tabelas nacionais (deve ser lançado
+		// como assuntoLocal
+		TipoProcessoJudicial processoJudicial2 = retornaDadosProcesso(2, "0000002-60.2012.5.04.0406");
+		TipoAssuntoLocal assuntoLocal2 = getAssuntoLocalComCodigo(55207, processoJudicial2.getDadosBasicos().getAssunto());
+		assertEquals(55207, assuntoLocal2.getCodigoAssunto());
+		assertEquals(2656, assuntoLocal2.getCodigoPaiNacional());
+		assertEquals("Outras Hipóteses de Estabilidade", assuntoLocal2.getDescricao());
+		
+		// Processo sem assunto deve receber um assunto principal baseado nas configurações (campos
+		// assunto_padrao_1G e assunto_padrao_2G)
+		TipoProcessoJudicial processoJudicial3 = retornaDadosProcesso(1, "0021172-82.2013.5.04.0332");
+		assertEquals(1, processoJudicial3.getDadosBasicos().getAssunto().size());
+		TipoAssuntoLocal assuntoLocal3 = getAssuntoLocalComCodigo(1654, processoJudicial3.getDadosBasicos().getAssunto());
+		assertEquals(1654, assuntoLocal3.getCodigoAssunto());
+		assertEquals(864, assuntoLocal3.getCodigoPaiNacional());
+		assertEquals("Contrato Individual de Trabalho", assuntoLocal3.getDescricao());
+		assertTrue(processoJudicial3.getDadosBasicos().getAssunto().get(0).isPrincipal());
 	}
 }
