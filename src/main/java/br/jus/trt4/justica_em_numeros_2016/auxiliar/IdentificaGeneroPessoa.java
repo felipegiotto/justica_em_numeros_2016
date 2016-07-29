@@ -91,7 +91,12 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 				}
 			}
 			pessoa.setSexo(cacheGenerosOutraInstancia.get(chaveCache));
-		}	
+			
+		} else {
+			
+			// Se realmente não foi possível consultar o sexo na outra instância, grava como DESCONHECIDO.
+			pessoa.setSexo(ModalidadeGeneroPessoa.D);
+		}
 		
 	}
 
