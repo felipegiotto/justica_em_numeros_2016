@@ -302,7 +302,16 @@ public class Op_2_GeraXMLsIndividuais {
 				// Script TRT14:
 				// raise notice '<polo polo="%">', polo.in_polo_participacao;
 				TipoPoloProcessual polo = new TipoPoloProcessual();
-				polo.setPolo(ModalidadePoloProcessual.valueOf(rsPolos.getString("in_polo_participacao")));
+				String tipoPoloPJe = rsPolos.getString("in_polo_participacao");
+				if ("A".equals(tipoPoloPJe)) {
+					polo.setPolo(ModalidadePoloProcessual.AT); // AT: polo ativo
+				} else if ("P".equals(tipoPoloPJe)) {
+					polo.setPolo(ModalidadePoloProcessual.PA); // PA: polo passivo
+				} else if ("T".equals(tipoPoloPJe)) {
+					polo.setPolo(ModalidadePoloProcessual.TC); // TC: terceiro
+				} else {
+					throw new RuntimeException("Tipo de polo não reconhecido: " + tipoPoloPJe);
+				}
 				polos.add(polo);
 
 				// Consulta as partes de um determinado polo no processo
