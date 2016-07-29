@@ -401,20 +401,26 @@ public class Op_2_GeraXMLsIndividuais {
 									// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
 									//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
 									if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
-										TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
-										pessoa.getDocumento().add(documento);
-										
-										documento.setCodigoDocumento(numeroDocumento);
-										documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
 										
 										// Carrega o tipo de documento do CNJ a partir do tipo do PJe
-										documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe)));
-										
-										// Nome do documento, conforme documentação do XSD:
-										// Nome existente no documento. Deve ser utilizado apenas se existente nome diverso daquele ordinariamente usado.
-										String nomePessoaDocumento = rsDocumentos.getString("ds_nome_pessoa");
-										if (!pessoa.getNome().equals(nomePessoaDocumento)) {
-											documento.setNome(nomePessoaDocumento);
+										// OBS: Alguns documentos do PJe não possuem correspondente
+										// no CNJ, ex: PFP. Esses tipos de documento estão cadastrados
+										// no arquivo "properties" mas estarão em branco (string vazia).
+										String tipoDocumentoCNJ = tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe);
+										if (!StringUtils.isBlank(tipoDocumentoCNJ)) {
+											
+											TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
+											documento.setCodigoDocumento(numeroDocumento);
+											documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
+											documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tipoDocumentoCNJ));
+											
+											// Nome do documento, conforme documentação do XSD:
+											// Nome existente no documento. Deve ser utilizado apenas se existente nome diverso daquele ordinariamente usado.
+											String nomePessoaDocumento = rsDocumentos.getString("ds_nome_pessoa");
+											if (!pessoa.getNome().equals(nomePessoaDocumento)) {
+												documento.setNome(nomePessoaDocumento);
+											}
+											pessoa.getDocumento().add(documento);
 										}
 										
 									} else {
@@ -425,6 +431,16 @@ public class Op_2_GeraXMLsIndividuais {
 						}
 						
 						identificaGeneroPessoa.preencherSexoPessoa(pessoa, rsPartes.getString("in_sexo"), rsPartes.getString("ds_nome_consulta"));
+						
+						// Verifica se existe documento principal. Orientação do CNJ, do arquivo
+						// intercomunicacao-2.2.2.xsd:
+						// Número do documento principal da pessoa individualizada, devendo ser 
+						// utilizado o RIC ou o CPF para pessoas físicas, nessa ordem, ou o CNPJ 
+						// para pessoas jurídicas. O atributo é opcional em razão da possibilidade 
+						// de haver pessoas sem documentos ou cujos dados não estão disponíveis.
+						if (StringUtils.isEmpty(pessoa.getNumeroDocumentoPrincipal())) {
+							LOGGER.info("Pessoa '" + nomeParte + "' não possui documento principal!");
+						}
 					}
 					
 					// Para cada parte identificada, localiza todos os seus representantes
