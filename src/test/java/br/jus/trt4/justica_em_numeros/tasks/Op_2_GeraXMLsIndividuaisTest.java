@@ -665,5 +665,28 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("93226476", endereco.getCep());
 		assertNull(endereco.getEstado());
 		assertNull(endereco.getPais());
-	}	
+	}
+	
+	/**
+	 * Curadores e Tutores, apesar de estarem previstos no arquivo intercomunicacao-2.2.2, não estão
+	 * sendo tratados pelo arquivo JAR do CNJ (replicacao-client). Seus dados estão sendo simplesmente
+	 * ignorados. Por isso, também removerei essas pessoas do arquivo XML, já que, de acordo
+	 * com Jeferson Andrade (TRT4), essas pessoas não são consideradas PARTES nos processos.
+	 * @throws Exception
+	 */
+	@Test
+	public void testCurador() throws Exception {
+		
+		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0021300-74.2013.5.04.0406");
+		TipoPoloProcessual poloPassivo = getPolo(ModalidadePoloProcessual.PA, processoJudicial.getDadosBasicos().getPolo());
+		TipoParte partePassivoGuiomar = getParteComNome("GUIOMAR ANTUNES MACIEL", poloPassivo.getParte());
+		
+		// GUIOMAR possui, no PJe, um ADVOGADO (EDSON) e um CURADOR (DALVA). 
+		// Mas, nesse arquivo XML, somente o ADVOGADO deve estar preenchido.
+		assertEquals("EDSON DE CARLI", partePassivoGuiomar.getAdvogado().get(0).getNome());
+		assertEquals(1, partePassivoGuiomar.getAdvogado().size());
+		
+		// O curador não deve estar constando como parte no processo 
+		assertEquals(1, poloPassivo.getParte().size());
+	}
 }

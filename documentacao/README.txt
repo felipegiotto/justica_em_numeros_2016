@@ -103,12 +103,10 @@ Funcionamento "avançado":
 
 
 * Parte/Relacionamentos: não estão sendo tratados os casos de representação e assistência dos pais, 
-  representação ou substituição processual em ações coletivas, tutela e curatela. No XSD, esse campo 
-  não é obrigatório.
+  representação ou substituição processual em ações coletivas, inventariantes, tutela e curatela. No XSD, esse campo 
+  não é obrigatório. Ao executar a ferramenta "replicacao-client", do CNJ, esses dados não são 
+  enviados, de qualquer forma.
   
-  
-* Parte/Advogado: não está sendo preenchido o elemento opcional 'advogado'.
-
 
 * Parte/Documentos: somente estão sendo inseridos nos arquivos XML os documentos que possuem correspondência
   nos tipos do CNJ, conforme arquivo "tipos_de_documentos.properties". Os documentos do PJe que não possuírem
@@ -146,23 +144,18 @@ Funcionamento "avançado":
   exibe um exemplo de complemento com código e sem código: Ex.: no movimento 123, seria
       18:motivo_da_remessa:38:em grau de recurso
       7:destino:1ª Vara Cível
+      
+* Movimentos/Complementos: Não estão sendo validados os códigos e tipos de complementos do PJe: todos
+  os complementos estão sendo preenchidos da mesma forma, como texto.
 
 
 
 ========== Dúvidas / Esclarecimentos / Pendências ==========
 
-* TODO: Definir como tratar partes de tipos que não estejam mapeadas no CNJ, ex: 
-  * O representante da parte 'CLINSUL MAO DE OBRA E REPRESENTACAO LTDA' (id_processo_parte=173621) possui um tipo de parte que ainda não foi tratado: ADMINISTRADOR
-  * O representante da parte 'FERNANDA CRISTINA DE SOUZA LIMA' (id_processo_parte=2780966) possui um tipo de parte que ainda não foi tratado: ASSISTENTE
-  * O representante da parte 'LUIZ PAULO FERREIRA' (id_processo_parte=466618) possui um tipo de parte que ainda não foi tratado: CURADOR
-  * O representante da parte 'VILMAR DOS REIS' (id_processo_parte=2220300) possui um tipo de parte que ainda não foi tratado: REPRESENTANTE
-  * O representante da parte 'NISYO STROIEKE' (id_processo_parte=245410) possui um tipo de parte que ainda não foi tratado: INVENTARIANTE
-  * O representante da parte 'MELISSA CAVALHEIRO GRAVINA' (id_processo_parte=2436733) possui um tipo de parte que ainda não foi tratado: TUTOR
-  * Comando para identificar problemas com tipos de parte desconhecidos:
-    grep "O representante da parte" justica_em_numeros.log | grep --invert-match ": ADMINISTRADOR" | grep --invert-match ": ASSISTENTE" | grep --invert-match ": CURADOR" | grep --invert-match ": REPRESENTANTE" | grep --invert-match ": INVENTARIANTE" | grep --invert-match ": TUTOR" | less
-  
+
 * Comando para identificar warnings nos arquivos de log:
   grep " WARN " justica_em_numeros.log | grep --invert-match "'RGE'" | grep --invert-match "EM PROCEDIMENTO SUMAR" | grep --invert-match "GABINETE JUDICIARIO" | grep --invert-match "foi gerado na base" | grep --invert-match "sem assunto" | grep --invert-match "representante da parte" | grep --invert-match "'PFP'" | grep --invert-match "connection has been closed" | less  
+
   
 * Quanto ao período de extração dos dados:
   Pergunta enviada ao CNJ: 
@@ -194,10 +187,6 @@ Funcionamento "avançado":
   Resposta de davi.borges@cnj.jus.br em 26/07/2016: Sim.
 
 
-* Parte/Advogado: analisar como devem ser tratados os procuradores, que hoje estão sendo ignorados no arquivo 
-  "03_consulta_partes.sql"
-  
-  
 * Quanto à cumulatividade dos arquivos enviados:
   Pergunta enviada ao CNJ e respostas de leandro.andrade@cnj.jus.br em 26/07/2016:
     O CNJ disponibilizou a ferramenta "replicacao-client" para que os tribunais possam validar seus 

@@ -321,7 +321,8 @@ public class Op_2_GeraXMLsIndividuais {
 				nsPartes.setString("in_participacao", rsPolos.getString("in_participacao"));
 				try (ResultSet rsPartes = nsPartes.executeQuery()) {
 					
-					// O PJe considera, como partes, tanto os autores e réus quanto seus advogados.
+					// O PJe considera, como partes, tanto os autores e réus quanto seus advogados,
+					// procuradores, tutores, curadores, assistentes, etc.
 					// Por isso, a identificação das partes será feita em etapas:
 					// 1. Todas as partes e advogados serão identificados e gravados no HashMap
 					//    "partesPorIdParte"
@@ -344,6 +345,8 @@ public class Op_2_GeraXMLsIndividuais {
 						int idProcessoParte = rsPartes.getInt("id_processo_parte");
 						int idProcessoParteRepresentante = rsPartes.getInt("id_parte_representante");
 						partesPorIdParte.put(idProcessoParte, parte);
+						
+						// Verifica se, no PJe, essa parte possui representante (advogado, procurador, tutor, curador, etc)
 						if (idProcessoParteRepresentante > 0) {
 							if (!partesERepresentantes.containsKey(idProcessoParte)) {
 								partesERepresentantes.put(idProcessoParte, new ArrayList<Integer>());
@@ -356,6 +359,16 @@ public class Op_2_GeraXMLsIndividuais {
 								
 							} else if ("PROCURADOR".equals(tipoParteRepresentante)) {
 								tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.P);
+								
+							} else if ("ADMINISTRADOR".equals(tipoParteRepresentante)
+									|| "ASSISTENTE".equals(tipoParteRepresentante)
+									|| "CURADOR".equals(tipoParteRepresentante)
+									|| "INVENTARIANTE".equals(tipoParteRepresentante)
+									|| "REPRESENTANTE".equals(tipoParteRepresentante)
+									|| "TUTOR".equals(tipoParteRepresentante)) {
+								// Não fazer nada, pois esses tipos de parte (PJe), apesar de estarem descritos
+								// no arquivo "intercomunicacao-2.2.2", não estão sendo enviados ao CNJ
+								// pela ferramenta "replicacao-client".
 								
 							} else {
 								LOGGER.warn("O representante da parte '" + nomeParte + "' (id_processo_parte=" + idProcessoParte + ") possui um tipo de parte que ainda não foi tratado: " + tipoParteRepresentante);
@@ -539,12 +552,16 @@ public class Op_2_GeraXMLsIndividuais {
 							if (representante != null) {
 								
 								// Cria um objeto TipoRepresentanteProcessual a partir dos dados do representante
-								TipoRepresentanteProcessual representanteProcessual = new TipoRepresentanteProcessual();
-								parte.getAdvogado().add(representanteProcessual);
-								representanteProcessual.setNome(representante.getPessoa().getNome());
-								representanteProcessual.setIntimacao(true); // intercomunicacao-2.2.2: Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
-								representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
+								// OBS: somente se o tipo do representante foi identificado, pois
+								//      alguns tipos (como tutores e curadores) não são processados
+								//      pelo "replicacao-client", do CNJ, e não serão incluídos no
+								//      arquivo XML.
 								if (tiposRepresentantes.containsKey(idProcessoParteRepresentante)) {
+									TipoRepresentanteProcessual representanteProcessual = new TipoRepresentanteProcessual();
+									parte.getAdvogado().add(representanteProcessual);
+									representanteProcessual.setNome(representante.getPessoa().getNome());
+									representanteProcessual.setIntimacao(true); // intercomunicacao-2.2.2: Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
+									representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
 									representanteProcessual.setTipoRepresentante(tiposRepresentantes.get(idProcessoParteRepresentante));
 								}
 							}
