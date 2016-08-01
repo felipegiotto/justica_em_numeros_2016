@@ -5,3 +5,4 @@ LEFT JOIN tb_cep cep USING (id_cep)
 LEFT JOIN tb_municipio m USING (id_municipio)
 LEFT JOIN tb_estado uf USING (id_estado)
 WHERE id_processo_parte = :id_processo_parte
+  AND e.nm_logradouro IS NOT NULL AND cep.nr_cep IS NOT NULL

@@ -470,32 +470,6 @@ public class Op_2_GeraXMLsIndividuais {
 						nsEnderecos.setInt("id_processo_parte", rsPartes.getInt("id_processo_parte"));
 						try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
 							while (rsEnderecos.next()) {
-								TipoEndereco endereco = new TipoEndereco();
-								
-								// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
-								// tais como rua, praça, quadra etc. O elemento é opcional para permitir 
-								// que as implementações acatem a indicação de endereço exclusivamente 
-								// pelo CEP, quando o CEP já encerrar o dado respectivo.
-								endereco.setLogradouro(rsEnderecos.getString("nm_logradouro"));
-								
-								// intercomunicacao-2.2.2: O número vinculado a este endereço. O elemento 
-								// é opcional para permitir que as implementações acatem a indicação de 
-								// endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-								endereco.setNumero(rsEnderecos.getString("nr_endereco"));
-								
-								// intercomunicacao-2.2.2: O complemento vinculado a este endereço. 
-								// O elemento é opcional em razão de sua própria natureza.
-								endereco.setComplemento(rsEnderecos.getString("ds_complemento"));
-								
-								// intercomunicacao-2.2.2: O bairro vinculado a este endereço. O elemento 
-								// é opcional para permitir que as implementações acatem a indicação 
-								// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-								endereco.setBairro(rsEnderecos.getString("nm_bairro"));
-								
-								// intercomunicacao-2.2.2: A cidade vinculada a este endereço. O elemento 
-								// é opcional para permitir que as implementações acatem a indicação 
-								// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-								endereco.setCidade(rsEnderecos.getString("ds_municipio"));
 								
 								// intercomunicacao-2.2.2: Atributo indicador do código de endereçamento 
 								// postal do endereço no diretório nacional de endereços da ECT. O 
@@ -505,25 +479,40 @@ public class Op_2_GeraXMLsIndividuais {
 								// <restriction base="string"><pattern value="\d{8}"></pattern></restriction>
 								String cep = rsEnderecos.getString("nr_cep");
 								if (!StringUtils.isBlank(cep)) {
-									endereco.setCep(cep.replaceAll("[^0-9]", ""));
-								} else {
-								
-									// intercomunicacao-2.2.2: O estado federativo vinculado a este endereço. 
-									// O elemento é opcional para permitir que as implementações acatem 
-									// a indicação de endereço exclusivamente pelo CEP, quando o CEP já 
-									// encerrar o dado respectivo. A implementação de codificação e decodificação 
-									// deverão IGNORAR o elemento quando indicado um CEP válido.
-									endereco.setEstado(rsEnderecos.getString("cd_estado")); 
-									
-									// intercomunicacao-2.2.2: O país vinculado a este endereço. 
-									// Dever-se-á utilizar, preferencialmente, o código ISO-3166-1-alpha-2 
-									// (http://www.iso.org/iso/english_country_names_and_code_elements) 
-									// pertinente ao país respectivo. A implementação deverá IGNORAR 
-									// esse elemento caso tenha sido indicado um CEP válido.
-									//endereco.setPais(""); 
+									cep = cep.replaceAll("[^0-9]", "");
 								}
 								
-								pessoa.getEndereco().add(endereco);
+								if (!StringUtils.isBlank(cep)) {
+									TipoEndereco endereco = new TipoEndereco();
+									endereco.setCep(cep);
+									
+									// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
+									// tais como rua, praça, quadra etc. O elemento é opcional para permitir 
+									// que as implementações acatem a indicação de endereço exclusivamente 
+									// pelo CEP, quando o CEP já encerrar o dado respectivo.
+									endereco.setLogradouro(rsEnderecos.getString("nm_logradouro"));
+									
+									// intercomunicacao-2.2.2: O número vinculado a este endereço. O elemento 
+									// é opcional para permitir que as implementações acatem a indicação de 
+									// endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+									endereco.setNumero(rsEnderecos.getString("nr_endereco"));
+									
+									// intercomunicacao-2.2.2: O complemento vinculado a este endereço. 
+									// O elemento é opcional em razão de sua própria natureza.
+									endereco.setComplemento(rsEnderecos.getString("ds_complemento"));
+									
+									// intercomunicacao-2.2.2: O bairro vinculado a este endereço. O elemento 
+									// é opcional para permitir que as implementações acatem a indicação 
+									// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+									endereco.setBairro(rsEnderecos.getString("nm_bairro"));
+									
+									// intercomunicacao-2.2.2: A cidade vinculada a este endereço. O elemento 
+									// é opcional para permitir que as implementações acatem a indicação 
+									// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+									endereco.setCidade(rsEnderecos.getString("ds_municipio"));
+									
+									pessoa.getEndereco().add(endereco);
+								}
 							}
 						}
 						

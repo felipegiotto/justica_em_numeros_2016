@@ -670,6 +670,13 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoRepresentanteProcessual advogado = getRepresentanteComNome("ANDERSON ALZENIR DE JESUS", parteAtivoRogerio.getAdvogado());
 		assertEquals(1, advogado.getEndereco().size());
 		assertEquals("Rua Padre Claret", advogado.getEndereco().get(0).getLogradouro());
+		
+		// Processo que possui um endereço com CEP em branco
+		TipoProcessoJudicial processoJudicial2 = retornaDadosProcesso(2, "0020242-05.2014.5.04.0017");
+		TipoPoloProcessual poloAtivo2 = getPolo(ModalidadePoloProcessual.AT, processoJudicial2.getDadosBasicos().getPolo());
+		TipoParte parteSindicato = getParteComNome("SINDICATO DOS BANCARIOS DE PORTO ALEGRE", poloAtivo2.getParte());
+		TipoRepresentanteProcessual advogadoSindicato = getRepresentanteComNome("ANDRE HEINECK KRUSE", parteSindicato.getAdvogado());
+		assertEquals(5, advogadoSindicato.getEndereco().size());
 	}
 	
 	/**
