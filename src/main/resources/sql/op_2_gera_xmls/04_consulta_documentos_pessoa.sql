@@ -9,5 +9,5 @@ select
   
   pdi.ds_nome_pessoa
 from tb_pess_doc_identificacao pdi
-
 where pdi.id_pessoa = :id_pessoa
+  AND pdi.in_ativo = 'S'

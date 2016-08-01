@@ -410,9 +410,10 @@ public class Op_2_GeraXMLsIndividuais {
 								// Considera CPF, CNPJ e RIC como documentos principais da pessoa, que ficam em um campo separado
 								// (fora da lista de documentos)
 								String tipoDocumentoPJe = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao").trim();
-								String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento").replaceAll("[^0-9a-zA-Z]", "");
+								String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento");
 								if (tipoDocumentoPJe.equals("CPF") || tipoDocumentoPJe.equals("CPJ") || tipoDocumentoPJe.equals("RIC")) {
 									
+									numeroDocumento = numeroDocumento.replaceAll("[^0-9a-zA-Z]", "");
 									if (tipoDocumentoPJe.equals("CPF")) {
 										numeroDocumento = StringUtils.leftPad(numeroDocumento, 11, '0');
 									} else {
@@ -445,6 +446,12 @@ public class Op_2_GeraXMLsIndividuais {
 												documento.setNome(nomePessoaDocumento);
 											}
 											pessoa.getDocumento().add(documento);
+											
+											// Gera um WARNING se encontrar algum documento totalmente fora do padrão (sem números)
+											// Ex: no TRT4, havia um documento da PJ "ESTADO DO RIO GRANDE DO SUL" do tipo "RJC" com número "Órgão Público com Procuradoria"
+											if (StringUtils.isBlank(numeroDocumento.replaceAll("[^0-9]", ""))) {
+												LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomeParte + "' não possui números: '" + numeroDocumento + "'");
+											}
 										}
 										
 									} else {
