@@ -676,7 +676,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoPoloProcessual poloAtivo2 = getPolo(ModalidadePoloProcessual.AT, processoJudicial2.getDadosBasicos().getPolo());
 		TipoParte parteSindicato = getParteComNome("SINDICATO DOS BANCARIOS DE PORTO ALEGRE", poloAtivo2.getParte());
 		TipoRepresentanteProcessual advogadoSindicato = getRepresentanteComNome("ANDRE HEINECK KRUSE", parteSindicato.getAdvogado());
-		assertEquals(5, advogadoSindicato.getEndereco().size());
+		assertEquals(5, advogadoSindicato.getEndereco().size()); // Advogado possui 5 endedeços com CEP válido e 1 com CEP em branco.
 	}
 	
 	/**
