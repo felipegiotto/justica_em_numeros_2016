@@ -434,23 +434,24 @@ public class Op_2_GeraXMLsIndividuais {
 										String tipoDocumentoCNJ = tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe);
 										if (!StringUtils.isBlank(tipoDocumentoCNJ)) {
 											
-											TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
-											documento.setCodigoDocumento(numeroDocumento);
-											documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
-											documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tipoDocumentoCNJ));
-											
-											// Nome do documento, conforme documentação do XSD:
-											// Nome existente no documento. Deve ser utilizado apenas se existente nome diverso daquele ordinariamente usado.
-											String nomePessoaDocumento = rsDocumentos.getString("ds_nome_pessoa");
-											if (!pessoa.getNome().equals(nomePessoaDocumento)) {
-												documento.setNome(nomePessoaDocumento);
-											}
-											pessoa.getDocumento().add(documento);
-											
 											// Gera um WARNING se encontrar algum documento totalmente fora do padrão (sem números)
 											// Ex: no TRT4, havia um documento da PJ "ESTADO DO RIO GRANDE DO SUL" do tipo "RJC" com número "Órgão Público com Procuradoria"
 											if (StringUtils.isBlank(numeroDocumento.replaceAll("[^0-9]", ""))) {
 												LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomeParte + "' não possui números: '" + numeroDocumento + "'");
+											} else {
+												
+												TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
+												documento.setCodigoDocumento(numeroDocumento);
+												documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
+												documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tipoDocumentoCNJ));
+												
+												// Nome do documento, conforme documentação do XSD:
+												// Nome existente no documento. Deve ser utilizado apenas se existente nome diverso daquele ordinariamente usado.
+												String nomePessoaDocumento = rsDocumentos.getString("ds_nome_pessoa");
+												if (!pessoa.getNome().equals(nomePessoaDocumento)) {
+													documento.setNome(nomePessoaDocumento);
+												}
+												pessoa.getDocumento().add(documento);
 											}
 										}
 										
