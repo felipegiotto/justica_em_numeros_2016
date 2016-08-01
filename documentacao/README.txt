@@ -151,10 +151,6 @@ Funcionamento "avançado":
 
 ========== Dúvidas / Esclarecimentos / Pendências ==========
 
-* TODO: Documentos do tipo "RGE". Esclarecer o que fazer.
-
-* TODO: Classe processual que não existe nas tabelas do CNJ: 11886 - RECURSO ORDINÁRIO EM PROCEDIMENTO SUMARÍSSIMO
-
 * TODO: Definir como tratar partes de tipos que não estejam mapeadas no CNJ, ex: 
   * O representante da parte 'CLINSUL MAO DE OBRA E REPRESENTACAO LTDA' (id_processo_parte=173621) possui um tipo de parte que ainda não foi tratado: ADMINISTRADOR
   * O representante da parte 'FERNANDA CRISTINA DE SOUZA LIMA' (id_processo_parte=2780966) possui um tipo de parte que ainda não foi tratado: ASSISTENTE
