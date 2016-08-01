@@ -778,35 +778,35 @@ public class Op_2_GeraXMLsIndividuais {
 		identificaGeneroPessoa = new IdentificaGeneroPessoa(outraInstancia);
 		
 		// SQL que fará a consulta de um processo
-		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/01_consulta_processo.sql");
+		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/01_consulta_processo.sql");
 		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 		
 		// SQL que fará a consulta de todos os polos
-		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/02_consulta_polos.sql");
+		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/02_consulta_polos.sql");
 		nsPolos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPolos);		
 
 		// SQL que fará a consulta das partes
-		String sqlConsultaPartes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/03_consulta_partes.sql");
+		String sqlConsultaPartes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/03_consulta_partes.sql");
 		nsPartes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPartes);
 
 		// SQL que fará a consulta dos documentos da pessoa
-		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/04_consulta_documentos_pessoa.sql");
+		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_documentos_pessoa.sql");
 		nsDocumentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaDocumentos);
 		
 		// SQL que fará a consulta dos endereços da parte
-		String sqlConsultaEnderecos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/04_consulta_enderecos_pessoa.sql");
+		String sqlConsultaEnderecos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_enderecos_pessoa.sql");
 		nsEnderecos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaEnderecos);
 
 		// SQL que fará a consulta dos assuntos do processo
-		String sqlConsultaAssuntos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/05_consulta_assuntos.sql");
+		String sqlConsultaAssuntos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/05_consulta_assuntos.sql");
 		nsAssuntos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaAssuntos);
 
 		// SQL que fará a consulta dos movimentos processuais
-		String sqlConsultaMovimentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/06_consulta_movimentos.sql");
+		String sqlConsultaMovimentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/06_consulta_movimentos.sql");
 		nsMovimentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaMovimentos);
 
 		// Le o SQL que fará a consulta dos complementos dos movimentos processuais
-		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/07_consulta_complementos.sql");
+		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/07_consulta_complementos.sql");
 		nsComplementos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaComplementos);
 
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional

@@ -44,7 +44,7 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 			try {
 				conexaoBasePrincipalOutraInstancia = Auxiliar.getConexaoPJe(grau);
 		
-				String sqlConsultaGeneroOutraInstancia = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/consulta_genero_outra_instancia.sql");
+				String sqlConsultaGeneroOutraInstancia = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/consulta_genero_outra_instancia.sql");
 				nsConsultaGeneroOutraInstancia = new NamedParameterStatement(conexaoBasePrincipalOutraInstancia, sqlConsultaGeneroOutraInstancia);
 			} catch (SQLException | IOException ex) {
 				LOGGER.warn("Não foi possível abrir conexão com a outra instância do PJe (" + grau + "G). O parâmetro 'contornar_falta_de_genero' não terá efeito!");
