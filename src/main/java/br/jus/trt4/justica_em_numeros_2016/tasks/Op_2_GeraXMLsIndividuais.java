@@ -563,6 +563,7 @@ public class Op_2_GeraXMLsIndividuais {
 									representanteProcessual.setIntimacao(true); // intercomunicacao-2.2.2: Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
 									representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
 									representanteProcessual.setTipoRepresentante(tiposRepresentantes.get(idProcessoParteRepresentante));
+									representanteProcessual.getEndereco().addAll(representante.getPessoa().getEndereco());
 								}
 							}
 						}

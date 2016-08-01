@@ -425,7 +425,6 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// TODO: Testar campos de TipoRepresentanteProcessual
 		TipoRepresentanteProcessual repLidiane = getRepresentanteComNome("LIDIANE DA SILVA DANIEL", parteAtivoRogerio.getAdvogado());
 		assertEquals(true, repLidiane.isIntimacao()); // Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
-		// TODO: Testar campo List<TipoEndereco> endereco;
 		// TODO: Testar campo String inscricao;
 		assertEquals("00374625042", repLidiane.getNumeroDocumentoPrincipal());
 		assertEquals(ModalidadeRepresentanteProcessual.A, repLidiane.getTipoRepresentante());
@@ -655,6 +654,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoPoloProcessual poloAtivo = getPolo(ModalidadePoloProcessual.AT, processoJudicial.getDadosBasicos().getPolo());
 		TipoParte parteAtivoRogerio = getParteComNome("ROGERIO MELO DE CASTRO", poloAtivo.getParte());
 		
+		// Endereço de uma parte
 		assertEquals(1, parteAtivoRogerio.getPessoa().getEndereco().size());
 		TipoEndereco endereco = parteAtivoRogerio.getPessoa().getEndereco().get(0);
 		assertEquals("RUA SAPIRANGA", endereco.getLogradouro());
@@ -665,6 +665,11 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("93226476", endereco.getCep());
 		assertNull(endereco.getEstado());
 		assertNull(endereco.getPais());
+		
+		// Endereço de um advogado
+		TipoRepresentanteProcessual advogado = getRepresentanteComNome("ANDERSON ALZENIR DE JESUS", parteAtivoRogerio.getAdvogado());
+		assertEquals(1, advogado.getEndereco().size());
+		assertEquals("Rua Padre Claret", advogado.getEndereco().get(0).getLogradouro());
 	}
 	
 	/**

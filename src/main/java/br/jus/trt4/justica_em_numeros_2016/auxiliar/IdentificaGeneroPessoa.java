@@ -31,10 +31,8 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 	private NamedParameterStatement nsConsultaGeneroOutraInstancia;
 	private HashMap<String, ModalidadeGeneroPessoa> cacheGenerosOutraInstancia = new HashMap<>();
 	private Connection conexaoBasePrincipalOutraInstancia;
-	private int grau;
 
 	public IdentificaGeneroPessoa(int grau) {
-		this.grau = grau;
 		
 		// Abre conexão com o outro banco de dados do PJe, para localizar o sexo de pessoas que podem
 		// estar sem essa informação
