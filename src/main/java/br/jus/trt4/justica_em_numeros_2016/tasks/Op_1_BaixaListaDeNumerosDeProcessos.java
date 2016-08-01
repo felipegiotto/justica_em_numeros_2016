@@ -83,11 +83,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			
 			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um lote qualquer
 			// de 30 processos
-			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
-					"FROM tb_processo p " +
-					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"WHERE nr_ano = 2016 " +
-					"LIMIT 30";
+			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_testes.sql");
 			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			
@@ -95,10 +91,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			
 			// Se usuário preencheu um número de processo no parâmetro "tipo_carga_xml", carrega
 			// somente os dados dele
-			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
-					"FROM tb_processo p " +
-					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"WHERE nr_processo = ?";
+			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_um_processo.sql");
 			PreparedStatement ps = conexaoBasePrincipal.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			ps.setString(1, tipoCarga);
 			rsConsultaProcessos = ps.executeQuery();
@@ -110,10 +103,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// regras definidas pelo CNJ:
 			// Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
 			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
-			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
-					"FROM tb_processo p " +
-					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"WHERE EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE p.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2015-01-01 00:00:00.000' AND '2016-07-31 23:59:59.999' LIMIT 1)";
+			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_completa.sql");
 			Statement statement = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			statement.setFetchSize(100);
 			rsConsultaProcessos = statement.executeQuery(sql);
@@ -124,10 +114,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// regras definidas pelo CNJ:
 			// Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
 			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
-			String sql = "SELECT nr_processo, ptrf.id_orgao_julgador " +
-					"FROM tb_processo p " +
-					"INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf) " +
-					"WHERE EXISTS (SELECT 1 FROM tb_processo_evento pe WHERE p.id_processo = pe.id_processo AND pe.dt_atualizacao BETWEEN '2016-08-01 00:00:00.000' AND '2016-08-31 23:59:59.999' LIMIT 1)";
+			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_mensal.sql");
 			Statement statement = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			statement.setFetchSize(100);
 			rsConsultaProcessos = statement.executeQuery(sql);
