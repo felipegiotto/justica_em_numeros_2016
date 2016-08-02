@@ -261,7 +261,7 @@ public class Op_2_GeraXMLsIndividuais {
 		cabecalhoProcesso.setNumero(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
 		
 		// Grava a classe processual, conferindo se ela está na tabela nacional do CNJ
-		int codigoClasseProcessual = Auxiliar.getCampoIntNotNull(rsProcesso, "cd_classe_judicial");
+		int codigoClasseProcessual = rsProcesso.getInt("cd_classe_judicial");
 		cabecalhoProcesso.setClasseProcessual(codigoClasseProcessual);
 		if (!classesProcessuaisCNJ.contains(codigoClasseProcessual)) {
 			LOGGER.warn("Processo '" + rsProcesso.getString("numero_completo_processo") + "' possui uma classe processual que não existe nas tabelas do CNJ: " + codigoClasseProcessual + " - " + rsProcesso.getString("ds_classe_judicial"));
@@ -272,7 +272,7 @@ public class Op_2_GeraXMLsIndividuais {
 		if (grau == 1) {
 			
 			// Em 1G, pega como localidade o município do OJ do processo
-			cabecalhoProcesso.setCodigoLocalidade(Auxiliar.getCampoStringNotNull(rsProcesso, "id_municipio_ibge_origem"));
+			cabecalhoProcesso.setCodigoLocalidade(Auxiliar.getCampoStringNotNull(rsProcesso, "id_municipio_ibge"));
 		} else {
 			
 			// Em 2G, pega como localidade o município do TRT, que está definido no arquivo de configurações
@@ -676,7 +676,7 @@ public class Op_2_GeraXMLsIndividuais {
 		if (grau == 1) {
 			
 			// Em 1G, pega como localidade do OJ o município do OJ do processo
-			orgaoJulgador.setCodigoMunicipioIBGE(Auxiliar.getCampoIntNotNull(rsProcesso, "id_municipio_ibge_atual"));
+			orgaoJulgador.setCodigoMunicipioIBGE(Auxiliar.getCampoIntNotNull(rsProcesso, "id_municipio_ibge"));
 			
 			// Em 1G, instância será sempre originária
 			orgaoJulgador.setInstancia("ORIG");
@@ -708,7 +708,7 @@ public class Op_2_GeraXMLsIndividuais {
 				TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
 				movimento.setDataHora(Auxiliar.getCampoStringNotNull(rsMovimentos, "dta_ocorrencia"));
 				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
-				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), Auxiliar.getCampoStringNotNull(rsMovimentos, "ds_texto_final_interno"));
+				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), rsMovimentos.getString("ds_texto_final_interno"), rsMovimentos.getString("ds_movimento"));
 				movimentos.add(movimento);
 
 				// Consulta os complementos desse movimento processual.

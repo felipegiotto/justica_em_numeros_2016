@@ -62,12 +62,16 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 	 * 
 	 * @throws SQLException 
 	 */
-	public void preencheDadosMovimentoCNJ(TipoMovimentoProcessual movimento, int codigoMovimento, String descricao) throws SQLException {
+	public void preencheDadosMovimentoCNJ(TipoMovimentoProcessual movimento, int codigoMovimento, String descricao, String descricaoEventoProcessual) throws SQLException {
 		if (movimentoExisteNasTabelasNacionais(codigoMovimento)) {
 			TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
 			movimentoNacional.setCodigoNacional(codigoMovimento);
 			movimento.setMovimentoNacional(movimentoNacional);
 		} else {
+			if (descricao == null) {
+				LOGGER.info("Movimento com código " + codigoMovimento + " não possui descrição. Será utilizada a descrição da tabela tb_evento_processual: " + descricaoEventoProcessual);
+				descricao = descricaoEventoProcessual;
+			}
 			TipoMovimentoLocal movimentoLocal = new TipoMovimentoLocal();
 			movimentoLocal.setCodigoMovimento(codigoMovimento);
 			movimentoLocal.setDescricao(descricao);
