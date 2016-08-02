@@ -362,9 +362,11 @@ public class Op_2_GeraXMLsIndividuais {
 								
 							} else if ("ADMINISTRADOR".equals(tipoParteRepresentante)
 									|| "ASSISTENTE".equals(tipoParteRepresentante)
+									|| "ASSISTENTE TÉCNICO".equals(tipoParteRepresentante)
 									|| "CURADOR".equals(tipoParteRepresentante)
 									|| "INVENTARIANTE".equals(tipoParteRepresentante)
 									|| "REPRESENTANTE".equals(tipoParteRepresentante)
+									|| "TERCEIRO INTERESSADO".equals(tipoParteRepresentante)
 									|| "TUTOR".equals(tipoParteRepresentante)) {
 								// Não fazer nada, pois esses tipos de parte (PJe), apesar de estarem descritos
 								// no arquivo "intercomunicacao-2.2.2", não estão sendo enviados ao CNJ
@@ -437,7 +439,7 @@ public class Op_2_GeraXMLsIndividuais {
 											// Gera um WARNING se encontrar algum documento totalmente fora do padrão (sem números)
 											// Ex: no TRT4, havia um documento da PJ "ESTADO DO RIO GRANDE DO SUL" do tipo "RJC" com número "Órgão Público com Procuradoria"
 											if (StringUtils.isBlank(numeroDocumento.replaceAll("[^0-9]", ""))) {
-												LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomeParte + "' não possui números: '" + numeroDocumento + "'");
+												LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomeParte + "' não possui números e será ignorado: '" + numeroDocumento + "'");
 											} else {
 												
 												TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
