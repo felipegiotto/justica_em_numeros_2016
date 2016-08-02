@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -20,12 +19,10 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeRepresentanteProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
-import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
 import br.jus.cnj.intercomunicacao_2_2.TipoEndereco;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoNacional;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
@@ -39,6 +36,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoRepresentanteProcessual;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaDocumentosPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
@@ -62,18 +60,17 @@ public class Op_2_GeraXMLsIndividuais {
 	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPolos;
 	private NamedParameterStatement nsPartes;
-	private NamedParameterStatement nsDocumentos;
 	private NamedParameterStatement nsEnderecos;
 	private NamedParameterStatement nsAssuntos;
 	private NamedParameterStatement nsMovimentos;
 	private NamedParameterStatement nsComplementos;
 	private int codigoMunicipioIBGETRT;
 	private static AnalisaServentiasCNJ processaServentiasCNJ;
-	private static Properties tiposDocumentosPJeCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
 	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
 	private List<Integer> classesProcessuaisCNJ;
 	private IdentificaGeneroPessoa identificaGeneroPessoa;
+	private IdentificaDocumentosPessoa identificaDocumentosPessoa;
 	
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
@@ -404,77 +401,10 @@ public class Op_2_GeraXMLsIndividuais {
 						}
 						
 						// Consulta os documentos da parte
-						nsDocumentos.setInt("id_pessoa", rsPartes.getInt("id_pessoa"));
-						try (ResultSet rsDocumentos = nsDocumentos.executeQuery()) {
-							
-							while (rsDocumentos.next()) {
-
-								// Considera CPF, CNPJ e RIC como documentos principais da pessoa, que ficam em um campo separado
-								// (fora da lista de documentos)
-								String tipoDocumentoPJe = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao").trim();
-								String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento");
-								if (tipoDocumentoPJe.equals("CPF") || tipoDocumentoPJe.equals("CPJ") || tipoDocumentoPJe.equals("RIC")) {
-									
-									numeroDocumento = numeroDocumento.replaceAll("[^0-9a-zA-Z]", "");
-									if (tipoDocumentoPJe.equals("CPF")) {
-										numeroDocumento = StringUtils.leftPad(numeroDocumento, 11, '0');
-									} else {
-										numeroDocumento = StringUtils.leftPad(numeroDocumento, 14, '0');
-									}
-									pessoa.setNumeroDocumentoPrincipal(numeroDocumento);
-								} else {
-									
-									// Script TRT14:
-									// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
-									//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
-									if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
-										
-										// Carrega o tipo de documento do CNJ a partir do tipo do PJe
-										// OBS: Alguns documentos do PJe não possuem correspondente
-										// no CNJ, ex: PFP. Esses tipos de documento estão cadastrados
-										// no arquivo "properties" mas estarão em branco (string vazia).
-										String tipoDocumentoCNJ = tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe);
-										if (!StringUtils.isBlank(tipoDocumentoCNJ)) {
-											
-											// Gera um WARNING se encontrar algum documento totalmente fora do padrão (sem números)
-											// Ex: no TRT4, havia um documento da PJ "ESTADO DO RIO GRANDE DO SUL" do tipo "RJC" com número "Órgão Público com Procuradoria"
-											if (StringUtils.isBlank(numeroDocumento.replaceAll("[^0-9]", ""))) {
-												LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomeParte + "' não possui números e será ignorado: '" + numeroDocumento + "'");
-											} else {
-												
-												TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
-												documento.setCodigoDocumento(numeroDocumento);
-												documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
-												documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tipoDocumentoCNJ));
-												
-												// Nome do documento, conforme documentação do XSD:
-												// Nome existente no documento. Deve ser utilizado apenas se existente nome diverso daquele ordinariamente usado.
-												String nomePessoaDocumento = rsDocumentos.getString("ds_nome_pessoa");
-												if (!pessoa.getNome().equals(nomePessoaDocumento)) {
-													documento.setNome(nomePessoaDocumento);
-												}
-												pessoa.getDocumento().add(documento);
-											}
-										}
-										
-									} else {
-										LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + nomeParte + "' não possui correspondente na tabela do CNJ. Esse documento não constará no XML.");
-									}
-								}
-							}
-						}
+						identificaDocumentosPessoa.preencherDocumentosPessoa(pessoa, rsPartes.getInt("id_pessoa"));
 						
+						// Identifica o gênero (sexo) da pessoa (pode ser necessário consultar na outra instância)
 						identificaGeneroPessoa.preencherSexoPessoa(pessoa, rsPartes.getString("in_sexo"), rsPartes.getString("ds_nome_consulta"));
-						
-						// Verifica se existe documento principal. Orientação do CNJ, do arquivo
-						// intercomunicacao-2.2.2.xsd:
-						// Número do documento principal da pessoa individualizada, devendo ser 
-						// utilizado o RIC ou o CPF para pessoas físicas, nessa ordem, ou o CNPJ 
-						// para pessoas jurídicas. O atributo é opcional em razão da possibilidade 
-						// de haver pessoas sem documentos ou cujos dados não estão disponíveis.
-						if (StringUtils.isEmpty(pessoa.getNumeroDocumentoPrincipal())) {
-							// LOGGER.debug("Pessoa '" + nomeParte + "' não possui documento principal!");
-						}
 						
 						// Identifica os endereços da parte
 						nsEnderecos.setInt("id_processo_parte", rsPartes.getInt("id_processo_parte"));
@@ -768,11 +698,6 @@ public class Op_2_GeraXMLsIndividuais {
 			processaServentiasCNJ = new AnalisaServentiasCNJ();
 		}
 		
-		// Objeto que fará o de/para dos tipos de documentos do PJe para os do CNJ
-		if (tiposDocumentosPJeCNJ == null) {
-			tiposDocumentosPJeCNJ = Auxiliar.carregarPropertiesDoArquivo(new File("src/main/resources/tipos_de_documentos.properties"));
-		}
-		
 		if (classesProcessuaisCNJ == null) {
 			
 			// Lista de classes processuais do CNJ. Essa lista servirá para garantir que as classes
@@ -794,6 +719,9 @@ public class Op_2_GeraXMLsIndividuais {
 		int outraInstancia = grau == 1 ? 2 : 1;
 		identificaGeneroPessoa = new IdentificaGeneroPessoa(outraInstancia);
 		
+		// Objeto que auxiliará na identificação dos documentos de identificação das pessoas
+		identificaDocumentosPessoa = new IdentificaDocumentosPessoa(conexaoBasePrincipal);
+		
 		// SQL que fará a consulta de um processo
 		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/01_consulta_processo.sql");
 		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
@@ -806,10 +734,6 @@ public class Op_2_GeraXMLsIndividuais {
 		String sqlConsultaPartes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/03_consulta_partes.sql");
 		nsPartes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPartes);
 
-		// SQL que fará a consulta dos documentos da pessoa
-		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_documentos_pessoa.sql");
-		nsDocumentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaDocumentos);
-		
 		// SQL que fará a consulta dos endereços da parte
 		String sqlConsultaEnderecos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_enderecos_pessoa.sql");
 		nsEnderecos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaEnderecos);
@@ -847,7 +771,7 @@ public class Op_2_GeraXMLsIndividuais {
 			}
 		}
 				
-				// Fecha objeto que analisa os assuntos processuais do CNJ
+		// Fecha objeto que analisa os assuntos processuais do CNJ
 		if (analisaAssuntosCNJ != null) {
 			try {
 				analisaAssuntosCNJ.close();
@@ -880,14 +804,6 @@ public class Op_2_GeraXMLsIndividuais {
 				nsPartes = null;
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando consulta 'nsPartes': " + e.getLocalizedMessage(), e);
-			}
-		}
-		if (nsDocumentos != null) {
-			try {
-				nsDocumentos.close();
-				nsDocumentos = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsDocumentos': " + e.getLocalizedMessage(), e);
 			}
 		}
 		if (nsEnderecos != null) {
@@ -923,6 +839,15 @@ public class Op_2_GeraXMLsIndividuais {
 			}
 		}
 
+		if (identificaGeneroPessoa != null) {
+			identificaGeneroPessoa.close();
+			identificaGeneroPessoa = null;
+		}
+		if (identificaDocumentosPessoa != null) {
+			identificaDocumentosPessoa.close();
+			identificaDocumentosPessoa = null;
+		}
+		
 		if (conexaoBasePrincipal != null) {
 			try {
 				conexaoBasePrincipal.close();
@@ -930,11 +855,6 @@ public class Op_2_GeraXMLsIndividuais {
 			} catch (SQLException e) {
 				LOGGER.warn("Erro fechando 'conexaoBasePrincipal': " + e.getLocalizedMessage(), e);
 			}
-		}
-		
-		if (identificaGeneroPessoa != null) {
-			identificaGeneroPessoa.close();
-			identificaGeneroPessoa = null;
 		}
 	}
 	
