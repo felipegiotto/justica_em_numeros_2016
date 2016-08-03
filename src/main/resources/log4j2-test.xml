@@ -13,12 +13,21 @@
 			</Policies>
 			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
 		</RollingFile>
+		
+        <RollingFile name="Problemas" fileName="log/justica_em_numeros_problemas.log" filePattern="log/justica_em_numeros_problemas-%d{yyyy-MM-dd-HH-mm}--%i.log">
+            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY" />
+            <Policies>
+                <OnStartupTriggeringPolicy />
+            </Policies>
+            <PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
+        </RollingFile>
 	</Appenders>
 	
 	<Loggers>
 		<Root level="DEBUG">
 			<AppenderRef ref="Console" />
 			<AppenderRef ref="File" />
+            <AppenderRef ref="Problemas" />
 		</Root>
 	</Loggers>
 </Configuration>
