@@ -93,11 +93,57 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			psConsultaAssuntoPorCodigo.setString(1, Integer.toString(codigoAssunto));
 			try (ResultSet rs = psConsultaAssuntoPorCodigo.executeQuery()) {
 				if (rs.next()) {
-					assuntoLocal.setDescricao(Auxiliar.getCampoStringNotNull(rs, "ds_assunto_trf"));
+					String descricaoAssuntoLocal = Auxiliar.getCampoStringNotNull(rs, "ds_assunto_trf");
 					
-					int assuntoPai = procurarRecursivamenteAssuntoPaiNaTabelaNacional(rs.getInt("id_assunto_trf"));
-					assuntoLocal.setCodigoPaiNacional(assuntoPai);
-					if (assuntoPai == 0) {
+					// Variável que receberá um código de assunto que faça parte das TPUs, preenchida
+					// a partir de uma pesquisa recursiva na árvore de assuntos do processo, até
+					// encontrar algum nó pai que esteja nas TPUs.
+					int codigoPaiNacional = 0;
+					
+					// Limita a quantidade de nós recursivos, para evitar um possível loop infinito
+					int tentativasRecursivas = 0;
+					
+					// Próximo assunto que será pesquisado recursivamente
+					int idProximoAssunto = rs.getInt("id_assunto_trf");
+					
+					// Variável auxiliar para montar a descrição do assunto no padrão do PJe, mostrando
+					// os códigos somente nos assuntos "pai", sem mostrar o código no assunto "folha", ex:
+					// DIREITO PROCESSUAL CIVIL E DO TRABALHO (8826) / Partes e Procuradores (8842) / Sucumbência (8874) / Honorários na Justiça do Trabalho
+					boolean assuntoFolha = true;
+					
+					// Itera, recursivamente, localizando assuntos "pai" na tabela
+					while (idProximoAssunto > 0 && tentativasRecursivas < 50) {
+						psConsultaAssuntoPorID.setInt(1, idProximoAssunto);
+						try (ResultSet rsAssunto = psConsultaAssuntoPorID.executeQuery()) {
+							
+							// Verifica se chegou no fim da árvore
+							if (!rsAssunto.next()) {
+								break;
+							}
+							
+							// Se ainda está pesquisando um codigoPaiNacional e encontrou um, grava
+							// seu código.
+							int codigo = rsAssunto.getInt("cd_assunto_trf");
+							if (codigoPaiNacional == 0 && assuntoExisteNasTabelasNacionais(codigo)) {
+								codigoPaiNacional = codigo;
+							}
+							
+							// Localiza o próximo assunto que deverá ser consultado recursivamente
+							idProximoAssunto = rsAssunto.getInt("id_assunto_trf_superior");
+							
+							// Coloca o nó atual na descrição do assunto
+							if (assuntoFolha) {
+								assuntoFolha = false;
+							} else {
+								descricaoAssuntoLocal = rsAssunto.getString("ds_assunto_trf") + " (" + codigo + ") / " + descricaoAssuntoLocal;
+							}
+						}
+						tentativasRecursivas++;
+					}
+					
+					assuntoLocal.setDescricao(descricaoAssuntoLocal);
+					assuntoLocal.setCodigoPaiNacional(codigoPaiNacional);
+					if (codigoPaiNacional == 0) {
 						LOGGER.warn("Não foi possível identificar um \"código pai nacional\" para o assunto " + assuntoLocal.getCodigoAssunto() + " - " + assuntoLocal.getDescricao());
 					}
 					
@@ -107,35 +153,6 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			}
 		}
 		return assunto;
-	}
-
-	
-	/**
-	 * Pesquisa recursivamente os "pais" desse assunto, até encontrar um que exista nas tabelas nacionais do CNJ.
-	 */
-	private int procurarRecursivamenteAssuntoPaiNaTabelaNacional(int idAssunto) throws SQLException {
-		int tentativas = 0;
-		while (tentativas < 50) {
-			
-			psConsultaAssuntoPorID.setInt(1, idAssunto);
-			try (ResultSet rsAssunto = psConsultaAssuntoPorID.executeQuery()) {
-				if (rsAssunto.next()) {
-					int codigo = rsAssunto.getInt("cd_assunto_trf");
-					if (assuntoExisteNasTabelasNacionais(codigo)) {
-						return codigo;
-					} else {
-						idAssunto = rsAssunto.getInt("id_assunto_trf_superior");
-					}
-				} else {
-					LOGGER.warn("Não localizei assunto com id_assunto_trf = " + idAssunto);
-					return 0;
-				}
-			}
-			
-			tentativas++;
-		}
-		LOGGER.warn("Excedido o limite de tentativas recursivas de identificar assunto pai!");
-		return 0;
 	}
 
 	

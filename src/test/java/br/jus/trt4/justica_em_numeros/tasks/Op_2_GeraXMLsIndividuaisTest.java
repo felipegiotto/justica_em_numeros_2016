@@ -12,14 +12,12 @@ import java.util.List;
 
 import org.junit.Test;
 
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadePoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.ModalidadeRepresentanteProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
-import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
 import br.jus.cnj.intercomunicacao_2_2.TipoEndereco;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoOrgaoJulgador;
@@ -589,7 +587,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoAssuntoLocal assuntoLocal2 = getAssuntoLocalComCodigo(55207, processoJudicial2.getDadosBasicos().getAssunto());
 		assertEquals(55207, assuntoLocal2.getCodigoAssunto());
 		assertEquals(2656, assuntoLocal2.getCodigoPaiNacional());
-		assertEquals("Outras Hipóteses de Estabilidade", assuntoLocal2.getDescricao());
+		assertEquals("DIREITO DO TRABALHO (864) / Rescisão do Contrato de Trabalho (2620) / Reintegração / Readmissão ou Indenização (2656) / Outras Hipóteses de Estabilidade", assuntoLocal2.getDescricao());
 		
 		// Processo sem assunto deve receber um assunto principal baseado nas configurações (campos
 		// assunto_padrao_1G e assunto_padrao_2G)
@@ -598,7 +596,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoAssuntoLocal assuntoLocal3 = getAssuntoLocalComCodigo(1654, processoJudicial3.getDadosBasicos().getAssunto());
 		assertEquals(1654, assuntoLocal3.getCodigoAssunto());
 		assertEquals(864, assuntoLocal3.getCodigoPaiNacional());
-		assertEquals("Contrato Individual de Trabalho", assuntoLocal3.getDescricao());
+		assertEquals("DIREITO DO TRABALHO (864) / Contrato Individual de Trabalho", assuntoLocal3.getDescricao());
 		assertTrue(processoJudicial3.getDadosBasicos().getAssunto().get(0).isPrincipal());
 	}
 	

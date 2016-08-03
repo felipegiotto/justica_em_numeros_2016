@@ -44,6 +44,22 @@ public class IdentificaDocumentosPessoaTest {
 	}
 	
 	@Test
+	public void testPessoaComDoisDocumentosPrincipais() throws Exception {
+		TipoPessoa pessoa = carregaDocumentosPessoa(1, "EDISON SOLIVARGAS ALMEIDA", 511199);
+		
+		// Localiza CPF (CMF, no CNJ)
+		TipoDocumentoIdentificacao cpf = getDocumentoDoTipo(ModalidadeDocumentoIdentificador.CMF, pessoa.getDocumento());
+		assertEquals("82343071004", cpf.getCodigoDocumento());
+		
+		// Localiza Título de Eleitor
+		TipoDocumentoIdentificacao tituloEleitor = getDocumentoDoTipo(ModalidadeDocumentoIdentificador.TE, pessoa.getDocumento());
+		assertEquals("0075924700469", tituloEleitor.getCodigoDocumento());
+		
+		// Verifica se gravou documento principal
+		assertEquals("82343071004", pessoa.getNumeroDocumentoPrincipal());
+	}
+	
+	@Test
 	public void testDocumentoCNPJ() throws Exception {
 		TipoPessoa pessoa = carregaDocumentosPessoa(1, "FORTUNA CONSTRUCOES LTDA  - ME", 637282);
 		
