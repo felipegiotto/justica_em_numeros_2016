@@ -33,43 +33,24 @@ public class Auxiliar {
 
 	
 	/**
-	 * Cria uma conexão com o banco de dados de 1o Grau do PJe, a partir do parâmetro "url_jdbc_1g"
-	 * do arquivo "config.properties"
-	 * 
-	 * @return
-	 * @throws SQLException
-	 */
-	public static Connection getConexaoPJe1G() throws SQLException {
-		LOGGER.info("Abrindo conexão com o PJe 1G");
-		Connection connection = getConexaoDasConfiguracoes("url_jdbc_1g");
-		return connection;
-	}
-
-	
-	/**
-	 * Cria uma conexão com o banco de dados de 2o Grau do PJe, a partir do parâmetro "url_jdbc_2g"
-	 * do arquivo "config.properties"
-	 * 
-	 * @throws SQLException
-	 */
-	public static Connection getConexaoPJe2G() throws SQLException {
-		LOGGER.info("Abrindo conexão com o PJe 2G");
-		Connection connection = getConexaoDasConfiguracoes("url_jdbc_2g");
-		return connection;
-	}
-	
-	
-	/**
-	 * Cria uma conexão com o banco de dados do PJe, conforme a instância selecionada (1 ou 2)
-	 * 
+	 * Cria uma conexão com o banco de dados do PJe, conforme a instância selecionada (1 ou 2),
+	 * lendo os dados dos parâmetros "url_jdbc_1g" ou "url_jdbc_2g"
 	 * @throws SQLException
 	 */
 	public static Connection getConexaoPJe(int grau) throws SQLException {
-		if (grau == 1) {
-			return getConexaoPJe1G();
-		} else {
-			return getConexaoPJe2G();
-		}
+		LOGGER.info("Abrindo conexão com o PJe " + grau + "G");
+		return getConexaoDasConfiguracoes("url_jdbc_" + grau + "g");
+	}
+	
+	
+	/**
+	 * Cria uma conexão com o banco de dados de staging do e-Gestão, conforme a instância selecionada (1 ou 2),
+	 * lendo os dados dos parâmetros "url_jdbc_egestao_1g" ou "url_jdbc_egestao_2g"
+	 * @throws SQLException
+	 */
+	public static Connection getConexaoStagingEGestao(int grau) throws SQLException {
+		LOGGER.info("Abrindo conexão com o Staging do e-Gestão " + grau + "G");
+		return getConexaoDasConfiguracoes("url_jdbc_egestao_" + grau + "g");
 	}
 	
 	

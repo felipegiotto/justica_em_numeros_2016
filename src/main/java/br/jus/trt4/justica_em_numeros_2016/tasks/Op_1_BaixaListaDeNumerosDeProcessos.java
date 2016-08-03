@@ -8,10 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,7 +29,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	private int grau;
 	private final File arquivoSaida;
 	private Connection conexaoBasePrincipal;
-	private List<Integer> listaIdOrgaoJulgadorParaIgnorar;
+	private Connection conexaoBaseStagingEGestao;
 	
 	
 	public static void main(String[] args) throws SQLException, IOException {
@@ -53,9 +52,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		Op_1_BaixaListaDeNumerosDeProcessos baixaDados = new Op_1_BaixaListaDeNumerosDeProcessos(grau);
 		try {
 
-			// Abre conexões com o PJe e prepara consultas a serem realizadas
-			baixaDados.prepararConexao();
-
 			// Executa consultas e grava arquivo XML
 			baixaDados.baixarListaProcessos();
 		} finally {
@@ -72,7 +68,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	
 	private void baixarListaProcessos() throws IOException, SQLException {
 		
-		ArrayList<String> listaProcessos = new ArrayList<>();
+		Set<String> listaProcessos = new TreeSet<>();
 		
 		// Verifica quais os critérios selecionados pelo usuário, no arquivo "config.properties",
 		// pra escolher os processos que serão analisados.
@@ -84,7 +80,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um lote qualquer
 			// de 30 processos
 			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_testes.sql");
-			rsConsultaProcessos = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
+			rsConsultaProcessos = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			
 		} else if (tipoCarga.matches("\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}")) {
@@ -92,19 +88,45 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// Se usuário preencheu um número de processo no parâmetro "tipo_carga_xml", carrega
 			// somente os dados dele
 			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_um_processo.sql");
-			PreparedStatement ps = conexaoBasePrincipal.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			PreparedStatement ps = getConexaoBasePrincipalPJe().prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			ps.setString(1, tipoCarga);
 			rsConsultaProcessos = ps.executeQuery();
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + tipoCarga + "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			
 		} else if ("COMPLETA".equals(tipoCarga)) {
 			
-			// Se usuário selecionou carga "COMPLETA" no parâmetro "tipo_carga_xml", utiliza as
-			// regras definidas pelo CNJ:
-			// Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de julho de 2016, 
-			// bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
-			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_completa.sql");
-			Statement statement = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			// Se usuário selecionou carga "COMPLETA" no parâmetro "tipo_carga_xml", 
+			// gera os XMLs de todos os processos que obedecerem às regras descritas no site do CNJ
+			/*
+			    1.1 Processos em tramitação
+			        Saldo de processos em 31/07/2016. Trazer o histórico completo dos movimentos nos seguintes casos:
+						a) Processos Pendentes de Baixa, conforme critérios de movimento de baixa estabelecidos na resolução CNJ nº 76.
+						b) Cartas Precatórias e de  Ordem Pendentes de Devolução
+						c) Recursos Internos Pendentes de Julgamento
+						d) Processos de competência exclusiva da Presidência/Corregedoria  Pendentes de Decisão
+						e) RPVs e Precatórios Pendentes de Quitação
+			     1.2 Processos baixados
+			        Todos os processos baixados de 01/01/2015 a 31/07/2016. Trazer o histórico completo dos movimentos nos seguintes casos:
+						a) Processos Baixados , conforme critérios de movimento de baixa estabelecidos na resolução CNJ nº 76.
+						b) Cartas Precatórias e de Ordem Devolvidas
+						c) Recursos Internos Julgados
+						d) Processos de competência exclusiva da Presidência/Corregedoria  Decididos
+						e) RPvs e Precatórios Quitados/Cancelados
+				Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
+			*/
+			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_completa_egestao_" + grau + "g.sql");
+			getConexaoBaseStagingEGestao().createStatement().execute("SET search_path TO pje_eg");
+			Statement statement = getConexaoBaseStagingEGestao().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			statement.setFetchSize(100);
+			rsConsultaProcessos = statement.executeQuery(sql);
+			
+		} else if ("TODOS_COM_MOVIMENTACOES".equals(tipoCarga)) {
+			
+			// Se usuário selecionou carga "TODOS_COM_MOVIMENTACOES" no parâmetro "tipo_carga_xml", 
+			// gera os XMLs de todos os processos que tiveram qualquer movimentação processual na 
+			// tabela tb_processo_evento. 
+			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_todos_com_movimentacoes.sql");
+			Statement statement = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			statement.setFetchSize(100);
 			rsConsultaProcessos = statement.executeQuery(sql);
 			
@@ -115,7 +137,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			// Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
 			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
 			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_mensal.sql");
-			Statement statement = conexaoBasePrincipal.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			Statement statement = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 			statement.setFetchSize(100);
 			rsConsultaProcessos = statement.executeQuery(sql);
 			
@@ -131,11 +153,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			while (rsConsultaProcessos.next()) {
 				qtdProcessos++;
 				String nrProcesso = rsConsultaProcessos.getString("nr_processo");
-				if (deveIgnorarIdOrgaoJulgador(rsConsultaProcessos.getInt("id_orgao_julgador"))) {
-					LOGGER.info("XML do processo " + nrProcesso + " não será gerado pois pertence a um OJ que está sendo ignorado conforme parâmetro 'orgaos_julgadores_ignorados'");
-				} else {
-					listaProcessos.add(nrProcesso);
-				}
+				listaProcessos.add(nrProcesso);
 				
 				// Mostra a quantidade de processos analisados a cada 15 segundos
 				if (System.currentTimeMillis() - tempo > 15_000) {
@@ -152,62 +170,25 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	}
 	
 	
-	/**
-	 * Verifica se o órgão julgador do processo faz parte da lista que deve ser ignorada, 
-	 * conforme parâmetro 'orgaos_julgadores_ignorados', nas configurações
-	 */
-	private boolean deveIgnorarIdOrgaoJulgador(int idOrgaoJulgador) throws SQLException {
-		
-		// Carrega uma vez a lista de IDs de órgãos julgadores cujos processos devem ser ignorados
-		if (listaIdOrgaoJulgadorParaIgnorar == null) {
-			
-			// Essa configuração é opcional. Verifica se ela realmente precisará ser analisada
-			List<Integer> lista = new ArrayList<>();
-			String nomesOJsParaIgnorar = Auxiliar.getParametroConfiguracao("orgaos_julgadores_ignorados_" + grau + "G", false);
-			if (nomesOJsParaIgnorar != null) {
-			
-				// Monta um SQL para consultar os IDs dos órgãos julgadores a serem ignorados
-				LOGGER.info("Carregando lista de OJs que serão ignorados...");
-				String[] nomesOJsParaIgnorarArray = StringUtils.split(nomesOJsParaIgnorar, ',');
-				StringBuilder sbLocalizaOJs = new StringBuilder();
-				sbLocalizaOJs.append("SELECT id_orgao_julgador, ds_orgao_julgador FROM tb_orgao_julgador WHERE upper(to_ascii(ds_orgao_julgador)) = ?");
-				try (PreparedStatement psLocalizaOJs = conexaoBasePrincipal.prepareStatement(sbLocalizaOJs.toString())) {
-					
-					// Consulta todos os OJs informados no parâmetro
-					for (String nomeOrgaoJulgador: nomesOJsParaIgnorarArray) {
-						psLocalizaOJs.setString(1, nomeOrgaoJulgador);
-						try (ResultSet rsLocalizaOJs = psLocalizaOJs.executeQuery()) {
-							while (rsLocalizaOJs.next()) {
-								int idOJ = rsLocalizaOJs.getInt("id_orgao_julgador");
-								String nomeOJ = rsLocalizaOJs.getString("ds_orgao_julgador");
-								lista.add(idOJ);
-								LOGGER.warn("* Todos os processos do OJ '" + nomeOJ + "' (id=" + idOJ + ") serão ignorados!");
-							}
-						}
-					}
-				}
-			}
-			
-			listaIdOrgaoJulgadorParaIgnorar = lista;
+	public Connection getConexaoBasePrincipalPJe() throws SQLException {
+		if (conexaoBasePrincipal == null) {
+			conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
+			conexaoBasePrincipal.setAutoCommit(false);
 		}
-		return listaIdOrgaoJulgadorParaIgnorar.contains(idOrgaoJulgador);
-	}
-
-
-	/**
-	 * Abre conexão com o banco de dados do PJe
-	 * 
-	 * @throws SQLException
-	 * @throws IOException
-	 */
-	public void prepararConexao() throws SQLException {
-
-		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
-		conexaoBasePrincipal.setAutoCommit(false);
+		return conexaoBasePrincipal;
 	}
 	
 	
-	public static void gravarListaProcessosEmArquivo(List<String> listaProcessos, File arquivoSaida) throws IOException {
+	public Connection getConexaoBaseStagingEGestao() throws SQLException {
+		if (conexaoBaseStagingEGestao == null) {
+			conexaoBaseStagingEGestao = Auxiliar.getConexaoStagingEGestao(grau);
+			conexaoBaseStagingEGestao.setAutoCommit(false);
+		}
+		return conexaoBaseStagingEGestao;
+	}
+	
+	
+	public static void gravarListaProcessosEmArquivo(Set<String> listaProcessos, File arquivoSaida) throws IOException {
 		arquivoSaida.getParentFile().mkdirs();
 		FileWriter fw = new FileWriter(arquivoSaida);
 		try {
@@ -227,12 +208,21 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	 */
 	public void close() {
 
+		if (conexaoBaseStagingEGestao != null) {
+			try {
+				conexaoBaseStagingEGestao.close();
+				conexaoBaseStagingEGestao = null;
+			} catch (SQLException e) {
+				LOGGER.warn("Erro fechando conexaoBaseStagingEGestao: " + e.getLocalizedMessage(), e);
+			}
+		}
+		
 		if (conexaoBasePrincipal != null) {
 			try {
 				conexaoBasePrincipal.close();
 				conexaoBasePrincipal = null;
 			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando conexão com o PJe: " + e.getLocalizedMessage(), e);
+				LOGGER.warn("Erro fechando conexaoBasePrincipal: " + e.getLocalizedMessage(), e);
 			}
 		}
 	}
