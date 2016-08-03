@@ -47,7 +47,6 @@ public class AnalisaMovimentosCNJTest {
 			
 			// "Subindo" na árvore, o movimento 50086 possui como "pai" o movimento 48: "Escrivão/Diretor de Secretaria/Secretário Jurídico"
 			assertEquals(48, movimentoLocal.getCodigoPaiNacional());
-			// TODO: TESTAR: movimentoLocalPai // OPCIONAL
 		}
 	}
 	

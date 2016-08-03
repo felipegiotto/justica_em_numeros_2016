@@ -52,13 +52,6 @@ public class Op_2_GeraXMLsIndividuaisTest {
 	    // TESTES DE protected TipoCabecalhoProcesso dadosBasicos;
 		TipoCabecalhoProcesso dadosBasicos = processoJudicial.getDadosBasicos();
 		
-		//  TODO: TESTAR: TipoProcessoJudicial protected List<TipoPoloProcessual> polo;
-	    //  TODO: TESTAR: TipoProcessoJudicial protected List<TipoAssuntoProcessual> assunto;
-	    //  TODO: TESTAR: TipoProcessoJudicial protected List<String> magistradoAtuante;
-	    //  TODO: TESTAR: TipoProcessoJudicial protected List<TipoVinculacaoProcessual> processoVinculado;
-	    //  TODO: TESTAR: TipoProcessoJudicial protected List<String> prioridade;
-	    //  TODO: TESTAR: TipoProcessoJudicial protected List<TipoParametro> outroParametro;
-		
 		// Valor da Causa
 		/*
 			<element minOccurs="0" name="valorCausa" type="double">
@@ -68,8 +61,6 @@ public class Op_2_GeraXMLsIndividuaisTest {
 			</element>
 		 */
 		assertEquals(50000.0, dadosBasicos.getValorCausa());
-		
-	    //  TODO: TESTAR: TipoProcessoJudicial protected TipoOrgaoJulgador orgaoJulgador;
 		
 		// Número do processo
 		/*
@@ -87,8 +78,6 @@ public class Op_2_GeraXMLsIndividuaisTest {
 			</simpleType>
 		 */
 		assertEquals("00208215420135040221", dadosBasicos.getNumero());
-		
-	    // CAMPO NAO PREENCHIDO: TipoProcessoJudicial protected Integer competencia; // Opcional
 		
 	    // Classe Processual
 		/*
@@ -320,36 +309,10 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoPoloProcessual poloAtivo = getPolo(ModalidadePoloProcessual.AT, processoJudicial.getDadosBasicos().getPolo());
 		TipoPoloProcessual poloPassivo = getPolo(ModalidadePoloProcessual.PA, processoJudicial.getDadosBasicos().getPolo());
 		
-		// Campos de TipoParte
-	    // TODO: Testar campo: protected TipoPessoa pessoa;
-		// TODO: Testar campo: protected String interessePublico;
-		// TODO: Testar campo: protected List<TipoRepresentanteProcessual> advogado;
-		// TODO: Testar campo: protected List<TipoParte> pessoaProcessualRelacionada;
-		// TODO: Testar campo: protected Boolean assistenciaJudiciaria;
-		// TODO: Testar campo: protected Integer intimacaoPendente;
-		// TODO: Testar campo: protected ModalidadeRelacionamentoProcessual relacionamentoProcessual;
-		
-		
 		TipoParte parteAtivoRogerio = getParteComNome("ROGERIO MELO DE CASTRO", poloAtivo.getParte());
 		TipoPessoa pessoaAtivoRogerio = parteAtivoRogerio.getPessoa();
 		TipoParte partePassivoFAMF = getParteComNome("FAMF CONSTRUTORA LTDA", poloPassivo.getParte());
 		TipoPessoa pessoaPassivoFAMF = partePassivoFAMF.getPessoa();
-		
-		// Campos de TipoPessoa
-		// TODO: Testar campo: protected List<TipoDocumentoIdentificacao> documento;
-		// TODO: Testar campo: protected List<TipoEndereco> endereco;
-		// TODO: Testar campo: protected List<TipoRelacionamentoPessoal> pessoaRelacionada;
-		// TODO: Testar campo: protected TipoPessoa pessoaVinculada;
-		// TODO: Testar campo: protected String nome;
-		// TODO: Testar campo: protected String nomeGenitor;
-		// TODO: Testar campo: protected String nomeGenitora;
-		// TODO: Testar campo: protected String dataNascimento;
-		// TODO: Testar campo: protected String dataObito;
-		// TODO: Testar campo: protected String numeroDocumentoPrincipal;
-		// TODO: Testar campo: protected TipoQualificacaoPessoa tipoPessoa;
-		// TODO: Testar campo: protected String cidadeNatural;
-		// TODO: Testar campo: protected String estadoNatural;
-		// TODO: Testar campo: protected String nacionalidade;
 		
 		// Documento principal
 		/*
@@ -416,10 +379,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals(2, parteAtivoRogerio.getAdvogado().size());
 		
 		// Confere os dados da advogada LIDIANE
-		// TODO: Testar campos de TipoRepresentanteProcessual
 		TipoRepresentanteProcessual repLidiane = getRepresentanteComNome("LIDIANE DA SILVA DANIEL", parteAtivoRogerio.getAdvogado());
 		assertEquals(true, repLidiane.isIntimacao()); // Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
-		// TODO: Testar campo String inscricao;
 		assertEquals("00374625042", repLidiane.getNumeroDocumentoPrincipal());
 		assertEquals(ModalidadeRepresentanteProcessual.A, repLidiane.getTipoRepresentante());
 	}

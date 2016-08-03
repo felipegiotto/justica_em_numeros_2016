@@ -35,7 +35,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaAssuntosCNJ.class);
 	private List<Integer> assuntosProcessuaisCNJ;
-	private PreparedStatement psConsultaAssuntoPorCodigo; // TODO: remover essa consulta, dá pra fazer direto em 05_consulta_assuntos
+	private PreparedStatement psConsultaAssuntoPorCodigo;
 	private PreparedStatement psConsultaAssuntoPorID;
 	private TipoAssuntoProcessual assuntoProcessualPadrao;
 	

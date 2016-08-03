@@ -50,7 +50,7 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 	 */
 	public void preencherDocumentosPessoa(TipoPessoa pessoa, int idPessoa) throws SQLException {
 		
-		// Consulta TODOS os documentos da pessoa, no banco de dados do PJe
+		// Consulta todos os documentos da pessoa, no banco de dados do PJe
 		nsDocumentos.setInt("id_pessoa", idPessoa);
 		try (ResultSet rsDocumentos = nsDocumentos.executeQuery()) {
 			

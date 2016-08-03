@@ -32,7 +32,7 @@ IMPORTANTE: Confira sempre a saída do Console, prestando atenção especialment
 4. Executar o método "main" da classe "Op_3_UnificaArquivosXML", para unificar todos os arquivos XML
    gerados no passo anterior, em lotes de 5000 processos. Esses arquivos poderão ser enviados ao CNJ.
    OBS: Serão gerados arquivos na pasta "output\xmls_unificados".
-   IMPORTANTE: Essa classe unificará TODOS os arquivos XML da referida pasta, inclusive os que 
+   IMPORTANTE: Essa classe unificará todos os arquivos XML da referida pasta, inclusive os que 
                foram gerados em execuções anteriores!! 
                Por isso, antes de gerar o arquivo XML definitivo para enviar ao CNJ, recomenda-se 
                limpar a pasta "ouput", e seguir todos os passos novamente, desde o início.
