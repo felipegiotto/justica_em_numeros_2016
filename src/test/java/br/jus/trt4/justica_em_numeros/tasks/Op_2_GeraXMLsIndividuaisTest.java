@@ -513,6 +513,18 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		//            AAAAMMDDHHMMSS
 		assertEquals("20150922083157", movimento.getDataHora());
 		
+		/*
+			<attribute name="identificadorMovimento" type="string" use="optional">
+				<annotation>
+					<documentation>Atributo incluído para permitir a atribuição de um
+						identificador específico para a movimentação realizada em um
+						determinado processo judicial.
+					</documentation>
+				</annotation>
+			</attribute>
+		 */
+		assertEquals("514716", movimento.getIdentificadorMovimento());
+		
 		// Nível de sigilo
 		assertEquals(0, movimento.getNivelSigilo());
 	}

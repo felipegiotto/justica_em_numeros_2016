@@ -638,6 +638,7 @@ public class Op_2_GeraXMLsIndividuais {
 				TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
 				movimento.setDataHora(Auxiliar.getCampoStringNotNull(rsMovimentos, "dta_ocorrencia"));
 				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
+				movimento.setIdentificadorMovimento(rsMovimentos.getString("id_processo_evento"));
 				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), rsMovimentos.getString("ds_texto_final_interno"), rsMovimentos.getString("ds_movimento"));
 				movimentos.add(movimento);
 
