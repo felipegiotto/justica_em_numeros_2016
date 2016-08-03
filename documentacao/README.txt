@@ -84,6 +84,7 @@ Funcionamento "avançado":
 * Processo/Sigilo e Movimento/Sigilo: O arquivo XSD do CNJ orienta a utilização de diferentes níveis 
   de sigilo (de 0 a 5), para o processo e para os movimentos. Como o PJe não possui essa distinção, 
   serão utilizados somente os valores "0" (sem sigilo) ou "5" (sigilo absoluto).
+  Esse mesmo padrão é utilizado no PJe-JT, na classe "IntercomunicacaoMNI222Service".
 
 
 * Parte: não estão sendo tratados os casos de representação ou substituição processual em ações 

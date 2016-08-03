@@ -388,12 +388,6 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("57310009053", pessoaAtivoRogerio.getNumeroDocumentoPrincipal());
 		assertEquals("17640725000147", pessoaPassivoFAMF.getNumeroDocumentoPrincipal());
 		
-		// Outros documentos
-		TipoDocumentoIdentificacao documento = pessoaAtivoRogerio.getDocumento().get(0);
-		assertEquals(ModalidadeDocumentoIdentificador.TE, documento.getTipoDocumento()); // Título de Eleitor
-		assertEquals("0059509160434", documento.getCodigoDocumento());
-		assertEquals("Tribunal Superior Eleitoral", documento.getEmissorDocumento());
-		
 		// Gênero:
 		/*
 			<simpleType name="modalidadeGeneroPessoa">

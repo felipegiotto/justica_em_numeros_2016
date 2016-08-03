@@ -15,6 +15,12 @@ import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
 import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
 
+/**
+ * Classe responsável por localizar todos os documentos de uma pessoa e gravar, nos objetos do MNI,
+ * de acordo com os padrões do CNJ.
+ * 
+ * @author fgiotto
+ */
 public class IdentificaDocumentosPessoa implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(IdentificaDocumentosPessoa.class);
@@ -54,53 +60,70 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 				// (fora da lista de documentos)
 				String tipoDocumentoPJe = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao").trim();
 				String numeroDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento");
-				if (tipoDocumentoPJe.equals("CPF") || tipoDocumentoPJe.equals("CPJ") || tipoDocumentoPJe.equals("RIC")) {
 					
-					numeroDocumento = numeroDocumento.replaceAll("[^0-9a-zA-Z]", "");
-					if (tipoDocumentoPJe.equals("CPF")) {
-						numeroDocumento = StringUtils.leftPad(numeroDocumento, 11, '0');
-					} else {
-						numeroDocumento = StringUtils.leftPad(numeroDocumento, 14, '0');
-					}
-					pessoa.setNumeroDocumentoPrincipal(numeroDocumento);
-				} else {
+				// Script TRT14:
+				// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
+				//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
+				if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
 					
-					// Script TRT14:
-					// raise notice '<documento codigoDocumento="%" tipoDocumento="%" emissorDocumento="%" />'
-					//  , documento.nr_documento, documento.tp_documento, documento.ds_emissor;
-					if (tiposDocumentosPJeCNJ.containsKey(tipoDocumentoPJe)) {
+					// Carrega o tipo de documento do CNJ a partir do tipo do PJe
+					// OBS: Alguns documentos do PJe não possuem correspondente
+					// no CNJ, ex: PFP. Esses tipos de documento estão cadastrados
+					// no arquivo "properties" mas estarão em branco (string vazia).
+					String tipoDocumentoCNJ = tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe);
+					if (!StringUtils.isBlank(tipoDocumentoCNJ)) {
 						
-						// Carrega o tipo de documento do CNJ a partir do tipo do PJe
-						// OBS: Alguns documentos do PJe não possuem correspondente
-						// no CNJ, ex: PFP. Esses tipos de documento estão cadastrados
-						// no arquivo "properties" mas estarão em branco (string vazia).
-						String tipoDocumentoCNJ = tiposDocumentosPJeCNJ.getProperty(tipoDocumentoPJe);
-						if (!StringUtils.isBlank(tipoDocumentoCNJ)) {
+						// Gera um WARNING se encontrar algum documento totalmente fora do padrão (sem números)
+						// Ex: no TRT4, havia um documento da PJ "ESTADO DO RIO GRANDE DO SUL" do tipo "RJC" com número "Órgão Público com Procuradoria"
+						if (StringUtils.isBlank(numeroDocumento.replaceAll("[^0-9]", ""))) {
+							LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' não possui números e será ignorado: '" + numeroDocumento + "'");
+						} else {
 							
-							// Gera um WARNING se encontrar algum documento totalmente fora do padrão (sem números)
-							// Ex: no TRT4, havia um documento da PJ "ESTADO DO RIO GRANDE DO SUL" do tipo "RJC" com número "Órgão Público com Procuradoria"
-							if (StringUtils.isBlank(numeroDocumento.replaceAll("[^0-9]", ""))) {
-								LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' não possui números e será ignorado: '" + numeroDocumento + "'");
-							} else {
-								
-								TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
-								documento.setCodigoDocumento(numeroDocumento);
-								documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
-								documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tipoDocumentoCNJ));
-								
-								// Nome do documento, conforme documentação do XSD:
-								// Nome existente no documento. Deve ser utilizado apenas se existente nome diverso daquele ordinariamente usado.
-								String nomePessoaDocumento = rsDocumentos.getString("ds_nome_pessoa");
-								if (!pessoa.getNome().equals(nomePessoaDocumento)) {
-									documento.setNome(nomePessoaDocumento);
+							TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
+							numeroDocumento = numeroDocumento.replaceAll("[^0-9A-Za-z]", "");
+							documento.setCodigoDocumento(numeroDocumento);
+							documento.setEmissorDocumento(Auxiliar.getCampoStringNotNull(rsDocumentos, "ds_emissor"));
+							documento.setTipoDocumento(ModalidadeDocumentoIdentificador.fromValue(tipoDocumentoCNJ));
+							
+							// Nome do documento, conforme documentação do XSD:
+							// Nome existente no documento. Deve ser utilizado apenas se existente nome diverso daquele ordinariamente usado.
+							String nomePessoaDocumento = rsDocumentos.getString("ds_nome_pessoa");
+							if (!pessoa.getNome().equals(nomePessoaDocumento)) {
+								documento.setNome(nomePessoaDocumento);
+							}
+							pessoa.getDocumento().add(documento);
+							
+							
+							// De acordo com o XSD do CNJ, os documentos principais são CPF, CNPJ
+							// ou RIC e devem possuir os tamanhos de 11, 14 e 14 caracteres, 
+							// respectivamente (somente números).
+							if ("S".equals(rsDocumentos.getString("in_principal"))) {
+								int tamanhoMascara = 0;
+								if ("CPF".equals(tipoDocumentoPJe)) {
+									tamanhoMascara = 11;
+								} else if ("CPJ".equals(tipoDocumentoPJe)) {
+									tamanhoMascara = 14;
+								} else if ("RIC".equals(tipoDocumentoPJe)) {
+									tamanhoMascara = 14;
+								} else {
+									LOGGER.info("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' está marcado como principal mas não é dos tipos reconhecidos como principal pelo CNJ: CPF, CNPJ, RIC. Esse documento não será inserido como principal.");
 								}
-								pessoa.getDocumento().add(documento);
+								
+								if (tamanhoMascara > 0) {
+									String numeroDocumentoPrincipal = numeroDocumento.replaceAll("[^0-9]", "");
+									if (numeroDocumentoPrincipal.length() > tamanhoMascara) {
+										LOGGER.info("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' possui tamanho maior (" + numeroDocumento.length() + ") do que o especificado pelo CNJ (" + tamanhoMascara + "): '" + numeroDocumentoPrincipal + "'. Esse documento não será inserido como principal.");
+									} else {
+										numeroDocumentoPrincipal = StringUtils.leftPad(numeroDocumentoPrincipal, tamanhoMascara, '0');
+										pessoa.setNumeroDocumentoPrincipal(numeroDocumentoPrincipal);
+									}
+								}
 							}
 						}
-						
-					} else {
-						LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' não possui correspondente na tabela do CNJ. Esse documento não constará no XML.");
 					}
+					
+				} else {
+					LOGGER.warn("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' não possui correspondente na tabela do CNJ. Esse documento não constará no XML.");
 				}
 			}
 			
@@ -111,7 +134,7 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 			// para pessoas jurídicas. O atributo é opcional em razão da possibilidade 
 			// de haver pessoas sem documentos ou cujos dados não estão disponíveis.
 			if (StringUtils.isEmpty(pessoa.getNumeroDocumentoPrincipal())) {
-				// LOGGER.debug("Pessoa '" + nomeParte + "' não possui documento principal!");
+				 LOGGER.debug("Pessoa '" + pessoa.getNome() + "' não possui documento principal!");
 			}
 		}
 	}
