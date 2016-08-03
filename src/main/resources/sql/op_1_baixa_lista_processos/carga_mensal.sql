@@ -1,7 +1,9 @@
 SELECT nr_processo, ptrf.id_orgao_julgador
 FROM tb_processo p
 INNER JOIN tb_processo_trf ptrf ON (p.id_processo = ptrf.id_processo_trf)
-WHERE EXISTS (
+WHERE 1=1
+  AND ptrf.dt_autuacao IS NOT NULL
+  AND EXISTS (
     SELECT 1 
     FROM tb_processo_evento pe 
     WHERE (p.id_processo = pe.id_processo) 
