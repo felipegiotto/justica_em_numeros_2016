@@ -7,27 +7,37 @@
 			<!-- <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY" /> --> <!-- Na tela, mostra somente ERROR para cima -->
 		</Console>
 		
-		<RollingFile name="File" fileName="log/justica_em_numeros.log" filePattern="log/justica_em_numeros-%d{yyyy-MM-dd-HH-mm}--%i.log">
+		<Routing name="RoutingAppender">
+        <Routes pattern="${ctx:logFolder}">
+        <Route>
+        
+		<!-- ${ctx:logFolder}/ -->
+		<RollingFile name="File-${ctx:logFolder}" fileName="${ctx:logFolder}/log/log_completo.log" filePattern="${ctx:logFolder}/log/log_%d{yyyy-MM-dd-HH-mm}_completo-%i.log">
 			<Policies>
 				<OnStartupTriggeringPolicy />
 			</Policies>
 			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
 		</RollingFile>
-		
-        <RollingFile name="Problemas" fileName="log/justica_em_numeros_problemas.log" filePattern="log/justica_em_numeros_problemas-%d{yyyy-MM-dd-HH-mm}--%i.log">
+		<!-- 
+        <RollingFile name="Problemas" fileName="${ctx:logFolder}/log/log_problemas.log" filePattern="${ctx:logFolder}/log/log_%d{yyyy-MM-dd-HH-mm}_problemas-%i.log">
             <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY" />
             <Policies>
                 <OnStartupTriggeringPolicy />
             </Policies>
             <PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
         </RollingFile>
+         -->
+         
+         </Route>
+        </Routes>
+        </Routing>
+        
 	</Appenders>
 	
 	<Loggers>
 		<Root level="DEBUG">
 			<AppenderRef ref="Console" />
-			<AppenderRef ref="File" />
-            <AppenderRef ref="Problemas" />
+			<AppenderRef ref="RoutingAppender" />
 		</Root>
 	</Loggers>
 </Configuration>

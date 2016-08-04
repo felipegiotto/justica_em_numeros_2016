@@ -16,6 +16,7 @@ import java.util.Scanner;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * Classe que contém métodos auxiliares utilizados nesse projeto.
@@ -30,6 +31,7 @@ public class Auxiliar {
 	private static Properties configs = null;
 	private static String diaMesAnoArquivosXML;
 	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
+	private static File pastaSaida = null;
 
 	
 	/**
@@ -279,7 +281,7 @@ public class Auxiliar {
 	 * instância do PJe.
 	 */
 	public static File getArquivoListaProcessos(int grau) {
-		return new File("output/" + grau + "g/lista_processos.txt");
+		return new File(getPastaSaida(), grau + "g/lista_processos.txt");
 	}
 	
 	
@@ -288,7 +290,7 @@ public class Auxiliar {
 	 * instância do PJe.
 	 */
 	public static File getPastaXMLsIndividuais(int grau) {
-		return new File("output/" + grau + "g/xmls_individuais");
+		return new File(getPastaSaida(), grau + "g/xmls_individuais");
 	}
 
 
@@ -297,7 +299,7 @@ public class Auxiliar {
 	 * enviados ao CNJ
 	 */
 	public static File getPastaXMLsUnificados() {
-		File pasta = new File("output/xmls_unificados");
+		File pasta = new File(getPastaSaida(), "xmls_unificados");
 		pasta.mkdirs();
 		return pasta;
 	}
@@ -324,5 +326,27 @@ public class Auxiliar {
 	 */
 	public static String formataDataAAAAMMDD(Date data) {
 		return dfDataNascimento.format(data);
+	}
+	
+	
+	/**
+	 * Retorna a pasta padrão onde os arquivos TXT e XML serão gerados pela ferramenta.
+	 * 
+	 * Direciona, também, os arquivos de log para esta pasta
+	 * Fonte: http://stackoverflow.com/questions/25114526/log4j2-how-to-write-logs-to-separate-files-for-each-user
+	 */
+	public static File getPastaSaida() {
+		
+		if (pastaSaida == null) {
+			String nomePastaSaida = Auxiliar.getParametroConfiguracao("pasta_saida_padrao", false);
+			if (nomePastaSaida == null) {
+				nomePastaSaida = "output";
+			}
+			pastaSaida = new File(nomePastaSaida);
+			
+			ThreadContext.put("logFolder", nomePastaSaida);
+		}
+		
+		return pastaSaida;
 	}
 }
