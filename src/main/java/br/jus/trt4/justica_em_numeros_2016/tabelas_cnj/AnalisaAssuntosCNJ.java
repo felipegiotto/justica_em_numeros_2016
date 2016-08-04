@@ -42,11 +42,14 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException {
 		super();
 		
+		File arquivoAssuntos = new File("src/main/resources/tabelas_cnj/" + getNomeArquivoAssuntos(grau));
+		LOGGER.info("Carregando lista de assuntos CNJ do arquivo " + arquivoAssuntos + "...");
+		
 		// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
 		// deverá ser registrado com as tags "<assunto><codigoNacional>" ou "<assunto><assuntoLocal>"
 		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
 		this.assuntosProcessuaisCNJ = new ArrayList<>();
-		for (String assuntoString: FileUtils.readLines(new File("src/main/resources/tabelas_cnj/assuntos_" + grau + "g.csv"), "UTF-8")) {
+		for (String assuntoString: FileUtils.readLines(arquivoAssuntos, "UTF-8")) {
 			assuntosProcessuaisCNJ.add(Integer.parseInt(assuntoString));
 		}
 		
@@ -69,6 +72,22 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	}
 	
 	
+	/**
+	 * Identifica se o usuário quer utilizar a lista de assuntos da JT ou a lista completa do CNJ
+	 */
+	private String getNomeArquivoAssuntos(int grau) {
+		String tabelaAssuntosNacionais = Auxiliar.getParametroConfiguracao("tabela_de_assuntos_nacionais", "CNJ-JT");
+		
+		if ("CNJ-JT".equals(tabelaAssuntosNacionais)) {
+			return "assuntos_jt_" + grau + "g.csv";
+		} else if ("CNJ-GLOBAL".equals(tabelaAssuntosNacionais)) {
+			return "assuntos_global.csv";
+		} else {
+			throw new RuntimeException("Valor inválido para o parâmetro tabela_de_assuntos_nacionais: '" + tabelaAssuntosNacionais + "'. Verifique o arquivo de configurações.");
+		}
+	}
+
+
 	/**
 	 * Gera um objeto TipoAssuntoProcessual, para ser inserido no XML do CNJ, a partir do código 
 	 * informado.
