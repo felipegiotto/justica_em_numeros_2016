@@ -28,7 +28,7 @@ public class Auxiliar {
 
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
-	private static final String diaMesAno = new SimpleDateFormat("ddMMyyyy").format(new Date());
+	private static String diaMesAnoArquivosXML;
 	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
 
 	
@@ -294,7 +294,13 @@ public class Auxiliar {
 	 * <SIGLA_TRIBUNAL>_<GRAU_JURISDICAO>_<DIAMESANO>
 	 */
 	public static String getPrefixoArquivoXML(int grau) {
-		return Auxiliar.getParametroConfiguracao("sigla_tribunal", true) + "_G" + grau + "_" + diaMesAno;
+		if (diaMesAnoArquivosXML == null) {
+			diaMesAnoArquivosXML = getParametroConfiguracao("dia_padrao_para_arquivos_xml", false);
+			if (diaMesAnoArquivosXML == null) {
+				diaMesAnoArquivosXML = new SimpleDateFormat("ddMMyyyy").format(new Date());
+			}
+		}
+		return Auxiliar.getParametroConfiguracao("sigla_tribunal", true) + "_G" + grau + "_" + diaMesAnoArquivosXML;
 	}
 	
 	
