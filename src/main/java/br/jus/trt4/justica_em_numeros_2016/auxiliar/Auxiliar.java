@@ -158,6 +158,20 @@ public class Auxiliar {
 
 	
 	/**
+	 * Retorna o conteúdo de um determinado parâmetro definido no arquivo "config.properties".
+	 * 
+	 * Se o parâmetro não existir, será retornado o valor padrão.
+	 */
+	public static String getParametroConfiguracao(String parametro, String valorPadrao) {
+		if (getConfigs().containsKey(parametro)) {
+			return getConfigs().getProperty(parametro);
+		} else {
+			return valorPadrao;
+		}
+	}
+
+	
+	/**
 	 * Carrega e mantém em cache as configurações definidas no arquivo "config.properties"
 	 */
 	private static Properties getConfigs() {
@@ -281,7 +295,7 @@ public class Auxiliar {
 	 * instância do PJe.
 	 */
 	public static File getArquivoListaProcessos(int grau) {
-		return new File(getPastaSaida(), grau + "g/lista_processos.txt");
+		return new File(prepararPastaDeSaida(), grau + "g/lista_processos.txt");
 	}
 	
 	
@@ -290,7 +304,7 @@ public class Auxiliar {
 	 * instância do PJe.
 	 */
 	public static File getPastaXMLsIndividuais(int grau) {
-		return new File(getPastaSaida(), grau + "g/xmls_individuais");
+		return new File(prepararPastaDeSaida(), grau + "g/xmls_individuais");
 	}
 
 
@@ -299,7 +313,7 @@ public class Auxiliar {
 	 * enviados ao CNJ
 	 */
 	public static File getPastaXMLsUnificados() {
-		File pasta = new File(getPastaSaida(), "xmls_unificados");
+		File pasta = new File(prepararPastaDeSaida(), "xmls_unificados");
 		pasta.mkdirs();
 		return pasta;
 	}
@@ -312,10 +326,7 @@ public class Auxiliar {
 	 */
 	public static String getPrefixoArquivoXML(int grau) {
 		if (diaMesAnoArquivosXML == null) {
-			diaMesAnoArquivosXML = getParametroConfiguracao("dia_padrao_para_arquivos_xml", false);
-			if (diaMesAnoArquivosXML == null) {
-				diaMesAnoArquivosXML = new SimpleDateFormat("ddMMyyyy").format(new Date());
-			}
+			diaMesAnoArquivosXML = getParametroConfiguracao("dia_padrao_para_arquivos_xml", new SimpleDateFormat("ddMMyyyy").format(new Date()));
 		}
 		return Auxiliar.getParametroConfiguracao("sigla_tribunal", true) + "_G" + grau + "_" + diaMesAnoArquivosXML;
 	}
@@ -335,13 +346,10 @@ public class Auxiliar {
 	 * Direciona, também, os arquivos de log para esta pasta
 	 * Fonte: http://stackoverflow.com/questions/25114526/log4j2-how-to-write-logs-to-separate-files-for-each-user
 	 */
-	public static File getPastaSaida() {
+	public static File prepararPastaDeSaida() {
 		
 		if (pastaSaida == null) {
-			String nomePastaSaida = Auxiliar.getParametroConfiguracao("pasta_saida_padrao", false);
-			if (nomePastaSaida == null) {
-				nomePastaSaida = "output";
-			}
+			String nomePastaSaida = Auxiliar.getParametroConfiguracao("pasta_saida_padrao", "output");
 			pastaSaida = new File(nomePastaSaida);
 			
 			ThreadContext.put("logFolder", nomePastaSaida);

@@ -39,7 +39,8 @@ public class Op_3_UnificaArquivosXML {
 	private int qtdArquivosXMLGerados = 0;
 	
 	public static void main(String[] args) throws JAXBException {
-		
+		Auxiliar.prepararPastaDeSaida();
+
 		// Verifica se deve gerar XML para 2o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_2G")) {
 			unificarArquivosXML(2);

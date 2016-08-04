@@ -76,6 +76,7 @@ public class Op_2_GeraXMLsIndividuais {
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
 	 */
 	public static void main(String[] args) throws SQLException, Exception {
+		Auxiliar.prepararPastaDeSaida();
 
 		// Verifica se deve gerar XML para 2o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_2G")) {

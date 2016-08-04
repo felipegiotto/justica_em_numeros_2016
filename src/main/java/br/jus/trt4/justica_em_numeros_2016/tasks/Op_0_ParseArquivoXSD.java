@@ -24,6 +24,7 @@ public class Op_0_ParseArquivoXSD {
 	
 	public static void main(String[] args) throws Exception {
 		
+		Auxiliar.prepararPastaDeSaida();
 		ArrayList<String> comandos = new ArrayList<>();
 		
 		// Utilitário do Java para processar schemas XSD e gerar classes Java
