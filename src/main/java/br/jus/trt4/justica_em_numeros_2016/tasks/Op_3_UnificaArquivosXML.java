@@ -35,7 +35,7 @@ public class Op_3_UnificaArquivosXML {
 	
 	private int grau;
 	private final File pastaSaida;
-	private int numeroLoteAtual = 0;
+	private int numeroLoteAtual = Auxiliar.getParametroInteiroConfiguracao("contador_inicial_xmls_unificados", 1);
 	
 	public static void main(String[] args) throws JAXBException {
 		
@@ -118,10 +118,10 @@ public class Op_3_UnificaArquivosXML {
 	 * Grava os dados de uma lista de processos em um arquivo XML
 	 */
 	private void gravarProximoLoteXML(Marshaller jaxbMarshaller, Processos listaProcessos) throws JAXBException {
-		numeroLoteAtual++;
 		File arquivoSaida = new File(pastaSaida, Auxiliar.getPrefixoArquivoXML(grau) + "-" + numeroLoteAtual + ".xml");
 		LOGGER.info("Gerando arquivo " + arquivoSaida + "...");
 		jaxbMarshaller.marshal(listaProcessos, arquivoSaida);
+		numeroLoteAtual++;
 	}
 
 	

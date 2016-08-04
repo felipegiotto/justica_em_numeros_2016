@@ -123,6 +123,21 @@ public class Auxiliar {
 	
 	
 	/**
+	 * Carrega um parâmetro numérico do arquivo "config.properties". Se o parâmetro não existir ou não for numérico, retorna o valor padrão
+	 * 
+	 * @param parametro
+	 * @return
+	 */
+	public static int getParametroInteiroConfiguracao(String parametro, int valorPadrao) {
+		try {
+			return Integer.parseInt(getParametroConfiguracao(parametro, true));
+		} catch (NumberFormatException ex) {
+			return valorPadrao;
+		}
+	}
+	
+	
+	/**
 	 * Retorna o conteúdo de um determinado parâmetro definido no arquivo "config.properties".
 	 * 
 	 * Se o parâmetro for obrigatório e não existir, será lançada uma exceção, solicitando que o usuário preencha o referido parâmetro.
