@@ -25,7 +25,7 @@ public class AnalisaServentiasCNJ {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaServentiasCNJ.class);
 	private Map<String, ServentiaCNJ> serventiasCNJ = new HashMap<>();
-	private TreeSet<String> serventiasComWarningEmitido = new TreeSet<>();
+//	private TreeSet<String> serventiasComWarningEmitido = new TreeSet<>();
 	private File arquivoServentias;
 	
 	public AnalisaServentiasCNJ() throws IOException {
@@ -75,10 +75,10 @@ public class AnalisaServentiasCNJ {
 			return serventiasCNJ.get(nomePJe);
 		} else {
 			
-			if (!serventiasComWarningEmitido.contains(nomePJe)) {
-				serventiasComWarningEmitido.add(nomePJe);
+//			if (!serventiasComWarningEmitido.contains(nomePJe)) {
+//				serventiasComWarningEmitido.add(nomePJe);
 				LOGGER.warn("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe. Para evitar interrupção da rotina, será utilizada uma serventia temporária.");
-			}
+//			}
 			return new ServentiaCNJ("CODIGO_INEXISTENTE", "SERVENTIA INEXISTENTE");
 		}
 	}
