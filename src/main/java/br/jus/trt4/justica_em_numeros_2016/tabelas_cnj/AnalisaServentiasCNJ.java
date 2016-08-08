@@ -35,7 +35,7 @@ public class AnalisaServentiasCNJ {
 		}
 		
 		// Abre o arquivo e lê, linha por linha
-		Scanner scanner = new Scanner(arquivoServentias);
+		Scanner scanner = new Scanner(arquivoServentias, "UTF-8");
 		try {
 			int linha = 0;
 			while (scanner.hasNextLine()) {
