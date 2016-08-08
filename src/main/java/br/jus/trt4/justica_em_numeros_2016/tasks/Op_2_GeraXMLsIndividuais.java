@@ -40,6 +40,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaDocumentosPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaClassesProcessuaisCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
@@ -67,8 +68,8 @@ public class Op_2_GeraXMLsIndividuais {
 	private int codigoMunicipioIBGETRT;
 	private static AnalisaServentiasCNJ processaServentiasCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
+	private AnalisaClassesProcessuaisCNJ analisaClassesProcessuaisCNJ;
 	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
-	private List<Integer> classesProcessuaisCNJ;
 	private IdentificaGeneroPessoa identificaGeneroPessoa;
 	private IdentificaDocumentosPessoa identificaDocumentosPessoa;
 	
@@ -251,6 +252,8 @@ public class Op_2_GeraXMLsIndividuais {
 	
 	private TipoCabecalhoProcesso analisarCabecalhoProcesso(ResultSet rsProcesso) throws SQLException {
 		
+		String numeroCompletoProcesso = rsProcesso.getString("numero_completo_processo");
+		
 		// Script TRT14:
 		// raise notice '<dadosBasicos nivelSigilo="%" numero="%" classeProcessual="%" codigoLocalidade="%" dataAjuizamento="%">' 
 		//  , proc.nivelSigilo, proc.nr_processo, proc.cd_classe_judicial, proc.id_municipio_ibge_origem, proc.dt_autuacao;
@@ -259,11 +262,7 @@ public class Op_2_GeraXMLsIndividuais {
 		cabecalhoProcesso.setNumero(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
 		
 		// Grava a classe processual, conferindo se ela está na tabela nacional do CNJ
-		int codigoClasseProcessual = rsProcesso.getInt("cd_classe_judicial");
-		cabecalhoProcesso.setClasseProcessual(codigoClasseProcessual);
-		if (!classesProcessuaisCNJ.contains(codigoClasseProcessual)) {
-			LOGGER.warn("Processo '" + rsProcesso.getString("numero_completo_processo") + "' possui uma classe processual que não existe nas tabelas do CNJ: " + codigoClasseProcessual + " - " + rsProcesso.getString("ds_classe_judicial"));
-		}
+		analisaClassesProcessuaisCNJ.preencherClasseProcessualVerificandoTPU(cabecalhoProcesso, rsProcesso.getInt("cd_classe_judicial"), rsProcesso.getString("ds_classe_judicial"), numeroCompletoProcesso);
 		
 		cabecalhoProcesso.setDataAjuizamento(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
 		cabecalhoProcesso.setValorCausa(Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa")); 
@@ -281,7 +280,7 @@ public class Op_2_GeraXMLsIndividuais {
 		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(rsProcesso.getInt("id_processo_trf")));
 
 		// Consulta todos os assuntos desse processo
-		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(rsProcesso.getString("numero_completo_processo")));
+		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(numeroCompletoProcesso));
 
 		// Preenche dados do órgão julgador do processo
 		cabecalhoProcesso.setOrgaoJulgador(analisarOrgaoJulgadorProcesso(rsProcesso));
@@ -700,18 +699,6 @@ public class Op_2_GeraXMLsIndividuais {
 			processaServentiasCNJ = new AnalisaServentiasCNJ();
 		}
 		
-		if (classesProcessuaisCNJ == null) {
-			
-			// Lista de classes processuais do CNJ. Essa lista servirá para garantir que as classes
-			// informadas no arquivo XML sejam válidas.
-			// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=C
-			this.classesProcessuaisCNJ = new ArrayList<>();
-			for (String classeString: FileUtils.readLines(new File("src/main/resources/tabelas_cnj/classes_" + grau + "g.csv"), "UTF-8")) {
-				classesProcessuaisCNJ.add(Integer.parseInt(classeString));
-			}
-			
-		}
-		
 		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
 		conexaoBasePrincipal.setAutoCommit(false);
@@ -758,6 +745,7 @@ public class Op_2_GeraXMLsIndividuais {
 		// Objeto que identificará os assuntos e movimentos processuais das tabelas nacionais do CNJ
 		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal);
 		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(grau, conexaoBasePrincipal);
+		analisaClassesProcessuaisCNJ = new AnalisaClassesProcessuaisCNJ(grau);
 	}
 
 	

@@ -16,7 +16,7 @@ import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
 import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
 
-public class IdentificaDocumentosPessoaTest {
+public class IdentificaDocumentosPessoaTest extends AbstractTestCase {
 
 	@Test
 	public void testDocumentoTituloDeEleitor() throws Exception {

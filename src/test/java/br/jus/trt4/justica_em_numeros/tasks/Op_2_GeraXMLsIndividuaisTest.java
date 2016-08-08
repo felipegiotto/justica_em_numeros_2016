@@ -26,6 +26,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
 import br.jus.cnj.intercomunicacao_2_2.TipoPoloProcessual;
 import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.cnj.intercomunicacao_2_2.TipoRepresentanteProcessual;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
 
@@ -40,7 +41,7 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
  * 
  * @author fgiotto
  */
-public class Op_2_GeraXMLsIndividuaisTest {
+public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 
 	@Test
 	public void testCamposProcesso2G() throws Exception {
@@ -259,6 +260,11 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoOrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
 		assertEquals("46904", orgaoJulgador1G.getCodigoOrgao());
 		assertEquals("VT Encantado", orgaoJulgador1G.getNomeOrgao());
+		
+		// Processo 1G, nome de vara com caracteres acentuados
+		TipoOrgaoJulgador orgaoJulgadorAcentuado = retornaDadosProcesso(1, "0020150-49.2015.5.04.0451").getDadosBasicos().getOrgaoJulgador();
+		assertEquals("46994", orgaoJulgadorAcentuado.getCodigoOrgao());
+		assertEquals("VT São Jerônimo", orgaoJulgadorAcentuado.getNomeOrgao());
 	}
 	
 	@Test

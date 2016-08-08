@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoNacional;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
  * Classe que preencherá um objeto do tipo {@link TipoMovimentoProcessual}, conforme o dado no PJe:
@@ -40,16 +41,35 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 	public AnalisaMovimentosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException {
 		super();
 		
+		File arquivoMovimentos = new File("src/main/resources/tabelas_cnj", getNomeArquivoMovimentos(grau));
+		LOGGER.info("Carregando lista de movimentos CNJ do arquivo " + arquivoMovimentos + "...");
+		
 		// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
 		// deverá ser registrado com as tags "<assunto><codigoNacional>" ou "<assunto><assuntoLocal>"
 		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
 		this.movimentosProcessuaisCNJ = new ArrayList<>();
-		for (String assuntoString: FileUtils.readLines(new File("src/main/resources/tabelas_cnj/movimentos_" + grau + "g.csv"), "UTF-8")) {
-			movimentosProcessuaisCNJ.add(Integer.parseInt(assuntoString));
+		for (String movimentoString: FileUtils.readLines(arquivoMovimentos, "UTF-8")) {
+			movimentosProcessuaisCNJ.add(Integer.parseInt(movimentoString));
 		}
 		
 		// PreparedStatements que localizarão movimentos no banco de dados do PJe
 		this.psConsultaEventoPorID = conexaoPJe.prepareStatement("SELECT * FROM tb_evento WHERE id_evento = ?");
+	}
+	
+	
+	/**
+	 * Identifica se o usuário quer utilizar a lista de movimentos da JT ou a lista completa do CNJ
+	 */
+	private String getNomeArquivoMovimentos(int grau) {
+		String tabelaAssuntosNacionais = Auxiliar.getParametroConfiguracao("tabela_de_movimentos_nacionais", "CNJ-JT");
+		
+		if ("CNJ-JT".equals(tabelaAssuntosNacionais)) {
+			return "movimentos_jt_" + grau + "g.csv";
+		} else if ("CNJ-GLOBAL".equals(tabelaAssuntosNacionais)) {
+			return "movimentos_global.csv";
+		} else {
+			throw new RuntimeException("Valor inválido para o parâmetro tabela_de_movimentos_nacionais: '" + tabelaAssuntosNacionais + "'. Verifique o arquivo de configurações.");
+		}
 	}
 	
 	

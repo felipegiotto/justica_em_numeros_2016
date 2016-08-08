@@ -10,9 +10,10 @@ import org.junit.Test;
 
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
-public class AnalisaMovimentosCNJTest {
+public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 
 	@Test
 	public void analisaMovimentoNacional() throws Exception {

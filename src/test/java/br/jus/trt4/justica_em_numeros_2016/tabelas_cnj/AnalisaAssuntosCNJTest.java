@@ -9,9 +9,10 @@ import java.sql.Connection;
 import org.junit.Test;
 
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
-public class AnalisaAssuntosCNJTest {
+public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 
 	@Test
 	public void analisaAssuntoNacional() throws Exception {
