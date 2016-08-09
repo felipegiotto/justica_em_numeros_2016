@@ -87,6 +87,23 @@ Funcionamento "avançado":
   Esse mesmo padrão é utilizado no PJe-JT, na classe "IntercomunicacaoMNI222Service".
 
 
+* Processo/Documentos: Os documentos do processo NÃO SÃO enviados nos arquivos XML, pois isso
+  inviabilizaria a remessa. Essa informação foi confirmada por "Leandro Mendonça Andrade" 
+  <leandro.andrade@cnj.jus.br> em 09/08/2016 às 08:39, no e-mail com assunto "Selo Justiça em 
+  Números - Dúvida sobre TPUs": "Isso mesmo. Não é necessário enviar dados sobre 
+  documento(tipoDocumento). Enviar somente dadosBasicos(tipoCabecalhoProcesso) e 
+  movimento(tipoMovimentoProcessual).
+
+
+* Processo/Classes,Movimentos,Assuntos: Ao identificar classes, movimentos e assuntos, a ferramenta
+  verificará se as mesmas pertencem às TPUs "globais" do CNJ, sem levar em consideração somente as
+  tabelas da Justiça do Trabalho. Isso foi esclarecido no e-mail "Selo Justiça em Números - Dúvida 
+  sobre TPUs". 
+  Pergunta: Devo usar somente as tabelas da JT (baixadas do site do CNJ, no botão "Gerar Excel", 
+            ao lado de "Justiça do Trabalho") ou devo usar as tabelas "completas" do CNJ?
+  Resposta: A tabela completa.
+
+
 * Parte: não estão sendo tratados os casos de representação ou substituição processual em ações 
   coletivas, tutela e curatela.
 

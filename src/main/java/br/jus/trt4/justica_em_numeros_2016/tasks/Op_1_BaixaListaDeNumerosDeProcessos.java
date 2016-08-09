@@ -8,8 +8,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +34,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	private final File arquivoSaida;
 	private Connection conexaoBasePrincipal;
 	private Connection conexaoBaseStagingEGestao;
+	private static final Pattern pCargaProcesso = Pattern.compile("^PROCESSO (\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4})$");
+	private static final Pattern pCargaMensal = Pattern.compile("^MENSAL (\\d+)-(\\d+)$");
 	
 	
 	public static void main(String[] args) throws SQLException, IOException {
@@ -84,15 +90,22 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			rsConsultaProcessos = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			
-		} else if (tipoCarga.matches("\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}")) {
+		} else if (tipoCarga.startsWith("PROCESSO ")) {
 			
 			// Se usuário preencheu um número de processo no parâmetro "tipo_carga_xml", carrega
 			// somente os dados dele
+			Matcher m = pCargaProcesso.matcher(tipoCarga);
+			if (!m.find()) {
+				throw new RuntimeException("Parâmetro 'tipo_carga_xml' não especifica corretamente o processo que precisa ser baixado! Verifique o arquivo 'config.properties'");
+			}
+			String numeroProcesso = m.group(1);
+			
+			// Carrega o SQL do arquivo
 			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_um_processo.sql");
 			PreparedStatement ps = getConexaoBasePrincipalPJe().prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-			ps.setString(1, tipoCarga);
+			ps.setString(1, numeroProcesso);
 			rsConsultaProcessos = ps.executeQuery();
-			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + tipoCarga + "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
+			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + numeroProcesso + "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 			
 		} else if ("COMPLETA".equals(tipoCarga)) {
 			
@@ -131,16 +144,32 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			statement.setFetchSize(100);
 			rsConsultaProcessos = statement.executeQuery(sql);
 			
-		} else if ("MENSAL".equals(tipoCarga)) {
+		} else if (tipoCarga.startsWith("MENSAL ")) {
 			
 			// Se usuário selecionou carga "MENSAL" no parâmetro "tipo_carga_xml", utiliza as
 			// regras definidas pelo CNJ:
 			// Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
 			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
+			Matcher m = pCargaMensal.matcher(tipoCarga);
+			if (!m.find()) {
+				throw new RuntimeException("Parâmetro 'tipo_carga_xml' não especifica corretamente o ano e o mês que precisam ser baixados! Verifique o arquivo 'config.properties'");
+			}
+			
+			// Identifica o início e o término do mês selecionado
+			int ano = Integer.parseInt(m.group(1));
+			int mes = Integer.parseInt(m.group(2));
+			int maiorDiaNoMes = new GregorianCalendar(ano, (mes-1), 1).getActualMaximum(Calendar.DAY_OF_MONTH);
+			String dataInicial = ano + "-" + mes + "-1 00:00:00.000";
+			String dataFinal = ano + "-" + mes + "-" + maiorDiaNoMes + " 23:59:59.999";
+			LOGGER.info("* Considerando movimentações entre '" + dataInicial + "' e '" + dataFinal + "'");
+			
+			// Carrega o SQL do arquivo
 			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_mensal.sql");
-			Statement statement = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			PreparedStatement statement = getConexaoBasePrincipalPJe().prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			statement.setString(1, dataInicial);
+			statement.setString(2, dataFinal);
 			statement.setFetchSize(100);
-			rsConsultaProcessos = statement.executeQuery(sql);
+			rsConsultaProcessos = statement.executeQuery();
 			
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + tipoCarga);
