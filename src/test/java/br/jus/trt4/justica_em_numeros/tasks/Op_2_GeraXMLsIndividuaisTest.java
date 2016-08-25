@@ -59,7 +59,7 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 				</annotation>
 			</element>
 		 */
-		assertEquals(50000.0, dadosBasicos.getValorCausa());
+		assertEquals(50000.0, dadosBasicos.getValorCausa(), 0.001);
 		
 		// Número do processo
 		/*
@@ -532,7 +532,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("514716", movimento.getIdentificadorMovimento());
 		
 		// Nível de sigilo
-		assertEquals(0, movimento.getNivelSigilo());
+		assertEquals(0, (int) movimento.getNivelSigilo());
 	}
 	
 	@Test
@@ -672,4 +672,14 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// O curador não deve estar constando como parte no processo 
 		assertEquals(1, poloPassivo.getParte().size());
 	}
+	
+	@Test
+	public void testPolosDuplicados() throws Exception {
+		
+		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0000007-82.2012.5.04.0406");
+		
+		// Processo deve ter somente três polos: Ativo, Passivo e Terceiros. 
+		// Teste inserido para contornar problema que fazia com que os polos pudessem aparecer várias vezes.
+		assertEquals(3, processoJudicial.getDadosBasicos().getPolo().size());
+	}	
 }

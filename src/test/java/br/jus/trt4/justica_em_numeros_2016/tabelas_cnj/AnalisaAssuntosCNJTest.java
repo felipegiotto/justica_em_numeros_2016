@@ -25,7 +25,7 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 			assertNotNull(assunto);
 			
 			// Testa os campos do assunto nacional
-			assertEquals(2540, assunto.getCodigoNacional());
+			assertEquals(2540, (int) assunto.getCodigoNacional());
 			assertNull(assunto.getAssuntoLocal());
 		}
 	}
