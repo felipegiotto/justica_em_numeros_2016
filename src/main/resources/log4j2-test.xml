@@ -4,7 +4,7 @@
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
-			<!-- <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY" /> --> <!-- Na tela, mostra somente ERROR para cima -->
+			<!-- <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY" /> --> <!-- Na tela, mostra somente um determinado nível de log -->
 		</Console>
 		
 		<Routing name="RoutingAppender">
