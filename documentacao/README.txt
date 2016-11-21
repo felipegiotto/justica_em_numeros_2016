@@ -243,7 +243,7 @@ Funcionamento "avançado":
       que possui ainda uma terceira estrutura de classes para gerar os arquivos XML.
   Resposta de leandro.andrade@cnj.jus.br em 26/07/2016: 
     Seguir o modelo replicação-nacional.xsd. Esse encapsula o intercomunicação-2.2.2.xsd.
-    O arquivo está disponível em "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi"
+    O arquivo está disponível em "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe"
 
 
 * Processos sem assunto cadastrado (ou sem assunto principal) poderão gerar erros no envio dos dados

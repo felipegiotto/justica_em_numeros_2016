@@ -16,7 +16,7 @@ Se necessário, direcione a saída dos comandos para um arquivo, adicionando, ao
 o sufixo a seguir: "> arquivo_saida.txt"
 
 Para maiores detalhes sobre o funcionamento do "replicacao-client", consultar o manual do CNJ,
-disponível em "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi".
+disponível em "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe".
 
 
 
@@ -24,7 +24,7 @@ disponível em "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi".
 
 
 1. Baixar a versão mais recente do arquivo "replicacao-client-X.Y.Z.jar" a partir da página
-   "https://www.cnj.jus.br/owncloud/index.php/s/KwPOp6wENVBS6Vi" e salvar dentro da 
+   "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe" e salvar dentro da 
    pasta "lib/replicacaoNacional".
 
    
