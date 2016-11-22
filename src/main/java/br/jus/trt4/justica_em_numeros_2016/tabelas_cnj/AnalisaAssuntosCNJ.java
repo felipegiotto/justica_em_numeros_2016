@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 
 /**
  * Classe que montará um objeto do tipo {@link TipoAssuntoProcessual}, conforme o dado no PJe:
@@ -39,7 +40,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	private PreparedStatement psConsultaAssuntoPorID;
 	private TipoAssuntoProcessual assuntoProcessualPadrao;
 	
-	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException {
+	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException, DadosInvalidosException {
 		super();
 		
 		File arquivoAssuntos = new File("src/main/resources/tabelas_cnj/" + getNomeArquivoAssuntos(grau));
@@ -66,7 +67,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			if (this.assuntoProcessualPadrao != null) {
 				this.assuntoProcessualPadrao.setPrincipal(true);
 			} else {
-				LOGGER.warn("Foi definido um assunto padrão com código '" + codigoAssuntoPadraoString + "', mas esse assunto não foi localizado no PJe!");
+			    throw new DadosInvalidosException("Foi definido um assunto padrão com código '" + codigoAssuntoPadraoString + "', mas esse assunto não foi localizado no PJe!");
 			}
 		}
 	}

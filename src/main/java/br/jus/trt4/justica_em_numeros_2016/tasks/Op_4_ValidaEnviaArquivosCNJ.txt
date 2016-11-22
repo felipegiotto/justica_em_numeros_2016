@@ -35,7 +35,7 @@ disponível em "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe".
    INDIVIDUAIS que foram gerados para cada processo. Esse passo não é obrigatório, mas facilitará
    a identificação de problemas que podem ter ocorrido, pois o nome do arquivo com defeito será exibido.
    É recomendável executar o comando e autorizar a validação e conversão dos arquivos, mas NÃO
-   enviar os arquivos individuais ao CNJ! Substituir o token "SIGLA_REGIONAL", ex: "TRT0"
+   CONVERTER E NEM ENVIAR os arquivos individuais ao CNJ! Substituir o token "SIGLA_REGIONAL", ex: "TRT0"
    
    # Comando para validar os XMLs individuais no 1o Grau
    ## Saída somente na tela

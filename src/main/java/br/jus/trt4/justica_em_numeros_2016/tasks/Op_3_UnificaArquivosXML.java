@@ -16,6 +16,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoProcessoJudicial;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 
 /**
  * Lê todos os arquivos XML na pasta "output/Xg/xmls_individuais", tanto do PJe quanto dos
@@ -51,6 +52,7 @@ public class Op_3_UnificaArquivosXML {
 			unificarArquivosXML(1);
 		}
 		
+        DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
 		LOGGER.info("Fim!");
 	}
 

@@ -36,6 +36,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoRepresentanteProcessual;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaDocumentosPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
@@ -88,6 +89,9 @@ public class Op_2_GeraXMLsIndividuais {
 		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
 			gerarXMLs(1);
 		}
+		
+        DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+        LOGGER.info("Fim!");
 	}
 
 	
@@ -211,9 +215,10 @@ public class Op_2_GeraXMLsIndividuais {
 	 * @param numeroProcesso
 	 * @return
 	 * @throws SQLException 
+	 * @throws DadosInvalidosException 
 	 * @throws IOException
 	 */
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException {
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, DadosInvalidosException {
 		
 		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
@@ -233,9 +238,10 @@ public class Op_2_GeraXMLsIndividuais {
 	 * @param processoJudicial
 	 * @param rsProcesso
 	 * @throws SQLException 
+	 * @throws DadosInvalidosException 
 	 * @throws IOException 
 	 */
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ResultSet rsProcesso) throws SQLException {
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ResultSet rsProcesso) throws SQLException, DadosInvalidosException {
 
 		// Objeto que será retornado
 		TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
@@ -250,7 +256,7 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private TipoCabecalhoProcesso analisarCabecalhoProcesso(ResultSet rsProcesso) throws SQLException {
+	private TipoCabecalhoProcesso analisarCabecalhoProcesso(ResultSet rsProcesso) throws SQLException, DadosInvalidosException {
 		
 		String numeroCompletoProcesso = rsProcesso.getString("numero_completo_processo");
 		
@@ -517,7 +523,7 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(String nrProcesso) throws SQLException {
+	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(String nrProcesso) throws SQLException, DadosInvalidosException {
 		
 		List<TipoAssuntoProcessual> assuntos = new ArrayList<TipoAssuntoProcessual>();
 		
@@ -568,7 +574,8 @@ public class Op_2_GeraXMLsIndividuais {
 					assuntos.add(assuntoPadrao);
 					
 				} else {
-					LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
+				    throw new DadosInvalidosException("Processo sem assunto cadastrado: " + nrProcesso);
+					//LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
 				}
 				
 			} else if (!encontrouAssuntoPrincipal) {
@@ -581,7 +588,7 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ResultSet rsProcesso) throws SQLException {
+	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ResultSet rsProcesso) throws SQLException, DadosInvalidosException {
 		/*
 		 * Órgãos Julgadores
 				Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
@@ -690,7 +697,7 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	public void prepararConexao() throws SQLException, IOException {
+	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException {
 
 		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
 		

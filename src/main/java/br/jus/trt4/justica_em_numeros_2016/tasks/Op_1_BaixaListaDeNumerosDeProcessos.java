@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 
 /**
  * Monta uma lista de processos, conforme o parâmetro "tipo_carga_xml" do arquivo "config.properties",
@@ -51,6 +52,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 			gerarListaProcessos(1);
 		}
 		
+		DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
 		LOGGER.info("Fim!");
 	}
 
