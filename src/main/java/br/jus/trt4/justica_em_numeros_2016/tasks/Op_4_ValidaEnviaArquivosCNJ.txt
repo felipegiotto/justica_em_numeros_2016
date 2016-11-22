@@ -24,7 +24,7 @@ disponível em "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe".
 
 
 1. Baixar a versão mais recente do arquivo "replicacao-client-X.Y.Z.jar" a partir da página
-   "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe" e salvar dentro da 
+   "https://www.cnj.jus.br/owncloud/index.php/s/e29uoq9fZgDyeX0" e salvar dentro da 
    pasta "lib/replicacaoNacional".
 
    
@@ -39,15 +39,15 @@ disponível em "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe".
    
    # Comando para validar os XMLs individuais no 1o Grau
    ## Saída somente na tela
-   java -jar lib\replicacaoNacional\replicacao-client-2.2.2-passivemode.jar SIGLA_REGIONAL output\1g\xmls_individuais
+   java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\1g\xmls_individuais
    ## Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
-   java -jar lib\replicacaoNacional\replicacao-client-2.2.2-passivemode.jar SIGLA_REGIONAL output\1g\xmls_individuais >> output\log\replicacao-client-simulacao-1g.log
+   java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\1g\xmls_individuais >> output\log\replicacao-client-simulacao-1g.log
 
    # Comando para validar os XMLs individuais no 2o Grau
    ## Saída somente na tela
-   java -jar lib\replicacaoNacional\replicacao-client-2.2.2-passivemode.jar SIGLA_REGIONAL output\2g\xmls_individuais
+   java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\2g\xmls_individuais
    ## Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
-   java -jar lib\replicacaoNacional\replicacao-client-2.2.2-passivemode.jar SIGLA_REGIONAL output\2g\xmls_individuais >> output\log\replicacao-client-simulacao-2g.log
+   java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\2g\xmls_individuais >> output\log\replicacao-client-simulacao-2g.log
    
 
 4. Executar o comando abaixo para validar e enviar os arquivos XML unificados (em lotes de 5000) ao CNJ.
@@ -55,7 +55,7 @@ disponível em "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe".
 
    # Comando para validar os XMLs unificados de ambas as instâncias (útil para enviar as remessas ao CNJ em lotes de 5000 processos)
    ## Saída somente na tela
-   java -jar lib\replicacaoNacional\replicacao-client-2.2.2-passivemode.jar SIGLA_REGIONAL output\xmls_unificados
+   java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\xmls_unificados
    ## Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
-   java -jar lib\replicacaoNacional\replicacao-client-2.2.2-passivemode.jar SIGLA_REGIONAL output\xmls_unificados >> output\log\replicacao-client.log
+   java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\xmls_unificados >> output\log\replicacao-client.log
 
