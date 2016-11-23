@@ -14,6 +14,7 @@ import java.util.Properties;
 import java.util.Scanner;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -240,6 +241,61 @@ public class Auxiliar {
 			throw new RuntimeException("Processo retornou " + process.exitValue());
 		}
 	}
+	
+	
+	/**
+	 * Consome um determinado stream, gravando linha por linha nos logs do LOG4J.
+	 * 
+	 * Esse método é um pouco mais complexo do que um simples "while(hasNextLine) { log(nextLine) }", 
+	 * pois é utilizado para ler a STDOUT e a STDERR da JAR "replicacao-client", do CNJ.
+	 * 
+	 * Essa JAR, em diversas vezes, utiliza "print" em vez de "println", ou seja, não envia o caractere de
+	 * fim de linha, o que faz com que o "hasNextLine" fique aguardando indefinidamente.
+	 * 
+	 * Por isso, o método "consumirStreamAssincrono" lê todos os bytes disponíveis, mesmo que não exista
+	 * uma quebra de linha.
+	 * 
+	 * @param inputStream
+	 * @param prefix
+	 * @param logLevel
+	 * @throws IOException
+	 */
+	public static void consumirStreamAssincrono(final InputStream inputStream, final String prefix, final Level logLevel) throws IOException {
+		Thread t = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					while(true) {
+						leBytesDisponiveis(inputStream, logLevel);
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							leBytesDisponiveis(inputStream, logLevel);
+						}
+					}
+					
+				} catch (IOException e) {
+					LOGGER.log(logLevel, "Leitura do stream finalizada: " + inputStream);
+				}
+			}
+
+			private void leBytesDisponiveis(final InputStream inputStream, final Level logLevel) throws IOException {
+				int qtdBytes = inputStream.available();
+				if (qtdBytes > 0) {
+					byte[] bytes = new byte[qtdBytes];
+					inputStream.read(bytes);
+					String str = new String(bytes);
+					for (String linha: str.split("\n")) {
+						LOGGER.log(logLevel, linha);
+					}
+				}
+			}
+		});
+		t.setDaemon(true);
+		t.start();
+	}
+	
 	
 	/**
 	 * Lê todo o conteúdo de um arquivo UTF-8 e retorna em uma String
