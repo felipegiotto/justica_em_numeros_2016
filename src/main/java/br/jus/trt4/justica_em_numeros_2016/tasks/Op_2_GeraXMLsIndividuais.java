@@ -40,6 +40,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaDocumentosPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaClassesProcessuaisCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
@@ -81,12 +82,12 @@ public class Op_2_GeraXMLsIndividuais {
 		Auxiliar.prepararPastaDeSaida();
 
 		// Verifica se deve gerar XML para 2o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_2G")) {
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
 			gerarXMLs(2);
 		}
 		
 		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
 			gerarXMLs(1);
 		}
 		
@@ -118,7 +119,7 @@ public class Op_2_GeraXMLsIndividuais {
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
-		boolean gerarIncrementalmente = Auxiliar.getParametroBooleanConfiguracao("baixa_incremental", false);
+		boolean gerarIncrementalmente = Auxiliar.getParametroBooleanConfiguracao(Parametro.baixa_incremental, false);
 		if (gerarIncrementalmente) {
 			LOGGER.info("OBS: geração incremental!! Os processos que já foram baixados não serão baixados novamente!");
 		}
@@ -747,7 +748,7 @@ public class Op_2_GeraXMLsIndividuais {
 		nsComplementos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaComplementos);
 
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
-		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao("codigo_municipio_ibge_trt");
+		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao(Parametro.codigo_municipio_ibge_trt);
 		
 		// Objeto que identificará os assuntos e movimentos processuais das tabelas nacionais do CNJ
 		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal);

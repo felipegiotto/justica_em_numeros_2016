@@ -19,7 +19,7 @@ public class AnalisaClassesProcessuaisCNJ {
 
 	public AnalisaClassesProcessuaisCNJ(int grau) throws IOException {
 		
-		File arquivoClasses = new File("src/main/resources/tabelas_cnj", getNomeArquivoClasses(grau));
+		File arquivoClasses = new File("src/main/resources/tabelas_cnj/classes_cnj.csv");
 		LOGGER.info("Carregando lista de classes CNJ do arquivo " + arquivoClasses + "...");
 		
 		// Lista de classes processuais do CNJ. Essa lista servirá para garantir que as classes
@@ -28,22 +28,6 @@ public class AnalisaClassesProcessuaisCNJ {
 		this.classesProcessuaisCNJ = new ArrayList<>();
 		for (String classeString: FileUtils.readLines(arquivoClasses, "UTF-8")) {
 			classesProcessuaisCNJ.add(Integer.parseInt(classeString));
-		}
-	}
-	
-	
-	/**
-	 * Identifica se o usuário quer utilizar a lista de classes da JT ou a lista completa do CNJ
-	 */
-	private String getNomeArquivoClasses(int grau) {
-		String tabelaAssuntosNacionais = Auxiliar.getParametroConfiguracao("tabela_de_classes_nacionais", "CNJ-JT");
-		
-		if ("CNJ-JT".equals(tabelaAssuntosNacionais)) {
-			return "classes_jt_" + grau + "g.csv";
-		} else if ("CNJ-GLOBAL".equals(tabelaAssuntosNacionais)) {
-			return "classes_global.csv";
-		} else {
-			throw new RuntimeException("Valor inválido para o parâmetro tabela_de_classes_nacionais: '" + tabelaAssuntosNacionais + "'. Verifique o arquivo de configurações.");
 		}
 	}
 	

@@ -17,6 +17,7 @@ import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
  * Lê todos os arquivos XML na pasta "output/Xg/xmls_individuais", tanto do PJe quanto dos
@@ -36,19 +37,19 @@ public class Op_3_UnificaArquivosXML {
 	
 	private int grau;
 	private final File pastaSaida;
-	private int numeroLoteAtual = Auxiliar.getParametroInteiroConfiguracao("contador_inicial_xmls_unificados", 1);
+	private int numeroLoteAtual = Auxiliar.getParametroInteiroConfiguracao(Parametro.contador_inicial_xmls_unificados, 1);
 	private int qtdArquivosXMLGerados = 0;
 	
 	public static void main(String[] args) throws JAXBException {
 		Auxiliar.prepararPastaDeSaida();
 
 		// Verifica se deve gerar XML para 2o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_2G")) {
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
 			unificarArquivosXML(2);
 		}
 		
 		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
 			unificarArquivosXML(1);
 		}
 		

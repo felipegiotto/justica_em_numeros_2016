@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
  * Chama a JAR oficial do CNJ (replicacao-client), conforme parâmetro jar_replicacao_nacional_cnj 
@@ -57,8 +58,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	public static void main(String[] args) throws Exception {
 		
 		// Lê os parâmetros necessários
-		String caminhoJar = Auxiliar.getParametroConfiguracao("jar_replicacao_nacional_cnj", true);
-		String siglaTribunal = Auxiliar.getParametroConfiguracao("sigla_tribunal", true);
+		String caminhoJar = Auxiliar.getParametroConfiguracao(Parametro.jar_replicacao_nacional_cnj, true);
+		String siglaTribunal = Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true);
 		File pastaXMLsUnificados = new File(Auxiliar.prepararPastaDeSaida(), "xmls_unificados");
 		
 		// Prepara para disparar o "replicacao-client" do CNJ

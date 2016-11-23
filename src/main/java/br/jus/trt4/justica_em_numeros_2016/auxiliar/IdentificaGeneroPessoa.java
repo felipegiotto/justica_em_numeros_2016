@@ -37,7 +37,7 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 		// Abre conexão com o outro banco de dados do PJe, para localizar o sexo de pessoas que podem
 		// estar sem essa informação
 		// OBS: só busca o sexo na outra instância se o parâmetro estiver habilitado nas configurações
-		if (Auxiliar.getParametroBooleanConfiguracao("contornar_falta_de_genero", false)) {
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.contornar_falta_de_genero, false)) {
 			
 			try {
 				conexaoBasePrincipalOutraInstancia = Auxiliar.getConexaoPJe(grau);

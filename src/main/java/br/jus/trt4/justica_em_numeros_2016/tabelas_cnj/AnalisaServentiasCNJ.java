@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
  * Classe responsável por ler os arquivos de serventia do CNJ (conforme parâmetro arquivo_serventias_cnj)
@@ -30,7 +31,7 @@ public class AnalisaServentiasCNJ {
 	public AnalisaServentiasCNJ() throws IOException {
 		
 		// Arquivo de onde os dados das serventias serão lidos, conforme configuração.
-		arquivoServentias = new File("src/main/resources/serventias_cnj/" + Auxiliar.getParametroConfiguracao("arquivo_serventias_cnj", true));
+		arquivoServentias = new File("src/main/resources/serventias_cnj/" + Auxiliar.getParametroConfiguracao(Parametro.arquivo_serventias_cnj, true));
 		if (!arquivoServentias.exists()) {
 			throw new IOException("O arquivo '" + arquivoServentias + "' não existe! Verifique o arquivo de configuração.");
 		}

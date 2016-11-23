@@ -17,6 +17,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
  * Classe que montará um objeto do tipo {@link TipoAssuntoProcessual}, conforme o dado no PJe:
@@ -43,7 +44,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException, DadosInvalidosException {
 		super();
 		
-		File arquivoAssuntos = new File("src/main/resources/tabelas_cnj/" + getNomeArquivoAssuntos(grau));
+		File arquivoAssuntos = new File("src/main/resources/tabelas_cnj/assuntos_cnj.csv");
 		LOGGER.info("Carregando lista de assuntos CNJ do arquivo " + arquivoAssuntos + "...");
 		
 		// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
@@ -60,7 +61,15 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 		
 		// Se o arquivo de configuração especificar um assunto padrão, tenta carregá-lo.
 		// Posteriormente, se necessário, o assunto padrão será carregado do banco de dados.
-		String codigoAssuntoPadraoString = Auxiliar.getParametroConfiguracao("assunto_padrao_" + grau + "G", false);
+		String codigoAssuntoPadraoString;
+		if (grau == 1) {
+			codigoAssuntoPadraoString = Auxiliar.getParametroConfiguracao(Parametro.assunto_padrao_1G, false);			
+		} else if (grau == 2) {
+			codigoAssuntoPadraoString = Auxiliar.getParametroConfiguracao(Parametro.assunto_padrao_2G, false);
+		} else {
+			throw new SQLException("Grau inválido: " + grau);
+		}
+		
 		if (codigoAssuntoPadraoString != null) {
 			int codigo = Integer.parseInt(codigoAssuntoPadraoString);
 			this.assuntoProcessualPadrao = getAssunto(codigo);
@@ -73,22 +82,6 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	}
 	
 	
-	/**
-	 * Identifica se o usuário quer utilizar a lista de assuntos da JT ou a lista completa do CNJ
-	 */
-	private String getNomeArquivoAssuntos(int grau) {
-		String tabelaAssuntosNacionais = Auxiliar.getParametroConfiguracao("tabela_de_assuntos_nacionais", "CNJ-JT");
-		
-		if ("CNJ-JT".equals(tabelaAssuntosNacionais)) {
-			return "assuntos_jt_" + grau + "g.csv";
-		} else if ("CNJ-GLOBAL".equals(tabelaAssuntosNacionais)) {
-			return "assuntos_global.csv";
-		} else {
-			throw new RuntimeException("Valor inválido para o parâmetro tabela_de_assuntos_nacionais: '" + tabelaAssuntosNacionais + "'. Verifique o arquivo de configurações.");
-		}
-	}
-
-
 	/**
 	 * Gera um objeto TipoAssuntoProcessual, para ser inserido no XML do CNJ, a partir do código 
 	 * informado.

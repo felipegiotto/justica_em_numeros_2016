@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
  * Monta uma lista de processos, conforme o parâmetro "tipo_carga_xml" do arquivo "config.properties",
@@ -43,12 +44,12 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		Auxiliar.prepararPastaDeSaida();
 		
 		// Verifica se deve gerar XML para 2o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_2G")) {
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
 			gerarListaProcessos(2);
 		}
 		
 		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao("gerar_xml_1G")) {
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
 			gerarListaProcessos(1);
 		}
 		
@@ -81,7 +82,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		
 		// Verifica quais os critérios selecionados pelo usuário, no arquivo "config.properties",
 		// pra escolher os processos que serão analisados.
-		String tipoCarga = Auxiliar.getParametroConfiguracao("tipo_carga_xml", true);
+		String tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
 		LOGGER.info("Executando consulta " + tipoCarga + "...");
 		ResultSet rsConsultaProcessos;
 		if ("TESTES".equals(tipoCarga)) {

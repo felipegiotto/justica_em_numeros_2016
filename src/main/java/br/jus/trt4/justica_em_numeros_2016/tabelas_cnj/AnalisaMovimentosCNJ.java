@@ -41,7 +41,7 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 	public AnalisaMovimentosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException {
 		super();
 		
-		File arquivoMovimentos = new File("src/main/resources/tabelas_cnj", getNomeArquivoMovimentos(grau));
+		File arquivoMovimentos = new File("src/main/resources/tabelas_cnj/movimentos_cnj.csv");
 		LOGGER.info("Carregando lista de movimentos CNJ do arquivo " + arquivoMovimentos + "...");
 		
 		// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
@@ -54,22 +54,6 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 		
 		// PreparedStatements que localizarão movimentos no banco de dados do PJe
 		this.psConsultaEventoPorID = conexaoPJe.prepareStatement("SELECT * FROM tb_evento WHERE id_evento = ?");
-	}
-	
-	
-	/**
-	 * Identifica se o usuário quer utilizar a lista de movimentos da JT ou a lista completa do CNJ
-	 */
-	private String getNomeArquivoMovimentos(int grau) {
-		String tabelaAssuntosNacionais = Auxiliar.getParametroConfiguracao("tabela_de_movimentos_nacionais", "CNJ-JT");
-		
-		if ("CNJ-JT".equals(tabelaAssuntosNacionais)) {
-			return "movimentos_jt_" + grau + "g.csv";
-		} else if ("CNJ-GLOBAL".equals(tabelaAssuntosNacionais)) {
-			return "movimentos_global.csv";
-		} else {
-			throw new RuntimeException("Valor inválido para o parâmetro tabela_de_movimentos_nacionais: '" + tabelaAssuntosNacionais + "'. Verifique o arquivo de configurações.");
-		}
 	}
 	
 	

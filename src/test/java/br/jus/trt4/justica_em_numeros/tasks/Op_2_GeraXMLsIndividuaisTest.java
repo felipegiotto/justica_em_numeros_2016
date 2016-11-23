@@ -29,6 +29,7 @@ import br.jus.cnj.intercomunicacao_2_2.TipoRepresentanteProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
 
 /**
@@ -582,7 +583,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	public void testCacheGeneroPessoa() throws Exception {
 		
 		// O parâmetro deve estar preenchido!!
-		Auxiliar.getParametroBooleanConfiguracao("contornar_falta_de_genero");
+		Auxiliar.getParametroBooleanConfiguracao(Parametro.contornar_falta_de_genero);
 		
 		// Ao consultar o processo no 2o Grau, essa informação deverá ser retornada
 		TipoProcessoJudicial processoJudicial = retornaDadosProcesso(2, "0021149-65.2015.5.04.0333");

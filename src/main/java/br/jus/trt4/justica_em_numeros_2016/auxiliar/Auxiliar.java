@@ -42,7 +42,13 @@ public class Auxiliar {
 	 */
 	public static Connection getConexaoPJe(int grau) throws SQLException {
 		LOGGER.info("Abrindo conexão com o PJe " + grau + "G");
-		return getConexaoDasConfiguracoes("url_jdbc_" + grau + "g");
+		if (grau == 1) {
+			return getConexaoDasConfiguracoes(Parametro.url_jdbc_1g);
+		} else if (grau == 2) {
+			return getConexaoDasConfiguracoes(Parametro.url_jdbc_2g);
+		} else {
+			throw new SQLException("Grau inválido: " + grau);
+		}
 	}
 	
 	
@@ -53,7 +59,13 @@ public class Auxiliar {
 	 */
 	public static Connection getConexaoStagingEGestao(int grau) throws SQLException {
 		LOGGER.info("Abrindo conexão com o Staging do e-Gestão " + grau + "G");
-		return getConexaoDasConfiguracoes("url_jdbc_egestao_" + grau + "g");
+		if (grau == 1) {
+			return getConexaoDasConfiguracoes(Parametro.url_jdbc_egestao_1g);
+		} else if (grau == 2) {
+			return getConexaoDasConfiguracoes(Parametro.url_jdbc_egestao_2g);
+		} else {
+			throw new SQLException("Grau inválido: " + grau);
+		}
 	}
 	
 	
@@ -65,7 +77,7 @@ public class Auxiliar {
 	 * @return
 	 * @throws SQLException
 	 */
-	private static Connection getConexaoDasConfiguracoes(String parametro) throws SQLException {
+	private static Connection getConexaoDasConfiguracoes(Parametro parametro) throws SQLException {
 		try {
 			Class.forName("org.postgresql.Driver");
 		} catch (ClassNotFoundException e) {
@@ -80,7 +92,7 @@ public class Auxiliar {
 	 * @param parametro
 	 * @return
 	 */
-	public static boolean getParametroBooleanConfiguracao(String parametro) {
+	public static boolean getParametroBooleanConfiguracao(Parametro parametro) {
 		String valor = getParametroConfiguracao(parametro, false);
 		if ("SIM".equals(valor)) {
 			return true;
@@ -98,7 +110,7 @@ public class Auxiliar {
 	 * @param parametro
 	 * @return
 	 */
-	public static boolean getParametroBooleanConfiguracao(String parametro, boolean valorPadrao) {
+	public static boolean getParametroBooleanConfiguracao(Parametro parametro, boolean valorPadrao) {
 		String valor = getParametroConfiguracao(parametro, false);
 		if ("SIM".equals(valor)) {
 			return true;
@@ -116,7 +128,7 @@ public class Auxiliar {
 	 * @param parametro
 	 * @return
 	 */
-	public static int getParametroInteiroConfiguracao(String parametro) {
+	public static int getParametroInteiroConfiguracao(Parametro parametro) {
 		try {
 			return Integer.parseInt(getParametroConfiguracao(parametro, true));
 		} catch (NumberFormatException ex) {
@@ -131,7 +143,7 @@ public class Auxiliar {
 	 * @param parametro
 	 * @return
 	 */
-	public static int getParametroInteiroConfiguracao(String parametro, int valorPadrao) {
+	public static int getParametroInteiroConfiguracao(Parametro parametro, int valorPadrao) {
 		try {
 			return Integer.parseInt(getParametroConfiguracao(parametro, true));
 		} catch (NumberFormatException ex) {
@@ -150,11 +162,11 @@ public class Auxiliar {
 	 * @return se o parâmetro existir, retorna seu valor. Se o parâmetro não existir e for obrigatório, será lançada uma exceção.
 	 * Se o parâmetro não existir mas não for obrigatório, retornará "null".
 	 */
-	public static String getParametroConfiguracao(String parametro, boolean obrigatorio) {
-		if (obrigatorio && !getConfigs().containsKey(parametro)) {
+	public static String getParametroConfiguracao(Parametro parametro, boolean obrigatorio) {
+		if (obrigatorio && !getConfigs().containsKey(parametro.toString())) {
 			throw new RuntimeException("Defina o parâmetro '" + parametro + "' no arquivo '" + arquivoConfiguracoes + "'");
 		}
-		return getConfigs().getProperty(parametro);
+		return getConfigs().getProperty(parametro.toString());
 	}
 
 	
@@ -163,9 +175,9 @@ public class Auxiliar {
 	 * 
 	 * Se o parâmetro não existir, será retornado o valor padrão.
 	 */
-	public static String getParametroConfiguracao(String parametro, String valorPadrao) {
-		if (getConfigs().containsKey(parametro)) {
-			return getConfigs().getProperty(parametro);
+	public static String getParametroConfiguracao(Parametro parametro, String valorPadrao) {
+		if (getConfigs().containsKey(parametro.toString())) {
+			return getConfigs().getProperty(parametro.toString());
 		} else {
 			return valorPadrao;
 		}
@@ -180,6 +192,15 @@ public class Auxiliar {
 
 			try {
 				configs = carregarPropertiesDoArquivo(arquivoConfiguracoes);
+				
+				// Confere se há algum atributo não reconhecido, conforme enum "Parametro"
+				for (Object key: configs.keySet()) {
+					try {
+						Parametro.valueOf(key.toString());
+					} catch (IllegalArgumentException ex) {
+						LOGGER.warn("Há um atributo não reconhecido (" + key + ") no arquivo de configurações (" + arquivoConfiguracoes.getAbsolutePath() + "). Este atributo será ignorado!");
+					}
+				}
 			} catch (IOException ex) {
 				throw new RuntimeException("Erro ao ler arquivo de configurações (" + arquivoConfiguracoes + "): " + ex.getLocalizedMessage(), ex);
 			}
@@ -382,9 +403,9 @@ public class Auxiliar {
 	 */
 	public static String getPrefixoArquivoXML(int grau) {
 		if (diaMesAnoArquivosXML == null) {
-			diaMesAnoArquivosXML = getParametroConfiguracao("dia_padrao_para_arquivos_xml", new SimpleDateFormat("ddMMyyyy").format(new Date()));
+			diaMesAnoArquivosXML = getParametroConfiguracao(Parametro.dia_padrao_para_arquivos_xml, new SimpleDateFormat("ddMMyyyy").format(new Date()));
 		}
-		return Auxiliar.getParametroConfiguracao("sigla_tribunal", true) + "_G" + grau + "_" + diaMesAnoArquivosXML;
+		return Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true) + "_G" + grau + "_" + diaMesAnoArquivosXML;
 	}
 	
 	
@@ -405,7 +426,7 @@ public class Auxiliar {
 	public static File prepararPastaDeSaida() {
 		
 		if (pastaSaida == null) {
-			String nomePastaSaida = Auxiliar.getParametroConfiguracao("pasta_saida_padrao", "output");
+			String nomePastaSaida = Auxiliar.getParametroConfiguracao(Parametro.pasta_saida_padrao, "output");
 			pastaSaida = new File(nomePastaSaida);
 			
 			ThreadContext.put("logFolder", nomePastaSaida);

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
  * IMPORTANTE!! Essa classe só precisará ser executada novamente se houver alguma alteração no arquivo XSD do CNJ.
@@ -31,7 +32,7 @@ public class Op_0_ParseArquivoXSD {
 		comandos.add("xjc");
 		
 		// Verifica se será necessário utilizar proxy
-		String proxy = Auxiliar.getParametroConfiguracao("configuracao_proxy", false);
+		String proxy = Auxiliar.getParametroConfiguracao(Parametro.configuracao_proxy, false);
 		if (proxy != null) {
 			comandos.add("-httpproxy");
 			comandos.add(proxy);
