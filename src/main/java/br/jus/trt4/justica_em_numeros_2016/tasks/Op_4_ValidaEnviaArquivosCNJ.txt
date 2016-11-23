@@ -38,24 +38,36 @@ disponível em "https://www.cnj.jus.br/owncloud/index.php/s/holkvSASTlwbeoe".
    CONVERTER E NEM ENVIAR os arquivos individuais ao CNJ! Substituir o token "SIGLA_REGIONAL", ex: "TRT0"
    
    # Comando para validar os XMLs individuais no 1o Grau
-   ## Saída somente na tela
+   ## Windows: Saída somente na tela
    java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\1g\xmls_individuais
-   ## Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
+   ## Linux: Saída somente na tela
+   java -jar lib/replicacaoNacional/replicacao-client-2.2.6.jar SIGLA_REGIONAL output/1g/xmls_individuais
+   ## Windows: Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
    java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\1g\xmls_individuais >> output\log\replicacao-client-simulacao-1g.log
+   ## Linux: Saída em arquivo (facilita identificação de erros de validação)
+   java -jar lib/replicacaoNacional/replicacao-client-2.2.6.jar SIGLA_REGIONAL output/1g/xmls_individuais | tee -a output/log/replicacao-client-simulacao-1g.log
 
    # Comando para validar os XMLs individuais no 2o Grau
-   ## Saída somente na tela
+   ## Windows: Saída somente na tela
    java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\2g\xmls_individuais
-   ## Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
+   ## Linux: Saída somente na tela
+   java -jar lib/replicacaoNacional/replicacao-client-2.2.6.jar SIGLA_REGIONAL output/2g/xmls_individuais
+   ## Windows: Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
    java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\2g\xmls_individuais >> output\log\replicacao-client-simulacao-2g.log
+   ## Linux: Saída em arquivo (facilita identificação de erros de validação)
+   java -jar lib/replicacaoNacional/replicacao-client-2.2.6.jar SIGLA_REGIONAL output/2g/xmls_individuais | tee -a output/log/replicacao-client-simulacao-2g.log
    
 
 4. Executar o comando abaixo para validar e enviar os arquivos XML unificados (em lotes de 5000) ao CNJ.
    Substituir o token "SIGLA_REGIONAL", ex: "TRT0"
 
    # Comando para validar os XMLs unificados de ambas as instâncias (útil para enviar as remessas ao CNJ em lotes de 5000 processos)
-   ## Saída somente na tela
+   ## Windows: Saída somente na tela
    java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\xmls_unificados
-   ## Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
+   ## Linux: Saída somente na tela
+   java -jar lib/replicacaoNacional/replicacao-client-2.2.6.jar SIGLA_REGIONAL output/xmls_unificados
+   ## Windows: Saída em arquivo (facilita identificação de erros de validação, mas exige o monitoramento do arquivo em tempo real, por exemplo, com o comando 'tail')
    java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\xmls_unificados >> output\log\replicacao-client.log
+   ## Linux: Saída em arquivo (facilita identificação de erros de validação)
+   java -jar lib/replicacaoNacional/replicacao-client-2.2.6.jar SIGLA_REGIONAL output/xmls_unificados | tee -a output/log/replicacao-client.log
 
