@@ -5,6 +5,10 @@ Ferramenta para extrair, do PJe, os XMLs para o Selo Justiça em Números 2016 d
 Também é possível unir esses arquivos do PJe com arquivos XMLs de sistemas legados, para enviar
 de uma vez só ao CNJ. 
 
+Depois de ler essas instruções, leia o arquivo CHECKLIST_RESUMO.txt, que irá guiá-lo passo a 
+passo.
+
+
 Author: felipe.giotto@trt4.jus.br
 
 
@@ -37,7 +41,7 @@ IMPORTANTE: Confira sempre a saída do Console, prestando atenção especialment
                Por isso, antes de gerar o arquivo XML definitivo para enviar ao CNJ, recomenda-se 
                limpar a pasta "ouput", e seguir todos os passos novamente, desde o início.
 
-5. Seguir as instruções do arquivo "Op_4_ValidaEnviaArquivosCNJ.txt", para execução da ferramenta
+5. Executar o método "main" da classe "Op_4_ValidaEnviaArquivosCNJ", para execução da ferramenta
    "replicacao-client", fornecida pelo CNJ, para validar os XMLs gerados e enviar ao Conselho.
 
 

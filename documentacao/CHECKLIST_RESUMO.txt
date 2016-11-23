@@ -1,0 +1,109 @@
+Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, depois inspire-se nos passos abaixo para extrair os arquivos:
+
+
+1. Revise TODAS as configurações descritas no arquivo "config.properties". Alguns padrões que recomendo seguir: 
+
+   1.1. Ao gerar cargas MENSAIS, definir o atributo "dia_padrao_para_arquivos_xml" como sendo o último dia do mês.
+        Por exemplo, ao utilizar "tipo_carga_xml=MENSAL 2016-10", preencher também "dia_padrao_para_arquivos_xml=31102016".
+        
+
+2. Verifique se existe uma pasta "output", na raiz do projeto (ou outro nome, conforme configuração "pasta_saida_padrao")
+   com arquivos antigos. Se houver, mova esses dados antigos para o local adequado (backup / lixeira / etc), de forma
+   que NÃO EXISTA uma pasta "output". Ela será recriada em seguida, por esta aplicação.
+   
+   
+3. Prepare também uma pasta de backup, que será armazenada para referência futura, com todos os dados das etapas intermediárias
+   geradas por esta ferramenta.
+   
+   3.1. Dentro dessa pasta de backup, crie um arquivo "OBSERVACOES.txt", relatando qualquer informação relevante
+        que possa ser útil no futuro. Preencha esse arquivo conforme as próximas operações forem sendo executadas.
+
+   
+4. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
+
+   4.1. Depois de terminar, procure nos arquivos de log por eventuais problemas que possam ter ocorrido.
+        Exemplo de comando, em linux, para ler os logs, ignorando os níveis DEBUG e INFO (rodar
+        na pasta raiz do projeto "justica_em_numeros_2016")
+        grep "" output/log/*.log | grep --invert-match " DEBUG " | grep --invert-match " INFO "
+        
+   4.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
+
+
+5. Execute a classe "Op_2_GeraXMLsIndividuais"
+
+   5.1. Verifique novamente se algum problema foi registrado nos arquivos de log, conforme instrução anterior.
+   
+   5.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
+   
+
+6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/1g" e "output/2g")
+
+
+7. Execute a classe "Op_3_UnificaArquivosXML"
+
+   7.1. Verifique novamente se algum problema foi registrado nos arquivos de log, conforme instrução anterior.
+   
+   7.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
+
+
+8. Conte quantos arquivos XML foram gerados na pasta "output/xmls_unificados" e anote em algum lugar.
+
+   
+9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", mas NÃO RESPONDA AS PERGUNTAS efetuadas sem ler as instruções abaixo!
+
+   9.1. Se ocorrer o erro "Unable to access jarfile...", pode ser necessário baixar o arquivo JAR "replicacao-client", 
+        do CNJ, e configurar o parâmetro "jar_replicacao_nacional_cnj"
+   
+   9.2. Se ocorrer o erro "Não foi possível acessar o FTP do CNJ...", tente novamente em alguns segundos.
+        Se o problema persistir, entrar em contato com o CNJ.
+   
+   9.3. Se ocorrer o erro "Falha na conexão", tente novamente em alguns segundos.
+        Se o problema persistir, entrar em contato com o CNJ.
+   
+   9.4. Se ocorrer o erro "Erro de validação no arquivo...", será necessário encontrar a origem do problema e corrigir.
+        O "replicacao-client" pode não dar todas as informações necessárias! Boa sorte! Pode ser necessário gerar todos 
+        os processos novamente, desde o início!
+        
+   9.5. Quando a rotina exibir "Foram encontrados X arquivos pendentes de conversão. Gostaria de convertê-los?":
+        9.5.1. Não responda nada ainda!
+        9.5.2. Abra a pasta "output/xmls_unificados/validados" e confira se o número de arquivos XML bate com a quantidade
+               que foi encontrada no passo 8. 
+        9.5.3. Efetue backup da pasta "output/xmls_unificados/validados".
+        9.5.4. Volte ao console e responda "s" à pergunta "Gostaria de convertê-los?".
+        
+   9.6. Quando a rotina exibir "Foram encontrados X arquivos pendentes de envio. Gostaria de enviá-los?":
+        9.6.1. Não responda nada ainda!
+        9.6.2. Abra a pasta "output/xmls_unificados/convertidos" e confira se o número de arquivos XML bate com a quantidade
+               que foi encontrada no passo 8. 
+        9.6.3. Efetue backup da pasta "output/xmls_unificados/convertidos".
+        9.6.4. Volte ao console e responda "s" à pergunta "Gostaria de enviá-los?".
+        9.6.2. Abra a pasta "output/xmls_unificados/enviados" e confira se o número de arquivos ZIP bate com a quantidade
+               que foi encontrada no passo 8. 
+        9.6.3. Efetue backup da pasta "output/xmls_unificados/enviados".
+        
+        
+10. Confira se a pasta "output/xmls_unificados/erros" está vazia.
+
+
+11. Execute novamente a rotina "Op_4_ValidaEnviaArquivosCNJ" para que seja gerado um novo relatório de transmissão, completo, com todos
+    os arquivos que estão no FTP do CNJ.
+    
+    11.1. Abra o arquivo mais recente, com prefixo "relatorio_", na pasta "output/xmls_unificados/recibos" e confira se 
+          TODOS os arquivos da pasta "output/xmls_unificados/enviados" estão realmente neste documento.
+      
+    11.2. Efetue backup da pasta "output/xmls_unificados/recibos"
+    
+    
+12. Efetue backup da pasta "output/log"
+
+
+13. Efetue backup do arquivo "replicacao-client" que foi utilizado para enviar desse lote ao CNJ.
+
+
+14. SOMENTE TRT4: Compacte toda a pasta de backup, no formato "7z", com o nome no padrão "XXXX-XX-XX - Carga Mensal - Ref MM-AAAA.7z", onde:
+    * "XXXX-XX-XX" é a data em que os arquivos foram gerados
+    * "MM-AAAA" é o mês e o ano que os dados se referem (conforme parâmetro "tipo_carga_xml" nas configurações)
+ 
+    14.1. Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
+
+

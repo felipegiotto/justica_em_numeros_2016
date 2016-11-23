@@ -62,6 +62,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		String siglaTribunal = Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true);
 		File pastaXMLsUnificados = new File(Auxiliar.prepararPastaDeSaida(), "xmls_unificados");
 		
+		LOGGER.info("Processando todos os arquivos da pasta " + pastaXMLsUnificados.getAbsolutePath() + "...");
+		
 		// Prepara para disparar o "replicacao-client" do CNJ
 		ProcessBuilder pb = new ProcessBuilder("java", "-jar", caminhoJar, siglaTribunal, pastaXMLsUnificados.getAbsolutePath());
 		
@@ -78,6 +80,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		// Aguarda até que o processo termine.
 		p.waitFor();
 		
+		Thread.sleep(1000);
 		LOGGER.info("Fim!");
 	}
 }
