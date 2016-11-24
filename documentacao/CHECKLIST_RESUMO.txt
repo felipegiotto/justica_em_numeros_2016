@@ -12,7 +12,7 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
    que NÃO EXISTA uma pasta "output". Ela será recriada em seguida, por esta aplicação.
    
    
-3. Prepare também uma pasta de backup, que será armazenada para referência futura, com todos os dados das etapas intermediárias
+3. SUGESTÃO: Prepare também uma pasta de backup, que será armazenada para referência futura, com todos os dados das etapas intermediárias
    geradas por esta ferramenta.
    
    3.1. Dentro dessa pasta de backup, crie um arquivo "OBSERVACOES.txt", relatando qualquer informação relevante
@@ -33,7 +33,20 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
 
    5.1. Verifique novamente se algum problema foi registrado nos arquivos de log, conforme instrução anterior.
    
-   5.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
+   5.2. Se algum problema for identificado, resolva-o e execute novamente esse passo. 
+        Os problemas mais frequentes, nessa etapa, são:
+   
+        5.2.1. Processos sem assunto: Há duas soluções possíveis: 
+               1. Solicitar ao setor negocial responsável que analise o processo e cadastre pelo
+                  menos um assunto no processo.
+               2. Registrar, no arquivo de configurações, um assunto padrão para a referida instância (1G ou 2G).
+               
+        5.2.2. Erro "não há nenhuma linha definindo o código e o nome da serventia": provavelmente
+               foi cadastrado um novo OJ/OJC no PJe, ou o nome de algum OJ/OJC foi alterado.
+               Será necessário corrigir o arquivo referenciado pelo atributo "arquivo_serventias_cnj",
+               nas configurações, inserindo o código e o nome correto da serventia do CNJ. 
+               A área de negócios do tribunal, responsável pelas estatísticas, deve possuir os códigos
+               dessas serventias.
    
 
 6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/1g" e "output/2g")
@@ -51,35 +64,43 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
    
 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", mas NÃO RESPONDA AS PERGUNTAS efetuadas sem ler as instruções abaixo!
 
-   9.1. Se ocorrer o erro "Unable to access jarfile...", pode ser necessário baixar o arquivo JAR "replicacao-client", 
-        do CNJ, e configurar o parâmetro "jar_replicacao_nacional_cnj"
+   9.1. Erros mais frequentes:
+        9.1.1. "Unable to access jarfile...": pode ser necessário baixar o arquivo JAR "replicacao-client", 
+               do CNJ, e configurar o parâmetro "jar_replicacao_nacional_cnj"
+               
+        9.1.2. "Não foi possível acessar o FTP do CNJ...": tente novamente em alguns segundos.
+               Se o problema persistir, entrar em contato com o CNJ.
    
-   9.2. Se ocorrer o erro "Não foi possível acessar o FTP do CNJ...", tente novamente em alguns segundos.
-        Se o problema persistir, entrar em contato com o CNJ.
+        9.1.3. "Falha na conexão": tente novamente em alguns segundos.
+               Se o problema persistir, entrar em contato com o CNJ.
+               
+        9.1.4. "Sua versão X.X.X está desatualizada": baixe a nova versão do "replicacao-client" do CNJ,
+               conforme orientações na seção "Instruções básicas" no arquivo README.txt.
+               Em seguida, atualize o atributo "jar_replicacao_nacional_cnj" no arquivo de configurações.
    
-   9.3. Se ocorrer o erro "Falha na conexão", tente novamente em alguns segundos.
-        Se o problema persistir, entrar em contato com o CNJ.
-   
-   9.4. Se ocorrer o erro "Erro de validação no arquivo...", será necessário encontrar a origem do problema e corrigir.
-        O "replicacao-client" pode não dar todas as informações necessárias! Boa sorte! Pode ser necessário gerar todos 
-        os processos novamente, desde o início!
+        9.1.5. "Erro de validação no arquivo...": será necessário encontrar a origem do problema e corrigir.
+               O "replicacao-client" pode não dar todas as informações necessárias! Boa sorte! Pode ser necessário gerar todos 
+               os processos novamente, desde o início!
+               
+   9.2. Quando a rotina exibir "Foram encontrados X arquivos pendentes de conversão. Gostaria de convertê-los?":
+        9.2.1. Não responda nada ainda!
+        9.2.2. Abra a pasta "output/xmls_unificados/validados" e confira se o número de arquivos XML bate com a quantidade
+               que foi encontrada no passo 8. 
+        9.2.3. Efetue backup da pasta "output/xmls_unificados/validados".
+        9.2.4. Volte ao console e responda "s" à pergunta "Gostaria de convertê-los?".
         
-   9.5. Quando a rotina exibir "Foram encontrados X arquivos pendentes de conversão. Gostaria de convertê-los?":
-        9.5.1. Não responda nada ainda!
-        9.5.2. Abra a pasta "output/xmls_unificados/validados" e confira se o número de arquivos XML bate com a quantidade
+   9.3. Quando a rotina exibir "Foram encontrados X arquivos pendentes de envio. Gostaria de enviá-los?":
+        9.3.1. Não responda nada ainda!
+        9.3.2. Abra a pasta "output/xmls_unificados/convertidos" e confira se o número de arquivos XML bate com a quantidade
                que foi encontrada no passo 8. 
-        9.5.3. Efetue backup da pasta "output/xmls_unificados/validados".
-        9.5.4. Volte ao console e responda "s" à pergunta "Gostaria de convertê-los?".
-        
-   9.6. Quando a rotina exibir "Foram encontrados X arquivos pendentes de envio. Gostaria de enviá-los?":
-        9.6.1. Não responda nada ainda!
-        9.6.2. Abra a pasta "output/xmls_unificados/convertidos" e confira se o número de arquivos XML bate com a quantidade
-               que foi encontrada no passo 8. 
-        9.6.3. Efetue backup da pasta "output/xmls_unificados/convertidos".
-        9.6.4. Volte ao console e responda "s" à pergunta "Gostaria de enviá-los?".
-        9.6.2. Abra a pasta "output/xmls_unificados/enviados" e confira se o número de arquivos ZIP bate com a quantidade
-               que foi encontrada no passo 8. 
-        9.6.3. Efetue backup da pasta "output/xmls_unificados/enviados".
+        9.3.3. Efetue backup da pasta "output/xmls_unificados/convertidos".
+        9.3.4. Volte ao console e responda "s" à pergunta "Gostaria de enviá-los?".
+        9.3.5. Aguarde o término do envio. Eventualmente esse envio "congela", sem que a ferramenta do CNJ aborte a conexão.
+               Se o procedimento de envio permanecer mais do que 10 minutos sem mostrar nenhuma informação na tela,
+               aborte a execução do script e inicie novamente. 
+        9.3.6. Abra a pasta "output/xmls_unificados/enviados" e confira se o número de arquivos ZIP bate com a quantidade
+               que foi encontrada no passo 8. Se houve alguma falha no envio, preste atenção redobrada nesse passo!
+        9.3.6. Efetue backup da pasta "output/xmls_unificados/enviados".
         
         
 10. Confira se a pasta "output/xmls_unificados/erros" está vazia.
@@ -94,10 +115,12 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
     11.2. Efetue backup da pasta "output/xmls_unificados/recibos"
     
     
-12. Efetue backup da pasta "output/log"
-
-
-13. Efetue backup do arquivo "replicacao-client" que foi utilizado para enviar desse lote ao CNJ.
+12. Efetue backup dos seguintes dados, para referência futura:
+    * Pasta "output/log"
+    * Arquivo "replicacao-client" que foi utilizado para enviar desse lote ao CNJ.
+    * Arquivo "config.properties" (RETIRAR os dados de acesso ao banco de dados do PJE)
+    * Dados do último commit desta ferramenta, executando o comando "git log -n 1" na pasta raiz do projeto 
+      (gravar dentro do arquivo "OBSERVACOES.txt") 
 
 
 14. SOMENTE TRT4: Compacte toda a pasta de backup, no formato "7z", com o nome no padrão "XXXX-XX-XX - Carga Mensal - Ref MM-AAAA.7z", onde:

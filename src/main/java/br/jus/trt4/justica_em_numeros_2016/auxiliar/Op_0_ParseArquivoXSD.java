@@ -1,13 +1,10 @@
-package br.jus.trt4.justica_em_numeros_2016.tasks;
+package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
  * IMPORTANTE!! Essa classe só precisará ser executada novamente se houver alguma alteração no arquivo XSD do CNJ.

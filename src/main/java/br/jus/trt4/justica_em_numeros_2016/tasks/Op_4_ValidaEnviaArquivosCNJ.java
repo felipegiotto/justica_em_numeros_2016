@@ -56,13 +56,15 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
 	
 	public static void main(String[] args) throws Exception {
+		Auxiliar.prepararPastaDeSaida();
 		
 		// Lê os parâmetros necessários
 		String caminhoJar = Auxiliar.getParametroConfiguracao(Parametro.jar_replicacao_nacional_cnj, true);
 		String siglaTribunal = Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true);
 		File pastaXMLsUnificados = new File(Auxiliar.prepararPastaDeSaida(), "xmls_unificados");
 		
-		LOGGER.info("Processando todos os arquivos da pasta " + pastaXMLsUnificados.getAbsolutePath() + "...");
+		LOGGER.info("Processando todos os arquivos da pasta '" + pastaXMLsUnificados.getAbsolutePath() + "' com a ferramenta 'replicacao-client', do CNJ.");
+		LOGGER.info("Os dados retornados pela 'replicacao-client' serão exibidos, nos arquivos de log, com o prefixo 'DEBUG' ou 'ERROR'.");
 		
 		// Prepara para disparar o "replicacao-client" do CNJ
 		ProcessBuilder pb = new ProcessBuilder("java", "-jar", caminhoJar, siglaTribunal, pastaXMLsUnificados.getAbsolutePath());
@@ -74,7 +76,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		final Process p = pb.start();
 		
 		// Redireciona a STDOUT e STDERR do processo filho (replicacao-client) para os logs em arquivo, para referência futura.
-		Auxiliar.consumirStreamAssincrono(p.getInputStream(), "", Level.INFO);
+		Auxiliar.consumirStreamAssincrono(p.getInputStream(), "", Level.DEBUG);
 		Auxiliar.consumirStreamAssincrono(p.getErrorStream(), "", Level.ERROR);
 		
 		// Aguarda até que o processo termine.

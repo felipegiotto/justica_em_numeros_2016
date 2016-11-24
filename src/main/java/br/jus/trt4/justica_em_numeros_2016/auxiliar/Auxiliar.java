@@ -286,6 +286,8 @@ public class Auxiliar {
 			
 			@Override
 			public void run() {
+				prepararPastaDeSaida();
+				
 				try {
 					while(true) {
 						leBytesDisponiveis(inputStream, logLevel);
@@ -420,7 +422,8 @@ public class Auxiliar {
 	/**
 	 * Retorna a pasta padrão onde os arquivos TXT e XML serão gerados pela ferramenta.
 	 * 
-	 * Direciona, também, os arquivos de log para esta pasta
+	 * Direciona, também, os arquivos de log para esta pasta. É necessário direcionar os logs para
+	 * cada thread que for utilizada!
 	 * Fonte: http://stackoverflow.com/questions/25114526/log4j2-how-to-write-logs-to-separate-files-for-each-user
 	 */
 	public static File prepararPastaDeSaida() {
@@ -428,9 +431,9 @@ public class Auxiliar {
 		if (pastaSaida == null) {
 			String nomePastaSaida = Auxiliar.getParametroConfiguracao(Parametro.pasta_saida_padrao, "output");
 			pastaSaida = new File(nomePastaSaida);
-			
-			ThreadContext.put("logFolder", nomePastaSaida);
 		}
+		
+		ThreadContext.put("logFolder", pastaSaida.getAbsolutePath());
 		
 		return pastaSaida;
 	}

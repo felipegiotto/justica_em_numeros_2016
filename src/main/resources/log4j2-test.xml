@@ -18,15 +18,6 @@
 			</Policies>
 			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
 		</RollingFile>
-		<!-- 
-        <RollingFile name="Problemas" fileName="${ctx:logFolder}/log/log_problemas.log" filePattern="${ctx:logFolder}/log/log_%d{yyyy-MM-dd-HH-mm}_problemas-%i.log">
-            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY" />
-            <Policies>
-                <OnStartupTriggeringPolicy />
-            </Policies>
-            <PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
-        </RollingFile>
-         -->
          
          </Route>
         </Routes>

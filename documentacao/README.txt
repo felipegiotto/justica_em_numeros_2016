@@ -2,66 +2,56 @@
 
 Ferramenta para extrair, do PJe, os XMLs para o Selo Justiça em Números 2016 do CNJ.
 
-Também é possível unir esses arquivos do PJe com arquivos XMLs de sistemas legados, para enviar
+Esse sistema executa diversos passos incrementais para extrair os dados e deixar em um formato
+compatível com o solicitado pelo CNJ. Cada um desses passos é representado por uma classe
+no pacote "br.jus.trt4.justica_em_numeros_2016.tasks".
+
+Também é possível unir os arquivos do PJe com arquivos XMLs de sistemas legados, para enviar
 de uma vez só ao CNJ. 
 
-Depois de ler essas instruções, leia o arquivo CHECKLIST_RESUMO.txt, que irá guiá-lo passo a 
+DEPOIS de ler as instruções desse arquivo, leia o arquivo CHECKLIST_RESUMO.txt, que irá guiá-lo passo a 
 passo.
 
 
-Author: felipe.giotto@trt4.jus.br
+Autor: felipe.giotto@trt4.jus.br
 
 
 
-========== Instruções ==========
+========== Instruções básicas / Preparação do ambiente ==========
 
-Funcionamento "básico":
+IMPORTANTE: Confira sempre a saída do Console depois de cada passo executado, 
+            prestando atenção especialmente nas linhas com "WARN" ou "ERROR". 
+            Pode ser necessária alguma intervenção!
 
-IMPORTANTE: Confira sempre a saída do Console, prestando atenção especialmente nas linhas 
-            com "WARN" ou "ERROR". Pode ser necessária alguma intervenção!
+IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_numeros_2016.tasks")
+            possui uma explicação sobre o seu funcionamento. Recomendo a leitura de todos
+            antes da execução das tarefas, para entender o funcionamento da ferramenta.
+            
+1. Baixe o arquivo JAR do CNJ, denominado "replicacao-client".
+   Este arquivo deve ser baixado do site "https://www.cnj.jus.br/owncloud/index.php/s/e29uoq9fZgDyeX0"
+   (credenciais devem ser solicitadas aos responsáveis pelo Selo Justiça em Números no CNJ ou no regional)
+   e deve ser gravado, preferencialmente, na pasta "lib/replicacaoNacional".
 
-1. Criar um arquivo "config.properties", na raiz do projeto, a partir do arquivo 
+2. Crie um arquivo "config.properties", na raiz do projeto, a partir do arquivo 
    "config.properties_modelo", preenchendo os dados corretos.
 
-2. Executar o método "main" da classe "Op_1_BaixaListaDeNumerosDeProcessos", para localizar os números
-   dos processos que precisarão ser exportados para arquivos XML.
-   OBS: Os números dos processos serão gravados na pasta "output\Xg" (onde 'X' representa o número 
-        da instância - '1' ou '2') no arquivo "lista_processos.txt".
+3. Leia as instruções do arquivo "CHECKLIST_RESUMO.txt", que conterá todos os
+   passos que precisarão ser executados.
    
-3. Executar o método "main" da classe "Op_2_GeraXMLsIndividuais", para gerar os arquivos XML dos
-   processos identificados no passo anterior.
-   OBS: Será gerado um arquivo XML para cada processo, nas pastas "output\Xg\xmls_individuais\PJe",
-        (onde 'X' representa o número da instância - '1' ou '2').
-   
-4. Executar o método "main" da classe "Op_3_UnificaArquivosXML", para unificar todos os arquivos XML
-   gerados no passo anterior, em lotes de 5000 processos. Esses arquivos poderão ser enviados ao CNJ.
-   OBS: Serão gerados arquivos na pasta "output\xmls_unificados".
-   IMPORTANTE: Essa classe unificará todos os arquivos XML da referida pasta, inclusive os que 
-               foram gerados em execuções anteriores!! 
-               Por isso, antes de gerar o arquivo XML definitivo para enviar ao CNJ, recomenda-se 
-               limpar a pasta "ouput", e seguir todos os passos novamente, desde o início.
-
-5. Executar o método "main" da classe "Op_4_ValidaEnviaArquivosCNJ", para execução da ferramenta
-   "replicacao-client", fornecida pelo CNJ, para validar os XMLs gerados e enviar ao Conselho.
 
 
-
-Funcionamento "avançado":
+========== Características técnicas / Funcionamento avançado ==========
 
 * Essa ferramenta também permite a unificação de arquivos XML de processos de sistemas legados.
   Obviamente, esses arquivos devem ser gerados utilizando alguma outra ferramenta. 
   Para tanto, grave os arquivos XML dos sistemas legados na pasta 
   "output\Xg\xmls_individuais\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
-  NOME_SISTEMA pode ser qualquer identificador) antes de executar o passo 4, acima.
+  NOME_SISTEMA pode ser qualquer identificador) antes de executar a classe "Op_3_UnificaArquivosXML".
 
 
 * Se a estrutura do arquivo XSD do CNJ for alterado, gravar o novo arquivo XSD na pasta 
   "src/main/resources" e executar o método "main" da classe "Op_0_ParseArquivoXSD".
   Provavelmente será necessário alterar a lógica das rotinas que leem e gravam arquivos XML.
-
-
-
-========== Características ==========
 
 
 * A ferramenta permite a extração dos dados do PJe para a carga COMPLETA e para a carga MENSAL, conforme
@@ -91,7 +81,7 @@ Funcionamento "avançado":
   Esse mesmo padrão é utilizado no PJe-JT, na classe "IntercomunicacaoMNI222Service".
 
 
-* Processo/Documentos: Os documentos do processo NÃO SÃO enviados nos arquivos XML, pois isso
+* Processo/Documentos: Os documentos do processo NÃO DEVEM SER enviados nos arquivos XML, pois isso
   inviabilizaria a remessa. Essa informação foi confirmada por "Leandro Mendonça Andrade" 
   <leandro.andrade@cnj.jus.br> em 09/08/2016 às 08:39, no e-mail com assunto "Selo Justiça em 
   Números - Dúvida sobre TPUs": "Isso mesmo. Não é necessário enviar dados sobre 
@@ -150,15 +140,15 @@ Funcionamento "avançado":
   
   
 * Assuntos CNJ: O arquivo XSD do CNJ explicita que os assuntos devem ser preenchidos de forma diferente
-  se fizerem ou não parte das tabelas nacionais. Por isso, os arquivos "assuntos_1g.csv" e "assuntos_2g.csv", 
+  se fizerem ou não parte das tabelas nacionais. Por isso, o arquivo "assuntos_cnj.csv", 
   na pasta "src/main/resources/tabelas_cnj", contém listas com todos os assuntos do CNJ. Essa lista
-  foi baixada de http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A .
+  foi extraída da ferramenta "replicacao-client".
 
 
 * Movimentos CNJ: A mesma regra dos assuntos (que devem fazer parte da lista do CNJ) também se aplica
-  aos movimentos processuais. Por isso, a lista dos movimentos processuais do CNJ foi gravada nos arquivos 
-  "movimentos_1g.csv" e "movimentos_2g.csv". na pasta "src/main/resources/tabelas_cnj", depois de 
-  serem baixadas de http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=M .
+  aos movimentos processuais. Por isso, a lista dos movimentos processuais do CNJ foi gravada no arquivo 
+  "movimentos_cnj.csv". na pasta "src/main/resources/tabelas_cnj", depois de 
+  ser extraída da ferramenta "replicacao-client".
   
   
 * Movimentos/Complementos: Alguns complementos de movimentos possuem código, outros não. A página do CNJ
@@ -175,10 +165,6 @@ Funcionamento "avançado":
 ========== Dúvidas / Esclarecimentos / Pendências ==========
 
 
-* Comando para identificar warnings nos arquivos de log:
-  grep " WARN " justica_em_numeros.log | grep --invert-match "'RGE'" | grep --invert-match "EM PROCEDIMENTO SUMAR" | grep --invert-match "GABINETE JUDICIARIO" | grep --invert-match "foi gerado na base" | grep --invert-match "sem assunto" | grep --invert-match "representante da parte" | grep --invert-match "'PFP'" | grep --invert-match "connection has been closed" | less  
-
-  
 * Quanto ao período de extração dos dados:
   Pergunta enviada ao CNJ: 
     Há uma divergência, na página do CNJ, a respeito do período dos dados que precisam ser extraídos:
@@ -247,7 +233,7 @@ Funcionamento "avançado":
       que possui ainda uma terceira estrutura de classes para gerar os arquivos XML.
   Resposta de leandro.andrade@cnj.jus.br em 26/07/2016: 
     Seguir o modelo replicação-nacional.xsd. Esse encapsula o intercomunicação-2.2.2.xsd.
-    O arquivo está disponível em "https://www.cnj.jus.br/owncloud/index.php/s/e29uoq9fZgDyeX0"
+    O arquivo está disponível em "https://www.cnj.jus.br/owncloud/....." (ver "Instruções básicas", neste arquivo README)
 
 
 * Processos sem assunto cadastrado (ou sem assunto principal) poderão gerar erros no envio dos dados
