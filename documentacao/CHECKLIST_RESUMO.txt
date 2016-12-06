@@ -103,8 +103,12 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
         9.3.3. Efetue backup da pasta "output/xmls_unificados/convertidos".
         9.3.4. Volte ao console e responda "s" à pergunta "Gostaria de enviá-los?".
         9.3.5. Aguarde o término do envio. Eventualmente esse envio "congela", sem que a ferramenta do CNJ aborte a conexão.
-               Se o procedimento de envio permanecer mais do que 10 minutos sem mostrar nenhuma informação na tela,
-               aborte a execução do script e inicie novamente. 
+               Se o procedimento de envio permanecer mais do que 10 minutos sem mostrar nenhuma informação na tela, siga os 
+               passos abaixo:
+               * Aborte a execução do script, dentro do Eclipse, clicando no botão "Terminate".
+               * Confira se o subprocesso "java" ainda não está rodando em background (no Windows, utilize o Gerenciador de
+                 Tarefas. No Linux, execute o comando "ps -aux | grep replicacao-client")
+               * Execute novamente a classe "Op_4_ValidaEnviaArquivosCNJ" e continue nesse mesmo passo (9.3.5). 
         9.3.6. Abra a pasta "output/xmls_unificados/enviados" e confira se o número de arquivos ZIP bate com a quantidade
                que foi encontrada no passo 8. Se houve alguma falha no envio, preste atenção redobrada nesse passo!
         9.3.6. Efetue backup da pasta "output/xmls_unificados/enviados".
@@ -119,7 +123,11 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
     11.1. Abra o arquivo mais recente, com prefixo "relatorio_", na pasta "output/xmls_unificados/recibos" e confira se 
           TODOS os arquivos da pasta "output/xmls_unificados/enviados" estão realmente neste documento.
       
-    11.2. Efetue backup da pasta "output/xmls_unificados/recibos"
+    11.2. Confira se realmente os arquivos da pasta "output/enviados" estão dentro do FTP do CNJ, no endereço a seguir,
+          depois de acessar a pasta do regional (ex: TRT0): ftp://ftp.cnj.jus.br/
+          OBS: credenciais devem ser solicitadas aos responsáveis pelo Selo Justiça em Números no CNJ ou no regional.
+          
+    11.3. Efetue backup da pasta "output/xmls_unificados/recibos"
     
     
 12. Efetue backup dos seguintes dados, para referência futura:
