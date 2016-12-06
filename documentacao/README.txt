@@ -35,12 +35,23 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
 2. Crie um arquivo "config.properties", na raiz do projeto, a partir do arquivo 
    "config.properties_modelo", preenchendo os dados corretos.
 
-3. Leia as instruções do arquivo "CHECKLIST_RESUMO.txt", que conterá todos os
+3. Importe este projeto no Eclipse. É necessário ter as seguintes ferramentas instaladas:
+   * Eclipse
+   * Java 1.8 ou superior (necessária para executar o JAR do CNJ)
+   * Apache Maven (pode ser necessária configuração de proxy para baixar dependências)
+
+4. Leia as instruções do arquivo "CHECKLIST_RESUMO.txt", que conterá todos os
    passos que precisarão ser executados.
    
 
 
 ========== Características técnicas / Funcionamento avançado ==========
+
+* Cada operação gerará um log de operações, por padrão na pasta "output/log" (isso pode ser
+  alterado no arquivo de configurações). O log mais recente sempre se chamará "log_completo.log".
+  Cada vez que uma nova operação for executada, o arquivo anterior será renomeado para utilizando a
+  data/hora atual e um novo "log_completo.log" será criado.
+
 
 * Essa ferramenta também permite a unificação de arquivos XML de processos de sistemas legados.
   Obviamente, esses arquivos devem ser gerados utilizando alguma outra ferramenta. 

@@ -22,9 +22,10 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
 4. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
 
    4.1. Depois de terminar, procure nos arquivos de log por eventuais problemas que possam ter ocorrido.
-        Exemplo de comando, em linux, para ler os logs, ignorando os níveis DEBUG e INFO (rodar
-        na pasta raiz do projeto "justica_em_numeros_2016")
-        grep "" output/log/*.log | grep --invert-match " DEBUG " | grep --invert-match " INFO "
+        4.1.2: LINUX: Exemplo de comando para ler os logs, ignorando os níveis DEBUG e INFO (rodar
+                      na pasta raiz do projeto "justica_em_numeros_2016")
+                      grep "" output/log/*.log | grep --invert-match " DEBUG " | grep --invert-match " INFO "
+        4.1.2: WINDOWS: abra o arquivo "output/log/log_completo.log" e procure pelos textos " WARN " e " ERROR "
         
    4.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
 
@@ -81,6 +82,12 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
         9.1.5. "Erro de validação no arquivo...": será necessário encontrar a origem do problema e corrigir.
                O "replicacao-client" pode não dar todas as informações necessárias! Boa sorte! Pode ser necessário gerar todos 
                os processos novamente, desde o início!
+               
+        9.1.6. "UnsupportedClassVersionError: br/jus/cnj/Main : Unsupported major.minor version":
+               Você está utilizando uma versão do Java que não é compatível com a ferramenta "replicacao-client" do CNJ.
+               Atualmente, a versão recomendada é a JDK 1.8 (talvez isso mude no futuro). Instale a nova JDK, habilite-a
+               no Eclipse (menu Window / Preferentes / Java / Installed JREs) e vincule-a ao projeto dentro do
+               Eclipse (botão direito no projeto / Properties / Java Build Path / Libraries). 
                
    9.2. Quando a rotina exibir "Foram encontrados X arquivos pendentes de conversão. Gostaria de convertê-los?":
         9.2.1. Não responda nada ainda!
