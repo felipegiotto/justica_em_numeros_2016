@@ -28,7 +28,7 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
             antes da execução das tarefas, para entender o funcionamento da ferramenta.
             
 1. Baixe o arquivo JAR do CNJ, denominado "replicacao-client".
-   Este arquivo deve ser baixado do site "https://www.cnj.jus.br/owncloud/index.php/s/e29uoq9fZgDyeX0"
+   Este arquivo deve ser baixado do site "https://www.cnj.jus.br/owncloud/index.php/s/TQ6JPOXFRod0jZd"
    (credenciais devem ser solicitadas aos responsáveis pelo Selo Justiça em Números no CNJ ou no regional)
    e deve ser gravado, preferencialmente, na pasta "lib/replicacaoNacional".
 

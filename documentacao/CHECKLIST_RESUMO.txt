@@ -123,9 +123,17 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
     11.1. Abra o arquivo mais recente, com prefixo "relatorio_", na pasta "output/xmls_unificados/recibos" e confira se 
           TODOS os arquivos da pasta "output/xmls_unificados/enviados" estão realmente neste documento.
       
-    11.2. Confira se realmente os arquivos da pasta "output/enviados" estão dentro do FTP do CNJ, no endereço a seguir,
-          depois de acessar a pasta do regional (ex: TRT0): ftp://ftp.cnj.jus.br/
-          OBS: credenciais devem ser solicitadas aos responsáveis pelo Selo Justiça em Números no CNJ ou no regional.
+    11.2. Confira se realmente os arquivos da pasta "output/enviados" estão dentro do FTP do CNJ, no endereço a seguir:
+          ftp://ftp.cnj.jus.br/
+          OBS: Credenciais devem ser solicitadas aos responsáveis pelo Selo Justiça em Números no CNJ ou no regional.
+          OBS: Dentro do FTP, acesse a pasta com a sigla do regional.
+          OBS: Ao acessar o FTP, se o navegador não perguntar as credenciais, você não está na pasta correta!!
+               Utilize outro navegador (ex: Firefox) ou um cliente FTP dedicado, para forçar a utilização das credenciais corretas,
+               de forma a ter acesso a todos os arquivos enviados pelo regional.
+               
+          IMPORTANTE: Preste muita atenção a essa fase, pois algumas versões da ferramenta "replicacao-client" possuem
+                      uma falha que move o arquivo ZIP para a pasta "enviados" mas, na verdade, o arquivo não foi 
+                      enviado corretamente!
           
     11.3. Efetue backup da pasta "output/xmls_unificados/recibos"
     
