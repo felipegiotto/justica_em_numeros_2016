@@ -148,6 +148,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 							if (assuntoFolha) {
 								assuntoFolha = false;
 							} else {
+								// TODO: Verificar se isso pode ser substituído pelo campo "ds_assunto_completo" de "tb_assunto_trf"
 								descricaoAssuntoLocal = rsAssunto.getString("ds_assunto_trf") + " (" + codigo + ") / " + descricaoAssuntoLocal;
 							}
 						}
