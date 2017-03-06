@@ -141,6 +141,7 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
 12. Efetue backup dos seguintes dados, para referência futura:
     * Pasta "output/log"
     * Arquivo "replicacao-client" que foi utilizado para enviar desse lote ao CNJ.
+    * Arquivo de serventias
     * Arquivo "config.properties" (RETIRAR os dados de acesso ao banco de dados do PJE)
     * Dados do último commit desta ferramenta, executando o comando "git log -n 1" na pasta raiz do projeto 
       (gravar dentro do arquivo "OBSERVACOES.txt") 

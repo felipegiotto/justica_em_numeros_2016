@@ -1,9 +1,12 @@
 package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
+import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -26,7 +29,7 @@ import org.apache.logging.log4j.ThreadContext;
  */
 public class Auxiliar {
 
-	private static final File arquivoConfiguracoes = new File("config.properties");
+	public static final File arquivoConfiguracoes = new File("config.properties");
 
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
@@ -437,4 +440,40 @@ public class Auxiliar {
 		
 		return pastaSaida;
 	}
+	
+	/**
+	 * Solicita que o usuário responda uma pergunta no console.
+	 * 
+	 * @param pergunta
+	 * @return
+	 */
+	public static String pedirParaUsuarioDigitarSenha(String pergunta) {
+		LOGGER.info(pergunta);
+		
+		// O objeto "Console" não existirá ao rodar o projeto, por exemplo, de dentro do Eclipse.
+		Console console = System.console();
+		if (console != null) {
+			char[] passwordChars = console.readPassword(pergunta + ": ");
+			return new String(passwordChars);
+			
+		} else {
+			System.out.println(pergunta + " (CUIDADO: AS INFORMAÇÕES DIGITADAS SERÃO EXIBIDAS EM TEXTO PLANO!)");
+			String senha = Auxiliar.readStdin();
+			System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+			return senha;
+		}
+	}
+	
+	/**
+	 * Lê na entrada padrão um comando do usuário e retorna em uma String
+	 */
+	public static String readStdin() {
+		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+		try {
+			String valorDigitado = in.readLine();
+			return valorDigitado;
+		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		}
+	}	
 }

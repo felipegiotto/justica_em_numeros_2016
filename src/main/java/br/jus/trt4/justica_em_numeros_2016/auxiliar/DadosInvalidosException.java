@@ -21,6 +21,10 @@ public class DadosInvalidosException extends Exception {
         qtdErros++;
     }
 
+    public static int getQtdErros() {
+		return qtdErros;
+	}
+    
     public static void mostrarWarningSeHouveAlgumErro() {
         if (qtdErros > 0) {
             LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 erro" : "Ocorreram " + qtdErros + " erros") + " durante a execução dessa rotina! Verifique atenciosamente os arquivos de log!");

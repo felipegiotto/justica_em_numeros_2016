@@ -64,7 +64,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		File pastaXMLsUnificados = new File(Auxiliar.prepararPastaDeSaida(), "xmls_unificados");
 		
 		LOGGER.info("Processando todos os arquivos da pasta '" + pastaXMLsUnificados.getAbsolutePath() + "' com a ferramenta 'replicacao-client', do CNJ.");
-		LOGGER.info("Os dados retornados pela 'replicacao-client' serão exibidos, nos arquivos de log, com o prefixo 'DEBUG' ou 'ERROR'.");
+		LOGGER.info("*** Executando JAR 'replicacaoClient' do CNJ. Os dados retornados pela 'replicacao-client' serão exibidos, nos arquivos de log, com o prefixo 'DEBUG' ou 'ERROR'.");
 		
 		// Prepara para disparar o "replicacao-client" do CNJ
 		ProcessBuilder pb = new ProcessBuilder("java", "-jar", caminhoJar, siglaTribunal, pastaXMLsUnificados.getAbsolutePath());
@@ -81,8 +81,13 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Aguarda até que o processo termine.
 		p.waitFor();
-		
 		Thread.sleep(1000);
+		
+		// Confere se o processo retornou sucesso
+		if (p.exitValue() != 0) {
+			throw new Exception("O envio ao CNJ deveria ter retornado código 0, mas retornou " + p.exitValue());
+		}
+		
 		LOGGER.info("Fim!");
 	}
 }

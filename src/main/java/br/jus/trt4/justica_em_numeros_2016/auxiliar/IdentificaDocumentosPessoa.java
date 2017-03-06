@@ -76,7 +76,7 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 						// Gera um WARNING se encontrar algum documento totalmente fora do padrão (sem números)
 						// Ex: no TRT4, havia um documento da PJ "ESTADO DO RIO GRANDE DO SUL" do tipo "RJC" com número "Órgão Público com Procuradoria"
 						if (StringUtils.isBlank(numeroDocumento.replaceAll("[^0-9]", ""))) {
-							LOGGER.info("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' (id " + idPessoa + ") não possui números e será ignorado: '" + numeroDocumento + "'");
+							LOGGER.debug("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' (id " + idPessoa + ") não possui números e será ignorado: '" + numeroDocumento + "'");
 						} else {
 							
 							TipoDocumentoIdentificacao documento = new TipoDocumentoIdentificacao();
@@ -106,13 +106,13 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 								} else if ("RIC".equals(tipoDocumentoPJe)) {
 									tamanhoMascara = 14;
 								} else {
-									LOGGER.info("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' (id " + idPessoa + ") está marcado como principal mas não é dos tipos reconhecidos como principal pelo CNJ: CPF, CNPJ, RIC. Esse documento não será inserido como principal.");
+									LOGGER.debug("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' (id " + idPessoa + ") está marcado como principal mas não é dos tipos reconhecidos como principal pelo CNJ: CPF, CNPJ, RIC. Esse documento não será inserido como principal.");
 								}
 								
 								if (tamanhoMascara > 0) {
 									String numeroDocumentoPrincipal = numeroDocumento.replaceAll("[^0-9]", "");
 									if (numeroDocumentoPrincipal.length() > tamanhoMascara) {
-										LOGGER.info("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' (id " + idPessoa + ") possui tamanho maior (" + numeroDocumento.length() + ") do que o especificado pelo CNJ (" + tamanhoMascara + "): '" + numeroDocumentoPrincipal + "'. Esse documento não será inserido como principal.");
+										LOGGER.debug("Documento do tipo '" + tipoDocumentoPJe + "' da pessoa '" + pessoa.getNome() + "' (id " + idPessoa + ") possui tamanho maior (" + numeroDocumento.length() + ") do que o especificado pelo CNJ (" + tamanhoMascara + "): '" + numeroDocumentoPrincipal + "'. Esse documento não será inserido como principal.");
 									} else {
 										numeroDocumentoPrincipal = StringUtils.leftPad(numeroDocumentoPrincipal, tamanhoMascara, '0');
 										pessoa.setNumeroDocumentoPrincipal(numeroDocumentoPrincipal);

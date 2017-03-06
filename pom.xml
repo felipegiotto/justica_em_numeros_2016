@@ -40,6 +40,14 @@
             <artifactId>log4j-core</artifactId>
             <version>LATEST</version>
         </dependency>
+
+        <!-- Utilizado pela classe Op_X_OperacaoCompleta para conferir os dados que foram enviados ao FTP do CNJ -->
+		<!-- https://mvnrepository.com/artifact/commons-net/commons-net -->
+		<dependency>
+			<groupId>commons-net</groupId>
+			<artifactId>commons-net</artifactId>
+			<version>3.6</version>
+		</dependency>
         
         <!-- Utilizado por todos os testes unitários da ferramenta -->
         <dependency>

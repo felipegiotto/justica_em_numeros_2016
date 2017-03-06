@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -27,11 +29,12 @@ public class AnalisaServentiasCNJ {
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaServentiasCNJ.class);
 	private Map<String, ServentiaCNJ> serventiasCNJ = new HashMap<>();
 	private File arquivoServentias;
+	private static Set<String> orgaosJulgadoresSemServentiasCadastradas = new TreeSet<>();
 	
 	public AnalisaServentiasCNJ() throws IOException {
 		
 		// Arquivo de onde os dados das serventias serão lidos, conforme configuração.
-		arquivoServentias = new File("src/main/resources/serventias_cnj/" + Auxiliar.getParametroConfiguracao(Parametro.arquivo_serventias_cnj, true));
+		arquivoServentias = getArquivoServentias();
 		if (!arquivoServentias.exists()) {
 			throw new IOException("O arquivo '" + arquivoServentias + "' não existe! Verifique o arquivo de configuração.");
 		}
@@ -70,6 +73,10 @@ public class AnalisaServentiasCNJ {
 		}
 	}
 
+	public static File getArquivoServentias() {
+		return new File("src/main/resources/serventias_cnj/" + Auxiliar.getParametroConfiguracao(Parametro.arquivo_serventias_cnj, true));
+	}
+
 	public ServentiaCNJ getServentiaByOJ(String nomePJe) throws DadosInvalidosException {
 		if (serventiasCNJ.containsKey(nomePJe)) {
 			return serventiasCNJ.get(nomePJe);
@@ -77,7 +84,17 @@ public class AnalisaServentiasCNJ {
 			
 			//LOGGER.warn("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe. Para evitar interrupção da rotina, será utilizada uma serventia temporária.");
 			//return new ServentiaCNJ("CODIGO_INEXISTENTE", "SERVENTIA INEXISTENTE");
+			orgaosJulgadoresSemServentiasCadastradas.add(nomePJe);
 		    throw new DadosInvalidosException("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe.");
+		}
+	}
+	
+	public static void mostrarWarningSeAlgumaServentiaNaoFoiEncontrada() {
+		if (!orgaosJulgadoresSemServentiasCadastradas.isEmpty()) {
+			LOGGER.warn("Há pelo menos um órgão julgador que não possui serventia cadastrada no arquivo " + getArquivoServentias().getName() + " (ver instruções na chave 'arquivo_serventias_cnj' do arquivo de configurações):");
+			for (String oj: orgaosJulgadoresSemServentiasCadastradas) {
+				LOGGER.warn("* " + oj);
+			}
 		}
 	}
 }

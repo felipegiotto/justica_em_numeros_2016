@@ -91,6 +91,7 @@ public class Op_2_GeraXMLsIndividuais {
 			gerarXMLs(1);
 		}
 		
+		AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
         DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
         LOGGER.info("Fim!");
 	}
@@ -152,9 +153,16 @@ public class Op_2_GeraXMLsIndividuais {
 			String prefixo = Auxiliar.getPrefixoArquivoXML(grau) + "-" + numeroProcesso;
 			File arquivoXMLTemporario = new File(pastaRaiz, prefixo + ".temp");
 			File arquivoXML = new File(pastaRaiz, prefixo + ".xml");
+			arquivoXMLTemporario.delete();
+			
+			// Se o script for abortado bem na hora da cópia do arquivo temporário para o definitivo, o definitivo
+			// pode ficar vazio. Se isso ocorrer, apaga o XML vazio, para que um novo seja gerado.
+			if (arquivoXML.exists() && arquivoXML.length() == 0) {
+				arquivoXML.delete();
+			}
 			
 			// Se a geração incremental estiver habilitada, verifica se o XML do processo já foi gerado.
-			if (gerarIncrementalmente && arquivoXML.exists() && !arquivoXMLTemporario.exists()) {
+			if (gerarIncrementalmente && arquivoXML.exists()) {
 				LOGGER.debug("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
 				continue;
 			}
