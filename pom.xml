@@ -34,6 +34,14 @@
             <version>LATEST</version>
         </dependency>
   
+        <!-- Utilizado para gerar arquivos ZIP com os dados que foram enviados ao CNJ, para backup -->
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>LATEST</version>
+        </dependency>
+        
         <!-- http://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-web -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

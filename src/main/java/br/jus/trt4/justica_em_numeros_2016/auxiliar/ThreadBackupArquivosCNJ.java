@@ -2,6 +2,8 @@ package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +28,10 @@ public class ThreadBackupArquivosCNJ extends Thread {
 	// Pasta onde os arquivos serão gravados
 	private File pastaDestino;
 
+	private boolean executar = true;
+
+	private Map<File, File> arquivosQuePrecisamSerCopiados = new HashMap<>();
+
 	public ThreadBackupArquivosCNJ(File pastaOrigem, File pastaDestino) throws IOException {
 		this.pastaOrigem = pastaOrigem;
 		this.pastaDestino = pastaDestino;
@@ -43,37 +49,62 @@ public class ThreadBackupArquivosCNJ extends Thread {
 		super.run();
 		Auxiliar.prepararPastaDeSaida();
 
-		while (!isInterrupted()) {
+		try {
+			while (executar) {
 
-			// Verifica se algum arquivo novo foi gravado na pasta
-			efetuarBackupIncrementalCompleto();
+				// Verifica se algum arquivo novo foi gravado na pasta
+				efetuarBackupIncrementalCompleto();
 
-			// Aguarda um intervalo antes de tentar novamente
-			try {
+				// Aguarda um intervalo antes de tentar novamente
 				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				break;
 			}
-		}
 
-		// Depois que thread terminou, faz backup mais uma vez, para garantir
-		efetuarBackupIncrementalCompleto();
+			// Depois que thread terminou, faz backup mais uma vez, para garantir
+			efetuarBackupIncrementalCompleto();
+			
+		} catch (InterruptedException e) {
+			// Thread deve ser interrompida
+		}
 	}
 
 	/**
 	 * Verifica todas as subpastas geradas pelo "replicacao-client" do CNJ e efetua backup
 	 * dos arquivos necessários.
+	 * 
+	 * @throws InterruptedException 
 	 */
-	private void efetuarBackupIncrementalCompleto() {
-		efetuarBackupIncremental("convertidos", ".json");
-		efetuarBackupIncremental("enviados", ".zip");
-		efetuarBackupIncremental("erros", null);
-		efetuarBackupIncremental("recibos", null);
-		// efetuarBackupIncremental("validados"); // Pasta 'validados' não precisa fazer backup, pois serão os mesmos que já foram copiados.
+	private void efetuarBackupIncrementalCompleto() throws InterruptedException {
+
+		arquivosQuePrecisamSerCopiados.clear();
+
+		localizaArquivosPendentes("convertidos", ".json");
+		localizaArquivosPendentes("enviados", ".zip");
+		localizaArquivosPendentes("erros", null);
+		localizaArquivosPendentes("recibos", null);
+		// localizaArquivosPendentes("validados"); // Pasta 'validados' não precisa fazer backup, pois serão os mesmos que já foram copiados.
+
+		if (!arquivosQuePrecisamSerCopiados.isEmpty()) {
+
+			// Aguarda um tempo para o arquivo terminar de ser gravado
+			Thread.sleep(2000);
+
+			for (File arquivoOrigem: arquivosQuePrecisamSerCopiados.keySet()) {
+				File arquivoDestino = arquivosQuePrecisamSerCopiados.get(arquivoOrigem);
+
+				// Efetua backup do arquivo de origem
+				LOGGER.info("Efetuando backup do arquivo " + arquivoOrigem);
+				try {
+					FileUtils.copyFile(arquivoOrigem, arquivoDestino);
+				} catch (IOException e) {
+					LOGGER.debug("Não foi possível fazer backup do arquivo " + arquivoOrigem + ", provavelmente ele ainda está sendo modificado. Na próxima iteração será realizada uma nova tentativa", e);
+				}
+
+			}
+		}
 	}
 
 	/**
-	 * Lê todos os arquivos da subpasta "nomePasta", dentro da "pastaOrigem", e grava os que foram
+	 * Lê todos os arquivos da subpasta "nomePasta", dentro da "pastaOrigem", e marca para gravação os que foram
 	 * alterados na subpasta de mesmo nome em "pastaDestino".
 	 * 
 	 * @param nomePasta : nome da subpasta que será identificada dentro de "pastaOrigem"
@@ -83,7 +114,7 @@ public class ThreadBackupArquivosCNJ extends Thread {
 	 *                         na pasta "convertidos", para só depois movê-los para a pasta "enviados". Esse parâmetro
 	 *                         permite ignorar os arquivos ZIP da pasta "convertidos".
 	 */
-	private void efetuarBackupIncremental(String nomePasta, String sufixoArquivos) {
+	private void localizaArquivosPendentes(String nomePasta, String sufixoArquivos) {
 
 		// Prepara as pastas de origem e destino
 		File origem = new File(pastaOrigem, nomePasta);
@@ -104,16 +135,13 @@ public class ThreadBackupArquivosCNJ extends Thread {
 				// Verifica se o arquivo de destino existe e se o arquivo de origem foi alterado
 				File arquivoDestino = new File(destino, arquivoOrigem.getName());
 				if (!arquivoDestino.exists() || arquivoDestino.length() != arquivoOrigem.length()) {
-
-					// Efetua backup do arquivo de origem
-					LOGGER.info("Efetuando backup do arquivo " + arquivoOrigem);
-					try {
-						FileUtils.copyFile(arquivoOrigem, arquivoDestino);
-					} catch (IOException e) {
-						LOGGER.error("Não foi possível fazer backup do arquivo " + arquivoOrigem, e);
-					}
+					arquivosQuePrecisamSerCopiados.put(arquivoOrigem, arquivoDestino);
 				}
 			}
 		}
+	}
+
+	public void finalizar() {
+		executar = false;
 	}
 }

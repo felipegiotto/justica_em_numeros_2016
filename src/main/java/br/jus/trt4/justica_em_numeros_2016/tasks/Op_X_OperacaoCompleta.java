@@ -48,12 +48,13 @@ public class Op_X_OperacaoCompleta {
 	private static final int OP_3_BACKUP_XMLS_UNIFICADOS = 350;
 	private static final int OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ = 400;
 	private static final int OP_9_ULTIMOS_BACKUPS = 900;
+	private static final int OP_9_COMPACTAR_PASTA_BACKUP = 950;
 	private static final Logger LOGGER = LogManager.getLogger(Op_X_OperacaoCompleta.class);
 
 	private interface Operacao {
 		void run() throws Exception;
 	}
-	File pastaSaida;
+	File pastaOutput;
 	File pastaBackup;
 
 	public static void main(String[] args) throws Exception {
@@ -62,7 +63,7 @@ public class Op_X_OperacaoCompleta {
 	}
 
 	public Op_X_OperacaoCompleta() {
-		this.pastaSaida = Auxiliar.prepararPastaDeSaida();
+		this.pastaOutput = Auxiliar.prepararPastaDeSaida();
 		this.pastaBackup = criarPastaParaBackup();
 		
 		LOGGER.info("Os dados referentes a este envio ao CNJ, inclusive os backup, serão gravados na pasta '" + pastaBackup + "'.");
@@ -80,11 +81,11 @@ public class Op_X_OperacaoCompleta {
 
 			@Override
 			public void run() {
-				File pasta1G = new File(pastaSaida, "1g");
+				File pasta1G = new File(pastaOutput, "1g");
 				if (pasta1G.isDirectory()) {
 					throw new RuntimeException("A pasta '" + pasta1G + "' já existe! Por questões de segurança, a operação completa deve ser executada desde o início, antes mesmo da criação desta pasta de saída! Exclua-a (fazendo backup, se necessário) e tente novamente.");
 				}
-				File pasta2G = new File(pastaSaida, "2g");
+				File pasta2G = new File(pastaOutput, "2g");
 				if (pasta2G.isDirectory()) {
 					throw new RuntimeException("A pasta '" + pasta1G + "' já existe! Por questões de segurança, a operação completa deve ser executada desde o início, antes mesmo da criação desta pasta de saída! Exclua-a (fazendo backup, se necessário) e tente novamente.");
 				}
@@ -114,23 +115,10 @@ public class Op_X_OperacaoCompleta {
 
 			@Override
 			public void run() throws IOException {
-				File pastaOutputBackup = getPastaOutputBackup();
-
-				// Backup da pasta 1G
-				File pasta1G = new File(pastaSaida, "1g");
-				if (pasta1G.exists()) {
-					File pastaBackup1G = new File(pastaOutputBackup, "1g");
-					FileUtils.copyDirectory(pasta1G, pastaBackup1G);
-				}
-
-				// Backup da pasta 2G
-				File pasta2G = new File(pastaSaida, "2g");
-				if (pasta2G.exists()) {
-					File pastaBackup2G = new File(pastaOutputBackup, "2g");
-					FileUtils.copyDirectory(pasta2G, pastaBackup2G);
-				}
-
+				efetuarBackupDeArquivosIndividuais(1);
+				efetuarBackupDeArquivosIndividuais(2);
 			}
+
 		});
 
 		// CHECKLIST: 7. Execute a classe "Op_3_UnificaArquivosXML"
@@ -152,6 +140,7 @@ public class Op_X_OperacaoCompleta {
 				// Backup da pasta xmls_unificados
 				File pastaXMLs = Auxiliar.getPastaXMLsUnificados();
 				if (pastaXMLs.exists()) {
+					LOGGER.info("Efetuando backup dos XMLs unificados");
 					File pastaBackupXMLs = new File(pastaOutputBackup, pastaXMLs.getName());
 					FileUtils.copyDirectory(pastaXMLs, pastaBackupXMLs);
 				}
@@ -167,7 +156,7 @@ public class Op_X_OperacaoCompleta {
 				// Thread que irá monitorar os arquivos gerados pela JAR do CNJ e fazer backup.
 				File pastaXMLs = Auxiliar.getPastaXMLsUnificados();
 				File pastaBackupXMLs = new File(getPastaOutputBackup(), pastaXMLs.getName());
-				final Thread threadBackupArquivosCNJ = new ThreadBackupArquivosCNJ(pastaXMLs, pastaBackupXMLs);
+				ThreadBackupArquivosCNJ threadBackupArquivosCNJ = new ThreadBackupArquivosCNJ(pastaXMLs, pastaBackupXMLs);
 				threadBackupArquivosCNJ.start();
 				try {
 					
@@ -175,7 +164,7 @@ public class Op_X_OperacaoCompleta {
 					Op_4_ValidaEnviaArquivosCNJ.main(null);
 					
 				} finally {
-					threadBackupArquivosCNJ.interrupt();
+					threadBackupArquivosCNJ.finalizar();
 					threadBackupArquivosCNJ.join();
 				}
 				
@@ -241,7 +230,7 @@ public class Op_X_OperacaoCompleta {
 				
 				// Backup da pasta "log"
 				LOGGER.info("Efetuando backup da pasta de logs...");
-				File pastaLogOutput = new File(pastaSaida, "log");
+				File pastaLogOutput = new File(pastaOutput, "log");
 				File pastaLogBackup = new File(pastaBackup, "log");
 				FileUtils.copyDirectory(pastaLogOutput, pastaLogBackup);
 				
@@ -253,8 +242,47 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 		
+		// CHECKLIST: 14. SOMENTE TRT4: Compacte toda a pasta de backup
+		executaOperacaoSeAindaNaoFoiExecutada(OP_9_COMPACTAR_PASTA_BACKUP, new Operacao() {
+			
+			@Override
+			public void run() throws Exception {
+				
+				// Prepara o ambiente
+				File arquivoZipBackupDefinitivo = new File(pastaBackup.getAbsolutePath() + ".zip");
+				File arquivoZipBackupTemporario = new File(pastaBackup.getAbsolutePath() + ".zip.tmp");
+				arquivoZipBackupTemporario.delete();
+				if (arquivoZipBackupDefinitivo.exists()) {
+					throw new IOException("O arquivo de saída já existe: " + arquivoZipBackupDefinitivo);
+				}
+				
+				// Compacta em um ZIP temporário
+				LOGGER.info("Compactando pasta de backup no arquivo '" + arquivoZipBackupDefinitivo + "'...");
+				Auxiliar.compressZipfile(pastaBackup.getAbsolutePath(), arquivoZipBackupTemporario.getAbsolutePath());
+				
+				// Renomeia para o ZIP definitivo
+				FileUtils.moveFile(arquivoZipBackupTemporario, arquivoZipBackupDefinitivo);
+			}
+		});
+		
 		LOGGER.info("Operação completa realizada com sucesso!");
 		LOGGER.info("Os dados referentes a este envio ao CNJ, inclusive os backup, foram gravados na pasta '" + pastaBackup + "'.");
+	}
+
+	/**
+	 * Efetua backup da pasta de XMLs individuais de uma determinada instância
+	 * 
+	 * @param grau
+	 * @throws IOException
+	 */
+	private void efetuarBackupDeArquivosIndividuais(int grau) throws IOException {
+		File pastaOutputBackup = getPastaOutputBackup();
+		File pastaOrigem = new File(pastaOutput, grau + "g");
+		if (pastaOrigem.exists()) {
+			File pastaDestino = new File(pastaOutputBackup, pastaOrigem.getName());
+			LOGGER.info("Efetuando backup da pasta " + pastaOrigem);
+			FileUtils.copyDirectory(pastaOrigem, pastaDestino);
+		}
 	}
 
 	/**
@@ -272,6 +300,8 @@ public class Op_X_OperacaoCompleta {
 		String servidorFTPCNJ = "ftp.cnj.jus.br";
 		String usuarioFTPCNJ = "ftp.repnac";
 		String senhaFTPCNJ = Auxiliar.pedirParaUsuarioDigitarSenha("Digite a senha do usuário '" + usuarioFTPCNJ + "' para acessar o servidor '" + servidorFTPCNJ + "'");
+		
+		LOGGER.info("Conectando no servidor FTP do CNJ...");
 		FTPClient ftp = new FTPClient();
 		ftp.connect(servidorFTPCNJ);
 		ftp.login(usuarioFTPCNJ, senhaFTPCNJ);
@@ -294,7 +324,7 @@ public class Op_X_OperacaoCompleta {
 				throw new IOException("O arquivo " + nomeArquivo + " possui " + tamanhoLocal + " Bytes, mas no servidor FTP do CNJ ele possui " + tamanhoRemoto + " Bytes.");
 			}
 			
-			LOGGER.debug("Arquivo enviado corretamente: " + arquivoEnviado.getName());
+			LOGGER.info("Arquivo presente no FTP: " + arquivoEnviado.getName() + " (" + tamanhoRemoto + " Bytes)");
 		}
 	}
 	

@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,8 +17,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -475,5 +480,34 @@ public class Auxiliar {
 		} catch (IOException ex) {
 			throw new RuntimeException(ex);
 		}
+	}
+	
+	/**
+	 * Compacta uma pasta inteira em um arquivo ZIP
+	 * 
+	 * Fonte: http://stackoverflow.com/questions/23318383/compress-directory-into-a-zipfile-with-commons-io
+	 */
+	public static void compressZipfile(String sourceDir, String outputFile) throws IOException {
+	    ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream(outputFile));
+	    compressDirectoryToZipfile(sourceDir, sourceDir, zipFile);
+	    IOUtils.closeQuietly(zipFile);
+	}
+
+	/**
+	 * Fonte: http://stackoverflow.com/questions/23318383/compress-directory-into-a-zipfile-with-commons-io
+	 */
+	private static void compressDirectoryToZipfile(String rootDir, String sourceDir, ZipOutputStream out) throws IOException {
+	    for (File file : new File(sourceDir).listFiles()) {
+	        if (file.isDirectory()) {
+	            compressDirectoryToZipfile(rootDir, sourceDir + File.separator + file.getName(), out);
+	        } else {
+	            ZipEntry entry = new ZipEntry(sourceDir.replace(rootDir, "") + file.getName());
+	            out.putNextEntry(entry);
+
+	            FileInputStream in = new FileInputStream(sourceDir + File.separator + file.getName());
+	            IOUtils.copy(in, out);
+	            IOUtils.closeQuietly(in);
+	        }
+	    }
 	}	
 }
