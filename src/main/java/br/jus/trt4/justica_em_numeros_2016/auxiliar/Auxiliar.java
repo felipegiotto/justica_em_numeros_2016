@@ -17,10 +17,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -489,6 +491,7 @@ public class Auxiliar {
 	 */
 	public static void compressZipfile(String sourceDir, String outputFile) throws IOException {
 	    ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream(outputFile));
+	    zipFile.setLevel(Deflater.BEST_COMPRESSION);
 	    compressDirectoryToZipfile(sourceDir, sourceDir, zipFile);
 	    IOUtils.closeQuietly(zipFile);
 	}
@@ -497,11 +500,15 @@ public class Auxiliar {
 	 * Fonte: http://stackoverflow.com/questions/23318383/compress-directory-into-a-zipfile-with-commons-io
 	 */
 	private static void compressDirectoryToZipfile(String rootDir, String sourceDir, ZipOutputStream out) throws IOException {
-	    for (File file : new File(sourceDir).listFiles()) {
+		
+	    File[] files = new File(sourceDir).listFiles();
+		LOGGER.info("Compactando pasta " + sourceDir + " com " + files.length + " arquivo(s)...");
+		for (File file : files) {
 	        if (file.isDirectory()) {
 	            compressDirectoryToZipfile(rootDir, sourceDir + File.separator + file.getName(), out);
 	        } else {
-	            ZipEntry entry = new ZipEntry(sourceDir.replace(rootDir, "") + file.getName());
+	            String zipEntryName = FilenameUtils.normalize(sourceDir.replace(rootDir, "") + File.separator + file.getName());
+				ZipEntry entry = new ZipEntry(zipEntryName);
 	            out.putNextEntry(entry);
 
 	            FileInputStream in = new FileInputStream(sourceDir + File.separator + file.getName());

@@ -39,21 +39,36 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
  */
 public class Op_X_OperacaoCompleta {
 
-	// Constantes com todas as operações necessárias.
-	private static final int OP_0_CRIACAO_PASTA_OUTPUT = 50;
-	private static final int OP_1_BAIXAR_LISTA = 100;
-	private static final int OP_2_GERAR_XMLS_INDIVIDUAIS = 200;
-	private static final int OP_2_BACKUP_ARQUIVOS_INDIVIDUAIS = 250;
-	private static final int OP_3_UNIFICA_ARQUIVOS_XML = 300;
-	private static final int OP_3_BACKUP_XMLS_UNIFICADOS = 350;
-	private static final int OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ = 400;
-	private static final int OP_9_ULTIMOS_BACKUPS = 900;
-	private static final int OP_9_COMPACTAR_PASTA_BACKUP = 950;
+	// Enum com todas as operações que serão executadas.
+	public enum ControleOperacoes {
+	    
+		OP_0_CRIACAO_PASTA_OUTPUT          (50),
+		OP_1_BAIXAR_LISTA                  (100),
+		OP_2_GERAR_XMLS_INDIVIDUAIS        (200),
+		OP_2_BACKUP_ARQUIVOS_INDIVIDUAIS   (250),
+		OP_3_UNIFICA_ARQUIVOS_XML          (300), 
+		OP_3_BACKUP_XMLS_UNIFICADOS        (350), 
+		OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ     (400), 
+		OP_9_ULTIMOS_BACKUPS               (900),
+		OP_9_COMPACTAR_PASTA_BACKUP        (950);
+		
+	    private int ordem;
+	    
+	    ControleOperacoes(int ordem) {
+	        this.ordem = ordem;
+	    }
+	    
+	    public int getOrdem() {
+	        return this.ordem;
+	    }
+	}
+
 	private static final Logger LOGGER = LogManager.getLogger(Op_X_OperacaoCompleta.class);
 
 	private interface Operacao {
 		void run() throws Exception;
 	}
+	
 	File pastaOutput;
 	File pastaBackup;
 
@@ -77,7 +92,7 @@ public class Op_X_OperacaoCompleta {
 	private void executarOperacaoCompleta() throws Exception {
 
 		// CHECKLIST: 2. Verifique se existe uma pasta "output"
-		executaOperacaoSeAindaNaoFoiExecutada(OP_0_CRIACAO_PASTA_OUTPUT, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_0_CRIACAO_PASTA_OUTPUT, new Operacao() {
 
 			@Override
 			public void run() {
@@ -93,7 +108,7 @@ public class Op_X_OperacaoCompleta {
 		});
 
 		// CHECKLIST: 4. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
-		executaOperacaoSeAindaNaoFoiExecutada(OP_1_BAIXAR_LISTA, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
 
 			@Override
 			public void run() throws SQLException, IOException {
@@ -102,7 +117,7 @@ public class Op_X_OperacaoCompleta {
 		});
 
 		// CHECKLIST: 5. Execute a classe "Op_2_GeraXMLsIndividuais"
-		executaOperacaoSeAindaNaoFoiExecutada(OP_2_GERAR_XMLS_INDIVIDUAIS, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_GERAR_XMLS_INDIVIDUAIS, new Operacao() {
 
 			@Override
 			public void run() throws SQLException, Exception {
@@ -111,7 +126,7 @@ public class Op_X_OperacaoCompleta {
 		});
 
 		// CHECKLIST: 6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/1g" e "output/2g")
-		executaOperacaoSeAindaNaoFoiExecutada(OP_2_BACKUP_ARQUIVOS_INDIVIDUAIS, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_BACKUP_ARQUIVOS_INDIVIDUAIS, new Operacao() {
 
 			@Override
 			public void run() throws IOException {
@@ -122,7 +137,7 @@ public class Op_X_OperacaoCompleta {
 		});
 
 		// CHECKLIST: 7. Execute a classe "Op_3_UnificaArquivosXML"
-		executaOperacaoSeAindaNaoFoiExecutada(OP_3_UNIFICA_ARQUIVOS_XML, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_3_UNIFICA_ARQUIVOS_XML, new Operacao() {
 
 			@Override
 			public void run() throws Exception {
@@ -131,7 +146,7 @@ public class Op_X_OperacaoCompleta {
 		});
 
 		// Backup dos XMLs unificados
-		executaOperacaoSeAindaNaoFoiExecutada(OP_3_BACKUP_XMLS_UNIFICADOS, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_3_BACKUP_XMLS_UNIFICADOS, new Operacao() {
 
 			@Override
 			public void run() throws IOException {
@@ -148,7 +163,7 @@ public class Op_X_OperacaoCompleta {
 		});
 
 		// CHECKLIST: 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", mas NÃO RESPONDA AS PERGUNTAS efetuadas sem ler as instruções abaixo!
-		executaOperacaoSeAindaNaoFoiExecutada(OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ, new Operacao() {
 			
 			@Override
 			public void run() throws Exception {
@@ -182,7 +197,7 @@ public class Op_X_OperacaoCompleta {
 		});
 		
 		// CHECKLIST: 12. Efetue backup dos seguintes dados, para referência futura: ...
-		executaOperacaoSeAindaNaoFoiExecutada(OP_9_ULTIMOS_BACKUPS, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_9_ULTIMOS_BACKUPS, new Operacao() {
 			
 			@Override
 			public void run() throws Exception {
@@ -237,13 +252,13 @@ public class Op_X_OperacaoCompleta {
 				// Backup do arquivo de serventias
 				LOGGER.info("Efetuando backup do arquivo de serventias CNJ...");
 				File arquivoServentiasOrigem = AnalisaServentiasCNJ.getArquivoServentias();
-				File arquivoServentiasDestino = new File(pastaBackup, arquivoJarCNJOrigem.getName());
+				File arquivoServentiasDestino = new File(pastaBackup, arquivoServentiasOrigem.getName());
 				FileUtils.copyFile(arquivoServentiasOrigem, arquivoServentiasDestino);
 			}
 		});
 		
 		// CHECKLIST: 14. SOMENTE TRT4: Compacte toda a pasta de backup
-		executaOperacaoSeAindaNaoFoiExecutada(OP_9_COMPACTAR_PASTA_BACKUP, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_9_COMPACTAR_PASTA_BACKUP, new Operacao() {
 			
 			@Override
 			public void run() throws Exception {
@@ -313,7 +328,8 @@ public class Op_X_OperacaoCompleta {
 		}
 		
 		// Itera sobre os arquivos locais, verificando se cada um existe no FTP
-		for (File arquivoEnviado: pastaArquivosEnviados.listFiles()) {
+		File[] arquivosEnviadosLocal = pastaArquivosEnviados.listFiles();
+		for (File arquivoEnviado: arquivosEnviadosLocal) {
 			String nomeArquivo = arquivoEnviado.getName();
 			if (!arquivosNoServidor.containsKey(nomeArquivo)) {
 				throw new IOException("O arquivo " + nomeArquivo + " consta como enviado pela JAR do CNJ, mas não está no servidor FTP!");
@@ -324,8 +340,9 @@ public class Op_X_OperacaoCompleta {
 				throw new IOException("O arquivo " + nomeArquivo + " possui " + tamanhoLocal + " Bytes, mas no servidor FTP do CNJ ele possui " + tamanhoRemoto + " Bytes.");
 			}
 			
-			LOGGER.info("Arquivo presente no FTP: " + arquivoEnviado.getName() + " (" + tamanhoRemoto + " Bytes)");
+			LOGGER.info("* Arquivo presente no FTP: " + arquivoEnviado.getName() + " (" + tamanhoRemoto + " Bytes)");
 		}
+		LOGGER.info("Todos os " + arquivosEnviadosLocal.length + " arquivos que constam localmente como enviados estão no FTP do CNJ com seus tamanhos corretos!");
 	}
 	
 	/**
@@ -365,22 +382,24 @@ public class Op_X_OperacaoCompleta {
 	 * 
 	 * @throws Exception
 	 */
-	private void executaOperacaoSeAindaNaoFoiExecutada(int codigoOperacao, Operacao operacao) throws Exception {
+	private void executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes controleOperacoes, Operacao operacao) throws Exception {
 
-		if (getUltimaOperacaoExecutada() < codigoOperacao) {
+		String descricaoOperacao = controleOperacoes + " (" + controleOperacoes.getOrdem() + ")";
+		if (getUltimaOperacaoExecutada() < controleOperacoes.getOrdem()) {
 
-			LOGGER.info("Iniciando operação " + codigoOperacao + "...");
+			LOGGER.info("Iniciando operação " + descricaoOperacao + "...");
 			operacao.run();
+			LOGGER.info("Operação " + descricaoOperacao + " concluída!");
 
 			// Se algum problema foi identificado, aborta.
 			if (DadosInvalidosException.getQtdErros() > 0) {
-				throw new Exception("Operação abortada!");
+				throw new Exception("Operação " + descricaoOperacao + " abortada!");
 			}
 
-			setUltimaOperacaoExecutada(codigoOperacao);
+			setUltimaOperacaoExecutada(controleOperacoes.getOrdem());
 
 		} else {
-			LOGGER.info("Operação " + codigoOperacao + " já foi executada!");
+			LOGGER.info("Operação " + descricaoOperacao + " já foi executada!");
 		}
 	}
 
