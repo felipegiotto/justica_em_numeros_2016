@@ -219,7 +219,7 @@ public class Op_X_OperacaoCompleta {
 						while (scanner.hasNextLine()) {
 							String line = scanner.nextLine();
 							if (line.contains("url_jdbc_")) {
-								fw.append("# (linha omitida por questões de segurança\n");
+								fw.append("# (linha omitida por questões de segurança)\n");
 							} else {
 								fw.append(line + "\n");
 							}
@@ -243,17 +243,17 @@ public class Op_X_OperacaoCompleta {
 					}
 				}
 				
-				// Backup da pasta "log"
-				LOGGER.info("Efetuando backup da pasta de logs...");
-				File pastaLogOutput = new File(pastaOutput, "log");
-				File pastaLogBackup = new File(pastaBackup, "log");
-				FileUtils.copyDirectory(pastaLogOutput, pastaLogBackup);
-				
 				// Backup do arquivo de serventias
 				LOGGER.info("Efetuando backup do arquivo de serventias CNJ...");
 				File arquivoServentiasOrigem = AnalisaServentiasCNJ.getArquivoServentias();
 				File arquivoServentiasDestino = new File(pastaBackup, arquivoServentiasOrigem.getName());
 				FileUtils.copyFile(arquivoServentiasOrigem, arquivoServentiasDestino);
+				
+				// Backup da pasta "log"
+				LOGGER.info("Efetuando backup da pasta de logs...");
+				File pastaLogOutput = new File(pastaOutput, "log");
+				File pastaLogBackup = new File(pastaBackup, "log");
+				FileUtils.copyDirectory(pastaLogOutput, pastaLogBackup);
 			}
 		});
 		
@@ -309,7 +309,7 @@ public class Op_X_OperacaoCompleta {
 	 * @throws SocketException
 	 * @throws IOException
 	 */
-	private void conferirArquivosEnviadosAoFTPDoCNJ(File pastaArquivosEnviados) throws SocketException, IOException {
+	private void conferirArquivosEnviadosAoFTPDoCNJ(File pastaArquivosEnviados) throws IOException {
 		
 		// Conecta e autentica no servidor FTP.
 		LOGGER.info("Conferindo se todos os arquivos foram enviados ao FTP do CNJ...");
@@ -320,30 +320,41 @@ public class Op_X_OperacaoCompleta {
 		LOGGER.info("Conectando no servidor FTP do CNJ...");
 		FTPClient ftp = new FTPClient();
 		ftp.connect(servidorFTPCNJ);
-		ftp.login(usuarioFTPCNJ, senhaFTPCNJ);
-		
-		// Carrega uma lista com todos os arquivos que estão no FTP
-		Map<String, Long> arquivosNoServidor = new HashMap<>();
-		for (FTPFile file: ftp.listFiles(Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true))) {
-			arquivosNoServidor.put(file.getName(), file.getSize());
-		}
-		
-		// Itera sobre os arquivos locais, verificando se cada um existe no FTP
-		File[] arquivosEnviadosLocal = pastaArquivosEnviados.listFiles();
-		for (File arquivoEnviado: arquivosEnviadosLocal) {
-			String nomeArquivo = arquivoEnviado.getName();
-			if (!arquivosNoServidor.containsKey(nomeArquivo)) {
-				throw new IOException("O arquivo " + nomeArquivo + " consta como enviado pela JAR do CNJ, mas não está no servidor FTP!");
-			}
-			Long tamanhoRemoto = arquivosNoServidor.get(nomeArquivo);
-			long tamanhoLocal = arquivoEnviado.length();
-			if (tamanhoRemoto != tamanhoLocal) {
-				throw new IOException("O arquivo " + nomeArquivo + " possui " + tamanhoLocal + " Bytes, mas no servidor FTP do CNJ ele possui " + tamanhoRemoto + " Bytes.");
+		if (!ftp.login(usuarioFTPCNJ, senhaFTPCNJ)) {
+			LOGGER.warn("IMPORTANTE! Não foi possível efetuar login no FTP do CNJ com os dados informados!");
+			LOGGER.warn("Você pode continuar o processo sem conferir os arquivos que realmente foram enviados, MAS ISSO NÃO É RECOMENDADO, pois a ferramenta do CNJ eventualmente acusa que um arquivo foi enviado mas, na realidade, não foi!");
+			LOGGER.warn("Para continuar sem conferir, digite 'CONTINUAR SEM CONFERIR OS DADOS ENVIADOS'. Qualquer outro texto informado irá abortar a operação (recomendado).");
+			if ("CONTINUAR SEM CONFERIR OS DADOS ENVIADOS".equals(Auxiliar.readStdin())) {
+				LOGGER.warn("Você escolheu continuar sem conferir os dados enviados ao CNJ!");
+			} else {
+				throw new IOException("Operação abortada");
 			}
 			
-			LOGGER.info("* Arquivo presente no FTP: " + arquivoEnviado.getName() + " (" + tamanhoRemoto + " Bytes)");
+		} else {
+		
+			// Carrega uma lista com todos os arquivos que estão no FTP
+			Map<String, Long> arquivosNoServidor = new HashMap<>();
+			for (FTPFile file: ftp.listFiles(Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true))) {
+				arquivosNoServidor.put(file.getName(), file.getSize());
+			}
+			
+			// Itera sobre os arquivos locais, verificando se cada um existe no FTP
+			File[] arquivosEnviadosLocal = pastaArquivosEnviados.listFiles();
+			for (File arquivoEnviado: arquivosEnviadosLocal) {
+				String nomeArquivo = arquivoEnviado.getName();
+				if (!arquivosNoServidor.containsKey(nomeArquivo)) {
+					throw new IOException("O arquivo " + nomeArquivo + " consta como enviado pela JAR do CNJ, mas não está no servidor FTP!");
+				}
+				Long tamanhoRemoto = arquivosNoServidor.get(nomeArquivo);
+				long tamanhoLocal = arquivoEnviado.length();
+				if (tamanhoRemoto != tamanhoLocal) {
+					throw new IOException("O arquivo " + nomeArquivo + " possui " + tamanhoLocal + " Bytes, mas no servidor FTP do CNJ ele possui " + tamanhoRemoto + " Bytes.");
+				}
+				
+				LOGGER.info("* Arquivo presente no FTP: " + arquivoEnviado.getName() + " (" + tamanhoRemoto + " Bytes)");
+			}
+			LOGGER.info("Todos os " + arquivosEnviadosLocal.length + " arquivos que constam localmente como enviados estão no FTP do CNJ com seus tamanhos corretos!");
 		}
-		LOGGER.info("Todos os " + arquivosEnviadosLocal.length + " arquivos que constam localmente como enviados estão no FTP do CNJ com seus tamanhos corretos!");
 	}
 	
 	/**
