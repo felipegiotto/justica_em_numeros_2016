@@ -4,7 +4,7 @@
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
-			<!-- <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY" /> --> <!-- Na tela, mostra somente um determinado nível de log -->
+			<ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY" /><!-- Na tela, mostra somente um determinado nível de log -->
 		</Console>
 		
 		<Routing name="RoutingAppender">
@@ -26,7 +26,7 @@
 	</Appenders>
 	
 	<Loggers>
-		<Root level="DEBUG">
+		<Root level="TRACE">
 			<AppenderRef ref="Console" />
 			<AppenderRef ref="RoutingAppender" />
 		</Root>

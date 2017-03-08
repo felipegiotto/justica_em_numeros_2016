@@ -42,9 +42,10 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
  * 2. Iniciar um terminal (cmd.exe) e acessar a pasta raiz desse projeto (justica_em_numeros_2016).
  *
  * 3. Executar o comando abaixo para validar e enviar os arquivos XML unificados (gerados pela operação "Op_3") ao CNJ.
- *    Lembrar de substituir o token "SIGLA_REGIONAL" (ex: "TRT0") e a versão correta da biblioteca do CNJ (replicacao-client)
- *    Ambiente Windows: java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\xmls_unificados
- *    Ambiente Linux:   java -jar lib/replicacaoNacional/replicacao-client-2.2.6.jar SIGLA_REGIONAL output/xmls_unificados
+ *    Lembrar de substituir os tokens "SIGLA_REGIONAL" (ex: "TRT0") e "TIPO_CARGA_XML" (ex: "MENSAL 2017-02") 
+ *    e a versão correta da biblioteca do CNJ (replicacao-client)
+ *    Ambiente Windows: java -jar lib\replicacaoNacional\replicacao-client-2.2.6.jar SIGLA_REGIONAL output\TIPO_CARGA_XML\xmls_unificados
+ *    Ambiente Linux:   java -jar lib/replicacaoNacional/replicacao-client-2.2.6.jar SIGLA_REGIONAL output/TIPO_CARGA_XML/xmls_unificados
  *
  * OBS: caso tenha problemas com proxy, adicionar os parâmetros abaixo ao final dos comandos sugeridos:
  *      -Dhttp.proxyHost=HOST -Dhttp.proxyPort=PORTA -Dhttp.proxyUser=USUARIO -Dhttp.proxyPassword=SENHA

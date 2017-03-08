@@ -33,7 +33,7 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
  * 
  * Se algum erro ocorrer, a operação será abortada, mas posteriormente poderá continuar da etapa em que parou,
  * reexecutando a classe. O controle das operações já executadas ficará no arquivo "operacao_atual.dat", dentro
- * da pasta "backups/?????"
+ * da pasta "output/<TIPO_CARGA_XML>_backup_operacao_completa"
  * 
  * @author felipe.giotto@trt4.jus.br
  */
@@ -125,7 +125,7 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 
-		// CHECKLIST: 6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/1g" e "output/2g")
+		// CHECKLIST: 6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/.../1g" e "output/.../2g")
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_BACKUP_ARQUIVOS_INDIVIDUAIS, new Operacao() {
 
 			@Override
@@ -162,7 +162,7 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 
-		// CHECKLIST: 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", mas NÃO RESPONDA AS PERGUNTAS efetuadas sem ler as instruções abaixo!
+		// CHECKLIST: 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", ...
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ, new Operacao() {
 			
 			@Override
@@ -277,6 +277,7 @@ public class Op_X_OperacaoCompleta {
 				
 				// Renomeia para o ZIP definitivo
 				FileUtils.moveFile(arquivoZipBackupTemporario, arquivoZipBackupDefinitivo);
+				LOGGER.info("Arquivo ZIP gerado com todas as informações desta extração: '" + arquivoZipBackupDefinitivo + "'");
 			}
 		});
 		
@@ -447,9 +448,8 @@ public class Op_X_OperacaoCompleta {
 	 */
 	private static File criarPastaParaBackup() {
 		String tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
-		File backupRoot = new File("backup_operacao_completa");
-		backupRoot.mkdirs();
-		File pastaBackup = new File(backupRoot, tipoCarga);
+		File outputRoot = Auxiliar.getPastaOutputRaiz();
+		File pastaBackup = new File(outputRoot, tipoCarga + "_backup_operacao_completa");
 		pastaBackup.mkdirs();
 		return pastaBackup;
 	}

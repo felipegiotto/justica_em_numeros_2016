@@ -20,8 +20,8 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
- * Lê todos os arquivos XML na pasta "output/Xg/xmls_individuais", tanto do PJe quanto dos
- * sistemas legados, e gera arquivos XML unificados na pasta "output/xmls_unificados", no formato
+ * Lê todos os arquivos XML na pasta "output/.../Xg/xmls_individuais", tanto do PJe quanto dos
+ * sistemas legados, e gera arquivos XML unificados na pasta "output/.../xmls_unificados", no formato
  * definido pelo CNJ: <SIGLA_TRIBUNAL>_<GRAU_JURISDICAO>_<DIAMESANO>-<SEQ>.
  * 
  * Será gerado um arquivo XML para cada 5000 processos (numero arbitrário, mas escolhido pois o
@@ -83,7 +83,7 @@ public class Op_3_UnificaArquivosXML {
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 		Processos todosProcessos = factory.createProcessos();
 		
-		// Itera sobre todos os XMLs que existem na pasta "output/xmls_individuais/(grau)"
+		// Itera sobre todos os XMLs que existem na pasta "output/.../xmls_individuais/(grau)"
 		int i=0;
 		int qtdLote = 0;
 		for (File arquivoXML: arquivosParaProcessar) {

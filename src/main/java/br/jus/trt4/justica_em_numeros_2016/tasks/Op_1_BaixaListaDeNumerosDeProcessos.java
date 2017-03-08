@@ -24,7 +24,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
  * Monta uma lista de processos, conforme o parâmetro "tipo_carga_xml" do arquivo "config.properties",
- * e grava na pasta "output/Xg" (onde 'X' representa o número da instância - '1' ou '2'), 
+ * e grava na pasta "output/.../Xg" (onde 'X' representa o número da instância - '1' ou '2'), 
  * em arquivos com nome "lista_processos.txt".
  * 
  * @author fgiotto

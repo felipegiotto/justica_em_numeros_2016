@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -208,7 +207,9 @@ public class Auxiliar {
 					try {
 						Parametro.valueOf(key.toString());
 					} catch (IllegalArgumentException ex) {
-						LOGGER.warn("Há um atributo não reconhecido (" + key + ") no arquivo de configurações (" + arquivoConfiguracoes.getAbsolutePath() + "). Este atributo será ignorado!");
+						
+						// Nesse momento, é melhor não utilizar o LOGGER, pois ele ainda não está configurado para gravar na pasta correta (dentro de "output")
+						System.out.println("Há um atributo não reconhecido (" + key + ") no arquivo de configurações (" + arquivoConfiguracoes.getAbsolutePath() + "). Este atributo será ignorado!");
 					}
 				}
 			} catch (IOException ex) {
@@ -439,13 +440,25 @@ public class Auxiliar {
 	public static File prepararPastaDeSaida() {
 		
 		if (pastaSaida == null) {
-			String nomePastaSaida = Auxiliar.getParametroConfiguracao(Parametro.pasta_saida_padrao, "output");
-			pastaSaida = new File(nomePastaSaida);
+			File pastaOutputRaiz = getPastaOutputRaiz();
+			File pastaOutputCarga = new File(pastaOutputRaiz, Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true));
+			pastaSaida = pastaOutputCarga;
 		}
 		
 		ThreadContext.put("logFolder", pastaSaida.getAbsolutePath());
 		
 		return pastaSaida;
+	}
+
+	/**
+	 * Retorna o caminho da pasta "output raiz", conforme definido pelo parâmetro "pasta_saida_padrao" no arquivo de configurações.
+	 * 
+	 * Se a configuração não existir, utiliza a pasta padrão ("output").
+	 * 
+	 * @return
+	 */
+	public static File getPastaOutputRaiz() {
+		return new File(Auxiliar.getParametroConfiguracao(Parametro.pasta_saida_padrao, "output"));
 	}
 	
 	/**

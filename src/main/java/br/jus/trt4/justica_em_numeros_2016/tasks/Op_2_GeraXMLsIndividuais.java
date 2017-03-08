@@ -49,7 +49,7 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
 
 /**
  * Carrega as listas de processos geradas pela classe {@link Op_1_BaixaListaDeNumerosDeProcessos} e,
- * para cada processo, gera seu arquivo XML na pasta "output/Xg/xmls_individuais".
+ * para cada processo, gera seu arquivo XML na pasta "output/.../Xg/xmls_individuais".
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 

@@ -47,7 +47,7 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
 
 ========== Características técnicas / Funcionamento avançado ==========
 
-* Cada operação gerará um log de operações, por padrão na pasta "output/log" (isso pode ser
+* Cada operação gerará um log de operações, por padrão na pasta "output/<TIPO_CARGA_XML>/log" (isso pode ser
   alterado no arquivo de configurações). O log mais recente sempre se chamará "log_completo.log".
   Cada vez que uma nova operação for executada, o arquivo anterior será renomeado para utilizando a
   data/hora atual e um novo "log_completo.log" será criado.
@@ -56,7 +56,7 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
 * Essa ferramenta também permite a unificação de arquivos XML de processos de sistemas legados.
   Obviamente, esses arquivos devem ser gerados utilizando alguma outra ferramenta. 
   Para tanto, grave os arquivos XML dos sistemas legados na pasta 
-  "output\Xg\xmls_individuais\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
+  "output\<TIPO_CARGA_XML>\Xg\xmls_individuais\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
   NOME_SISTEMA pode ser qualquer identificador) antes de executar a classe "Op_3_UnificaArquivosXML".
 
 

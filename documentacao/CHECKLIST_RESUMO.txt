@@ -7,9 +7,14 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
         Por exemplo, ao utilizar "tipo_carga_xml=MENSAL 2016-10", preencher também "dia_padrao_para_arquivos_xml=31102016".
         
 
-2. Verifique se existe uma pasta "output", na raiz do projeto (ou outro nome, conforme configuração "pasta_saida_padrao")
+UPDATE: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa que engloba todos os próximos passos.
+        Use-a com cautela!
+        
+
+2. Verifique se existe uma pasta com o tipo da carga (conforme configuração "tipo_carga_xml", ex: "MENSAL 2017-02") dentro 
+   da pasta "output", na raiz do projeto (ou outro nome, conforme configuração "pasta_saida_padrao")
    com arquivos antigos. Se houver, mova esses dados antigos para o local adequado (backup / lixeira / etc), de forma
-   que NÃO EXISTA uma pasta "output". Ela será recriada em seguida, por esta aplicação.
+   que NÃO EXISTA uma pasta "output/<TIPO_CARGA_XML>". Ela será recriada em seguida, por esta aplicação.
    
    
 3. SUGESTÃO: Prepare também uma pasta de backup, que será armazenada para referência futura, com todos os dados das etapas intermediárias
@@ -24,8 +29,8 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
    4.1. Depois de terminar, procure nos arquivos de log por eventuais problemas que possam ter ocorrido.
         4.1.2: LINUX: Exemplo de comando para ler os logs, ignorando os níveis DEBUG e INFO (rodar
                       na pasta raiz do projeto "justica_em_numeros_2016")
-                      grep "" output/log/*.log | grep --invert-match " DEBUG " | grep --invert-match " INFO "
-        4.1.2: WINDOWS: abra o arquivo "output/log/log_completo.log" e procure pelos textos " WARN " e " ERROR "
+                      grep "" output/<TIPO_CARGA_XML>/log/*.log | grep --invert-match " DEBUG " | grep --invert-match " INFO "
+        4.1.2: WINDOWS: abra o arquivo "output/<TIPO_CARGA_XML>/log/log_completo.log" e procure pelos textos " WARN " e " ERROR "
         
    4.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
 
@@ -50,7 +55,7 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
                dessas serventias.
    
 
-6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/1g" e "output/2g")
+6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/<TIPO_CARGA_XML>/1g" e "output/<TIPO_CARGA_XML>/2g")
 
 
 7. Execute a classe "Op_3_UnificaArquivosXML"
@@ -60,7 +65,7 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
    7.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
 
 
-8. Conte quantos arquivos XML foram gerados na pasta "output/xmls_unificados" e anote em algum lugar.
+8. Conte quantos arquivos XML foram gerados na pasta "output/<TIPO_CARGA_XML>/xmls_unificados" e anote em algum lugar.
 
    
 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", mas NÃO RESPONDA AS PERGUNTAS efetuadas sem ler as instruções abaixo!
@@ -91,16 +96,16 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
                
    9.2. Quando a rotina exibir "Foram encontrados X arquivos pendentes de conversão. Gostaria de convertê-los?":
         9.2.1. Não responda nada ainda!
-        9.2.2. Abra a pasta "output/xmls_unificados/validados" e confira se o número de arquivos XML bate com a quantidade
+        9.2.2. Abra a pasta "output/<TIPO_CARGA_XML>/xmls_unificados/validados" e confira se o número de arquivos XML bate com a quantidade
                que foi encontrada no passo 8. 
-        9.2.3. Efetue backup da pasta "output/xmls_unificados/validados".
+        9.2.3. Efetue backup da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/validados".
         9.2.4. Volte ao console e responda "s" à pergunta "Gostaria de convertê-los?".
         
    9.3. Quando a rotina exibir "Foram encontrados X arquivos pendentes de envio. Gostaria de enviá-los?":
         9.3.1. Não responda nada ainda!
-        9.3.2. Abra a pasta "output/xmls_unificados/convertidos" e confira se o número de arquivos XML bate com a quantidade
+        9.3.2. Abra a pasta "output/<TIPO_CARGA_XML>/xmls_unificados/convertidos" e confira se o número de arquivos XML bate com a quantidade
                que foi encontrada no passo 8. 
-        9.3.3. Efetue backup da pasta "output/xmls_unificados/convertidos".
+        9.3.3. Efetue backup da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/convertidos".
         9.3.4. Volte ao console e responda "s" à pergunta "Gostaria de enviá-los?".
         9.3.5. Aguarde o término do envio. Eventualmente esse envio "congela", sem que a ferramenta do CNJ aborte a conexão.
                Se o procedimento de envio permanecer mais do que 10 minutos sem mostrar nenhuma informação na tela, siga os 
@@ -109,21 +114,21 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
                * Confira se o subprocesso "java" ainda não está rodando em background (no Windows, utilize o Gerenciador de
                  Tarefas. No Linux, execute o comando "ps -aux | grep replicacao-client")
                * Execute novamente a classe "Op_4_ValidaEnviaArquivosCNJ" e continue nesse mesmo passo (9.3.5). 
-        9.3.6. Abra a pasta "output/xmls_unificados/enviados" e confira se o número de arquivos ZIP bate com a quantidade
+        9.3.6. Abra a pasta "output/<TIPO_CARGA_XML>/xmls_unificados/enviados" e confira se o número de arquivos ZIP bate com a quantidade
                que foi encontrada no passo 8. Se houve alguma falha no envio, preste atenção redobrada nesse passo!
-        9.3.6. Efetue backup da pasta "output/xmls_unificados/enviados".
+        9.3.6. Efetue backup da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/enviados".
         
         
-10. Confira se a pasta "output/xmls_unificados/erros" está vazia.
+10. Confira se a pasta "output/<TIPO_CARGA_XML>/xmls_unificados/erros" está vazia.
 
 
 11. Execute novamente a rotina "Op_4_ValidaEnviaArquivosCNJ" para que seja gerado um novo relatório de transmissão, completo, com todos
     os arquivos que estão no FTP do CNJ.
     
-    11.1. Abra o arquivo mais recente, com prefixo "relatorio_", na pasta "output/xmls_unificados/recibos" e confira se 
-          TODOS os arquivos da pasta "output/xmls_unificados/enviados" estão realmente neste documento.
+    11.1. Abra o arquivo mais recente, com prefixo "relatorio_", na pasta "output/<TIPO_CARGA_XML>/xmls_unificados/recibos" e confira se 
+          TODOS os arquivos da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/enviados" estão realmente neste documento.
       
-    11.2. Confira se realmente os arquivos da pasta "output/enviados" estão dentro do FTP do CNJ, no endereço a seguir:
+    11.2. Confira se realmente os arquivos da pasta "output/<TIPO_CARGA_XML>/enviados" estão dentro do FTP do CNJ, no endereço a seguir:
           ftp://ftp.cnj.jus.br/
           OBS: Credenciais devem ser solicitadas aos responsáveis pelo Selo Justiça em Números no CNJ ou no regional.
           OBS: Dentro do FTP, acesse a pasta com a sigla do regional.
@@ -135,11 +140,11 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
                       uma falha que move o arquivo ZIP para a pasta "enviados" mas, na verdade, o arquivo não foi 
                       enviado corretamente!
           
-    11.3. Efetue backup da pasta "output/xmls_unificados/recibos"
+    11.3. Efetue backup da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/recibos"
     
     
 12. Efetue backup dos seguintes dados, para referência futura:
-    * Pasta "output/log"
+    * Pasta "output/<TIPO_CARGA_XML>/log"
     * Arquivo "replicacao-client" que foi utilizado para enviar desse lote ao CNJ.
     * Arquivo de serventias
     * Arquivo "config.properties" (RETIRAR os dados de acesso ao banco de dados do PJE)
