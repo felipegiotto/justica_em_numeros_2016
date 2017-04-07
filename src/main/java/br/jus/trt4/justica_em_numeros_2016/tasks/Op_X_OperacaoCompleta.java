@@ -43,7 +43,9 @@ public class Op_X_OperacaoCompleta {
 	public enum ControleOperacoes {
 	    
 		OP_0_CRIACAO_PASTA_OUTPUT          (50),
+		OP_0_VERIFICACAO_JAR_CNJ           (75),
 		OP_1_BAIXAR_LISTA                  (100),
+		OP_1_CONFERIR_SERVENTIAS           (150),
 		OP_2_GERAR_XMLS_INDIVIDUAIS        (200),
 		OP_2_BACKUP_ARQUIVOS_INDIVIDUAIS   (250),
 		OP_3_UNIFICA_ARQUIVOS_XML          (300), 
@@ -107,6 +109,19 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 
+		// Passo extra: Verificar versão da JAR do CNJ
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_0_VERIFICACAO_JAR_CNJ, new Operacao() {
+			
+			@Override
+			public void run() throws Exception {
+				
+				if (Op_4_ValidaEnviaArquivosCNJ.verificarVersaoDesatualizadaJarCNJ()) {
+					LOGGER.warn("Pressione ENTER ou aguarde 2 minutos para que a operação continue. Se você preferir, aborte este script e atualize o JAR do CNJ!");
+					Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
+				}
+			}
+		});
+		
 		// CHECKLIST: 4. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
 
@@ -116,6 +131,20 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 
+		// Passo extra: Conferir lista de serventias CNJ
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_CONFERIR_SERVENTIAS, new Operacao() {
+			
+			@Override
+			public void run() throws Exception {
+				AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ();
+				if (analisaServentiasCNJ.diagnosticarServentiasInexistentes()) {
+					
+					LOGGER.warn("Pressione ENTER ou aguarde 2 minutos para que a geração dos XMLs continue. Se você preferir, aborte este script e corrija o arquivo de serventias");
+					Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
+				}
+			}
+		});
+		
 		// CHECKLIST: 5. Execute a classe "Op_2_GeraXMLsIndividuais"
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_GERAR_XMLS_INDIVIDUAIS, new Operacao() {
 

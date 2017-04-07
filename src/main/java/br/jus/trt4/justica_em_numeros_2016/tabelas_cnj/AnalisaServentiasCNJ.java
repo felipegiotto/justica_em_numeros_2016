@@ -2,7 +2,13 @@ package br.jus.trt4.justica_em_numeros_2016.tabelas_cnj;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
@@ -77,7 +83,7 @@ public class AnalisaServentiasCNJ {
 		return new File("src/main/resources/serventias_cnj/" + Auxiliar.getParametroConfiguracao(Parametro.arquivo_serventias_cnj, true));
 	}
 
-	public ServentiaCNJ getServentiaByOJ(String nomePJe) throws DadosInvalidosException {
+	public ServentiaCNJ getServentiaByOJ(String nomePJe, boolean obrigatorio) throws DadosInvalidosException {
 		if (serventiasCNJ.containsKey(nomePJe)) {
 			return serventiasCNJ.get(nomePJe);
 		} else {
@@ -85,16 +91,82 @@ public class AnalisaServentiasCNJ {
 			//LOGGER.warn("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe. Para evitar interrupção da rotina, será utilizada uma serventia temporária.");
 			//return new ServentiaCNJ("CODIGO_INEXISTENTE", "SERVENTIA INEXISTENTE");
 			orgaosJulgadoresSemServentiasCadastradas.add(nomePJe);
-		    throw new DadosInvalidosException("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe.");
+			if (obrigatorio) {
+				throw new DadosInvalidosException("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe.");
+			} else {
+				return null;
+			}
 		}
 	}
 	
-	public static void mostrarWarningSeAlgumaServentiaNaoFoiEncontrada() {
+	public static boolean mostrarWarningSeAlgumaServentiaNaoFoiEncontrada() {
 		if (!orgaosJulgadoresSemServentiasCadastradas.isEmpty()) {
+			LOGGER.warn("");
 			LOGGER.warn("Há pelo menos um órgão julgador que não possui serventia cadastrada no arquivo " + getArquivoServentias().getName() + " (ver instruções na chave 'arquivo_serventias_cnj' do arquivo de configurações):");
 			for (String oj: orgaosJulgadoresSemServentiasCadastradas) {
 				LOGGER.warn("* " + oj);
 			}
+			return true;
 		}
+		
+		return false;
+	}
+	
+	public boolean diagnosticarServentiasInexistentes() throws IOException, SQLException {
+		LOGGER.info("Iniciando diagnóstico de serventias inexistentes...");
+		
+		// Verifica se deve gerar XML para 2o Grau
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
+			diagnosticarServentiasInexistentes(2);
+		}
+		
+		// Verifica se deve gerar XML para 1o Grau
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
+			diagnosticarServentiasInexistentes(1);
+		}
+		
+		LOGGER.info("Finalizado diagnóstico de serventias inexistentes.");
+		
+		return AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
+	}
+
+	private void diagnosticarServentiasInexistentes(int grau) throws IOException, SQLException {
+		
+		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
+		if (!listaProcessos.isEmpty()) {
+			
+			// Monta SQL para consultar os nomes dos OJs de todos os processos da instância
+			// OBS: PreparedStatement não funcionou, por causa do número de parâmetros muito grande!
+			StringBuilder sql = new StringBuilder("SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
+					"FROM tb_processo proc " +
+					"INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf) " +
+					"INNER JOIN tb_orgao_julgador oj USING (id_orgao_julgador) " +
+					"WHERE proc.nr_processo IN (");
+			for (int i=0; i<listaProcessos.size(); i++) {
+				if (i > 0) {
+					sql.append(", ");
+				}
+				sql.append("'" + listaProcessos.get(i) + "'");
+			}
+			sql.append(")");
+			
+			// Executa consulta
+			try (Connection conexao = Auxiliar.getConexaoPJe(grau)) {
+				try (ResultSet rs = conexao.createStatement().executeQuery(sql.toString())) {
+					while (rs.next()) {
+						try {
+							getServentiaByOJ(rs.getString("ds_orgao_julgador"), false);
+						} catch (DadosInvalidosException e) {
+							// Não vai acontecer, por causa do parametro "false"
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	public static void main(String[] args) throws Exception {
+		AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ();
+		analisaServentiasCNJ.diagnosticarServentiasInexistentes();
 	}
 }

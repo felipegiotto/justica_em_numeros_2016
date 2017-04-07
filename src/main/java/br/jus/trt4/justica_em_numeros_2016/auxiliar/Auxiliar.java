@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.zip.Deflater;
@@ -529,5 +530,24 @@ public class Auxiliar {
 	            IOUtils.closeQuietly(in);
 	        }
 	    }
-	}	
+	}
+	
+	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws IOException {
+		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
+		LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
+		return listaProcessos;
+	}
+
+
+	public static void aguardaUsuarioApertarENTERComTimeout(int segundos) throws InterruptedException, IOException {
+		
+		// Aguarda 2 minutos ou até usuário digite alguma coisa na STDIN
+		for (int i=0; i<segundos; i++) {
+			Thread.sleep(1000);
+			if (System.in.available() > 0) {
+				Auxiliar.readStdin();
+				break;
+			}
+		}
+	}
 }

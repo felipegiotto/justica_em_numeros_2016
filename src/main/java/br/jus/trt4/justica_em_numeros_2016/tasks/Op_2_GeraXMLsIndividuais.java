@@ -139,7 +139,7 @@ public class Op_2_GeraXMLsIndividuais {
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
 		
 		// Carrega a lista de processos que precisará ser analisada
-		List<String> listaProcessos = carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
+		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		int i=0;
 		for (String numeroProcesso: listaProcessos) {
 			
@@ -615,7 +615,7 @@ public class Op_2_GeraXMLsIndividuais {
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
-		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(rsProcesso.getString("ds_orgao_julgador"));
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(rsProcesso.getString("ds_orgao_julgador"), true);
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
 		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
@@ -862,12 +862,5 @@ public class Op_2_GeraXMLsIndividuais {
 				LOGGER.warn("Erro fechando 'conexaoBasePrincipal': " + e.getLocalizedMessage(), e);
 			}
 		}
-	}
-	
-	
-	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws IOException {
-		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
-		LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
-		return listaProcessos;
 	}
 }

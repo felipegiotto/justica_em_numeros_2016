@@ -1,8 +1,11 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,22 +62,19 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	public static void main(String[] args) throws Exception {
 		Auxiliar.prepararPastaDeSaida();
 		
-		// Lê os parâmetros necessários
-		String caminhoJar = Auxiliar.getParametroConfiguracao(Parametro.jar_replicacao_nacional_cnj, true);
-		String siglaTribunal = Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true);
 		File pastaXMLsUnificados = new File(Auxiliar.prepararPastaDeSaida(), "xmls_unificados");
 		
 		LOGGER.info("Processando todos os arquivos da pasta '" + pastaXMLsUnificados.getAbsolutePath() + "' com a ferramenta 'replicacao-client', do CNJ.");
 		LOGGER.info("*** Executando JAR 'replicacaoClient' do CNJ. Os dados retornados pela 'replicacao-client' serão exibidos, nos arquivos de log, com o prefixo 'DEBUG' ou 'ERROR'.");
 		
 		// Prepara para disparar o "replicacao-client" do CNJ
-		ProcessBuilder pb = new ProcessBuilder("java", "-jar", caminhoJar, siglaTribunal, pastaXMLsUnificados.getAbsolutePath());
+		ProcessBuilder pb = prepararReplicacaoNacional(pastaXMLsUnificados);
 		
 		// Envia comandos do teclado (STDIN) no processo pai (esta classe) para o processo filho (replicacaoNacional)
 		pb.redirectInput(Redirect.INHERIT); 
 		
 		// Chama o "replicacao-client".
-		final Process p = pb.start();
+		Process p = pb.start();
 		
 		// Redireciona a STDOUT e STDERR do processo filho (replicacao-client) para os logs em arquivo, para referência futura.
 		Auxiliar.consumirStreamAssincrono(p.getInputStream(), "", Level.DEBUG);
@@ -90,5 +90,59 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		}
 		
 		LOGGER.info("Fim!");
+	}
+	
+	public static ProcessBuilder prepararReplicacaoNacional(File pastaParaProcessamento) {
+		
+		// Lê os parâmetros necessários
+		String caminhoJar = Auxiliar.getParametroConfiguracao(Parametro.jar_replicacao_nacional_cnj, true);
+		String siglaTribunal = Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true);
+		return new ProcessBuilder("java", "-jar", caminhoJar, siglaTribunal, pastaParaProcessamento.getAbsolutePath());
+	}
+
+	public static boolean verificarVersaoDesatualizadaJarCNJ() throws InterruptedException {
+		
+		try {
+			// Cria uma pasta temporária para executar o JAR do CNJ
+			File pastaTemporaria = new File("tmp/versao_jar_cnj");
+			try {
+				FileUtils.deleteDirectory(pastaTemporaria);
+				pastaTemporaria.mkdirs();
+				
+				ProcessBuilder pb = prepararReplicacaoNacional(pastaTemporaria);
+				
+				// Chama o "replicacao-client".
+				Process p = pb.start();
+				
+				// Analisa a saída da JAR do CNJ
+				StringBuilder saida = new StringBuilder();
+				saida.append(IOUtils.toString(p.getInputStream()));
+				saida.append(IOUtils.toString(p.getErrorStream()));
+	
+				// Aguarda até que o processo termine.
+				p.waitFor();
+				
+				// Verifica se JAR indicou estar desatualizada ou se houve problemas na execução
+				boolean houveProblema = false;
+				if (saida.toString().contains("desatualizada")) { // Ex: Sua versão [2.3.0] está desatualizada.
+					LOGGER.warn("");
+					for (String linha: saida.toString().split("\n")) {
+						LOGGER.warn("JAR CNJ: " + linha);
+					}
+					houveProblema = true;
+				}
+				if (p.exitValue() != 0) {
+					LOGGER.warn("JAR CNJ retornou código " + p.exitValue() + " (deveria ser zero)");
+					houveProblema = true;
+				}
+				return houveProblema;
+				
+			} finally {
+				FileUtils.deleteDirectory(pastaTemporaria);
+			}
+		} catch (IOException ex) {
+			LOGGER.error("Erro verificando se JAR do CNJ está desatualizada: " + ex.getLocalizedMessage(), ex);
+			return true;
+		}
 	}
 }
