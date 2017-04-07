@@ -400,7 +400,13 @@ public class Op_X_OperacaoCompleta {
 		if (getUltimaOperacaoExecutada() < controleOperacoes.getOrdem()) {
 
 			LOGGER.info("Iniciando operação " + descricaoOperacao + "...");
-			operacao.run();
+			
+			try {
+				operacao.run();
+			} catch (Exception ex) {
+				LOGGER.error("Erro na operação " + descricaoOperacao + ": " + ex.getLocalizedMessage(), ex);
+				throw ex;
+			}
 			LOGGER.info("Operação " + descricaoOperacao + " concluída!");
 
 			// Se algum problema foi identificado, aborta.
