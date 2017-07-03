@@ -52,6 +52,9 @@ public class AnalisaServentiasCNJ {
 			while (scanner.hasNextLine()) {
 				linha++;
 				String line = scanner.nextLine();
+				if (line.isEmpty() || line.startsWith("#")) {
+					continue;
+				}
 				
 				// Quebra cada linha em três partes: o nome do OJ/OJC no PJe, o código da serventia no CNJ e o nome da serventia no CNJ
 				String[] partes = line.split(";");

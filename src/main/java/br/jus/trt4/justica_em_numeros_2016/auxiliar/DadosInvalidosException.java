@@ -27,7 +27,7 @@ public class DadosInvalidosException extends Exception {
     
     public static void mostrarWarningSeHouveAlgumErro() {
         if (qtdErros > 0) {
-            LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 erro" : "Ocorreram " + qtdErros + " erros") + " durante a execução dessa rotina! Verifique atenciosamente os arquivos de log!");
+            LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 erro" : "Ocorreram " + qtdErros + " erros") + " durante a execução dessa rotina! Verifique atentamente os arquivos de log!");
         }
     }
 }

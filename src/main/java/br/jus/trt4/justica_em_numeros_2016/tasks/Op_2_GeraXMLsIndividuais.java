@@ -185,7 +185,7 @@ public class Op_2_GeraXMLsIndividuais {
 			try {
 				processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
 			} catch (Exception ex) {
-				LOGGER.warn("Erro gerando XML do processo " + numeroProcesso + ": " + ex.getLocalizedMessage(), ex);
+				LOGGER.warn("Erro gerando XML do processo " + numeroProcesso + " (" + grau + "): " + ex.getLocalizedMessage(), ex);
 			}
 			
 			if (processoJudicial != null) {
