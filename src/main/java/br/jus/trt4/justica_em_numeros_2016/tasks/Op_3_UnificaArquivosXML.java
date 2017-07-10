@@ -84,13 +84,13 @@ public class Op_3_UnificaArquivosXML {
 		Processos todosProcessos = factory.createProcessos();
 		
 		// Itera sobre todos os XMLs que existem na pasta "output/.../xmls_individuais/(grau)"
-		int i=0;
+		int qtdTotal = 0;
 		int qtdLote = 0;
 		for (File arquivoXML: arquivosParaProcessar) {
 			
-			i++;
-			if (i % 1000 == 0) {
-				LOGGER.debug("Processando arquivo " + arquivoXML + " (" + i + "/" + arquivosParaProcessar.size() + " - " + (i * 100 / arquivosParaProcessar.size()) + "%)");
+			qtdTotal++;
+			if (qtdTotal % 1000 == 0) {
+				LOGGER.debug("Processando arquivo " + arquivoXML + " (" + qtdTotal + "/" + arquivosParaProcessar.size() + " - " + (qtdTotal * 100 / arquivosParaProcessar.size()) + "%)");
 			}
 			
 			// Objeto com os dados lidos deste arquivo XML
@@ -115,7 +115,7 @@ public class Op_3_UnificaArquivosXML {
 			gravarProximoLoteXML(jaxbMarshaller, todosProcessos);
 		}
 		
-		LOGGER.info("Total de " + i + " processos gravados em " + qtdArquivosXMLGerados + " arquivos XML.");
+		LOGGER.info("Total de " + qtdTotal + " processos gravados em " + qtdArquivosXMLGerados + " arquivos XML.");
 	}
 	
 	
