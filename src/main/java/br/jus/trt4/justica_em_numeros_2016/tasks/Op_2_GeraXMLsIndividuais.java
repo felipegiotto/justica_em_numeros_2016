@@ -120,10 +120,6 @@ public class Op_2_GeraXMLsIndividuais {
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
-		boolean gerarIncrementalmente = Auxiliar.getParametroBooleanConfiguracao(Parametro.baixa_incremental, false);
-		if (gerarIncrementalmente) {
-			LOGGER.info("OBS: geração incremental!! Os processos que já foram baixados não serão baixados novamente!");
-		}
 		
 		// Objetos auxiliares para gerar o XML a partir das classes Java
 		ObjectFactory factory = new ObjectFactory();
@@ -161,8 +157,8 @@ public class Op_2_GeraXMLsIndividuais {
 				arquivoXML.delete();
 			}
 			
-			// Se a geração incremental estiver habilitada, verifica se o XML do processo já foi gerado.
-			if (gerarIncrementalmente && arquivoXML.exists()) {
+			// Verifica se o XML do processo já foi gerado
+			if (arquivoXML.exists()) {
 				LOGGER.debug("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
 				continue;
 			}

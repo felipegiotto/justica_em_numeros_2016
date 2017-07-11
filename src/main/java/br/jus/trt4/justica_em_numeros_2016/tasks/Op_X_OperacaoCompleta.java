@@ -3,26 +3,19 @@ package br.jus.trt4.justica_em_numeros_2016.tasks;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.net.SocketException;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.ThreadBackupArquivosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
 
 /**
@@ -74,8 +67,12 @@ public class Op_X_OperacaoCompleta {
 	File pastaBackup;
 
 	public static void main(String[] args) throws Exception {
-		Op_X_OperacaoCompleta operacaoCompleta = new Op_X_OperacaoCompleta();
-		operacaoCompleta.executarOperacaoCompleta();
+		try {
+			Op_X_OperacaoCompleta operacaoCompleta = new Op_X_OperacaoCompleta();
+			operacaoCompleta.executarOperacaoCompleta();
+		} catch (Exception ex) {
+			LOGGER.error("Op_X_OperacaoCompleta abortada", ex);
+		}
 	}
 
 	public Op_X_OperacaoCompleta() {
@@ -149,6 +146,23 @@ public class Op_X_OperacaoCompleta {
 				efetuarBackupDeArquivosIndividuais(2);
 			}
 
+			/**
+			 * Efetua backup da pasta de XMLs individuais de uma determinada instância
+			 * 
+			 * @param grau
+			 * @throws IOException
+			 */
+			private void efetuarBackupDeArquivosIndividuais(int grau) throws IOException {
+				File pastaOutputBackup = getPastaOutputBackup();
+				File pastaOrigem = new File(pastaOutput, grau + "g");
+				if (pastaOrigem.exists()) {
+					File pastaDestino = new File(pastaOutputBackup, pastaOrigem.getName());
+					LOGGER.info("Efetuando backup da pasta " + pastaOrigem);
+					FileUtils.copyDirectory(pastaOrigem, pastaDestino);
+				}
+			}
+			
+			
 		});
 
 		// CHECKLIST: 7. Execute a classe "Op_3_UnificaArquivosXML"
@@ -165,12 +179,17 @@ public class Op_X_OperacaoCompleta {
 
 			@Override
 			public void run() throws IOException {
-				File pastaOutputBackup = getPastaOutputBackup();
+				efeguarBackupDeArquivosUnificados(1);
+				efeguarBackupDeArquivosUnificados(2);
+			}
+
+			private void efeguarBackupDeArquivosUnificados(int grau) throws IOException {
+				File pastaOutputBackup = new File(getPastaOutputBackup(), "G" + grau);
 
 				// Backup da pasta xmls_unificados
-				File pastaXMLs = Auxiliar.getPastaXMLsUnificados();
+				File pastaXMLs = Auxiliar.getPastaXMLsUnificados(grau);
 				if (pastaXMLs.exists()) {
-					LOGGER.info("Efetuando backup dos XMLs unificados");
+					LOGGER.info("Efetuando backup dos XMLs unificados da pasta " + pastaXMLs);
 					File pastaBackupXMLs = new File(pastaOutputBackup, pastaXMLs.getName());
 					FileUtils.copyDirectory(pastaXMLs, pastaBackupXMLs);
 				}
@@ -183,31 +202,8 @@ public class Op_X_OperacaoCompleta {
 			@Override
 			public void run() throws Exception {
 				
-				// Thread que irá monitorar os arquivos gerados pela JAR do CNJ e fazer backup.
-				File pastaXMLs = Auxiliar.getPastaXMLsUnificados();
-				File pastaBackupXMLs = new File(getPastaOutputBackup(), pastaXMLs.getName());
-				ThreadBackupArquivosCNJ threadBackupArquivosCNJ = new ThreadBackupArquivosCNJ(pastaXMLs, pastaBackupXMLs);
-				threadBackupArquivosCNJ.start();
-				try {
-					
-					// Chama a JAR do CNJ para validar os arquivos e enviar ao FTP.
-					Op_4_ValidaEnviaArquivosCNJ.main(null);
-					
-				} finally {
-					threadBackupArquivosCNJ.finalizar();
-					threadBackupArquivosCNJ.join();
-				}
-				
-				// Verificando se todos os arquivos foram processados corretamente pela JAR do CNJ
-				int qtdXMLsGerados = pastaBackupXMLs.listFiles(new FilenameFilter() {
-					@Override
-					public boolean accept(File dir, String name) {
-						return name.toUpperCase().endsWith(".XML");
-					}
-				}).length;
-				conferirQuantidadeDeArquivosNaPasta(qtdXMLsGerados, new File(pastaBackupXMLs, "convertidos"));
-				conferirQuantidadeDeArquivosNaPasta(qtdXMLsGerados, new File(pastaBackupXMLs, "enviados"));
-				conferirArquivosEnviadosAoFTPDoCNJ(new File(pastaBackupXMLs, "enviados"));
+				// Envia os XMLs ao CNJ
+				Op_4_ValidaEnviaArquivosCNJ.main(null);
 			}
 		});
 		
@@ -289,98 +285,6 @@ public class Op_X_OperacaoCompleta {
 		
 		LOGGER.info("Operação completa realizada com sucesso!");
 		LOGGER.info("Os dados referentes a este envio ao CNJ, inclusive os backup, foram gravados na pasta '" + pastaBackup + "'.");
-	}
-
-	/**
-	 * Efetua backup da pasta de XMLs individuais de uma determinada instância
-	 * 
-	 * @param grau
-	 * @throws IOException
-	 */
-	private void efetuarBackupDeArquivosIndividuais(int grau) throws IOException {
-		File pastaOutputBackup = getPastaOutputBackup();
-		File pastaOrigem = new File(pastaOutput, grau + "g");
-		if (pastaOrigem.exists()) {
-			File pastaDestino = new File(pastaOutputBackup, pastaOrigem.getName());
-			LOGGER.info("Efetuando backup da pasta " + pastaOrigem);
-			FileUtils.copyDirectory(pastaOrigem, pastaDestino);
-		}
-	}
-
-	/**
-	 * Conecta no FTP do CNJ e verifica se todos os arquivos ZIP foram enviados corretamente.
-	 * 
-	 * @param pastaArquivosEnviados : pasta onde estão, localmente, os arquivos que devem estar no servidor.
-	 * 
-	 * @throws SocketException
-	 * @throws IOException
-	 */
-	private void conferirArquivosEnviadosAoFTPDoCNJ(File pastaArquivosEnviados) throws IOException {
-		
-		// Conecta e autentica no servidor FTP.
-		LOGGER.info("Conferindo se todos os arquivos foram enviados ao FTP do CNJ...");
-		String servidorFTPCNJ = "ftp.cnj.jus.br";
-		String usuarioFTPCNJ = "ftp.repnac";
-		String senhaFTPCNJ = Auxiliar.pedirParaUsuarioDigitarSenha("Digite a senha do usuário '" + usuarioFTPCNJ + "' para acessar o servidor '" + servidorFTPCNJ + "'");
-		
-		LOGGER.info("Conectando no servidor FTP do CNJ...");
-		FTPClient ftp = new FTPClient();
-		ftp.connect(servidorFTPCNJ);
-		if (!ftp.login(usuarioFTPCNJ, senhaFTPCNJ)) {
-			LOGGER.warn("IMPORTANTE! Não foi possível efetuar login no FTP do CNJ com os dados informados!");
-			LOGGER.warn("Você pode continuar o processo sem conferir os arquivos que realmente foram enviados, MAS ISSO NÃO É RECOMENDADO, pois a ferramenta do CNJ eventualmente acusa que um arquivo foi enviado mas, na realidade, não foi!");
-			LOGGER.warn("Para continuar sem conferir, digite 'CONTINUAR SEM CONFERIR OS DADOS ENVIADOS'. Qualquer outro texto informado irá abortar a operação (recomendado).");
-			if ("CONTINUAR SEM CONFERIR OS DADOS ENVIADOS".equals(Auxiliar.readStdin())) {
-				LOGGER.warn("Você escolheu continuar sem conferir os dados enviados ao CNJ!");
-			} else {
-				throw new IOException("Operação abortada");
-			}
-			
-		} else {
-		
-			// Carrega uma lista com todos os arquivos que estão no FTP
-			// TODO: REFAZER COM API REST!
-//			Map<String, Long> arquivosNoServidor = new HashMap<>();
-//			for (FTPFile file: ftp.listFiles(Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true))) {
-//				arquivosNoServidor.put(file.getName(), file.getSize());
-//			}
-//			
-//			// Itera sobre os arquivos locais, verificando se cada um existe no FTP
-//			File[] arquivosEnviadosLocal = pastaArquivosEnviados.listFiles();
-//			for (File arquivoEnviado: arquivosEnviadosLocal) {
-//				String nomeArquivo = arquivoEnviado.getName();
-//				if (!arquivosNoServidor.containsKey(nomeArquivo)) {
-//					throw new IOException("O arquivo " + nomeArquivo + " consta como enviado pela JAR do CNJ, mas não está no servidor FTP!");
-//				}
-//				Long tamanhoRemoto = arquivosNoServidor.get(nomeArquivo);
-//				long tamanhoLocal = arquivoEnviado.length();
-//				if (tamanhoRemoto != tamanhoLocal) {
-//					throw new IOException("O arquivo " + nomeArquivo + " possui " + tamanhoLocal + " Bytes, mas no servidor FTP do CNJ ele possui " + tamanhoRemoto + " Bytes.");
-//				}
-//				
-//				LOGGER.info("* Arquivo presente no FTP: " + arquivoEnviado.getName() + " (" + tamanhoRemoto + " Bytes)");
-//			}
-//			LOGGER.info("Todos os " + arquivosEnviadosLocal.length + " arquivos que constam localmente como enviados estão no FTP do CNJ com seus tamanhos corretos!");
-		}
-	}
-	
-	/**
-	 * Confere se a quantidade de arquivos na pasta é a mesma dos XMLs que foram gerados localmente.
-	 * 
-	 * @param qtdXMLsGerados
-	 * @param pasta
-	 * 
-	 * @throws IOException
-	 */
-	private void conferirQuantidadeDeArquivosNaPasta(int qtdXMLsGerados, File pasta) throws IOException {
-		if (!pasta.isDirectory()) {
-			throw new IOException("Pasta não existe: " + pasta);
-		}
-		
-		int qtdXMLsPasta = pasta.listFiles().length;
-		if (qtdXMLsGerados != qtdXMLsPasta) {
-			throw new IOException("Foram gerados " + qtdXMLsGerados + " arquivos XML unificados, mas há " + qtdXMLsPasta + " na pasta " + pasta + ". Este erro não deve ocorrer depois que o envio ao CNJ for realizado com sucesso!");
-		}
 	}
 
 	/**

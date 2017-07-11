@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 public class AnalisaClassesProcessuaisCNJ {
 

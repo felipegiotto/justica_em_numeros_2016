@@ -39,6 +39,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
 /**
@@ -58,6 +59,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
 		operacao.testarConexaoComCNJ();
 		operacao.enviarXMLsUnificadosAoCNJ();
+		
+		DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
 		LOGGER.info("Fim!");
 	}
 
@@ -126,7 +129,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
         return SSLContexts.custom().loadTrustMaterial(trustStore).build();
     }	
 	
-	private void testarConexaoComCNJ() throws IOException, InvalidCredentialsException {
+	private void testarConexaoComCNJ() throws DadosInvalidosException, IOException {
 		
 		LOGGER.info("Testando conexão com o webservice do CNJ...");
 		
@@ -155,9 +158,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @param statusCode
 	 * @throws IOException
 	 */
-	private void conferirRespostaSucesso(int statusCode) throws IOException {
+	private void conferirRespostaSucesso(int statusCode) throws DadosInvalidosException {
 		if (statusCode != 200) {
-			throw new IOException("Falha ao conectar no Webservice do CNJ (esperado codigo 200, recebido codigo " + statusCode + ")");
+			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (esperado codigo 200, recebido codigo " + statusCode + ")");
 		}
 	}
 
@@ -219,7 +222,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				LOGGER.debug("  * Resposta: " + body);
 				conferirRespostaSucesso(response.getStatusLine().getStatusCode());
 				LOGGER.debug("  * Arquivo enviado!");
-			} catch (IOException ex) {
+			} catch (DadosInvalidosException ex) {
 				LOGGER.error("  * Erro: " + ex.getLocalizedMessage());
 			}
 		}

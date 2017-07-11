@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoLocal;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoNacional;
 import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
 /**
  * Classe que preencherá um objeto do tipo {@link TipoMovimentoProcessual}, conforme o dado no PJe:

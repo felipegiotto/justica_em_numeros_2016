@@ -19,7 +19,6 @@ public enum Parametro {
 	arquivo_serventias_cnj,
 	pasta_saida_padrao,
 	tipo_carga_xml,
-	baixa_incremental,
 	codigo_municipio_ibge_trt,
 	url_jdbc_egestao_1g, 
 	url_jdbc_egestao_2g, 
