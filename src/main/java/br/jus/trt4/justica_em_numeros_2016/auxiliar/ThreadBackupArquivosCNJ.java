@@ -109,7 +109,7 @@ public class ThreadBackupArquivosCNJ extends Thread {
 	 * 
 	 * @param nomePasta : nome da subpasta que será identificada dentro de "pastaOrigem"
 	 * @param sufixoArquivos : Se for informado, efetua backup somente os arquivos com este sufixo (extensão).
-	 *                         Se for nulo, efetua backup de TODOS os arquivos na pasta.
+	 *                         Se for nulo, efetua backup de todos os arquivos na pasta.
 	 *                         Isso é útil pois a JAR do CNJ gera os arquivos ZIP, antes de ser enviados ao FTP,
 	 *                         na pasta "convertidos", para só depois movê-los para a pasta "enviados". Esse parâmetro
 	 *                         permite ignorar os arquivos ZIP da pasta "convertidos".

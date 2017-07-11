@@ -126,7 +126,7 @@ UPDATE: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa
     os arquivos que estão no FTP do CNJ.
     
     11.1. Abra o arquivo mais recente, com prefixo "relatorio_", na pasta "output/<TIPO_CARGA_XML>/xmls_unificados/recibos" e confira se 
-          TODOS os arquivos da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/enviados" estão realmente neste documento.
+          todos os arquivos da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/enviados" estão realmente neste documento.
       
     11.2. Confira se realmente os arquivos da pasta "output/<TIPO_CARGA_XML>/enviados" estão dentro do FTP do CNJ, no endereço a seguir:
           ftp://ftp.cnj.jus.br/

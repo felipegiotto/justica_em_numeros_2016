@@ -23,7 +23,11 @@ public enum Parametro {
 	codigo_municipio_ibge_trt,
 	url_jdbc_egestao_1g, 
 	url_jdbc_egestao_2g, 
-	configuracao_proxy,
+	proxy_host,
+	proxy_port,
+	proxy_username,
+	proxy_password,
 	sigla_tribunal,
+	password_tribunal,
 	contornar_falta_de_genero;
 }
