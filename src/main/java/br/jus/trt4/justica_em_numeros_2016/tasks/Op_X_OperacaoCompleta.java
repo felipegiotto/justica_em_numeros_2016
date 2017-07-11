@@ -220,8 +220,14 @@ public class Op_X_OperacaoCompleta {
 					try (FileWriter fw = new FileWriter(arquivoConfiguracaoBackup)) {
 						while (scanner.hasNextLine()) {
 							String line = scanner.nextLine();
-							if (line.contains("url_jdbc_")) {
-								fw.append("# (linha omitida por questões de segurança)\n");
+							
+							// Se for uma linha que contém alguma senha, não grava no backup
+							if (line.contains("password")) {
+								
+								// Mostra somente o "nome" da propriedade, omitindo seu valor
+								int posicao = line.indexOf('=');
+								fw.append(line.substring(0, posicao) + "=(linha omitida por questões de segurança)\n");
+								
 							} else {
 								fw.append(line + "\n");
 							}
