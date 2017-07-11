@@ -27,7 +27,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
  * e grava na pasta "output/.../Xg" (onde 'X' representa o número da instância - '1' ou '2'), 
  * em arquivos com nome "lista_processos.txt".
  * 
- * @author fgiotto
+ * @author felipe.giotto@trt4.jus.br
  */
 public class Op_1_BaixaListaDeNumerosDeProcessos {
 
@@ -87,8 +87,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		ResultSet rsConsultaProcessos;
 		if ("TESTES".equals(tipoCarga)) {
 			
-			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um lote qualquer
-			// de 30 processos
+			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um lote qualquer de processos
 			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_testes.sql");
 			rsConsultaProcessos = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");

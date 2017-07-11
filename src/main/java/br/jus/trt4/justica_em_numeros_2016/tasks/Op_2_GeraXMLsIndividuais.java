@@ -53,7 +53,7 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
  * 
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
- * @author fgiotto
+ * @author felipe.giotto@trt4.jus.br
  */
 public class Op_2_GeraXMLsIndividuais {
 
@@ -137,6 +137,7 @@ public class Op_2_GeraXMLsIndividuais {
 		
 		// Pasta onde serão gerados os arquivos XML
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
+		pastaRaiz = new File(pastaRaiz, "PJe");
 		
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
@@ -150,9 +151,8 @@ public class Op_2_GeraXMLsIndividuais {
 			// Arquivo XML que conterá os dados do processo
 			// Depois da geração do XML temporário, visando garantir a integridade do arquivo XML 
 			// definitivo, o temporário só será excluído depois da gravação completa do definitivo.
-			String prefixo = Auxiliar.getPrefixoArquivoXML(grau) + "-" + numeroProcesso;
-			File arquivoXMLTemporario = new File(pastaRaiz, prefixo + ".temp");
-			File arquivoXML = new File(pastaRaiz, prefixo + ".xml");
+			File arquivoXMLTemporario = new File(pastaRaiz, numeroProcesso + ".temp");
+			File arquivoXML = new File(pastaRaiz, numeroProcesso + ".xml");
 			arquivoXMLTemporario.delete();
 			
 			// Se o script for abortado bem na hora da cópia do arquivo temporário para o definitivo, o definitivo

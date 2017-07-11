@@ -172,6 +172,11 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
   os complementos estão sendo preenchidos da mesma forma, como texto.
 
 
+* O envio de dados ao CNJ via serviços REST depende da geração de uma keystore que contenha os certificados
+  de homologação e de produção do CNJ. Esta keystore fica gravada no arquivo src/main/resources/certificados_rest_cnj/keystore/cnj.keystore
+  e contém os certificados gravados na pasta src/main/resources/certificados_rest_cnj/certificados.
+  Se for preciso gerar novamente a keystore, executar o arquivo src/main/resources/certificados_rest_cnj/_importar_certificados_para_keystore.sh.
+  
 
 ========== Dúvidas / Esclarecimentos / Pendências ==========
 

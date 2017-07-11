@@ -40,7 +40,6 @@ public class Auxiliar {
 
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
-	private static String diaMesAnoArquivosXML;
 	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
 	private static File pastaSaida = null;
 
@@ -386,7 +385,7 @@ public class Auxiliar {
 	 * instância do PJe.
 	 */
 	public static File getArquivoListaProcessos(int grau) {
-		return new File(prepararPastaDeSaida(), grau + "g/lista_processos.txt");
+		return new File(prepararPastaDeSaida(), "G" + grau + "/PJe_lista_processos.txt");
 	}
 	
 	
@@ -395,7 +394,7 @@ public class Auxiliar {
 	 * instância do PJe.
 	 */
 	public static File getPastaXMLsIndividuais(int grau) {
-		return new File(prepararPastaDeSaida(), grau + "g/xmls_individuais");
+		return new File(prepararPastaDeSaida(), "G" + grau + "/xmls_individuais");
 	}
 
 
@@ -403,23 +402,10 @@ public class Auxiliar {
 	 * Retorna a pasta raiz onde serão gravados e lidos os arquivos XML unificados para serem
 	 * enviados ao CNJ
 	 */
-	public static File getPastaXMLsUnificados() {
-		File pasta = new File(prepararPastaDeSaida(), "xmls_unificados");
+	public static File getPastaXMLsUnificados(int grau) {
+		File pasta = new File(prepararPastaDeSaida(), "xmls_unificados/G" + grau);
 		pasta.mkdirs();
 		return pasta;
-	}
-
-	
-	/**
-	 * Retorna o prefixo que os arquivos XML a serem enviados ao CNJ devem possuir, conforme 
-	 * formato definido no site do CNJ:
-	 * <SIGLA_TRIBUNAL>_<GRAU_JURISDICAO>_<DIAMESANO>
-	 */
-	public static String getPrefixoArquivoXML(int grau) {
-		if (diaMesAnoArquivosXML == null) {
-			diaMesAnoArquivosXML = getParametroConfiguracao(Parametro.dia_padrao_para_arquivos_xml, new SimpleDateFormat("ddMMyyyy").format(new Date()));
-		}
-		return Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true) + "_G" + grau + "_" + diaMesAnoArquivosXML;
 	}
 	
 	

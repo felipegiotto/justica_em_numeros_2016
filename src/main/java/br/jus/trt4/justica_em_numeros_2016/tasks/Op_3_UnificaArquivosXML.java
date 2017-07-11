@@ -9,6 +9,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,16 +29,15 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
  * importador do CNJ processa lotes com essa quantidade), inserindo um sufixo no final do arquivo,
  * conforme orientação do CNJ no arquivo README.txt
  * 
- * @author fgiotto
+ * @author felipe.giotto@trt4.jus.br
  */
 public class Op_3_UnificaArquivosXML {
 
 	private static final Logger LOGGER = LogManager.getLogger(Op_3_UnificaArquivosXML.class);
-	private static final int PROCESSOS_POR_LOTE = 5000;
 	
 	private int grau;
 	private final File pastaSaida;
-	private int numeroLoteAtual = Auxiliar.getParametroInteiroConfiguracao(Parametro.contador_inicial_xmls_unificados, 1);
+	private int numeroLoteAtual = 1;
 	private int qtdArquivosXMLGerados = 0;
 	
 	public static void main(String[] args) throws JAXBException {
@@ -64,7 +64,7 @@ public class Op_3_UnificaArquivosXML {
 	
 	public Op_3_UnificaArquivosXML(int grau) {
 		this.grau = grau;
-		this.pastaSaida = Auxiliar.getPastaXMLsUnificados();
+		this.pastaSaida = Auxiliar.getPastaXMLsUnificados(grau);
 	}
 
 	private void unificarArquivosXML() throws JAXBException {
@@ -85,7 +85,7 @@ public class Op_3_UnificaArquivosXML {
 		
 		// Itera sobre todos os XMLs que existem na pasta "output/.../xmls_individuais/(grau)"
 		int qtdTotal = 0;
-		int qtdLote = 0;
+		int bytesLote = 0;
 		for (File arquivoXML: arquivosParaProcessar) {
 			
 			qtdTotal++;
@@ -98,15 +98,19 @@ public class Op_3_UnificaArquivosXML {
 			
 			// Adiciona os dados lidos do XML na lista "global"
 			for (TipoProcessoJudicial processo: processosXML.getProcesso()) {
-				todosProcessos.getProcesso().add(processo);
 				
 				// Se atingiu o tamanho do lote, grava em arquivo XML e recomeça a contar
-				qtdLote++;
-				if (qtdLote == PROCESSOS_POR_LOTE) {
+				// O tamanho do lote foi fixado em 1MB no "API REST.pdf" (não sei se será 1.048.576 
+				// ou 1.000.000, escolherei o mais prudente)
+				if (bytesLote + arquivoXML.length() > 1_000_000 && !todosProcessos.getProcesso().isEmpty()) {
 					gravarProximoLoteXML(jaxbMarshaller, todosProcessos);
 					todosProcessos.getProcesso().clear();
-					qtdLote = 0;
+					bytesLote = 0;
 				}
+				
+				// Adiciona este processo no lote
+				todosProcessos.getProcesso().add(processo);
+				bytesLote += arquivoXML.length();
 			}
 		}
 		
@@ -123,7 +127,7 @@ public class Op_3_UnificaArquivosXML {
 	 * Grava os dados de uma lista de processos em um arquivo XML
 	 */
 	private void gravarProximoLoteXML(Marshaller jaxbMarshaller, Processos listaProcessos) throws JAXBException {
-		File arquivoSaida = new File(pastaSaida, Auxiliar.getPrefixoArquivoXML(grau) + "-" + numeroLoteAtual + ".xml");
+		File arquivoSaida = new File(pastaSaida, "Lote_" + StringUtils.leftPad(Integer.toString(numeroLoteAtual), 6, '0') + ".xml");
 		LOGGER.info("Gerando arquivo " + arquivoSaida + "...");
 		jaxbMarshaller.marshal(listaProcessos, arquivoSaida);
 		numeroLoteAtual++;

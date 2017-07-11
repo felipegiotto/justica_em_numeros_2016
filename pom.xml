@@ -56,7 +56,19 @@
 			<artifactId>commons-net</artifactId>
 			<version>3.6</version>
 		</dependency>
-        
+
+		<!-- Utilizado para enviar os dados ao CNJ via REST -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpmime</artifactId>
+			<version>4.3.4</version>
+		</dependency>
+		
         <!-- Utilizado por todos os testes unitários da ferramenta -->
         <dependency>
             <groupId>junit</groupId>

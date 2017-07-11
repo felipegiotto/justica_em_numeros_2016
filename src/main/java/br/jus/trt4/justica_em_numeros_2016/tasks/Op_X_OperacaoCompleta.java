@@ -43,7 +43,6 @@ public class Op_X_OperacaoCompleta {
 	public enum ControleOperacoes {
 	    
 		OP_0_CRIACAO_PASTA_OUTPUT          (50),
-		OP_0_VERIFICACAO_JAR_CNJ           (75),
 		OP_1_BAIXAR_LISTA                  (100),
 		OP_1_CONFERIR_SERVENTIAS           (150),
 		OP_2_GERAR_XMLS_INDIVIDUAIS        (200),
@@ -109,19 +108,6 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 
-		// Passo extra: Verificar versão da JAR do CNJ
-		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_0_VERIFICACAO_JAR_CNJ, new Operacao() {
-			
-			@Override
-			public void run() throws Exception {
-				
-				if (Op_4_ValidaEnviaArquivosCNJ.verificarVersaoDesatualizadaJarCNJ()) {
-					LOGGER.warn("Pressione ENTER ou aguarde 2 minutos para que a operação continue. Se você preferir, aborte este script e atualize o JAR do CNJ!");
-					Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
-				}
-			}
-		});
-		
 		// CHECKLIST: 4. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
 
@@ -230,15 +216,6 @@ public class Op_X_OperacaoCompleta {
 			
 			@Override
 			public void run() throws Exception {
-				
-				// Backup da JAR do CNJ
-				LOGGER.info("Efetuando backup da JAR do CNJ...");
-				File arquivoJarCNJOrigem = new File(Auxiliar.getParametroConfiguracao(Parametro.jar_replicacao_nacional_cnj, true));
-				if (!arquivoJarCNJOrigem.exists()) {
-					throw new IOException("Arquivo não encontrado para fazer backup: " + arquivoJarCNJOrigem);
-				}
-				File arquivoJarCNJDestino = new File(pastaBackup, arquivoJarCNJOrigem.getName());
-				FileUtils.copyFile(arquivoJarCNJOrigem, arquivoJarCNJDestino);
 				
 				// Backup do arquivo de configurações
 				LOGGER.info("Efetuando backup do arquivo de configurações...");
@@ -362,27 +339,28 @@ public class Op_X_OperacaoCompleta {
 		} else {
 		
 			// Carrega uma lista com todos os arquivos que estão no FTP
-			Map<String, Long> arquivosNoServidor = new HashMap<>();
-			for (FTPFile file: ftp.listFiles(Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true))) {
-				arquivosNoServidor.put(file.getName(), file.getSize());
-			}
-			
-			// Itera sobre os arquivos locais, verificando se cada um existe no FTP
-			File[] arquivosEnviadosLocal = pastaArquivosEnviados.listFiles();
-			for (File arquivoEnviado: arquivosEnviadosLocal) {
-				String nomeArquivo = arquivoEnviado.getName();
-				if (!arquivosNoServidor.containsKey(nomeArquivo)) {
-					throw new IOException("O arquivo " + nomeArquivo + " consta como enviado pela JAR do CNJ, mas não está no servidor FTP!");
-				}
-				Long tamanhoRemoto = arquivosNoServidor.get(nomeArquivo);
-				long tamanhoLocal = arquivoEnviado.length();
-				if (tamanhoRemoto != tamanhoLocal) {
-					throw new IOException("O arquivo " + nomeArquivo + " possui " + tamanhoLocal + " Bytes, mas no servidor FTP do CNJ ele possui " + tamanhoRemoto + " Bytes.");
-				}
-				
-				LOGGER.info("* Arquivo presente no FTP: " + arquivoEnviado.getName() + " (" + tamanhoRemoto + " Bytes)");
-			}
-			LOGGER.info("Todos os " + arquivosEnviadosLocal.length + " arquivos que constam localmente como enviados estão no FTP do CNJ com seus tamanhos corretos!");
+			// TODO: REFAZER COM API REST!
+//			Map<String, Long> arquivosNoServidor = new HashMap<>();
+//			for (FTPFile file: ftp.listFiles(Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true))) {
+//				arquivosNoServidor.put(file.getName(), file.getSize());
+//			}
+//			
+//			// Itera sobre os arquivos locais, verificando se cada um existe no FTP
+//			File[] arquivosEnviadosLocal = pastaArquivosEnviados.listFiles();
+//			for (File arquivoEnviado: arquivosEnviadosLocal) {
+//				String nomeArquivo = arquivoEnviado.getName();
+//				if (!arquivosNoServidor.containsKey(nomeArquivo)) {
+//					throw new IOException("O arquivo " + nomeArquivo + " consta como enviado pela JAR do CNJ, mas não está no servidor FTP!");
+//				}
+//				Long tamanhoRemoto = arquivosNoServidor.get(nomeArquivo);
+//				long tamanhoLocal = arquivoEnviado.length();
+//				if (tamanhoRemoto != tamanhoLocal) {
+//					throw new IOException("O arquivo " + nomeArquivo + " possui " + tamanhoLocal + " Bytes, mas no servidor FTP do CNJ ele possui " + tamanhoRemoto + " Bytes.");
+//				}
+//				
+//				LOGGER.info("* Arquivo presente no FTP: " + arquivoEnviado.getName() + " (" + tamanhoRemoto + " Bytes)");
+//			}
+//			LOGGER.info("Todos os " + arquivosEnviadosLocal.length + " arquivos que constam localmente como enviados estão no FTP do CNJ com seus tamanhos corretos!");
 		}
 	}
 	
