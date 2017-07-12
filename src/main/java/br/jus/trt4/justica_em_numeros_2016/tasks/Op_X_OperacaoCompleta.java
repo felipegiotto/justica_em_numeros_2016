@@ -184,7 +184,7 @@ public class Op_X_OperacaoCompleta {
 			}
 
 			private void efeguarBackupDeArquivosUnificados(int grau) throws IOException {
-				File pastaOutputBackup = new File(getPastaOutputBackup(), "G" + grau);
+				File pastaOutputBackup = new File(getPastaOutputBackup(), "xmls_unificados");
 
 				// Backup da pasta xmls_unificados
 				File pastaXMLs = Auxiliar.getPastaXMLsUnificados(grau);
