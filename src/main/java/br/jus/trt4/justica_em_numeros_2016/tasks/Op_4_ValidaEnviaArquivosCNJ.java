@@ -22,7 +22,6 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -153,14 +152,14 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	}
 
 	/**
-	 * Confere se a requisição HTTP teve reposta 200 (SUCCESS)
+	 * Confere se a requisição HTTP teve reposta 200 (SUCCESS) ou 201 (CREATED)
 	 * 
 	 * @param statusCode
 	 * @throws IOException
 	 */
 	private void conferirRespostaSucesso(int statusCode) throws DadosInvalidosException {
-		if (statusCode != 200) {
-			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (esperado codigo 200, recebido codigo " + statusCode + ")");
+		if (statusCode != 200 && statusCode != 201) {
+			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (esperado codigo 200 ou 201, recebido codigo " + statusCode + ")");
 		}
 	}
 
@@ -169,8 +168,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * 
 	 * @throws IOException
 	 * @throws InvalidCredentialsException
+	 * @throws DadosInvalidosException 
 	 */
-	private void enviarXMLsUnificadosAoCNJ() throws IOException, InvalidCredentialsException {
+	private void enviarXMLsUnificadosAoCNJ() throws IOException, InvalidCredentialsException, DadosInvalidosException {
 		
 		// Verifica se deve gerar XML para 2o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
@@ -188,42 +188,65 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * 
 	 * @param grau
 	 * @throws IOException
+	 * @throws DadosInvalidosException 
 	 */
-	private void enviarXMLsUnificadosAoCNJ(int grau) throws IOException {
+	private void enviarXMLsUnificadosAoCNJ(int grau) throws IOException, DadosInvalidosException {
 		Auxiliar.prepararPastaDeSaida();
-		File pastaXMLsUnificados = Auxiliar.getPastaXMLsUnificados(grau);
+		File pastaXMLsParaEnvio;
+		if (Auxiliar.deveMontarLotesDeProcessos()) {
+			pastaXMLsParaEnvio = Auxiliar.getPastaXMLsUnificados(grau);
+		} else {
+			pastaXMLsParaEnvio = Auxiliar.getPastaXMLsIndividuais(grau);
+		}
 		
-		LOGGER.info("Enviando todos os arquivos da pasta '" + pastaXMLsUnificados.getAbsolutePath() + "' via 'API REST' do CNJ.");
-		File[] arquivos = pastaXMLsUnificados.listFiles();
+		// Monta a URL para enviar processos ao CNJ.
+		// Exemplo de URL: https://wwwh.cnj.jus.br/selo-integracao-web/v1/processos/G2
+		String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/G" + grau;
+		LOGGER.info("URL onde os arquivos serão enviados: " + url);
+		
+		LOGGER.info("Enviando todos os arquivos da pasta '" + pastaXMLsParaEnvio.getAbsolutePath() + "' via 'API REST' do CNJ.");
+		enviarArquivoRecursivamente(pastaXMLsParaEnvio, url);
+	}
+
+	private void enviarArquivoRecursivamente(File arquivoPasta, String url) throws IOException, DadosInvalidosException {
+		
+		if (!arquivoPasta.isDirectory()) {
+			throw new DadosInvalidosException("Pasta não existe (" + arquivoPasta + ") talvez falte executar tarefas anteriores.");
+		}
+		File[] arquivos = arquivoPasta.listFiles();
 		Arrays.sort(arquivos);
-		for (File arquivoXML: arquivos) {
-			LOGGER.info("* Enviando arquivo " + arquivoXML + "...");
+		for (File filho: arquivos) {
 			
-			// Exemplo de URL: https://wwwh.cnj.jus.br/selo-integracao-web/v1/processos/G2
-			String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/G" + grau;
-			HttpPost post = new HttpPost(url);
-			adicionarCabecalhoAutenticacao(post);
-			
-			// Prepara um request com Multipart
-			HttpEntity entity = MultipartEntityBuilder
-				    .create()
-				    .addBinaryBody("file", arquivoXML)
-				    .build();
-			post.setEntity(entity);
-			
-			String body;
-			try {
+			if (filho.isDirectory()) {
+				enviarArquivoRecursivamente(filho, url);
 				
-				// Executa o POST
-				HttpResponse response = client.execute(post);
-	
-				HttpEntity result = response.getEntity();
-				body = EntityUtils.toString(result, Charset.forName("UTF-8"));
-				LOGGER.debug("  * Resposta: " + body);
-				conferirRespostaSucesso(response.getStatusLine().getStatusCode());
-				LOGGER.debug("  * Arquivo enviado!");
-			} catch (DadosInvalidosException ex) {
-				LOGGER.error("  * Erro: " + ex.getLocalizedMessage());
+			} else {
+				LOGGER.info("* Enviando arquivo " + filho + "...");
+				
+				HttpPost post = new HttpPost(url);
+				adicionarCabecalhoAutenticacao(post);
+				
+				// Prepara um request com Multipart
+				HttpEntity entity = MultipartEntityBuilder
+					    .create()
+					    .addBinaryBody("file", filho)
+					    .build();
+				post.setEntity(entity);
+				
+				String body;
+				try {
+					
+					// Executa o POST
+					HttpResponse response = client.execute(post);
+		
+					HttpEntity result = response.getEntity();
+					body = EntityUtils.toString(result, Charset.forName("UTF-8"));
+					LOGGER.debug("  * Resposta: " + body);
+					conferirRespostaSucesso(response.getStatusLine().getStatusCode());
+					LOGGER.debug("  * Arquivo enviado!");
+				} catch (DadosInvalidosException ex) {
+					LOGGER.error("  * Erro: " + ex.getLocalizedMessage());
+				}
 			}
 		}
 	}

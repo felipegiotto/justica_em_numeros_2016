@@ -9,6 +9,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,10 @@ public class Op_3_UnificaArquivosXML {
 	public static void main(String[] args) throws JAXBException {
 		Auxiliar.prepararPastaDeSaida();
 
+		if (!Auxiliar.deveMontarLotesDeProcessos()) {
+			return;
+		}
+		
 		// Verifica se deve gerar XML para 2o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
 			unificarArquivosXML(2);
@@ -58,13 +63,28 @@ public class Op_3_UnificaArquivosXML {
 	}
 
 	private static void unificarArquivosXML(int grau) throws JAXBException {
+		
+		LOGGER.info("");
+		LOGGER.info("Iniciando unificação de arquivos XML no " + grau + "o Grau...");
 		Op_3_UnificaArquivosXML baixaDados = new Op_3_UnificaArquivosXML(grau);
+		baixaDados.excluirArquivosUnificadosAntigos();
 		baixaDados.unificarArquivosXML();
 	}
 	
 	public Op_3_UnificaArquivosXML(int grau) {
 		this.grau = grau;
 		this.pastaSaida = Auxiliar.getPastaXMLsUnificados(grau);
+	}
+
+	private void excluirArquivosUnificadosAntigos() {
+		
+		LOGGER.info("Excluindo arquivos unificados antigos...");
+		for (File filho: this.pastaSaida.listFiles()) {
+			LOGGER.info("* Excluindo " + filho + "...");
+			if (!FileUtils.deleteQuietly(filho)) {
+				LOGGER.error("  * Não foi possível excluir o arquivo " + filho);
+			}
+		}
 	}
 
 	private void unificarArquivosXML() throws JAXBException {
@@ -74,6 +94,8 @@ public class Op_3_UnificaArquivosXML {
 		List<File> arquivosParaProcessar = new ArrayList<>();
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
 		localizaTodosArquivosXMLRecursivamente(pastaRaiz, arquivosParaProcessar);
+		int tamanhoLote = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_processos);
+		LOGGER.info("Serão gerados lotes de até " + tamanhoLote + " Bytes");
 		
 		// Objetos responsáveis por ler e gravar os arquivos XML
 		ObjectFactory factory = new ObjectFactory();
@@ -102,7 +124,7 @@ public class Op_3_UnificaArquivosXML {
 				// Se atingiu o tamanho do lote, grava em arquivo XML e recomeça a contar
 				// O tamanho do lote foi fixado em 1MB no "API REST.pdf" (não sei se será 1.048.576 
 				// ou 1.000.000, escolherei o mais prudente)
-				if (bytesLote + arquivoXML.length() > 1_000_000 && !todosProcessos.getProcesso().isEmpty()) {
+				if (bytesLote + arquivoXML.length() > tamanhoLote && !todosProcessos.getProcesso().isEmpty()) {
 					gravarProximoLoteXML(jaxbMarshaller, todosProcessos);
 					todosProcessos.getProcesso().clear();
 					bytesLote = 0;

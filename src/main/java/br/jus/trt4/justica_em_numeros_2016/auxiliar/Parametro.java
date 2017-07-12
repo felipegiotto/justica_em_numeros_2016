@@ -18,6 +18,7 @@ public enum Parametro {
 	assunto_padrao_2G,
 	arquivo_serventias_cnj,
 	pasta_saida_padrao,
+	tamanho_lote_processos,
 	tipo_carga_xml,
 	codigo_municipio_ibge_trt,
 	url_jdbc_egestao_1g, 

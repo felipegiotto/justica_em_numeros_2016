@@ -471,6 +471,15 @@ public class Auxiliar {
 		}
 	}
 	
+	public static boolean deveMontarLotesDeProcessos() {
+		if (Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_processos) == 0) {
+			LOGGER.info("A tarefa de unificação não será executada, pois o parâmetro 'tamanho_lote_processos' especifica o envio individual de processos");
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 	/**
 	 * Lê na entrada padrão um comando do usuário e retorna em uma String
 	 */

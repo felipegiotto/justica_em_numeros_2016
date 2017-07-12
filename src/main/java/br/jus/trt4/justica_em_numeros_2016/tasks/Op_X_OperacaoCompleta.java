@@ -94,11 +94,11 @@ public class Op_X_OperacaoCompleta {
 
 			@Override
 			public void run() {
-				File pasta1G = new File(pastaOutput, "1g");
+				File pasta1G = new File(pastaOutput, "G1");
 				if (pasta1G.isDirectory()) {
 					throw new RuntimeException("A pasta '" + pasta1G + "' já existe! Por questões de segurança, a operação completa deve ser executada desde o início, antes mesmo da criação desta pasta de saída! Exclua-a (fazendo backup, se necessário) e tente novamente.");
 				}
-				File pasta2G = new File(pastaOutput, "2g");
+				File pasta2G = new File(pastaOutput, "G2");
 				if (pasta2G.isDirectory()) {
 					throw new RuntimeException("A pasta '" + pasta1G + "' já existe! Por questões de segurança, a operação completa deve ser executada desde o início, antes mesmo da criação desta pasta de saída! Exclua-a (fazendo backup, se necessário) e tente novamente.");
 				}
@@ -154,9 +154,9 @@ public class Op_X_OperacaoCompleta {
 			 */
 			private void efetuarBackupDeArquivosIndividuais(int grau) throws IOException {
 				File pastaOutputBackup = getPastaOutputBackup();
-				File pastaOrigem = new File(pastaOutput, grau + "g");
+				File pastaOrigem = Auxiliar.getPastaXMLsIndividuais(grau);
 				if (pastaOrigem.exists()) {
-					File pastaDestino = new File(pastaOutputBackup, pastaOrigem.getName());
+					File pastaDestino = new File(pastaOutputBackup, "G" + grau + "/" + pastaOrigem.getName());
 					LOGGER.info("Efetuando backup da pasta " + pastaOrigem);
 					FileUtils.copyDirectory(pastaOrigem, pastaDestino);
 				}

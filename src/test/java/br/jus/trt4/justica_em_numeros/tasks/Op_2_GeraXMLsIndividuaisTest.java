@@ -255,8 +255,8 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		
 		// Processo 2G, responsabilidade do gabinete: GABINETE VANIA MATTOS;47074;GABINETE VANIA MARIA CUNHA MATTOS
 		TipoOrgaoJulgador orgaoJulgador2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getDadosBasicos().getOrgaoJulgador(); 
-		assertEquals("47074", orgaoJulgador2G.getCodigoOrgao()); 
-		assertEquals("GABINETE VANIA MARIA CUNHA MATTOS", orgaoJulgador2G.getNomeOrgao());
+		assertEquals("47176", orgaoJulgador2G.getCodigoOrgao()); 
+		assertEquals("Gabinete da Vice Presidência", orgaoJulgador2G.getNomeOrgao());
 		
 		// Processo 1G, responsabilidade da vara: 46904;VT Encantado
 		TipoOrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
@@ -647,7 +647,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// Processo que possui um endereço com CEP em branco
 		TipoProcessoJudicial processoJudicial2 = retornaDadosProcesso(2, "0020242-05.2014.5.04.0017");
 		TipoPoloProcessual poloAtivo2 = getPolo(ModalidadePoloProcessual.AT, processoJudicial2.getDadosBasicos().getPolo());
-		TipoParte parteSindicato = getParteComNome("SINDICATO DOS BANCARIOS DE PORTO ALEGRE", poloAtivo2.getParte());
+		TipoParte parteSindicato = getParteComNome("SINDICATO DOS BANCARIOS DE PORTO ALEGRE E REGIAO", poloAtivo2.getParte());
 		TipoRepresentanteProcessual advogadoSindicato = getRepresentanteComNome("ANDRE HEINECK KRUSE", parteSindicato.getAdvogado());
 		assertEquals(5, advogadoSindicato.getEndereco().size()); // Advogado possui 5 endedeços com CEP válido e 1 com CEP em branco.
 	}
