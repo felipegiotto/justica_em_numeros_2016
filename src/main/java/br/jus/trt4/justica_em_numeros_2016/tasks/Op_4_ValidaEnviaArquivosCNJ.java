@@ -22,6 +22,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -40,6 +41,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProdutorConsumidorMultiThread;
 
 /**
  * Chama os webservices do CNJ, enviando os XMLs que foram gerados pela classe {@link Op_3_UnificaArquivosXML}.
@@ -140,7 +142,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		String body = EntityUtils.toString(entity, Charset.forName("UTF-8"));
 		LOGGER.info("Resposta recebida: " + body);
 
-		conferirRespostaSucesso(response.getStatusLine().getStatusCode());
+		conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null);
 	}
 
 	/**
@@ -154,13 +156,20 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	/**
 	 * Confere se a requisição HTTP teve reposta 200 (SUCCESS) ou 201 (CREATED)
 	 * 
+	 * UPDATE: Também confere se o serviço não retornou "ERRO" dentro do "body" do request,
+	 * pois algumas requisições retornam "200" mas informam erro no conteúdo. 
+	 * 
 	 * @param statusCode
 	 * @throws IOException
 	 */
-	private void conferirRespostaSucesso(int statusCode) throws DadosInvalidosException {
+	private void conferirRespostaSucesso(int statusCode, String body) throws DadosInvalidosException {
 		if (statusCode != 200 && statusCode != 201) {
 			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (esperado codigo 200 ou 201, recebido codigo " + statusCode + ")");
 		}
+		if (body != null && body.contains("\"ERRO\"")) {
+			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')");
+		}
+		LOGGER.debug("Resposta: " + statusCode);
 	}
 
 	/**
@@ -169,8 +178,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws IOException
 	 * @throws InvalidCredentialsException
 	 * @throws DadosInvalidosException 
+	 * @throws InterruptedException 
 	 */
-	private void enviarXMLsUnificadosAoCNJ() throws IOException, InvalidCredentialsException, DadosInvalidosException {
+	private void enviarXMLsUnificadosAoCNJ() throws IOException, InvalidCredentialsException, DadosInvalidosException, InterruptedException {
 		
 		// Verifica se deve gerar XML para 2o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
@@ -189,8 +199,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @param grau
 	 * @throws IOException
 	 * @throws DadosInvalidosException 
+	 * @throws InterruptedException 
 	 */
-	private void enviarXMLsUnificadosAoCNJ(int grau) throws IOException, DadosInvalidosException {
+	private void enviarXMLsUnificadosAoCNJ(int grau) throws IOException, DadosInvalidosException, InterruptedException {
 		Auxiliar.prepararPastaDeSaida();
 		File pastaXMLsParaEnvio;
 		if (Auxiliar.deveMontarLotesDeProcessos()) {
@@ -201,14 +212,58 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Monta a URL para enviar processos ao CNJ.
 		// Exemplo de URL: https://wwwh.cnj.jus.br/selo-integracao-web/v1/processos/G2
-		String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/G" + grau;
+		final String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/G" + grau;
 		LOGGER.info("URL onde os arquivos serão enviados: " + url);
 		
+		// Objeto que fará o envio dos arquivos em várias threads
+		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
+		LOGGER.info("Iniciando o envio de arquivos utilizando " + numeroThreads + " thread(s)");
+		ProdutorConsumidorMultiThread<File> enviarMultiThread = new ProdutorConsumidorMultiThread<File>(100, numeroThreads, Thread.NORM_PRIORITY) {
+
+			@Override
+			public void consumir(File arquivo) {
+				
+				Auxiliar.prepararThreadLog();
+				LOGGER.trace("* Enviando arquivo " + arquivo + "...");
+				
+				HttpPost post = new HttpPost(url);
+				adicionarCabecalhoAutenticacao(post);
+				
+				// Prepara um request com Multipart
+				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("file", arquivo).build();
+				post.setEntity(entity);
+				
+				String body = "";
+				try {
+					try {
+						// Executa o POST
+						HttpResponse response = client.execute(post);
+			
+						HttpEntity result = response.getEntity();
+						body = EntityUtils.toString(result, Charset.forName("UTF-8"));
+						LOGGER.trace("  * Resposta: " + body);
+						conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body);
+						LOGGER.trace("  * Arquivo enviado!");
+						LOGGER.info("* Arquivo enviado com sucesso: " + arquivo + " / Resposta: " + body);
+						marcarArquivoComoEnviado(arquivo);
+					} catch (IOException ex) {
+						throw new DadosInvalidosException(ex.getLocalizedMessage());
+					}
+				} catch (DadosInvalidosException ex) {
+					LOGGER.error("* Erro ao enviar arquivo: " + arquivo + " / Resposta: " + body + " / Erro: " + ex.getLocalizedMessage());
+				}
+			}
+		};
+		
 		LOGGER.info("Enviando todos os arquivos da pasta '" + pastaXMLsParaEnvio.getAbsolutePath() + "' via 'API REST' do CNJ.");
-		enviarArquivoRecursivamente(pastaXMLsParaEnvio, url);
+		enviarArquivoRecursivamente(pastaXMLsParaEnvio, url, enviarMultiThread);
+		
+		LOGGER.info("Aguardando término das threads de envio...");
+		enviarMultiThread.aguardarTermino();
+		LOGGER.info("Threads de envio terminadas!");
 	}
 
-	private void enviarArquivoRecursivamente(File arquivoPasta, String url) throws IOException, DadosInvalidosException {
+	private void enviarArquivoRecursivamente(File arquivoPasta, String url, ProdutorConsumidorMultiThread<File> enviarMultiThread) throws IOException, DadosInvalidosException, InterruptedException {
 		
 		if (!arquivoPasta.isDirectory()) {
 			throw new DadosInvalidosException("Pasta não existe (" + arquivoPasta + ") talvez falte executar tarefas anteriores.");
@@ -218,36 +273,40 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		for (File filho: arquivos) {
 			
 			if (filho.isDirectory()) {
-				enviarArquivoRecursivamente(filho, url);
+				enviarArquivoRecursivamente(filho, url, enviarMultiThread);
 				
 			} else {
-				LOGGER.info("* Enviando arquivo " + filho + "...");
 				
-				HttpPost post = new HttpPost(url);
-				adicionarCabecalhoAutenticacao(post);
-				
-				// Prepara um request com Multipart
-				HttpEntity entity = MultipartEntityBuilder
-					    .create()
-					    .addBinaryBody("file", filho)
-					    .build();
-				post.setEntity(entity);
-				
-				String body;
-				try {
-					
-					// Executa o POST
-					HttpResponse response = client.execute(post);
-		
-					HttpEntity result = response.getEntity();
-					body = EntityUtils.toString(result, Charset.forName("UTF-8"));
-					LOGGER.debug("  * Resposta: " + body);
-					conferirRespostaSucesso(response.getStatusLine().getStatusCode());
-					LOGGER.debug("  * Arquivo enviado!");
-				} catch (DadosInvalidosException ex) {
-					LOGGER.error("  * Erro: " + ex.getLocalizedMessage());
+				if (deveEnviarArquivo(filho)) {
+					enviarMultiThread.produzir(filho);
 				}
 			}
+		}
+	}
+
+	private boolean deveEnviarArquivo(File arquivo) {
+		
+		// Envia somente arquivos XML
+		if (!arquivo.getName().toUpperCase().endsWith(".XML")) {
+			return false;
+		}
+		
+		// Não envia arquivos que já foram enviados NESTA REMESSA
+		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + ".enviado");
+		if (confirmacaoEnvio.exists()) {
+			LOGGER.debug("Arquivo já foi enviado anteriormente: " + arquivo);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	private void marcarArquivoComoEnviado(File arquivo) {
+		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + ".enviado");
+		try {
+			confirmacaoEnvio.createNewFile();
+		} catch (IOException ex) {
+			LOGGER.warn("Não foi possível marcar arquivo como enviado: " + arquivo, ex);
 		}
 	}
 }

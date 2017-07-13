@@ -432,10 +432,15 @@ public class Auxiliar {
 			pastaSaida = pastaOutputCarga;
 		}
 		
-		ThreadContext.put("logFolder", pastaSaida.getAbsolutePath());
+		prepararThreadLog();
 		
 		return pastaSaida;
 	}
+
+	public static void prepararThreadLog() {
+		ThreadContext.put("logFolder", pastaSaida.getAbsolutePath());
+	}
+
 
 	/**
 	 * Retorna o caminho da pasta "output raiz", conforme definido pelo parâmetro "pasta_saida_padrao" no arquivo de configurações.
