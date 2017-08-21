@@ -61,12 +61,14 @@
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-			<version>4.5.3</version>
+			<!-- Não utilizar 4.5.3: Antonio Lucas encontrou uma falha que causava erro no envio ao CNJ -->
+			<version>4.5.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpmime</artifactId>
-			<version>4.5.3</version>
+			<!-- Não utilizar 4.5.3: Antonio Lucas encontrou uma falha que causava erro no envio ao CNJ -->
+			<version>4.5.2</version>
 		</dependency>
 		
         <!-- Utilizado por todos os testes unitários da ferramenta -->
