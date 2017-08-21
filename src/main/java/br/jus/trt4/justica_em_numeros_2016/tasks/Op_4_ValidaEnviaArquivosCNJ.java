@@ -10,8 +10,13 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
@@ -38,6 +43,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
@@ -53,8 +59,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
 	private CloseableHttpClient client;
 	private String authHeader;
+	private static Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
 	
 	public static void main(String[] args) throws Exception {
+		
 		Auxiliar.prepararPastaDeSaida();
 		
 		Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
@@ -142,7 +150,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		String body = EntityUtils.toString(entity, Charset.forName("UTF-8"));
 		LOGGER.info("Resposta recebida: " + body);
 
-		conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null);
+		conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null, null, null);
 	}
 
 	/**
@@ -162,7 +170,36 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @param statusCode
 	 * @throws IOException
 	 */
-	private void conferirRespostaSucesso(int statusCode, String body) throws DadosInvalidosException {
+	private void conferirRespostaSucesso(int statusCode, String body, Unmarshaller unmarshaller, File arquivoXML) throws DadosInvalidosException {
+		
+		// Situação especial: se o serviço informar "processo(s) não foi(ram) inserido(s), pois já existe(m) na base de dados",
+		// confere se TODOS os processos enviados já existiam (conferindo a quantidade informada com a quantidade existente
+		// no arquivo XML que foi enviado).
+		// Se for a mesma quantidade, considera que o envio foi bem sucedido, pois de alguma forma os processos já estão
+		// na base do CNJ (pode ser por algum outro envio anterior, por exemplo)
+		if (unmarshaller != null) {
+			Matcher m = pProcessoJaEnviado.matcher(body);
+			if (m.find()) {
+				
+				// Quantidade de processos negados pelo serviço do CNJ
+				int qtdProcessosNegados = Integer.parseInt(m.group(1));
+				
+				// Quantidade de processos enviados no lote
+				Processos processosXML;
+				try {
+					processosXML = (Processos) unmarshaller.unmarshal(arquivoXML);
+				} catch (JAXBException e) {
+					throw new DadosInvalidosException("Erro ao tentar analisar a quantidade de processos no arquivo " + arquivoXML + ": " + e.getLocalizedMessage());
+				}
+				int qtdProcessosXML = processosXML.getProcesso().size();
+				
+				if (qtdProcessosNegados == qtdProcessosXML) {
+					LOGGER.debug("CNJ informou que todos os processos deste arquivo já foram recebidos. Arquivo será marcado como 'enviado'");
+					return;
+				}
+			}
+		}
+		
 		if (statusCode != 200 && statusCode != 201) {
 			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (esperado codigo 200 ou 201, recebido codigo " + statusCode + ")");
 		}
@@ -179,8 +216,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws InvalidCredentialsException
 	 * @throws DadosInvalidosException 
 	 * @throws InterruptedException 
+	 * @throws JAXBException 
 	 */
-	private void enviarXMLsUnificadosAoCNJ() throws IOException, InvalidCredentialsException, DadosInvalidosException, InterruptedException {
+	private void enviarXMLsUnificadosAoCNJ() throws IOException, InvalidCredentialsException, DadosInvalidosException, InterruptedException, JAXBException {
 		
 		// Verifica se deve gerar XML para 2o Grau
 		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
@@ -200,8 +238,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws IOException
 	 * @throws DadosInvalidosException 
 	 * @throws InterruptedException 
+	 * @throws JAXBException 
 	 */
-	private void enviarXMLsUnificadosAoCNJ(int grau) throws IOException, DadosInvalidosException, InterruptedException {
+	private void enviarXMLsUnificadosAoCNJ(int grau) throws IOException, DadosInvalidosException, InterruptedException, JAXBException {
 		Auxiliar.prepararPastaDeSaida();
 		File pastaXMLsParaEnvio;
 		if (Auxiliar.deveMontarLotesDeProcessos()) {
@@ -209,6 +248,11 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		} else {
 			pastaXMLsParaEnvio = Auxiliar.getPastaXMLsIndividuais(grau);
 		}
+		
+		// Prepara objetos para LER os arquivos XML e analisar a quantidade de processos dentro de cada um
+		JAXBContext jaxbContext = JAXBContext.newInstance(Processos.class);
+		final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+		
 		
 		// Monta a URL para enviar processos ao CNJ.
 		// Exemplo de URL: https://wwwh.cnj.jus.br/selo-integracao-web/v1/processos/G2
@@ -242,7 +286,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 						HttpEntity result = response.getEntity();
 						body = EntityUtils.toString(result, Charset.forName("UTF-8"));
 						LOGGER.trace("  * Resposta: " + body);
-						conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body);
+						conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body, jaxbUnmarshaller, arquivo);
 						LOGGER.trace("  * Arquivo enviado!");
 						LOGGER.info("* Arquivo enviado com sucesso: " + arquivo + " / Resposta: " + body);
 						marcarArquivoComoEnviado(arquivo);
