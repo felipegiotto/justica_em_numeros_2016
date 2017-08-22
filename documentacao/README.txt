@@ -27,20 +27,15 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
             possui uma explicação sobre o seu funcionamento. Recomendo a leitura de todos
             antes da execução das tarefas, para entender o funcionamento da ferramenta.
             
-1. Baixe o arquivo JAR do CNJ, denominado "replicacao-client".
-   Este arquivo deve ser baixado do site "https://www.cnj.jus.br/owncloud/index.php/s/jhW8sgab2v5TuPK"
-   (credenciais devem ser solicitadas aos responsáveis pelo Selo Justiça em Números no CNJ ou no regional)
-   e deve ser gravado, preferencialmente, na pasta "lib/replicacaoNacional".
-
-2. Crie um arquivo "config.properties", na raiz do projeto, a partir do arquivo 
+1. Crie um arquivo "config.properties", na raiz do projeto, a partir do arquivo 
    "config.properties_modelo", preenchendo os dados corretos.
 
-3. Importe este projeto no Eclipse. É necessário ter as seguintes ferramentas instaladas:
+2. Importe este projeto no Eclipse. É necessário ter as seguintes ferramentas instaladas:
    * Eclipse
    * Java 1.8 ou superior (necessária para executar o JAR do CNJ)
    * Apache Maven (pode ser necessária configuração de proxy para baixar dependências)
 
-4. Leia as instruções do arquivo "CHECKLIST_RESUMO.txt", que conterá todos os
+3. Leia as instruções do arquivo "CHECKLIST_RESUMO.txt", que conterá todos os
    passos que precisarão ser executados.
    
 
@@ -56,7 +51,7 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
 * Essa ferramenta também permite a unificação de arquivos XML de processos de sistemas legados.
   Obviamente, esses arquivos devem ser gerados utilizando alguma outra ferramenta. 
   Para tanto, grave os arquivos XML dos sistemas legados na pasta 
-  "output\<TIPO_CARGA_XML>\Xg\xmls_individuais\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
+  "output\<TIPO_CARGA_XML>\GX\xmls_individuais\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
   NOME_SISTEMA pode ser qualquer identificador) antes de executar a classe "Op_3_UnificaArquivosXML".
 
 
@@ -209,29 +204,6 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
     Colegiado" (turmas ou seções especializadas). Estamos mandando, portanto, somente a informação 
     do gabinete. Nosso entendimento está correto?
   Resposta de davi.borges@cnj.jus.br em 26/07/2016: Sim.
-
-
-* Quanto à cumulatividade dos arquivos enviados:
-  Pergunta enviada ao CNJ e respostas de leandro.andrade@cnj.jus.br em 26/07/2016:
-    O CNJ disponibilizou a ferramenta "replicacao-client" para que os tribunais possam validar seus 
-    arquivos XML e enviar ao CNJ. Temos algumas dúvidas a respeito deste procedimento:
-    * Como faremos para diferenciar os arquivos que foram enviados somente para testes e os arquivos 
-      que devem ser apreciados pelo CNJ? Temos como fazer uma limpeza desses dados antigos quando a 
-      rotina estiver pronta?
-      R: A carga final de todos os processos deve iniciar no máximo até dia 10/08. Vocês podem enviar os 
-         dados de teste. Caso queira fazer uma limpeza dos dados antigos, basta enviar um e-mail para
-         rosfran.borges@cnj.jus.br, leonardo.borges@cnj.jus.br e leandro.andrade@cnj.jus.br
-    * No TRT4, temos processos no PJe (1G e 2G), no inFOR e no NovaJus4. Qual o procedimento que 
-      devemos seguir? Acredito que o correto seja gerar vários arquivos XML para cada um dos 4 sistemas
-      (já que são muitos processos) e rodar, uma vez, o aplicativo "replicacao-client", para enviar 
-      todos ao CNJ. Estou correto?
-      R: A quantidade de XML fica a seu critério. O sistema processa todos e separa em 5000 processos.
-    * A página "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25" 
-      fala que devemos gravar os arquivos seguindo o padrão "<Sigla do Tribunal>_<Grau de Jurisdição>_<data e hora de transmissão>". 
-      Como temos diversos sistemas, como será feita esta diferenciação?
-      R: O correto é utilizar o seguinte padrão: <SIGLA_TRIBUNAL>_<GRAU_JURISDICAO>_<DIAMESANO>. 
-         Não se preocupe quando a diversidade de sistemas, basta criar os arquivos com a descrição 
-         diferente, por exemplo, TJRS_1_20072016-X.zip, em que "X" é um número sequencial e incremental.
 
 
 * Quanto à estrutura do arquivo XML:

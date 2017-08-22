@@ -55,7 +55,7 @@ UPDATE: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa
                dessas serventias.
    
 
-6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/<TIPO_CARGA_XML>/1g" e "output/<TIPO_CARGA_XML>/2g")
+6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/<TIPO_CARGA_XML>/G1" e "output/<TIPO_CARGA_XML>/G2")
 
 
 7. Execute a classe "Op_3_UnificaArquivosXML"
@@ -68,94 +68,20 @@ UPDATE: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa
 8. Conte quantos arquivos XML foram gerados na pasta "output/<TIPO_CARGA_XML>/xmls_unificados" e anote em algum lugar.
 
    
-9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", mas NÃO RESPONDA AS PERGUNTAS efetuadas sem ler as instruções abaixo!
+9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ" para remeter os arquivos ao CNJ.
 
-   9.1. Erros mais frequentes:
-        9.1.1. "Unable to access jarfile...": pode ser necessário baixar o arquivo JAR "replicacao-client", 
-               do CNJ, e configurar o parâmetro "jar_replicacao_nacional_cnj"
-               
-        9.1.2. "Não foi possível acessar o FTP do CNJ...": tente novamente em alguns segundos.
-               Se o problema persistir, entrar em contato com o CNJ.
-   
-        9.1.3. "Falha na conexão": tente novamente em alguns segundos.
-               Se o problema persistir, entrar em contato com o CNJ.
-               
-        9.1.4. "Sua versão X.X.X está desatualizada": baixe a nova versão do "replicacao-client" do CNJ,
-               conforme orientações na seção "Instruções básicas" no arquivo README.txt.
-               Em seguida, atualize o atributo "jar_replicacao_nacional_cnj" no arquivo de configurações.
-   
-        9.1.5. "Erro de validação no arquivo...": será necessário encontrar a origem do problema e corrigir.
-               O "replicacao-client" pode não dar todas as informações necessárias! Boa sorte! Pode ser necessário gerar todos 
-               os processos novamente, desde o início!
-               
-        9.1.6. "UnsupportedClassVersionError: br/jus/cnj/Main : Unsupported major.minor version":
-               Você está utilizando uma versão do Java que não é compatível com a ferramenta "replicacao-client" do CNJ.
-               Atualmente, a versão recomendada é a JDK 1.8 (talvez isso mude no futuro). Instale a nova JDK, habilite-a
-               no Eclipse (menu Window / Preferentes / Java / Installed JREs) e vincule-a ao projeto dentro do
-               Eclipse (botão direito no projeto / Properties / Java Build Path / Libraries). 
-               
-   9.2. Quando a rotina exibir "Foram encontrados X arquivos pendentes de conversão. Gostaria de convertê-los?":
-        9.2.1. Não responda nada ainda!
-        9.2.2. Abra a pasta "output/<TIPO_CARGA_XML>/xmls_unificados/validados" e confira se o número de arquivos XML bate com a quantidade
-               que foi encontrada no passo 8. 
-        9.2.3. Efetue backup da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/validados".
-        9.2.4. Volte ao console e responda "s" à pergunta "Gostaria de convertê-los?".
-        
-   9.3. Quando a rotina exibir "Foram encontrados X arquivos pendentes de envio. Gostaria de enviá-los?":
-        9.3.1. Não responda nada ainda!
-        9.3.2. Abra a pasta "output/<TIPO_CARGA_XML>/xmls_unificados/convertidos" e confira se o número de arquivos XML bate com a quantidade
-               que foi encontrada no passo 8. 
-        9.3.3. Efetue backup da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/convertidos".
-        9.3.4. Volte ao console e responda "s" à pergunta "Gostaria de enviá-los?".
-        9.3.5. Aguarde o término do envio. Eventualmente esse envio "congela", sem que a ferramenta do CNJ aborte a conexão.
-               Se o procedimento de envio permanecer mais do que 10 minutos sem mostrar nenhuma informação na tela, siga os 
-               passos abaixo:
-               * Aborte a execução do script, dentro do Eclipse, clicando no botão "Terminate".
-               * Confira se o subprocesso "java" ainda não está rodando em background (no Windows, utilize o Gerenciador de
-                 Tarefas. No Linux, execute o comando "ps -aux | grep replicacao-client")
-               * Execute novamente a classe "Op_4_ValidaEnviaArquivosCNJ" e continue nesse mesmo passo (9.3.5). 
-        9.3.6. Abra a pasta "output/<TIPO_CARGA_XML>/xmls_unificados/enviados" e confira se o número de arquivos ZIP bate com a quantidade
-               que foi encontrada no passo 8. Se houve alguma falha no envio, preste atenção redobrada nesse passo!
-        9.3.6. Efetue backup da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/enviados".
-        
-        
-10. Confira se a pasta "output/<TIPO_CARGA_XML>/xmls_unificados/erros" está vazia.
-
-
-11. Execute novamente a rotina "Op_4_ValidaEnviaArquivosCNJ" para que seja gerado um novo relatório de transmissão, completo, com todos
-    os arquivos que estão no FTP do CNJ.
-    
-    11.1. Abra o arquivo mais recente, com prefixo "relatorio_", na pasta "output/<TIPO_CARGA_XML>/xmls_unificados/recibos" e confira se 
-          todos os arquivos da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/enviados" estão realmente neste documento.
-      
-    11.2. Confira se realmente os arquivos da pasta "output/<TIPO_CARGA_XML>/enviados" estão dentro do FTP do CNJ, no endereço a seguir:
-          ftp://ftp.cnj.jus.br/
-          OBS: Credenciais devem ser solicitadas aos responsáveis pelo Selo Justiça em Números no CNJ ou no regional.
-          OBS: Dentro do FTP, acesse a pasta com a sigla do regional.
-          OBS: Ao acessar o FTP, se o navegador não perguntar as credenciais, você não está na pasta correta!!
-               Utilize outro navegador (ex: Firefox) ou um cliente FTP dedicado, para forçar a utilização das credenciais corretas,
-               de forma a ter acesso a todos os arquivos enviados pelo regional.
-               
-          IMPORTANTE: Preste muita atenção a essa fase, pois algumas versões da ferramenta "replicacao-client" possuem
-                      uma falha que move o arquivo ZIP para a pasta "enviados" mas, na verdade, o arquivo não foi 
-                      enviado corretamente!
-          
-    11.3. Efetue backup da pasta "output/<TIPO_CARGA_XML>/xmls_unificados/recibos"
-    
-    
-12. Efetue backup dos seguintes dados, para referência futura:
+10. Efetue backup dos seguintes dados, para referência futura:
     * Pasta "output/<TIPO_CARGA_XML>/log"
-    * Arquivo "replicacao-client" que foi utilizado para enviar desse lote ao CNJ.
     * Arquivo de serventias
     * Arquivo "config.properties" (RETIRAR os dados de acesso ao banco de dados do PJE)
     * Dados do último commit desta ferramenta, executando o comando "git log -n 1" na pasta raiz do projeto 
       (gravar dentro do arquivo "OBSERVACOES.txt") 
 
 
-14. SOMENTE TRT4: Compacte toda a pasta de backup, no formato "7z", com o nome no padrão "XXXX-XX-XX - Carga Mensal - Ref MM-AAAA.7z", onde:
+11. SOMENTE TRT4: Compacte toda a pasta de backup, no formato "7z", com o nome no padrão "XXXX-XX-XX - Carga Mensal - Ref MM-AAAA.7z", onde:
     * "XXXX-XX-XX" é a data em que os arquivos foram gerados
     * "MM-AAAA" é o mês e o ano que os dados se referem (conforme parâmetro "tipo_carga_xml" nas configurações)
  
-    14.1. Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
+    11.1. Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
 
 
