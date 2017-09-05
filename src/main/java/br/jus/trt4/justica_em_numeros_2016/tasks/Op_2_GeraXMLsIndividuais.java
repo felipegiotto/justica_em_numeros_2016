@@ -173,7 +173,7 @@ public class Op_2_GeraXMLsIndividuais {
 					tempoRestante = xmlsRestantes * mediaPorProcesso;
 				}
 				
-				LOGGER.debug("Processo " + numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + arquivoXML);
+				LOGGER.debug("Gravando Processo " + numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + arquivoXML + "...");
 			}
 
 			// Executa a consulta desse processo no banco de dados do PJe
@@ -199,6 +199,8 @@ public class Op_2_GeraXMLsIndividuais {
 				// Copia o XML temporário sobre o definitivo e exclui o temporário
 				FileUtils.copyFile(arquivoXMLTemporario, arquivoXML);
 				arquivoXMLTemporario.delete();
+				
+				LOGGER.debug("Processo gravado com sucesso no arquivo " + arquivoXML);
 				
 				// Cálculo do tempo restante
 				tempoGasto += System.currentTimeMillis() - antes;

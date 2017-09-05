@@ -27,7 +27,6 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -59,17 +58,52 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
 	private CloseableHttpClient client;
 	private String authHeader;
+	private File arquivoAbortar;
 	private static Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
+	private static final String NOME_ARQUIVO_ABORTAR = "ABORTAR.txt"; // Arquivo que pode ser gravado na pasta "output/[tipo_carga]", que faz com que o envio dos dados ao CNJ seja abortado
 	
 	public static void main(String[] args) throws Exception {
 		
+		System.out.println("Se algum arquivo for negado n CNJ, você quer que a operação seja reiniciada?");
+		System.out.println("Responda 'S' para que o envio ao CNJ rode indefinidamente, até que o webservice não negue nenhum arquivo.");
+		System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
+		String resposta = Auxiliar.readStdin().toUpperCase();
+		
+		validarEnviarArquivosCNJ("S".equals(resposta));
+	}
+
+	public static void validarEnviarArquivosCNJ(boolean continuarEnquantoHouverErro) throws Exception, DadosInvalidosException, IOException, InvalidCredentialsException, InterruptedException, JAXBException {
+		
 		Auxiliar.prepararPastaDeSaida();
 		
-		Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
-		operacao.testarConexaoComCNJ();
-		operacao.enviarXMLsUnificadosAoCNJ();
+		if (continuarEnquantoHouverErro) {
+			LOGGER.info("Se ocorrer algum erro no envio, a operação será reiniciada quantas vezes for necessário!");
+		}
 		
-		DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+		boolean executar = true;
+		do {
+			Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
+			operacao.testarConexaoComCNJ();
+			operacao.consultarTotaisDeProcessos(); // Antes
+			operacao.enviarXMLsUnificadosAoCNJ();
+			operacao.consultarTotaisDeProcessos(); // Depois
+			
+			DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+			
+			// Verifica se deve executar novamente em caso de erros
+			if (continuarEnquantoHouverErro) {
+				if (DadosInvalidosException.getQtdErros() > 0) {
+					DadosInvalidosException.zerarQtdErros();
+					LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 5min... Se desejar, aborte este script.");
+					Thread.sleep(5 * 60_000);
+				} else {
+					executar = false;
+				}
+			} else {
+				executar = false;
+			}
+		} while (executar);
+		
 		LOGGER.info("Fim!");
 	}
 
@@ -79,6 +113,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws Exception
 	 */
 	public Op_4_ValidaEnviaArquivosCNJ() throws Exception {
+		
+		arquivoAbortar = new File(Auxiliar.prepararPastaDeSaida(), NOME_ARQUIVO_ABORTAR);
 		
         HttpClientBuilder httpClientBuilder = HttpClients.custom();
         
@@ -153,6 +189,35 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null, null, null);
 	}
 
+	private void consultarTotaisDeProcessos() {
+		
+		LOGGER.info("Consultando total de processos enviados ao serviço do CNJ...");
+
+		// G1
+		HttpGet httpGetG1 = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/G1");
+		adicionarCabecalhoAutenticacao(httpGetG1);
+		try {
+			HttpResponse httpResponseG1 = client.execute(httpGetG1);
+			HttpEntity httpEntityG1 = httpResponseG1.getEntity();
+			String bodyG1 = EntityUtils.toString(httpEntityG1, Charset.forName("UTF-8"));
+			LOGGER.info("* G1: " + bodyG1);
+		} catch (IOException ex) {
+			LOGGER.error("* Erro ao consultar total em G1: " + ex.getLocalizedMessage(), ex);
+		}
+		
+		// G2
+		HttpGet httpGetG2 = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/G2");
+		adicionarCabecalhoAutenticacao(httpGetG2);
+		try {
+			HttpResponse httpResponseG2 = client.execute(httpGetG2);
+			HttpEntity httpEntityG2 = httpResponseG2.getEntity();
+			String bodyG2 = EntityUtils.toString(httpEntityG2, Charset.forName("UTF-8"));
+			LOGGER.info("* G2: " + bodyG2);
+		} catch (IOException ex) {
+			LOGGER.error("* Erro ao consultar total em G2: " + ex.getLocalizedMessage(), ex);
+		}
+	}
+	
 	/**
 	 * Adiciona o header "Authorization", informando autenticação "Basic", conforme documento "API REST.pdf"
 	 * @param get
@@ -183,18 +248,27 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				
 				// Quantidade de processos negados pelo serviço do CNJ
 				int qtdProcessosNegados = Integer.parseInt(m.group(1));
+				int qtdProcessosXML;
 				
-				// Quantidade de processos enviados no lote
-				Processos processosXML;
-				try {
-					processosXML = (Processos) unmarshaller.unmarshal(arquivoXML);
-				} catch (JAXBException e) {
-					throw new DadosInvalidosException("Erro ao tentar analisar a quantidade de processos no arquivo " + arquivoXML + ": " + e.getLocalizedMessage());
+				if (Auxiliar.deveMontarLotesDeProcessos()) {
+					// Quantidade de processos enviados no lote
+					Processos processosXML;
+					try {
+						processosXML = (Processos) unmarshaller.unmarshal(arquivoXML);
+					} catch (JAXBException e) {
+						throw new DadosInvalidosException("Erro ao tentar analisar a quantidade de processos no arquivo " + arquivoXML + ": " + e.getLocalizedMessage());
+					}
+					qtdProcessosXML = processosXML.getProcesso().size();
+					
+				} else {
+					
+					// Alguns XMLs, especialmente gerados pela NovaJus4, não podem ser carregados pelo Unmarshaller.
+					// Por isso, para evitar problemas, se for realizado envio individual, vou presumir que o tamanho do lote é 1.
+					qtdProcessosXML = 1;
 				}
-				int qtdProcessosXML = processosXML.getProcesso().size();
 				
 				if (qtdProcessosNegados == qtdProcessosXML) {
-					LOGGER.debug("CNJ informou que todos os processos deste arquivo já foram recebidos. Arquivo será marcado como 'enviado'");
+					LOGGER.debug("CNJ informou que todos os processos do arquivo '" + arquivoXML + "' já foram recebidos. Arquivo será marcado como 'enviado'");
 					return;
 				}
 			}
@@ -262,7 +336,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		// Objeto que fará o envio dos arquivos em várias threads
 		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
 		LOGGER.info("Iniciando o envio de arquivos utilizando " + numeroThreads + " thread(s)");
-		ProdutorConsumidorMultiThread<File> enviarMultiThread = new ProdutorConsumidorMultiThread<File>(100, numeroThreads, Thread.NORM_PRIORITY) {
+		ProdutorConsumidorMultiThread<File> enviarMultiThread = new ProdutorConsumidorMultiThread<File>(numeroThreads, numeroThreads, Thread.NORM_PRIORITY) {
 
 			@Override
 			public void consumir(File arquivo) {
@@ -281,11 +355,13 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				try {
 					try {
 						// Executa o POST
+						long tempo = System.currentTimeMillis();
 						HttpResponse response = client.execute(post);
+						tempo = System.currentTimeMillis() - tempo;
 			
 						HttpEntity result = response.getEntity();
 						body = EntityUtils.toString(result, Charset.forName("UTF-8"));
-						LOGGER.trace("  * Resposta: " + body);
+						LOGGER.debug("  * Resposta em " + tempo + "ms: " + body);
 						conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body, jaxbUnmarshaller, arquivo);
 						LOGGER.trace("  * Arquivo enviado!");
 						LOGGER.info("* Arquivo enviado com sucesso: " + arquivo + " / Resposta: " + body);
@@ -314,6 +390,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		}
 		File[] arquivos = arquivoPasta.listFiles();
 		Arrays.sort(arquivos);
+		int i = 0;
 		for (File filho: arquivos) {
 			
 			if (filho.isDirectory()) {
@@ -324,6 +401,17 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				if (deveEnviarArquivo(filho)) {
 					enviarMultiThread.produzir(filho);
 				}
+			}
+			
+			i++;
+			if (i % 10 == 0) {
+				LOGGER.debug("Progresso da pasta " + arquivoPasta + ": " + i + "/" + arquivos.length + " (" + (i * 100 / arquivos.length) + "%)");
+			}
+			
+			// Verifica se o usuário quer abortar o envio ao CNJ
+			if (arquivoAbortar.exists()) {
+				LOGGER.info("Abortando envio ao CNJ por causa do arquivo '" + arquivoAbortar.getAbsolutePath() + "'. Para continuar o envio, exclua este arquivo!");
+				return;
 			}
 		}
 	}

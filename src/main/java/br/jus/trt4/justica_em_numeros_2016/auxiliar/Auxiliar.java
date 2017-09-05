@@ -476,9 +476,13 @@ public class Auxiliar {
 		}
 	}
 	
+	private static boolean mostrouWarningLoteProcessos = false;
 	public static boolean deveMontarLotesDeProcessos() {
 		if (Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_processos) == 0) {
-			LOGGER.info("A tarefa de unificação não será executada, pois o parâmetro 'tamanho_lote_processos' especifica o envio individual de processos");
+			if (!mostrouWarningLoteProcessos) {
+				LOGGER.info("A tarefa de unificação não será executada, pois o parâmetro 'tamanho_lote_processos' especifica o envio individual de processos");
+				mostrouWarningLoteProcessos = true;
+			}
 			return false;
 		} else {
 			return true;

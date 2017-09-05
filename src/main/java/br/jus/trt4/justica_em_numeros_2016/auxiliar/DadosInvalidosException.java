@@ -30,4 +30,8 @@ public class DadosInvalidosException extends Exception {
             LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 erro" : "Ocorreram " + qtdErros + " erros") + " durante a execução dessa rotina! Verifique atentamente os arquivos de log!");
         }
     }
+    
+    public static void zerarQtdErros() {
+    	qtdErros = 0;
+    }
 }
