@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -430,6 +431,10 @@ public class Auxiliar {
 			File pastaOutputRaiz = getPastaOutputRaiz();
 			File pastaOutputCarga = new File(pastaOutputRaiz, Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true));
 			pastaSaida = pastaOutputCarga;
+			
+			// Mapeia STDOUT e STDERR para os arquivos de log
+			System.setErr(new PrintStream(new LoggingOutputStream(LogManager.getRootLogger(), Level.ERROR), true));
+			System.setOut(new PrintStream(new LoggingOutputStream(LogManager.getRootLogger(), Level.INFO), true));
 		}
 		
 		prepararThreadLog();

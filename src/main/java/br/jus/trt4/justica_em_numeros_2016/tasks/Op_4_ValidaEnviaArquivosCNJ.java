@@ -1,6 +1,7 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -10,6 +11,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +22,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -28,6 +32,7 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -55,10 +60,16 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProdutorConsumidorMultiThrea
  */
 public class Op_4_ValidaEnviaArquivosCNJ {
 	
+	private static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
+	private static final String SUFIXO_ARQUIVO_TENTOU_ENVIAR = ".tentativa_envio";
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
 	private CloseableHttpClient client;
 	private String authHeader;
 	private File arquivoAbortar;
+	private FileFilter aceitarPastasOuXMLs;
+	private AtomicLong totalArquivosSubmetidosCNJ = new AtomicLong(0);
+	private AtomicLong totalTempoCNJ = new AtomicLong(0);
+	private int numeroThreads;
 	private static Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
 	private static final String NOME_ARQUIVO_ABORTAR = "ABORTAR.txt"; // Arquivo que pode ser gravado na pasta "output/[tipo_carga]", que faz com que o envio dos dados ao CNJ seja abortado
 	
@@ -116,7 +127,15 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		arquivoAbortar = new File(Auxiliar.prepararPastaDeSaida(), NOME_ARQUIVO_ABORTAR);
 		
+		// Número de threads simultâneas para conectar ao CNJ
+		numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
+		
+		// Objeto que criará cada request a ser feito ao CNJ
         HttpClientBuilder httpClientBuilder = HttpClients.custom();
+        
+        // Aumenta o limite de conexoes, para permitir acesso multi-thread
+        httpClientBuilder.setMaxConnPerRoute(numeroThreads);
+        httpClientBuilder.setMaxConnTotal(numeroThreads);
         
         // SSL
         SSLContext sslcontext = getSSLContext();
@@ -129,6 +148,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
         	int proxyPort = Auxiliar.getParametroInteiroConfiguracao(Parametro.proxy_port, 3128);
     		HttpHost proxy = new HttpHost(proxyHost, proxyPort);
             httpClientBuilder.setProxy(proxy);
+    		LOGGER.info("Será utilizado proxy para conectar ao CNJ: " + proxyHost);
     		
             // Autenticação do Proxy
             String proxyUsername = Auxiliar.getParametroConfiguracao(Parametro.proxy_username, false);
@@ -139,7 +159,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
             	CredentialsProvider credsProvider = new BasicCredentialsProvider();
             	credsProvider.setCredentials(authScope, credentials);
             	httpClientBuilder.setDefaultCredentialsProvider(credsProvider);
+        		LOGGER.info("Será utilizada autenticação no proxy: " + proxyUsername);
             }
+        } else {
+    		LOGGER.info("Não será utilizado proxy para conectar ao CNJ.");
         }
 
         // Autenticação do tribunal junto ao CNJ
@@ -151,6 +174,15 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Cria um HttpClient para acessar o CNJ
 		client = httpClientBuilder.build();
+		
+		// Filtro para localizar arquivos XML a serem enviados, bem como pastas para fazer busca recursiva
+		aceitarPastasOuXMLs = new FileFilter() {
+			
+			@Override
+			public boolean accept(File file) {
+				return file.isDirectory() || file.getName().toUpperCase().endsWith(".XML");
+			}
+		};
 	}
 	
 	/**
@@ -180,44 +212,43 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		HttpGet get = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true));
 		adicionarCabecalhoAutenticacao(get);
+		
+		long tempo = System.currentTimeMillis();
 		HttpResponse response = client.execute(get);
+		tempo = System.currentTimeMillis() - tempo;
 
 		HttpEntity entity = response.getEntity();
 		String body = EntityUtils.toString(entity, Charset.forName("UTF-8"));
-		LOGGER.info("Resposta recebida: " + body);
+		LOGGER.info("Resposta recebida em " + tempo + "ms: " + body);
 
 		conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null, null, null);
 	}
 
 	private void consultarTotaisDeProcessos() {
 		
-		LOGGER.info("Consultando total de processos enviados ao serviço do CNJ...");
-
-		// G1
-		HttpGet httpGetG1 = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/G1");
-		adicionarCabecalhoAutenticacao(httpGetG1);
-		try {
-			HttpResponse httpResponseG1 = client.execute(httpGetG1);
-			HttpEntity httpEntityG1 = httpResponseG1.getEntity();
-			String bodyG1 = EntityUtils.toString(httpEntityG1, Charset.forName("UTF-8"));
-			LOGGER.info("* G1: " + bodyG1);
-		} catch (IOException ex) {
-			LOGGER.error("* Erro ao consultar total em G1: " + ex.getLocalizedMessage(), ex);
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
+			consultarTotalProcessos("G1");
 		}
-		
-		// G2
-		HttpGet httpGetG2 = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/G2");
-		adicionarCabecalhoAutenticacao(httpGetG2);
-		try {
-			HttpResponse httpResponseG2 = client.execute(httpGetG2);
-			HttpEntity httpEntityG2 = httpResponseG2.getEntity();
-			String bodyG2 = EntityUtils.toString(httpEntityG2, Charset.forName("UTF-8"));
-			LOGGER.info("* G2: " + bodyG2);
-		} catch (IOException ex) {
-			LOGGER.error("* Erro ao consultar total em G2: " + ex.getLocalizedMessage(), ex);
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
+			consultarTotalProcessos("G2");
 		}
 	}
 	
+	private void consultarTotalProcessos(String nomeInstancia) {
+		
+		LOGGER.info("Consultando total de processos enviados ao serviço do CNJ em " + nomeInstancia + "...");
+		HttpGet httpGet = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/" + nomeInstancia);
+		adicionarCabecalhoAutenticacao(httpGet);
+		try {
+			HttpResponse httpResponse = client.execute(httpGet);
+			HttpEntity httpEntity = httpResponse.getEntity();
+			String body = EntityUtils.toString(httpEntity, Charset.forName("UTF-8"));
+			LOGGER.info("* " + nomeInstancia + ": " + body);
+		} catch (IOException ex) {
+			LOGGER.error("* Erro ao consultar total em " + nomeInstancia + ": " + ex.getLocalizedMessage(), ex);
+		}
+	}
+
 	/**
 	 * Adiciona o header "Authorization", informando autenticação "Basic", conforme documento "API REST.pdf"
 	 * @param get
@@ -334,7 +365,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		LOGGER.info("URL onde os arquivos serão enviados: " + url);
 		
 		// Objeto que fará o envio dos arquivos em várias threads
-		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
 		LOGGER.info("Iniciando o envio de arquivos utilizando " + numeroThreads + " thread(s)");
 		ProdutorConsumidorMultiThread<File> enviarMultiThread = new ProdutorConsumidorMultiThread<File>(numeroThreads, numeroThreads, Thread.NORM_PRIORITY) {
 
@@ -347,6 +377,15 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				HttpPost post = new HttpPost(url);
 				adicionarCabecalhoAutenticacao(post);
 				
+				// Timeout
+//				int CONNECTION_TIMEOUT_MS = 100_000; // Timeout in millis.
+//				RequestConfig requestConfig = RequestConfig.custom()
+//				    .setConnectionRequestTimeout(CONNECTION_TIMEOUT_MS)
+//				    .setConnectTimeout(CONNECTION_TIMEOUT_MS)
+//				    .setSocketTimeout(CONNECTION_TIMEOUT_MS)
+//				    .build();
+//				post.setConfig(requestConfig);
+				
 				// Prepara um request com Multipart
 				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("file", arquivo).build();
 				post.setEntity(entity);
@@ -354,18 +393,31 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				String body = "";
 				try {
 					try {
+						
+						// Indica que o envio do arquivo está iniciando
+						File arquivoTentativaEnvio = new File(arquivo.getAbsolutePath() + SUFIXO_ARQUIVO_TENTOU_ENVIAR);
+						arquivoTentativaEnvio.createNewFile();
+						
 						// Executa o POST
 						long tempo = System.currentTimeMillis();
 						HttpResponse response = client.execute(post);
+						
+						// Estatísticas de tempo
 						tempo = System.currentTimeMillis() - tempo;
+						totalArquivosSubmetidosCNJ.addAndGet(1);
+						totalTempoCNJ.addAndGet(tempo);
 			
 						HttpEntity result = response.getEntity();
 						body = EntityUtils.toString(result, Charset.forName("UTF-8"));
+						EntityUtils.consumeQuietly(result);
 						LOGGER.debug("  * Resposta em " + tempo + "ms: " + body);
 						conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body, jaxbUnmarshaller, arquivo);
 						LOGGER.trace("  * Arquivo enviado!");
 						LOGGER.info("* Arquivo enviado com sucesso: " + arquivo + " / Resposta: " + body);
 						marcarArquivoComoEnviado(arquivo);
+						
+						
+						arquivoTentativaEnvio.delete();
 					} catch (IOException ex) {
 						throw new DadosInvalidosException(ex.getLocalizedMessage());
 					}
@@ -388,8 +440,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		if (!arquivoPasta.isDirectory()) {
 			throw new DadosInvalidosException("Pasta não existe (" + arquivoPasta + ") talvez falte executar tarefas anteriores.");
 		}
-		File[] arquivos = arquivoPasta.listFiles();
-		Arrays.sort(arquivos);
+		
+		File[] arquivos = arquivoPasta.listFiles(aceitarPastasOuXMLs);
+		ordenarArquivosNuncaEnviadosPrimeiro(arquivos);
+		
 		int i = 0;
 		for (File filho: arquivos) {
 			
@@ -405,7 +459,18 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			
 			i++;
 			if (i % 10 == 0) {
-				LOGGER.debug("Progresso da pasta " + arquivoPasta + ": " + i + "/" + arquivos.length + " (" + (i * 100 / arquivos.length) + "%)");
+				StringBuilder progresso = new StringBuilder();
+				progresso.append("Progresso da pasta " + arquivoPasta + ": " + i + "/" + arquivos.length);
+				progresso.append(" (" + (i * 100 / arquivos.length) + "%");
+				long arquivosSubmetidos = totalArquivosSubmetidosCNJ.get();
+				if (arquivosSubmetidos > 0) {
+					long tempoMedio = totalTempoCNJ.get() / arquivosSubmetidos;
+					long tempoRestante = (arquivos.length - i) * tempoMedio;
+					progresso.append(" - ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads) + " em " + numeroThreads + " thread(s)");
+					progresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "ms/arquivo");
+				}
+				progresso.append(")");
+				LOGGER.debug(progresso);
 			}
 			
 			// Verifica se o usuário quer abortar o envio ao CNJ
@@ -416,6 +481,29 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		}
 	}
 
+	/**
+	 * Coloca os arquivos que já tentou-se enviar (e, provavelmente, deu erro) no final da lista
+	 * 
+	 * @param arquivos
+	 */
+	private void ordenarArquivosNuncaEnviadosPrimeiro(File[] arquivos) {
+
+		Arrays.sort(arquivos, new Comparator<File>() {
+			@Override
+			public int compare(File o1, File o2) {
+				boolean o1TentouEnviar = new File(o1.getAbsolutePath() + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
+				boolean o2TentouEnviar = new File(o2.getAbsolutePath() + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
+				if (o1TentouEnviar && !o2TentouEnviar) {
+					return 1;
+				} else if (!o1TentouEnviar && o2TentouEnviar) {
+					return -1;
+				} else {
+					return o1.compareTo(o2);
+				}
+			}
+		});
+	}
+
 	private boolean deveEnviarArquivo(File arquivo) {
 		
 		// Envia somente arquivos XML
@@ -424,7 +512,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		}
 		
 		// Não envia arquivos que já foram enviados NESTA REMESSA
-		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + ".enviado");
+		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + SUFIXO_ARQUIVO_ENVIADO);
 		if (confirmacaoEnvio.exists()) {
 			LOGGER.debug("Arquivo já foi enviado anteriormente: " + arquivo);
 			return false;
@@ -434,7 +522,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	}
 	
 	private void marcarArquivoComoEnviado(File arquivo) {
-		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + ".enviado");
+		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + SUFIXO_ARQUIVO_ENVIADO);
 		try {
 			confirmacaoEnvio.createNewFile();
 		} catch (IOException ex) {
