@@ -134,8 +134,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
         HttpClientBuilder httpClientBuilder = HttpClients.custom();
         
         // Aumenta o limite de conexoes, para permitir acesso multi-thread
-        httpClientBuilder.setMaxConnPerRoute(numeroThreads);
-        httpClientBuilder.setMaxConnTotal(numeroThreads);
+        httpClientBuilder.setMaxConnPerRoute(numeroThreads*2);
+        httpClientBuilder.setMaxConnTotal(numeroThreads*2);
         
         // SSL
         SSLContext sslcontext = getSSLContext();
@@ -401,23 +401,25 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 						// Executa o POST
 						long tempo = System.currentTimeMillis();
 						HttpResponse response = client.execute(post);
-						
-						// Estatísticas de tempo
-						tempo = System.currentTimeMillis() - tempo;
-						totalArquivosSubmetidosCNJ.addAndGet(1);
-						totalTempoCNJ.addAndGet(tempo);
-			
-						HttpEntity result = response.getEntity();
-						body = EntityUtils.toString(result, Charset.forName("UTF-8"));
-						EntityUtils.consumeQuietly(result);
-						LOGGER.debug("  * Resposta em " + tempo + "ms: " + body);
-						conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body, jaxbUnmarshaller, arquivo);
-						LOGGER.trace("  * Arquivo enviado!");
-						LOGGER.info("* Arquivo enviado com sucesso: " + arquivo + " / Resposta: " + body);
-						marcarArquivoComoEnviado(arquivo);
-						
-						
-						arquivoTentativaEnvio.delete();
+						try {
+							// Estatísticas de tempo
+							tempo = System.currentTimeMillis() - tempo;
+							totalArquivosSubmetidosCNJ.addAndGet(1);
+							totalTempoCNJ.addAndGet(tempo);
+				
+							HttpEntity result = response.getEntity();
+							body = EntityUtils.toString(result, Charset.forName("UTF-8"));
+							LOGGER.debug("  * Resposta em " + tempo + "ms: " + body);
+							conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body, jaxbUnmarshaller, arquivo);
+							LOGGER.trace("  * Arquivo enviado!");
+							LOGGER.info("* Arquivo enviado com sucesso: " + arquivo + " / Resposta: " + body);
+							marcarArquivoComoEnviado(arquivo);
+							
+							
+							arquivoTentativaEnvio.delete();
+						} finally {
+							EntityUtils.consumeQuietly(response.getEntity());
+						}
 					} catch (IOException ex) {
 						throw new DadosInvalidosException(ex.getLocalizedMessage());
 					}
@@ -467,9 +469,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 					long tempoMedio = totalTempoCNJ.get() / arquivosSubmetidos;
 					long tempoRestante = (arquivos.length - i) * tempoMedio;
 					progresso.append(" - ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads) + " em " + numeroThreads + " thread(s)");
-					progresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "ms/arquivo");
+					progresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
 				}
 				progresso.append(")");
+				System.out.println("");
 				LOGGER.debug(progresso);
 			}
 			
