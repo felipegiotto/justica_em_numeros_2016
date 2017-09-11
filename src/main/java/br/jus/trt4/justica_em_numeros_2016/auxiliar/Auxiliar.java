@@ -37,7 +37,7 @@ import org.apache.logging.log4j.ThreadContext;
  */
 public class Auxiliar {
 
-	public static final File arquivoConfiguracoes = new File("config.properties");
+	private static final File arquivoConfiguracoes = new File("config.properties");
 
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
@@ -567,5 +567,9 @@ public class Auxiliar {
 	
 	public static boolean deveProcessarPrimeiroGrau() {
 		return getParametroBooleanConfiguracao(Parametro.gerar_xml_1G);
+	}
+	
+	public static File getArquivoconfiguracoes() {
+		return arquivoConfiguracoes;
 	}
 }

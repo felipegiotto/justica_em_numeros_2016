@@ -288,7 +288,7 @@ public class Op_2_GeraXMLsIndividuais {
 		}
 
 		// Consulta todos os polos do processo
-		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(rsProcesso.getInt("id_processo_trf")));
+		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(rsProcesso.getInt("id_processo_trf"), numeroCompletoProcesso));
 
 		// Consulta todos os assuntos desse processo
 		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(numeroCompletoProcesso));
@@ -300,7 +300,7 @@ public class Op_2_GeraXMLsIndividuais {
 	}
 
 	
-	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso) throws SQLException, DadosInvalidosException {
+	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
 		
 		List<TipoPoloProcessual> polos = new ArrayList<TipoPoloProcessual>();
 		
@@ -320,7 +320,7 @@ public class Op_2_GeraXMLsIndividuais {
 				} else if ("T".equals(tipoPoloPJe)) {
 					polo.setPolo(ModalidadePoloProcessual.TC); // TC: terceiro
 				} else {
-					throw new RuntimeException("Tipo de polo não reconhecido: " + tipoPoloPJe);
+					throw new DadosInvalidosException("Tipo de polo não reconhecido: " + tipoPoloPJe, numeroProcesso);
 				}
 				polos.add(polo);
 
@@ -421,7 +421,7 @@ public class Op_2_GeraXMLsIndividuais {
 						} else if ("O".equals(tipoPessoaPJe)) {
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.JURIDICA);
 						} else {
-							throw new DadosInvalidosException("Tipo de pessoa desconhecido para '" + nomeParte + "': " + tipoPessoaPJe);
+							throw new DadosInvalidosException("Tipo de pessoa desconhecido: " + tipoPessoaPJe, "Processo " + numeroProcesso + ", polo '" + tipoPoloPJe + "', parte '" + nomeParte + "'");
 //							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomeParte + "': " + tipoPessoaPJe);
 //							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
 						}
@@ -598,7 +598,7 @@ public class Op_2_GeraXMLsIndividuais {
 					assuntos.add(assuntoPadrao);
 					
 				} else {
-				    throw new DadosInvalidosException("Processo sem assunto cadastrado: " + nrProcesso);
+				    throw new DadosInvalidosException("Processo sem assunto cadastrado", nrProcesso);
 					//LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
 				}
 				

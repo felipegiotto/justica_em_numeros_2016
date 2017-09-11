@@ -93,7 +93,7 @@ public class AnalisaServentiasCNJ {
 			//return new ServentiaCNJ("CODIGO_INEXISTENTE", "SERVENTIA INEXISTENTE");
 			orgaosJulgadoresSemServentiasCadastradas.add(nomePJe);
 			if (obrigatorio) {
-				throw new DadosInvalidosException("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe.");
+				throw new DadosInvalidosException("Inconsistência no arquivo '" + arquivoServentias + "'", "Não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe.");
 			} else {
 				return null;
 			}

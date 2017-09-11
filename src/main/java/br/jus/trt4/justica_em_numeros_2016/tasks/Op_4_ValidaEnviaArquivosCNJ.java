@@ -279,7 +279,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 					try {
 						processosXML = (Processos) unmarshaller.unmarshal(arquivoXML);
 					} catch (JAXBException e) {
-						throw new DadosInvalidosException("Erro ao tentar analisar a quantidade de processos no arquivo " + arquivoXML + ": " + e.getLocalizedMessage());
+						throw new DadosInvalidosException("Erro ao tentar analisar a quantidade de processos: " + e.getLocalizedMessage(), arquivoXML.toString());
 					}
 					qtdProcessosXML = processosXML.getProcesso().size();
 					
@@ -298,10 +298,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		}
 		
 		if (statusCode != 200 && statusCode != 201) {
-			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (esperado codigo 200 ou 201, recebido codigo " + statusCode + ")");
+			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)", arquivoXML.toString());
 		}
 		if (body != null && body.contains("\"ERRO\"")) {
-			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')");
+			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')", arquivoXML.toString());
 		}
 		LOGGER.debug("Resposta: " + statusCode);
 	}
@@ -365,7 +365,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		LOGGER.debug("Localizando todos os arquivos XML da pasta '" + pasta.getAbsolutePath() + "'...");
 		if (!pasta.isDirectory()) {
-			throw new DadosInvalidosException("Pasta não existe (" + pasta + ") talvez falte executar tarefas anteriores.");
+			throw new DadosInvalidosException("Pasta não existe, talvez falte executar tarefas anteriores", pasta.toString());
 		}
 		
 		// Filtro para localizar arquivos XML a serem enviados, bem como pastas para fazer busca recursiva
@@ -466,7 +466,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							EntityUtils.consumeQuietly(response.getEntity());
 						}
 					} catch (IOException ex) {
-						throw new DadosInvalidosException(ex.getLocalizedMessage());
+						throw new DadosInvalidosException(ex.getLocalizedMessage(), xml.getArquivoXML().toString());
 					}
 				} catch (DadosInvalidosException ex) {
 					LOGGER.error("* Erro ao enviar arquivo: " + xml + " / Resposta: " + body + " / Erro: " + ex.getLocalizedMessage());

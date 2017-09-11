@@ -34,8 +34,8 @@ public class Op_5_BackupConfiguracoes {
 		
 		// Backup do arquivo de configurações
 		LOGGER.info("Efetuando backup do arquivo de configurações...");
-		try (Scanner scanner = new Scanner(Auxiliar.arquivoConfiguracoes, "ISO-8859-1")) {
-			File arquivoConfiguracaoBackup = new File(pastaOutput, Auxiliar.arquivoConfiguracoes.getName());
+		try (Scanner scanner = new Scanner(Auxiliar.getArquivoconfiguracoes(), "ISO-8859-1")) {
+			File arquivoConfiguracaoBackup = new File(pastaOutput, Auxiliar.getArquivoconfiguracoes().getName());
 			try (FileWriter fw = new FileWriter(arquivoConfiguracaoBackup)) {
 				while (scanner.hasNextLine()) {
 					String line = scanner.nextLine();

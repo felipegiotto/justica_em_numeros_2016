@@ -1,5 +1,10 @@
 package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,10 +19,26 @@ public class DadosInvalidosException extends Exception {
     
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DadosInvalidosException.class);
+    private static final Map<String, Set<String>> errosPorTipo = new HashMap<>();
     private static int qtdErros = 0;
     
-    public DadosInvalidosException(String cause) {
-        super(cause);
+    public DadosInvalidosException(String tipoErro, String origem) {
+        super(origem + ": " + tipoErro);
+        
+        // Armazena até 10 registros de cada tipo de erro, para mostrar um relatório no final da operação 
+        synchronized (DadosInvalidosException.class) {
+        	Set<String> listaOrigens;
+			if (!errosPorTipo.containsKey(tipoErro)) {
+				listaOrigens = new TreeSet<String>();
+				errosPorTipo.put(tipoErro, listaOrigens);
+			} else {
+				listaOrigens = errosPorTipo.get(tipoErro);
+			}
+			
+			if (listaOrigens.size() < 10) {
+				listaOrigens.add(origem);
+			}
+		}
         qtdErros++;
     }
 
@@ -27,11 +48,18 @@ public class DadosInvalidosException extends Exception {
     
     public static void mostrarWarningSeHouveAlgumErro() {
         if (qtdErros > 0) {
-            LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 erro" : "Ocorreram " + qtdErros + " erros") + " durante a execução dessa rotina! Verifique atentamente os arquivos de log!");
+            LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 erro" : "Ocorreram " + qtdErros + " erros") + " durante a execução dessa rotina! Verifique atentamente os arquivos de log! Estes são alguns:");
+            for (String tipoErro: errosPorTipo.keySet()) {
+            	LOGGER.warn("* " + tipoErro + ": ");
+            	for (String origem: errosPorTipo.get(tipoErro)) {
+                	LOGGER.warn("    => " + origem);
+            	}
+            }
         }
     }
     
     public static void zerarQtdErros() {
     	qtdErros = 0;
+    	errosPorTipo.clear();
     }
 }
