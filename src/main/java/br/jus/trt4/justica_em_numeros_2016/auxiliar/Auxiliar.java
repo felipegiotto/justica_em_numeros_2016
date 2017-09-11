@@ -559,4 +559,13 @@ public class Auxiliar {
 			}
 		}
 	}
+
+
+	public static boolean deveProcessarSegundoGrau() {
+		return getParametroBooleanConfiguracao(Parametro.gerar_xml_2G);
+	}
+	
+	public static boolean deveProcessarPrimeiroGrau() {
+		return getParametroBooleanConfiguracao(Parametro.gerar_xml_1G);
+	}
 }

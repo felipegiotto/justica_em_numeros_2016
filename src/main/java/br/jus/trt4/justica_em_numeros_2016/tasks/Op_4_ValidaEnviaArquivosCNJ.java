@@ -10,8 +10,10 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +24,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -32,7 +35,6 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -52,6 +54,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProdutorConsumidorMultiThread;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.XmlComInstancia;
 
 /**
  * Chama os webservices do CNJ, enviando os XMLs que foram gerados pela classe {@link Op_3_UnificaArquivosXML}.
@@ -63,14 +66,12 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
 	private static final String SUFIXO_ARQUIVO_TENTOU_ENVIAR = ".tentativa_envio";
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
-	private CloseableHttpClient client;
-	private String authHeader;
-	private File arquivoAbortar;
-	private FileFilter aceitarPastasOuXMLs;
-	private AtomicLong totalArquivosSubmetidosCNJ = new AtomicLong(0);
-	private AtomicLong totalTempoCNJ = new AtomicLong(0);
-	private int numeroThreads;
-	private static Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
+	private final CloseableHttpClient client;
+	private final String authHeader;
+	private final File arquivoAbortar;
+	private final List<Long> temposEnvioCNJ = new ArrayList<Long>();
+	private final int numeroThreads;
+	private static final Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
 	private static final String NOME_ARQUIVO_ABORTAR = "ABORTAR.txt"; // Arquivo que pode ser gravado na pasta "output/[tipo_carga]", que faz com que o envio dos dados ao CNJ seja abortado
 	
 	public static void main(String[] args) throws Exception {
@@ -95,9 +96,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		do {
 			Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
 			operacao.testarConexaoComCNJ();
-			operacao.consultarTotaisDeProcessos(); // Antes
-			operacao.enviarXMLsUnificadosAoCNJ();
-			operacao.consultarTotaisDeProcessos(); // Depois
+			operacao.consultarTotaisDeProcessosNoCNJ(); // Antes do envio
+			operacao.localizarEnviarXMLsAoCNJ();
+			operacao.consultarTotaisDeProcessosNoCNJ(); // Depois do envio
 			
 			DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
 			
@@ -174,15 +175,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Cria um HttpClient para acessar o CNJ
 		client = httpClientBuilder.build();
-		
-		// Filtro para localizar arquivos XML a serem enviados, bem como pastas para fazer busca recursiva
-		aceitarPastasOuXMLs = new FileFilter() {
-			
-			@Override
-			public boolean accept(File file) {
-				return file.isDirectory() || file.getName().toUpperCase().endsWith(".XML");
-			}
-		};
 	}
 	
 	/**
@@ -224,28 +216,28 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null, null, null);
 	}
 
-	private void consultarTotaisDeProcessos() {
+	private void consultarTotaisDeProcessosNoCNJ() {
 		
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
-			consultarTotalProcessos("G1");
+		if (Auxiliar.deveProcessarPrimeiroGrau()) {
+			consultarTotalProcessosNoCNJ(1);
 		}
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
-			consultarTotalProcessos("G2");
+		if (Auxiliar.deveProcessarSegundoGrau()) {
+			consultarTotalProcessosNoCNJ(2);
 		}
 	}
 	
-	private void consultarTotalProcessos(String nomeInstancia) {
+	private void consultarTotalProcessosNoCNJ(int instancia) {
 		
-		LOGGER.info("Consultando total de processos enviados ao serviço do CNJ em " + nomeInstancia + "...");
-		HttpGet httpGet = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/" + nomeInstancia);
+		LOGGER.info("Consultando total de processos enviados ao serviço do CNJ em G" + instancia + "...");
+		HttpGet httpGet = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/G" + instancia);
 		adicionarCabecalhoAutenticacao(httpGet);
 		try {
 			HttpResponse httpResponse = client.execute(httpGet);
 			HttpEntity httpEntity = httpResponse.getEntity();
 			String body = EntityUtils.toString(httpEntity, Charset.forName("UTF-8"));
-			LOGGER.info("* " + nomeInstancia + ": " + body);
+			LOGGER.info("* G" + instancia + ": " + body);
 		} catch (IOException ex) {
-			LOGGER.error("* Erro ao consultar total em " + nomeInstancia + ": " + ex.getLocalizedMessage(), ex);
+			LOGGER.error("* Erro ao consultar total em G" + instancia + ": " + ex.getLocalizedMessage(), ex);
 		}
 	}
 
@@ -264,7 +256,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * pois algumas requisições retornam "200" mas informam erro no conteúdo. 
 	 * 
 	 * @param statusCode
-	 * @throws IOException
+	 * @throws DadosInvalidosException
 	 */
 	private void conferirRespostaSucesso(int statusCode, String body, Unmarshaller unmarshaller, File arquivoXML) throws DadosInvalidosException {
 		
@@ -315,38 +307,50 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	}
 
 	/**
-	 * Carrega os arquivos XML unificados das instâncias selecionadas (1G e/ou 2G) e envia ao CNJ.
+	 * Carrega os arquivos XML das instâncias selecionadas (1G e/ou 2G) e envia ao CNJ.
 	 * 
-	 * @throws IOException
-	 * @throws InvalidCredentialsException
 	 * @throws DadosInvalidosException 
-	 * @throws InterruptedException 
 	 * @throws JAXBException 
+	 * @throws InterruptedException 
 	 */
-	private void enviarXMLsUnificadosAoCNJ() throws IOException, InvalidCredentialsException, DadosInvalidosException, InterruptedException, JAXBException {
+	private void localizarEnviarXMLsAoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException {
 		
-		// Verifica se deve gerar XML para 2o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
-			enviarXMLsUnificadosAoCNJ(2);
+		// Lista com todos os arquivos pendentes
+		Auxiliar.prepararPastaDeSaida();
+		List<XmlComInstancia> arquivosParaEnviar = new ArrayList<>();
+		AtomicLong totalArquivosXML = new AtomicLong();
+		
+		// Consulta arquivos das instâncias selecionadas
+		if (Auxiliar.deveProcessarSegundoGrau()) {
+			localizarXMLsPendentesDeEnvio(2, arquivosParaEnviar, totalArquivosXML);
+		}
+		if (Auxiliar.deveProcessarPrimeiroGrau()) {
+			localizarXMLsPendentesDeEnvio(1, arquivosParaEnviar, totalArquivosXML);
 		}
 		
-		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
-			enviarXMLsUnificadosAoCNJ(1);
+		// Coloca os arquivos que já tentou-se enviar (e, provavelmente, deu erro) no final da lista
+		ordenarArquivosNuncaEnviadosPrimeiro(arquivosParaEnviar);
+		
+		// Mostra o total de arquivos e os pendentes de envio
+		String infoTotal = "Total de arquivos XML encontrados: " + totalArquivosXML.get() + ". Arquivos pendentes de envio: " + arquivosParaEnviar.size();
+		if (totalArquivosXML.get() > 0) {
+			infoTotal += " (" + (arquivosParaEnviar.size() * 100 / totalArquivosXML.get()) + "%)";
 		}
+		LOGGER.info(infoTotal);
+		
+		// Inicia o envio
+		enviarXMLsAoCNJ(arquivosParaEnviar);
 	}
 
 	/**
-	 * Carrega os arquivos XML unificados da instância selecionada (1G ou 2G) e envia ao CNJ.
+	 * Carrega os arquivos XML (individuais ou unificados) da instância selecionada (1G ou 2G)
 	 * 
 	 * @param grau
-	 * @throws IOException
 	 * @throws DadosInvalidosException 
-	 * @throws InterruptedException 
-	 * @throws JAXBException 
 	 */
-	private void enviarXMLsUnificadosAoCNJ(int grau) throws IOException, DadosInvalidosException, InterruptedException, JAXBException {
-		Auxiliar.prepararPastaDeSaida();
+	private void localizarXMLsPendentesDeEnvio(int grau, List<XmlComInstancia> arquivosParaEnviar, AtomicLong totalArquivosXML) throws DadosInvalidosException {
+		
+		// Lê arquivos da lista de XMLs individuais ou unificados, conforme parâmetros
 		File pastaXMLsParaEnvio;
 		if (Auxiliar.deveMontarLotesDeProcessos()) {
 			pastaXMLsParaEnvio = Auxiliar.getPastaXMLsUnificados(grau);
@@ -354,25 +358,63 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			pastaXMLsParaEnvio = Auxiliar.getPastaXMLsIndividuais(grau);
 		}
 		
+		localizarArquivosRecursivamente(pastaXMLsParaEnvio, grau, arquivosParaEnviar, totalArquivosXML);
+	}
+
+	private void localizarArquivosRecursivamente(File pasta, int grau, List<XmlComInstancia> arquivosParaEnviar, AtomicLong totalArquivosXML) throws DadosInvalidosException {
+		
+		LOGGER.debug("Localizando todos os arquivos XML da pasta '" + pasta.getAbsolutePath() + "'...");
+		if (!pasta.isDirectory()) {
+			throw new DadosInvalidosException("Pasta não existe (" + pasta + ") talvez falte executar tarefas anteriores.");
+		}
+		
+		// Filtro para localizar arquivos XML a serem enviados, bem como pastas para fazer busca recursiva
+		FileFilter aceitarPastasOuXMLs = new FileFilter() {
+			
+			@Override
+			public boolean accept(File file) {
+				return file.isDirectory() || file.getName().toUpperCase().endsWith(".XML");
+			}
+		};
+		
+		// Localiza todos os arquivos XML da pasta
+		File[] arquivos = pasta.listFiles(aceitarPastasOuXMLs);
+		for (File filho: arquivos) {
+			
+			if (filho.isDirectory()) {
+				localizarArquivosRecursivamente(filho, grau, arquivosParaEnviar, totalArquivosXML);
+				
+			} else {
+				
+				totalArquivosXML.incrementAndGet();
+				if (deveEnviarArquivo(filho)) {
+					arquivosParaEnviar.add(new XmlComInstancia(filho, grau));
+				}
+			}
+		}
+	}
+
+	
+	private void enviarXMLsAoCNJ(List<XmlComInstancia> arquivosParaEnviar) throws JAXBException, InterruptedException {
+
 		// Prepara objetos para LER os arquivos XML e analisar a quantidade de processos dentro de cada um
 		JAXBContext jaxbContext = JAXBContext.newInstance(Processos.class);
 		final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
 		
-		
-		// Monta a URL para enviar processos ao CNJ.
-		// Exemplo de URL: https://wwwh.cnj.jus.br/selo-integracao-web/v1/processos/G2
-		final String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/G" + grau;
-		LOGGER.info("URL onde os arquivos serão enviados: " + url);
-		
 		// Objeto que fará o envio dos arquivos em várias threads
-		LOGGER.info("Iniciando o envio de arquivos utilizando " + numeroThreads + " thread(s)");
-		ProdutorConsumidorMultiThread<File> enviarMultiThread = new ProdutorConsumidorMultiThread<File>(numeroThreads, numeroThreads, Thread.NORM_PRIORITY) {
+		LOGGER.info("Iniciando o envio de " + arquivosParaEnviar.size() + " arquivos utilizando " + numeroThreads + " thread(s)");
+		ProdutorConsumidorMultiThread<XmlComInstancia> enviarMultiThread = new ProdutorConsumidorMultiThread<XmlComInstancia>(numeroThreads, numeroThreads, Thread.NORM_PRIORITY) {
 
 			@Override
-			public void consumir(File arquivo) {
+			public void consumir(XmlComInstancia xml) {
 				
 				Auxiliar.prepararThreadLog();
-				LOGGER.trace("* Enviando arquivo " + arquivo + "...");
+				LOGGER.trace("Enviando arquivo " + xml + "...");
+				
+				// Monta a URL para enviar processos ao CNJ.
+				// Exemplo de URL: https://wwwh.cnj.jus.br/selo-integracao-web/v1/processos/G2
+				final String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/G" + xml.getGrau();
+				LOGGER.info("* URL onde o arquivo será enviado: " + url);
 				
 				HttpPost post = new HttpPost(url);
 				adicionarCabecalhoAutenticacao(post);
@@ -387,34 +429,37 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 //				post.setConfig(requestConfig);
 				
 				// Prepara um request com Multipart
-				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("file", arquivo).build();
+				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("file", xml.getArquivoXML()).build();
 				post.setEntity(entity);
 				
-				String body = "";
+				String body = null;
 				try {
 					try {
 						
 						// Indica que o envio do arquivo está iniciando
-						File arquivoTentativaEnvio = new File(arquivo.getAbsolutePath() + SUFIXO_ARQUIVO_TENTOU_ENVIAR);
+						File arquivoTentativaEnvio = new File(xml.getArquivoXML().getAbsolutePath() + SUFIXO_ARQUIVO_TENTOU_ENVIAR);
 						arquivoTentativaEnvio.createNewFile();
 						
 						// Executa o POST
 						long tempo = System.currentTimeMillis();
 						HttpResponse response = client.execute(post);
 						try {
-							// Estatísticas de tempo
+							
+							// Estatísticas de tempo dos últimos 1000 arquivos
 							tempo = System.currentTimeMillis() - tempo;
-							totalArquivosSubmetidosCNJ.addAndGet(1);
-							totalTempoCNJ.addAndGet(tempo);
-				
+							synchronized (this) {
+								temposEnvioCNJ.add(tempo);
+								if (temposEnvioCNJ.size() > 1000) {
+									temposEnvioCNJ.remove(0);
+								}
+							}
+							
 							HttpEntity result = response.getEntity();
 							body = EntityUtils.toString(result, Charset.forName("UTF-8"));
-							LOGGER.debug("  * Resposta em " + tempo + "ms: " + body);
-							conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body, jaxbUnmarshaller, arquivo);
-							LOGGER.trace("  * Arquivo enviado!");
-							LOGGER.info("* Arquivo enviado com sucesso: " + arquivo + " / Resposta: " + body);
-							marcarArquivoComoEnviado(arquivo);
-							
+							LOGGER.debug("* Resposta em " + tempo + "ms: " + body);
+							conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body, jaxbUnmarshaller, xml.getArquivoXML());
+							LOGGER.info("* Arquivo enviado com sucesso: " + xml + " / Resposta: " + body);
+							marcarArquivoComoEnviado(xml.getArquivoXML());
 							
 							arquivoTentativaEnvio.delete();
 						} finally {
@@ -424,89 +469,88 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 						throw new DadosInvalidosException(ex.getLocalizedMessage());
 					}
 				} catch (DadosInvalidosException ex) {
-					LOGGER.error("* Erro ao enviar arquivo: " + arquivo + " / Resposta: " + body + " / Erro: " + ex.getLocalizedMessage());
+					LOGGER.error("* Erro ao enviar arquivo: " + xml + " / Resposta: " + body + " / Erro: " + ex.getLocalizedMessage());
 				}
 			}
 		};
 		
-		LOGGER.info("Enviando todos os arquivos da pasta '" + pastaXMLsParaEnvio.getAbsolutePath() + "' via 'API REST' do CNJ.");
-		enviarArquivoRecursivamente(pastaXMLsParaEnvio, url, enviarMultiThread);
-		
-		LOGGER.info("Aguardando término das threads de envio...");
-		enviarMultiThread.aguardarTermino();
-		LOGGER.info("Threads de envio terminadas!");
-	}
-
-	private void enviarArquivoRecursivamente(File arquivoPasta, String url, ProdutorConsumidorMultiThread<File> enviarMultiThread) throws IOException, DadosInvalidosException, InterruptedException {
-		
-		if (!arquivoPasta.isDirectory()) {
-			throw new DadosInvalidosException("Pasta não existe (" + arquivoPasta + ") talvez falte executar tarefas anteriores.");
-		}
-		
-		File[] arquivos = arquivoPasta.listFiles(aceitarPastasOuXMLs);
-		ordenarArquivosNuncaEnviadosPrimeiro(arquivos);
-		
-		int i = 0;
-		for (File filho: arquivos) {
+		int qtdArquivos = arquivosParaEnviar.size();
+		for (int i = 0; i < qtdArquivos; i++) {
+			XmlComInstancia xml = arquivosParaEnviar.get(i);
 			
-			if (filho.isDirectory()) {
-				enviarArquivoRecursivamente(filho, url, enviarMultiThread);
-				
-			} else {
-				
-				if (deveEnviarArquivo(filho)) {
-					enviarMultiThread.produzir(filho);
-				}
-			}
+			// Coloca cada um dos arquivos na fila para envio
+			enviarMultiThread.produzir(xml);
 			
-			i++;
+			// Mostra previsão de conclusão
 			if (i % 10 == 0) {
 				StringBuilder progresso = new StringBuilder();
-				progresso.append("Progresso da pasta " + arquivoPasta + ": " + i + "/" + arquivos.length);
-				progresso.append(" (" + (i * 100 / arquivos.length) + "%");
-				long arquivosSubmetidos = totalArquivosSubmetidosCNJ.get();
-				if (arquivosSubmetidos > 0) {
-					long tempoMedio = totalTempoCNJ.get() / arquivosSubmetidos;
-					long tempoRestante = (arquivos.length - i) * tempoMedio;
-					progresso.append(" - ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads) + " em " + numeroThreads + " thread(s)");
-					progresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
+				progresso.append("Progresso do envio: " + i + "/" + qtdArquivos);
+				progresso.append(" (" + (i * 100 / qtdArquivos) + "%");
+				synchronized (this) {
+					int arquivosMedicao = temposEnvioCNJ.size();
+					if (arquivosMedicao > 0) {
+						long totalTempo = 0;
+						for (Long tempo: temposEnvioCNJ) {
+							totalTempo += tempo;
+						}
+						long tempoMedio = totalTempo / arquivosMedicao;
+						long tempoRestante = (qtdArquivos - i) * tempoMedio;
+						progresso.append(" - ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads) + " em " + numeroThreads + " thread(s)");
+						progresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
+					}
+					progresso.append(")");
 				}
-				progresso.append(")");
-				System.out.println("");
 				LOGGER.debug(progresso);
 			}
 			
 			// Verifica se o usuário quer abortar o envio ao CNJ
 			if (arquivoAbortar.exists()) {
-				LOGGER.info("Abortando envio ao CNJ por causa do arquivo '" + arquivoAbortar.getAbsolutePath() + "'. Para continuar o envio, exclua este arquivo!");
-				return;
+				LOGGER.info("Abortando envio ao CNJ por causa do arquivo '" + arquivoAbortar.getAbsolutePath() + "'!");
+				FileUtils.deleteQuietly(arquivoAbortar);
+				break;
 			}
 		}
+		
+		LOGGER.info("Aguardando término das threads de envio...");
+		enviarMultiThread.aguardarTermino();
+		LOGGER.info("Threads de envio terminadas!");
 	}
-
+	
 	/**
 	 * Coloca os arquivos que já tentou-se enviar (e, provavelmente, deu erro) no final da lista
 	 * 
 	 * @param arquivos
 	 */
-	private void ordenarArquivosNuncaEnviadosPrimeiro(File[] arquivos) {
+	private void ordenarArquivosNuncaEnviadosPrimeiro(List<XmlComInstancia> arquivos) {
 
-		Arrays.sort(arquivos, new Comparator<File>() {
+		Collections.sort(arquivos, new Comparator<XmlComInstancia>() {
+			
 			@Override
-			public int compare(File o1, File o2) {
-				boolean o1TentouEnviar = new File(o1.getAbsolutePath() + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
-				boolean o2TentouEnviar = new File(o2.getAbsolutePath() + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
+			public int compare(XmlComInstancia o1, XmlComInstancia o2) {
+				
+				String o1Path = o1.getArquivoXML().getAbsolutePath();
+				String o2Path = o2.getArquivoXML().getAbsolutePath();
+				boolean o1TentouEnviar = new File(o1Path + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
+				boolean o2TentouEnviar = new File(o2Path + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
 				if (o1TentouEnviar && !o2TentouEnviar) {
 					return 1;
 				} else if (!o1TentouEnviar && o2TentouEnviar) {
 					return -1;
 				} else {
-					return o1.compareTo(o2);
+					return o1Path.compareTo(o2Path);
 				}
 			}
 		});
 	}
 
+	/**
+	 * Verifica se um determinado arquivo deve ser enviado. Condições:
+	 * 1. Deve ser um XML
+	 * 2. Não deve existir um arquivo com sufixo ".enviado", que indica que ele já foi enviado previamente.
+	 *  
+	 * @param arquivo
+	 * @return
+	 */
 	private boolean deveEnviarArquivo(File arquivo) {
 		
 		// Envia somente arquivos XML
@@ -517,7 +561,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		// Não envia arquivos que já foram enviados NESTA REMESSA
 		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + SUFIXO_ARQUIVO_ENVIADO);
 		if (confirmacaoEnvio.exists()) {
-			LOGGER.debug("Arquivo já foi enviado anteriormente: " + arquivo);
+			//LOGGER.debug("Arquivo já foi enviado anteriormente: " + arquivo);
 			return false;
 		}
 		

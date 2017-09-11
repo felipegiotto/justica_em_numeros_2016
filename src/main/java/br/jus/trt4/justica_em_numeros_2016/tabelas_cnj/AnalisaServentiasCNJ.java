@@ -103,9 +103,9 @@ public class AnalisaServentiasCNJ {
 	public static boolean mostrarWarningSeAlgumaServentiaNaoFoiEncontrada() {
 		if (!orgaosJulgadoresSemServentiasCadastradas.isEmpty()) {
 			LOGGER.warn("");
-			LOGGER.warn("Há pelo menos um órgão julgador que não possui serventia cadastrada no arquivo " + getArquivoServentias().getName() + " (ver instruções na chave 'arquivo_serventias_cnj' do arquivo de configurações):");
+			LOGGER.warn("Há pelo menos um órgão julgador que não possui serventia cadastrada no arquivo " + getArquivoServentias().getName() + " (veja instruções na chave 'arquivo_serventias_cnj' do arquivo de configurações e cadastre as linhas abaixo):");
 			for (String oj: orgaosJulgadoresSemServentiasCadastradas) {
-				LOGGER.warn("* " + oj);
+				LOGGER.warn("* " + oj + ";<CODIGO SERVENTIA CNJ>;<NOME SERVENTIA CNJ>");
 			}
 			return true;
 		}
@@ -116,13 +116,11 @@ public class AnalisaServentiasCNJ {
 	public boolean diagnosticarServentiasInexistentes() throws IOException, SQLException {
 		LOGGER.info("Iniciando diagnóstico de serventias inexistentes...");
 		
-		// Verifica se deve gerar XML para 2o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
+		if (Auxiliar.deveProcessarSegundoGrau()) {
 			diagnosticarServentiasInexistentes(2);
 		}
 		
-		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
+		if (Auxiliar.deveProcessarPrimeiroGrau()) {
 			diagnosticarServentiasInexistentes(1);
 		}
 		

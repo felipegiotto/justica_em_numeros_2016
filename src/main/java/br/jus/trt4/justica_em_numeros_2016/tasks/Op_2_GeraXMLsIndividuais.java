@@ -81,13 +81,11 @@ public class Op_2_GeraXMLsIndividuais {
 	public static void main(String[] args) throws SQLException, Exception {
 		Auxiliar.prepararPastaDeSaida();
 
-		// Verifica se deve gerar XML para 2o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
+		if (Auxiliar.deveProcessarSegundoGrau()) {
 			gerarXMLs(2);
 		}
 		
-		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
+		if (Auxiliar.deveProcessarPrimeiroGrau()) {
 			gerarXMLs(1);
 		}
 		
@@ -538,6 +536,10 @@ public class Op_2_GeraXMLsIndividuais {
 					for (TipoParte parte: partesPorIdParte.values()) {
 						polo.getParte().add(parte);
 					}
+				}
+				
+				if (polo.getParte().isEmpty()) {
+					LOGGER.warn("O polo " + polo.getPolo() + " do processo não contém nenhuma parte no XML gerado!");
 				}
 			}
 		}

@@ -48,13 +48,11 @@ public class Op_3_UnificaArquivosXML {
 			return;
 		}
 		
-		// Verifica se deve gerar XML para 2o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
+		if (Auxiliar.deveProcessarSegundoGrau()) {
 			unificarArquivosXML(2);
 		}
 		
-		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
+		if (Auxiliar.deveProcessarPrimeiroGrau()) {
 			unificarArquivosXML(1);
 		}
 		

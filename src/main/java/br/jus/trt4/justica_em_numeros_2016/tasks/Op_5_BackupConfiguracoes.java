@@ -75,5 +75,7 @@ public class Op_5_BackupConfiguracoes {
 		File arquivoServentiasOrigem = AnalisaServentiasCNJ.getArquivoServentias();
 		File arquivoServentiasDestino = new File(pastaOutput, arquivoServentiasOrigem.getName());
 		FileUtils.copyFile(arquivoServentiasOrigem, arquivoServentiasDestino);
+		
+		LOGGER.info("FIM!");
 	}
 }

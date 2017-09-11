@@ -43,13 +43,11 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	public static void main(String[] args) throws SQLException, IOException {
 		Auxiliar.prepararPastaDeSaida();
 		
-		// Verifica se deve gerar XML para 2o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_2G)) {
+		if (Auxiliar.deveProcessarSegundoGrau()) {
 			gerarListaProcessos(2);
 		}
 		
-		// Verifica se deve gerar XML para 1o Grau
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.gerar_xml_1G)) {
+		if (Auxiliar.deveProcessarPrimeiroGrau()) {
 			gerarListaProcessos(1);
 		}
 		
