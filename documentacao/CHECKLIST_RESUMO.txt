@@ -1,39 +1,33 @@
 Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, depois inspire-se nos passos abaixo para extrair os arquivos:
 
 
-1. Revise TODAS as configurações descritas no arquivo "config.properties". Alguns padrões que recomendo seguir: 
+1. Revise TODAS as configurações descritas no arquivo "config.properties".  
 
-   1.1. Ao gerar cargas MENSAIS, definir o atributo "dia_padrao_para_arquivos_xml" como sendo o último dia do mês.
-        Por exemplo, ao utilizar "tipo_carga_xml=MENSAL 2016-10", preencher também "dia_padrao_para_arquivos_xml=31102016".
-        
-
-UPDATE: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa que engloba todos os próximos passos.
-        Use-a com cautela!
-        
 
 2. Verifique se existe uma pasta com o tipo da carga (conforme configuração "tipo_carga_xml", ex: "MENSAL 2017-02") dentro 
    da pasta "output", na raiz do projeto (ou outro nome, conforme configuração "pasta_saida_padrao")
    com arquivos antigos. Se houver, mova esses dados antigos para o local adequado (backup / lixeira / etc), de forma
    que NÃO EXISTA uma pasta "output/<TIPO_CARGA_XML>". Ela será recriada em seguida, por esta aplicação.
-   
-   
-3. SUGESTÃO: Prepare também uma pasta de backup, que será armazenada para referência futura, com todos os dados das etapas intermediárias
-   geradas por esta ferramenta.
-   
-   3.1. Dentro dessa pasta de backup, crie um arquivo "OBSERVACOES.txt", relatando qualquer informação relevante
-        que possa ser útil no futuro. Preencha esse arquivo conforme as próximas operações forem sendo executadas.
 
-   
-4. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
 
-   4.1. Depois de terminar, procure nos arquivos de log por eventuais problemas que possam ter ocorrido.
-        4.1.2: LINUX: Exemplo de comando para ler os logs, ignorando os níveis DEBUG e INFO (rodar
+OBS: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa que engloba a execução das classes "Op_1..." a "Op_5...", 
+     descritas abaixo. Use-a com cautela!   
+
+
+3. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
+
+   3.1. Depois de terminar, procure nos arquivos de log por eventuais problemas que possam ter ocorrido.
+        3.1.2: LINUX: Exemplo de comando para ler os logs, ignorando os níveis DEBUG e INFO (rodar
                       na pasta raiz do projeto "justica_em_numeros_2016")
                       grep "" output/<TIPO_CARGA_XML>/log/*.log | grep --invert-match " DEBUG " | grep --invert-match " INFO "
-        4.1.2: WINDOWS: abra o arquivo "output/<TIPO_CARGA_XML>/log/log_completo.log" e procure pelos textos " WARN " e " ERROR "
+        3.1.2: WINDOWS: abra o arquivo "output/<TIPO_CARGA_XML>/log/log_completo.log" e procure pelos textos " WARN " e " ERROR "
         
-   4.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
+   3.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
 
+
+4. SUGESTÃO: Dentro da pasta "output/<TIPO_CARGA_XML>", crie um arquivo "OBSERVACOES.txt", relatando qualquer informação relevante
+             que possa ser útil no futuro. Preencha esse arquivo conforme as operações forem sendo executadas.
+   
 
 5. Execute a classe "Op_2_GeraXMLsIndividuais"
 
@@ -55,33 +49,26 @@ UPDATE: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa
                dessas serventias.
    
 
-6. Efetue backup dos arquivos gerados pela rotina anterior (pastas "output/<TIPO_CARGA_XML>/G1" e "output/<TIPO_CARGA_XML>/G2")
+6. Execute a classe "Op_3_UnificaArquivosXML"
 
-
-7. Execute a classe "Op_3_UnificaArquivosXML"
-
-   7.1. Verifique novamente se algum problema foi registrado nos arquivos de log, conforme instrução anterior.
+   6.1. Verifique novamente se algum problema foi registrado nos arquivos de log, conforme instrução anterior.
    
-   7.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
+   6.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
 
 
-8. Conte quantos arquivos XML foram gerados na pasta "output/<TIPO_CARGA_XML>/xmls_unificados" e anote em algum lugar.
-
-   
-9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ" para remeter os arquivos ao CNJ.
-
-10. Efetue backup dos seguintes dados, para referência futura:
-    * Pasta "output/<TIPO_CARGA_XML>/log"
-    * Arquivo de serventias
-    * Arquivo "config.properties" (RETIRAR os dados de acesso ao banco de dados do PJE)
-    * Dados do último commit desta ferramenta, executando o comando "git log -n 1" na pasta raiz do projeto 
-      (gravar dentro do arquivo "OBSERVACOES.txt") 
+7. Execute a classe "Op_4_ValidaEnviaArquivosCNJ" para remeter os arquivos ao CNJ.
 
 
-11. SOMENTE TRT4: Compacte toda a pasta de backup, no formato "7z", com o nome no padrão "XXXX-XX-XX - Carga Mensal - Ref MM-AAAA.7z", onde:
-    * "XXXX-XX-XX" é a data em que os arquivos foram gerados
-    * "MM-AAAA" é o mês e o ano que os dados se referem (conforme parâmetro "tipo_carga_xml" nas configurações)
+8. Execute a classe "Op_5_BackupConfiguracoes" para fazer backup de arquivos relevantes (como o arquivo de configurações e o de serventias)
+
+
+9. Efetue backup da pasta "output/<TIPO_CARGA_XML>", para referência futura. Ela contém os números de processo, os arquivos XML 
+   gerados (individuais e unificados) e os arquivos de log completos.
+
+
+10. SOMENTE TRT4: Compacte toda a pasta de backup, com o nome no padrão "MENSAL AAAA-MM.tar.gz", onde:
+    * "AAAA-MM" é o ano e o mês que os dados se referem (conforme parâmetro "tipo_carga_xml" nas configurações)
  
-    11.1. Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
+    10.1. Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
 
 
