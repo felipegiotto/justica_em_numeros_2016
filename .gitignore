@@ -6,3 +6,4 @@
 /config_trt*
 /saida.txt
 /*.zip
+/${ctx:logFolder}

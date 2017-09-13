@@ -43,6 +43,7 @@ public class Auxiliar {
 	private static Properties configs = null;
 	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
 	private static File pastaSaida = null;
+	public static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
 
 	
 	/**

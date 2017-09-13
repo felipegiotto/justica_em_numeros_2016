@@ -20,6 +20,7 @@ import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 
 /**
  * Lê todos os arquivos XML na pasta "output/.../Xg/xmls_individuais", tanto do PJe quanto dos
@@ -35,49 +36,98 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 public class Op_3_UnificaArquivosXML {
 
 	private static final Logger LOGGER = LogManager.getLogger(Op_3_UnificaArquivosXML.class);
+	private static ProgressoInterfaceGrafica progresso;
 	
 	private int grau;
 	private final File pastaSaida;
 	private int numeroLoteAtual = 1;
 	private int qtdArquivosXMLGerados = 0;
+	private List<File> arquivosParaProcessar;
 	
-	public static void main(String[] args) throws JAXBException {
-		Auxiliar.prepararPastaDeSaida();
-
+	public static void main(String[] args) throws JAXBException, DadosInvalidosException {
 		if (!Auxiliar.deveMontarLotesDeProcessos()) {
 			return;
 		}
 		
-		if (Auxiliar.deveProcessarSegundoGrau()) {
-			unificarArquivosXML(2);
+		progresso = new ProgressoInterfaceGrafica("(3/5) Unificação de Arquivos XML");
+		try {
+			Auxiliar.prepararPastaDeSaida();
+	
+			Op_3_UnificaArquivosXML baixaDados1g = Auxiliar.deveProcessarPrimeiroGrau() ? new Op_3_UnificaArquivosXML(1) : null;
+			Op_3_UnificaArquivosXML baixaDados2g = Auxiliar.deveProcessarSegundoGrau()  ? new Op_3_UnificaArquivosXML(2) : null;
+			
+			// Primeiro verifica se já não há arquivos unificados que foram enviados.
+			// Se eles forem gerados novamente, podem ser perdidas estatísticas de envio!
+			if (baixaDados1g != null) {
+				baixaDados1g.verificarSeArquivosUnificadosJaForamEnviados();
+			}
+			if (baixaDados2g != null) {
+				baixaDados2g.verificarSeArquivosUnificadosJaForamEnviados();
+			}
+			
+			// Analisa a quantidade total de processos que deve ser unificada,
+			// para mostrar barra de progresso
+			int totalArquivos = 0;
+			if (baixaDados1g != null) {
+				totalArquivos += baixaDados1g.carregarListaArquivosParaProcessar().size();
+			}
+			if (baixaDados2g != null) {
+				totalArquivos += baixaDados2g.carregarListaArquivosParaProcessar().size();
+			}
+			progresso.setMax(totalArquivos);
+			
+			// Exclui arquivos antigos (se existirem) e unifica os XMLs individuais
+			if (baixaDados1g != null) {
+				baixaDados1g.excluirArquivosUnificadosAntigos();
+				baixaDados1g.unificarArquivosXML();
+			}
+			if (baixaDados2g != null) {
+				baixaDados2g.excluirArquivosUnificadosAntigos();
+				baixaDados2g.unificarArquivosXML();
+			}
+			
+	        DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+			LOGGER.info("Fim!");
+		} finally {
+			progresso.close();
+			progresso = null;
 		}
-		
-		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			unificarArquivosXML(1);
-		}
-		
-        DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
-		LOGGER.info("Fim!");
-	}
-
-	private static void unificarArquivosXML(int grau) throws JAXBException {
-		
-		LOGGER.info("");
-		LOGGER.info("Iniciando unificação de arquivos XML no " + grau + "o Grau...");
-		Op_3_UnificaArquivosXML baixaDados = new Op_3_UnificaArquivosXML(grau);
-		baixaDados.excluirArquivosUnificadosAntigos();
-		baixaDados.unificarArquivosXML();
 	}
 	
 	public Op_3_UnificaArquivosXML(int grau) {
 		this.grau = grau;
 		this.pastaSaida = Auxiliar.getPastaXMLsUnificados(grau);
 	}
+	
+	/**
+	 * Verifica se algum arquivo unificado já foi enviado ao CNJ. 
+	 * 
+	 * Quando o usuário executa esta tarefa (de geração de XMLs unificados), se houver
+	 * arquivos unificados antigos, esses arquivos serão excluídos para a geração de novos.
+	 * Mas, pode ser que algum desses XMLs já tenham sido enviados ao CNJ! Nesse caso, a 
+	 * operação será abortada, para que o usuário intervenha manualmente!
+	 * 
+	 * @throws DadosInvalidosException
+	 */
+	private void verificarSeArquivosUnificadosJaForamEnviados() throws DadosInvalidosException {
+		File[] arquivosUnificados = this.pastaSaida.listFiles();
+		
+		LOGGER.info("Verificando se arquivos unificados já não foram enviados...");
+		for (File filho: arquivosUnificados) {
+			if (new File(filho.getAbsolutePath() + Auxiliar.SUFIXO_ARQUIVO_ENVIADO).exists()) {
+				throw new DadosInvalidosException("Lote já foi enviado e não será gerado automaticamente! Se necessário, exclua os lotes manualmente e gere os XMLs unificados outra vez.", filho.toString());
+			}
+		}
+	}
 
+	/**
+	 * Exclui XMLs unificados que já existam na pasta, para que novos sejam gerados.
+	 */
 	private void excluirArquivosUnificadosAntigos() {
 		
-		LOGGER.info("Excluindo arquivos unificados antigos...");
-		for (File filho: this.pastaSaida.listFiles()) {
+		File[] arquivosUnificados = this.pastaSaida.listFiles();
+		LOGGER.info("Excluindo arquivos unificados anteriormente...");
+		for (File filho: arquivosUnificados) {
 			LOGGER.info("* Excluindo " + filho + "...");
 			if (!FileUtils.deleteQuietly(filho)) {
 				LOGGER.error("  * Não foi possível excluir o arquivo " + filho);
@@ -85,13 +135,30 @@ public class Op_3_UnificaArquivosXML {
 		}
 	}
 
+	/**
+	 * Carrega, em memória, a lista de todos os XMLs individuais que serão unificados
+	 * 
+	 * @return
+	 */
+	private List<File> carregarListaArquivosParaProcessar() {
+		arquivosParaProcessar = new ArrayList<>();
+		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
+		localizaTodosArquivosXMLRecursivamente(pastaRaiz);
+		return arquivosParaProcessar;
+	}
+	
+	/**
+	 * Lê cada um dos XMLs individuais e gera os lotes (XMLs unificados) com base nas 
+	 * configurações de tamanho de lote.
+	 * 
+	 * @throws JAXBException
+	 */
 	private void unificarArquivosXML() throws JAXBException {
+		
+		LOGGER.info("Iniciando unificação de arquivos XML no " + grau + "o Grau...");
 		
 		// Pesquisando todos os arquivos que serão unificados
 		LOGGER.info("Pesquisando todos os arquivos que serão unificados no " + grau + "o Grau...");
-		List<File> arquivosParaProcessar = new ArrayList<>();
-		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
-		localizaTodosArquivosXMLRecursivamente(pastaRaiz, arquivosParaProcessar);
 		int tamanhoLote = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_processos);
 		LOGGER.info("Serão gerados lotes de até " + tamanhoLote + " Bytes");
 		
@@ -132,6 +199,8 @@ public class Op_3_UnificaArquivosXML {
 				todosProcessos.getProcesso().add(processo);
 				bytesLote += arquivoXML.length();
 			}
+			
+			progresso.incrementProgress();
 		}
 		
 		// Grava em arquivo XML os processos remanescentes.
@@ -144,7 +213,7 @@ public class Op_3_UnificaArquivosXML {
 	
 	
 	/**
-	 * Grava os dados de uma lista de processos em um arquivo XML
+	 * Grava os dados dos processos lidos até o momento em um XML unificado (lote).
 	 */
 	private void gravarProximoLoteXML(Marshaller jaxbMarshaller, Processos listaProcessos) throws JAXBException {
 		File arquivoSaida = new File(pastaSaida, "Lote_" + StringUtils.leftPad(Integer.toString(numeroLoteAtual), 6, '0') + ".xml");
@@ -154,8 +223,7 @@ public class Op_3_UnificaArquivosXML {
 		qtdArquivosXMLGerados++;
 	}
 
-	
-	private void localizaTodosArquivosXMLRecursivamente(File file, List<File> lista) {
+	private void localizaTodosArquivosXMLRecursivamente(File file) {
 		
 		if (file.getName().startsWith("_")) {
 			LOGGER.warn("Este arquivo não será processado pois seu nome começa com '_': " + file);
@@ -164,11 +232,11 @@ public class Op_3_UnificaArquivosXML {
 		
 		if (file.isDirectory()) {
 			for (File filho: file.listFiles()) {
-				localizaTodosArquivosXMLRecursivamente(filho, lista);
+				localizaTodosArquivosXMLRecursivamente(filho);
 			}
 		} else {
 			if (file.getName().toUpperCase().endsWith(".XML")) {
-				lista.add(file);
+				arquivosParaProcessar.add(file);
 			}
 		}
 	}

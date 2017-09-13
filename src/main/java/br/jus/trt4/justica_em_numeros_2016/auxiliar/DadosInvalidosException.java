@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,6 +32,10 @@ public class DadosInvalidosException extends Exception {
 			if (!errosPorTipo.containsKey(tipoErro)) {
 				listaOrigens = new TreeSet<String>();
 				errosPorTipo.put(tipoErro, listaOrigens);
+				
+				// Mostra warnings encontrados na interface gráfica
+				ProgressoInterfaceGrafica.setWarnings("PROBLEMAS (detalhes nos arquivos de log):\n\n" + StringUtils.join(errosPorTipo.keySet(), "\n\n"));
+				
 			} else {
 				listaOrigens = errosPorTipo.get(tipoErro);
 			}

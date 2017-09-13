@@ -1,5 +1,6 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -14,6 +15,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
@@ -41,6 +43,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaDocumentosPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaClassesProcessuaisCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
@@ -55,9 +58,10 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
  * 
  * @author felipe.giotto@trt4.jus.br
  */
-public class Op_2_GeraXMLsIndividuais {
+public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLsIndividuais.class);
+	private static ProgressoInterfaceGrafica progresso;
 	private int grau;
 	private Connection conexaoBasePrincipal;
 	private NamedParameterStatement nsConsultaProcessos;
@@ -74,70 +78,94 @@ public class Op_2_GeraXMLsIndividuais {
 	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
 	private IdentificaGeneroPessoa identificaGeneroPessoa;
 	private IdentificaDocumentosPessoa identificaDocumentosPessoa;
-	
+	private List<String> listaProcessos;
+
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
 	 */
 	public static void main(String[] args) throws SQLException, Exception {
-		Auxiliar.prepararPastaDeSaida();
 
-		if (Auxiliar.deveProcessarSegundoGrau()) {
-			gerarXMLs(2);
-		}
-		
-		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			gerarXMLs(1);
-		}
-		
-		AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
-        DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
-        LOGGER.info("Fim!");
-	}
-
-	
-	private static void gerarXMLs(int grau) throws Exception {
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);
+		progresso = new ProgressoInterfaceGrafica("(2/5) Geração de XMLs individuais");
 		try {
+			Auxiliar.prepararPastaDeSaida();
 
-			// Abre conexões com o PJe e prepara consultas a serem realizadas
-			baixaDados.prepararConexao();
+			Op_2_GeraXMLsIndividuais baixaDados1g = Auxiliar.deveProcessarPrimeiroGrau() ? new Op_2_GeraXMLsIndividuais(1) : null;
+			Op_2_GeraXMLsIndividuais baixaDados2g = Auxiliar.deveProcessarSegundoGrau()  ? new Op_2_GeraXMLsIndividuais(2) : null;
+			try {
 
-			// Executa consultas e grava arquivo XML
-			baixaDados.gerarXML();
+				// Conta quantos processos serão baixados, para mostrar barra de progresso
+				int qtdProcessos = 0;
+				if (baixaDados1g != null) {
+					qtdProcessos += baixaDados1g.carregarListaDeProcessos().size();
+				}
+				if (baixaDados2g != null) {
+					qtdProcessos += baixaDados2g.carregarListaDeProcessos().size();
+				}
+				progresso.setMax(qtdProcessos);
+
+				// Gera XMLs para cada processo
+				if (baixaDados1g != null) {
+					baixaDados1g.gerarXMLs();
+				}
+				if (baixaDados2g != null) {
+					baixaDados2g.gerarXMLs();
+				}
+			} finally {
+				IOUtils.closeQuietly(baixaDados1g);
+				IOUtils.closeQuietly(baixaDados2g);
+			}
+
+			AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
+			DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+			LOGGER.info("Fim!");
 		} finally {
-			baixaDados.close();
+			progresso.close();
+			progresso = null;
 		}
 	}
 
-	
+	private List<String> carregarListaDeProcessos() throws IOException {
+		listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
+		return listaProcessos;
+	}
+
+	private void gerarXMLs() throws Exception {
+
+		// Abre conexões com o PJe e prepara consultas a serem realizadas
+		prepararConexao();
+
+		// Executa consultas e grava arquivo XML
+		gerarXML();
+	}
+
+
 	public Op_2_GeraXMLsIndividuais(int grau) {
 		this.grau = grau;
 	}
-	
-	
+
 	private void gerarXML() throws IOException, SQLException, JAXBException {
 
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
-		
+
 		// Objetos auxiliares para gerar o XML a partir das classes Java
 		ObjectFactory factory = new ObjectFactory();
 		JAXBContext context = JAXBContext.newInstance(Processos.class);
 		Marshaller jaxbMarshaller = context.createMarshaller();
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-		
+
 		// Variáveis auxiliares para calcular o tempo estimado
 		int qtdXMLGerados = 0;
 		long tempoGasto = 0;
-		
+
 		// Pasta onde serão gerados os arquivos XML
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
 		pastaRaiz = new File(pastaRaiz, "PJe");
-		
+
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		int i=0;
 		for (String numeroProcesso: listaProcessos) {
-			
+
 			// Cálculo do tempo restante
 			long antes = System.currentTimeMillis();
 			i++;
@@ -148,71 +176,73 @@ public class Op_2_GeraXMLsIndividuais {
 			File arquivoXMLTemporario = new File(pastaRaiz, numeroProcesso + ".temp");
 			File arquivoXML = new File(pastaRaiz, numeroProcesso + ".xml");
 			arquivoXMLTemporario.delete();
-			
+
 			// Se o script for abortado bem na hora da cópia do arquivo temporário para o definitivo, o definitivo
 			// pode ficar vazio. Se isso ocorrer, apaga o XML vazio, para que um novo seja gerado.
 			if (arquivoXML.exists() && arquivoXML.length() == 0) {
 				arquivoXML.delete();
 			}
-			
+
 			// Verifica se o XML do processo já foi gerado
 			if (arquivoXML.exists()) {
 				LOGGER.debug("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
-				continue;
-			}
-			
-			// Calcula tempo restante
-			if (LOGGER.isDebugEnabled()) {
-				int xmlsRestantes = listaProcessos.size() - i;
-				long tempoRestante = 0;
-				long mediaPorProcesso = 0;
-				if (qtdXMLGerados > 0) {
-					mediaPorProcesso = tempoGasto / qtdXMLGerados;
-					tempoRestante = xmlsRestantes * mediaPorProcesso;
+			} else {
+
+				// Calcula tempo restante
+				if (LOGGER.isDebugEnabled()) {
+					int xmlsRestantes = listaProcessos.size() - i;
+					long tempoRestante = 0;
+					long mediaPorProcesso = 0;
+					if (qtdXMLGerados > 0) {
+						mediaPorProcesso = tempoGasto / qtdXMLGerados;
+						tempoRestante = xmlsRestantes * mediaPorProcesso;
+					}
+
+					LOGGER.debug("Gravando Processo " + numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + arquivoXML + "...");
 				}
-				
-				LOGGER.debug("Gravando Processo " + numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + arquivoXML + "...");
+
+				// Executa a consulta desse processo no banco de dados do PJe
+				TipoProcessoJudicial processoJudicial = null;
+				try {
+					processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
+				} catch (Exception ex) {
+					LOGGER.warn("Erro gerando XML do processo " + numeroProcesso + " (" + grau + "): " + ex.getLocalizedMessage(), ex);
+				}
+
+				if (processoJudicial != null) {
+
+					// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
+					// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
+					// processo serão unificados, junto com os XMLs dos outros sistemas legados.
+					Processos processos = factory.createProcessos();
+					processos.getProcesso().add(processoJudicial);
+
+					// Gera o arquivo XML temporário
+					arquivoXML.getParentFile().mkdirs();
+					jaxbMarshaller.marshal(processos, arquivoXMLTemporario);
+
+					// Copia o XML temporário sobre o definitivo e exclui o temporário
+					FileUtils.copyFile(arquivoXMLTemporario, arquivoXML);
+					arquivoXMLTemporario.delete();
+
+					LOGGER.debug("Processo gravado com sucesso no arquivo " + arquivoXML);
+
+					// Cálculo do tempo restante
+					tempoGasto += System.currentTimeMillis() - antes;
+					qtdXMLGerados++;
+
+				} else {
+					LOGGER.warn("O XML do processo " + numeroProcesso + " não foi gerado na base " + grau + "G!");
+				}
 			}
 
-			// Executa a consulta desse processo no banco de dados do PJe
-			TipoProcessoJudicial processoJudicial = null;
-			try {
-				processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
-			} catch (Exception ex) {
-				LOGGER.warn("Erro gerando XML do processo " + numeroProcesso + " (" + grau + "): " + ex.getLocalizedMessage(), ex);
-			}
-			
-			if (processoJudicial != null) {
-			
-				// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
-				// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
-				// processo serão unificados, junto com os XMLs dos outros sistemas legados.
-				Processos processos = factory.createProcessos();
-				processos.getProcesso().add(processoJudicial);
-				
-				// Gera o arquivo XML temporário
-				arquivoXML.getParentFile().mkdirs();
-				jaxbMarshaller.marshal(processos, arquivoXMLTemporario);
-				
-				// Copia o XML temporário sobre o definitivo e exclui o temporário
-				FileUtils.copyFile(arquivoXMLTemporario, arquivoXML);
-				arquivoXMLTemporario.delete();
-				
-				LOGGER.debug("Processo gravado com sucesso no arquivo " + arquivoXML);
-				
-				// Cálculo do tempo restante
-				tempoGasto += System.currentTimeMillis() - antes;
-				qtdXMLGerados++;
-				
-			} else {
-				LOGGER.warn("O XML do processo " + numeroProcesso + " não foi gerado na base " + grau + "G!");
-			}
+			progresso.incrementProgress();
 		}
-		
+
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerados!");
 	}
 
-	
+
 	/**
 	 * Consulta os dados do processo informado no banco de dados e gera um objeto da classe
 	 * {@link TipoProcessoJudicial}
@@ -224,7 +254,7 @@ public class Op_2_GeraXMLsIndividuais {
 	 * @throws IOException
 	 */
 	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, DadosInvalidosException {
-		
+
 		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
 			if (rsProcessos.next()) {
@@ -235,7 +265,7 @@ public class Op_2_GeraXMLsIndividuais {
 		}
 	}
 
-	
+
 	/**
 	 * Método criado com base no script recebido do TRT14
 	 * para preencher os dados de um processo judicial dentro das classes que gerarão o XML.
@@ -250,39 +280,39 @@ public class Op_2_GeraXMLsIndividuais {
 
 		// Objeto que será retornado
 		TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
-		
+
 		// Cabeçalho com dados básicos do processo:
 		processoJudicial.setDadosBasicos(analisarCabecalhoProcesso(rsProcesso));
 
 		// Movimentos processuais e complementos
 		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(rsProcesso.getInt("id_processo_trf")));
-		
+
 		return processoJudicial;
 	}
 
-	
+
 	private TipoCabecalhoProcesso analisarCabecalhoProcesso(ResultSet rsProcesso) throws SQLException, DadosInvalidosException {
-		
+
 		String numeroCompletoProcesso = rsProcesso.getString("numero_completo_processo");
-		
+
 		// Script TRT14:
 		// raise notice '<dadosBasicos nivelSigilo="%" numero="%" classeProcessual="%" codigoLocalidade="%" dataAjuizamento="%">' 
 		//  , proc.nivelSigilo, proc.nr_processo, proc.cd_classe_judicial, proc.id_municipio_ibge_origem, proc.dt_autuacao;
 		TipoCabecalhoProcesso cabecalhoProcesso = new TipoCabecalhoProcesso();
 		cabecalhoProcesso.setNivelSigilo(Auxiliar.getCampoIntNotNull(rsProcesso, "nivelSigilo"));
 		cabecalhoProcesso.setNumero(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
-		
+
 		// Grava a classe processual, conferindo se ela está na tabela nacional do CNJ
 		analisaClassesProcessuaisCNJ.preencherClasseProcessualVerificandoTPU(cabecalhoProcesso, rsProcesso.getInt("cd_classe_judicial"), rsProcesso.getString("ds_classe_judicial"), numeroCompletoProcesso);
-		
+
 		cabecalhoProcesso.setDataAjuizamento(Auxiliar.getCampoStringNotNull(rsProcesso, "dt_autuacao"));
 		cabecalhoProcesso.setValorCausa(Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa")); 
 		if (grau == 1) {
-			
+
 			// Em 1G, pega como localidade o município do OJ do processo
 			cabecalhoProcesso.setCodigoLocalidade(Auxiliar.getCampoStringNotNull(rsProcesso, "id_municipio_ibge"));
 		} else {
-			
+
 			// Em 2G, pega como localidade o município do TRT, que está definido no arquivo de configurações
 			cabecalhoProcesso.setCodigoLocalidade(Integer.toString(codigoMunicipioIBGETRT));
 		}
@@ -295,15 +325,15 @@ public class Op_2_GeraXMLsIndividuais {
 
 		// Preenche dados do órgão julgador do processo
 		cabecalhoProcesso.setOrgaoJulgador(analisarOrgaoJulgadorProcesso(rsProcesso));
-		
+
 		return cabecalhoProcesso;
 	}
 
-	
+
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
-		
+
 		List<TipoPoloProcessual> polos = new ArrayList<TipoPoloProcessual>();
-		
+
 		// Consulta todos os polos do processo
 		nsPolos.setInt("id_processo", idProcesso);
 		try (ResultSet rsPolos = nsPolos.executeQuery()) {
@@ -328,7 +358,7 @@ public class Op_2_GeraXMLsIndividuais {
 				nsPartes.setInt("id_processo", idProcesso);
 				nsPartes.setString("in_participacao", rsPolos.getString("in_participacao"));
 				try (ResultSet rsPartes = nsPartes.executeQuery()) {
-					
+
 					// O PJe considera, como partes, tanto os autores e réus quanto seus advogados,
 					// procuradores, tutores, curadores, assistentes, etc.
 					// Por isso, a identificação das partes será feita em etapas:
@@ -346,28 +376,28 @@ public class Op_2_GeraXMLsIndividuais {
 					while (rsPartes.next()) {
 
 						String nomeParte = Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome");
-						
+
 						// Script TRT14:
 						// raise notice '<parte>';
 						TipoParte parte = new TipoParte();
 						int idProcessoParte = rsPartes.getInt("id_processo_parte");
 						int idProcessoParteRepresentante = rsPartes.getInt("id_parte_representante");
 						partesPorIdParte.put(idProcessoParte, parte);
-						
+
 						// Verifica se, no PJe, essa parte possui representante (advogado, procurador, tutor, curador, etc)
 						if (idProcessoParteRepresentante > 0) {
 							if (!partesERepresentantes.containsKey(idProcessoParte)) {
 								partesERepresentantes.put(idProcessoParte, new ArrayList<Integer>());
 							}
 							partesERepresentantes.get(idProcessoParte).add(idProcessoParteRepresentante);
-							
+
 							String tipoParteRepresentante = rsPartes.getString("ds_tipo_parte_representante");
 							if ("ADVOGADO".equals(tipoParteRepresentante)) {
 								tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.A);
-								
+
 							} else if ("PROCURADOR".equals(tipoParteRepresentante)) {
 								tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.P);
-								
+
 							} else if ("ADMINISTRADOR".equals(tipoParteRepresentante)
 									|| "ASSISTENTE".equals(tipoParteRepresentante)
 									|| "ASSISTENTE TÉCNICO".equals(tipoParteRepresentante)
@@ -379,7 +409,7 @@ public class Op_2_GeraXMLsIndividuais {
 								// Não fazer nada, pois esses tipos de parte (PJe), apesar de estarem descritos
 								// no arquivo "intercomunicacao-2.2.2", não estão sendo enviados ao CNJ
 								// pela ferramenta "replicacao-client".
-								
+
 							} else {
 								LOGGER.warn("O representante da parte '" + nomeParte + "' (id_processo_parte=" + idProcessoParte + ") possui um tipo de parte que ainda não foi tratado: " + tipoParteRepresentante);
 							}
@@ -397,7 +427,7 @@ public class Op_2_GeraXMLsIndividuais {
 						TipoPessoa pessoa = new TipoPessoa();
 						parte.setPessoa(pessoa);
 						pessoa.setNome(nomeParte);
-						
+
 						// Tipo de pessoa (física / jurídica / outros)
 						// Pergunta feita à ASSTECO: no e-mail com assunto "Dúvidas sobre envio de dados para Justiça em Números", em 03/07/2017 14:15:
 						//   Estou gerando os dados para o Selo Justiça em Números, do CNJ. Ocorre que o MNI 2.2, utilizado como referência, permite somente o envio de dados de pessoas dos tipos "Física", "Jurídica", "Autoridade" e "Órgão de Representação".
@@ -422,21 +452,21 @@ public class Op_2_GeraXMLsIndividuais {
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.JURIDICA);
 						} else {
 							throw new DadosInvalidosException("Tipo de pessoa desconhecido: " + tipoPessoaPJe, "Processo " + numeroProcesso + ", polo '" + tipoPoloPJe + "', parte '" + nomeParte + "'");
-//							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomeParte + "': " + tipoPessoaPJe);
-//							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
+							//							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomeParte + "': " + tipoPessoaPJe);
+							//							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
 						}
-						
+
 						// Consulta os documentos da parte
 						identificaDocumentosPessoa.preencherDocumentosPessoa(pessoa, rsPartes.getInt("id_pessoa"));
-						
+
 						// Identifica o gênero (sexo) da pessoa (pode ser necessário consultar na outra instância)
 						identificaGeneroPessoa.preencherSexoPessoa(pessoa, rsPartes.getString("in_sexo"), rsPartes.getString("ds_nome_consulta"));
-						
+
 						// Identifica os endereços da parte
 						nsEnderecos.setInt("id_processo_parte", rsPartes.getInt("id_processo_parte"));
 						try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
 							while (rsEnderecos.next()) {
-								
+
 								// intercomunicacao-2.2.2: Atributo indicador do código de endereçamento 
 								// postal do endereço no diretório nacional de endereços da ECT. O 
 								// valor deverá ser uma sequência de 8 dígitos, sem qualquer separador. 
@@ -447,41 +477,41 @@ public class Op_2_GeraXMLsIndividuais {
 								if (!StringUtils.isBlank(cep)) {
 									cep = cep.replaceAll("[^0-9]", "");
 								}
-								
+
 								if (!StringUtils.isBlank(cep)) {
 									TipoEndereco endereco = new TipoEndereco();
 									endereco.setCep(cep);
-									
+
 									// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
 									// tais como rua, praça, quadra etc. O elemento é opcional para permitir 
 									// que as implementações acatem a indicação de endereço exclusivamente 
 									// pelo CEP, quando o CEP já encerrar o dado respectivo.
 									endereco.setLogradouro(rsEnderecos.getString("nm_logradouro"));
-									
+
 									// intercomunicacao-2.2.2: O número vinculado a este endereço. O elemento 
 									// é opcional para permitir que as implementações acatem a indicação de 
 									// endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
 									endereco.setNumero(rsEnderecos.getString("nr_endereco"));
-									
+
 									// intercomunicacao-2.2.2: O complemento vinculado a este endereço. 
 									// O elemento é opcional em razão de sua própria natureza.
 									endereco.setComplemento(rsEnderecos.getString("ds_complemento"));
-									
+
 									// intercomunicacao-2.2.2: O bairro vinculado a este endereço. O elemento 
 									// é opcional para permitir que as implementações acatem a indicação 
 									// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
 									endereco.setBairro(rsEnderecos.getString("nm_bairro"));
-									
+
 									// intercomunicacao-2.2.2: A cidade vinculada a este endereço. O elemento 
 									// é opcional para permitir que as implementações acatem a indicação 
 									// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
 									endereco.setCidade(rsEnderecos.getString("ds_municipio"));
-									
+
 									pessoa.getEndereco().add(endereco);
 								}
 							}
 						}
-						
+
 						// Outras dados da pessoa
 						if (rsPartes.getDate("dt_nascimento") != null) {
 							pessoa.setDataNascimento(Auxiliar.formataDataAAAAMMDD(rsPartes.getDate("dt_nascimento")));
@@ -492,20 +522,20 @@ public class Op_2_GeraXMLsIndividuais {
 						pessoa.setNomeGenitor(rsPartes.getString("nm_genitor"));
 						pessoa.setNomeGenitora(rsPartes.getString("nm_genitora"));
 					}
-					
+
 					// Para cada parte identificada, localiza todos os seus representantes
 					for (int idProcessoParte: partesERepresentantes.keySet()) {
 						for (int idProcessoParteRepresentante : partesERepresentantes.get(idProcessoParte)) {
-							
+
 							// Isola a parte e seu representante
 							TipoParte parte = partesPorIdParte.get(idProcessoParte);
 							TipoParte representante = partesPorIdParte.get(idProcessoParteRepresentante);
-							
+
 							// Pode ocorrer de a parte estar ATIVA e possuir um advogado cujo registro 
 							// em tb_processo_parte está INATIVO. Nesse caso, não insere o advogado
 							// como representante.
 							if (representante != null) {
-								
+
 								// Cria um objeto TipoRepresentanteProcessual a partir dos dados do representante
 								// OBS: somente se o tipo do representante foi identificado, pois
 								//      alguns tipos (como tutores e curadores) não são processados
@@ -523,7 +553,7 @@ public class Op_2_GeraXMLsIndividuais {
 							}
 						}
 					}
-					
+
 					// Retira, da lista de partes do processo, as partes que são representantes
 					// (e, por isso, já estão constando dentro das suas partes representadas)
 					for (List<Integer> idProcessoParteRepresentantes: partesERepresentantes.values()) {
@@ -531,26 +561,26 @@ public class Op_2_GeraXMLsIndividuais {
 							partesPorIdParte.remove(idProcessoParteRepresentante);
 						}
 					}
-					
+
 					// Insere as partes "restantes" no XML
 					for (TipoParte parte: partesPorIdParte.values()) {
 						polo.getParte().add(parte);
 					}
 				}
-				
+
 				if (polo.getParte().isEmpty()) {
-					LOGGER.warn("O polo " + polo.getPolo() + " do processo não contém nenhuma parte no XML gerado!");
+					throw new DadosInvalidosException("O polo " + polo.getPolo() + " do processo não contém nenhuma parte no XML gerado!", numeroProcesso);
 				}
 			}
 		}
 		return polos;
 	}
 
-	
+
 	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(String nrProcesso) throws SQLException, DadosInvalidosException {
-		
+
 		List<TipoAssuntoProcessual> assuntos = new ArrayList<TipoAssuntoProcessual>();
-		
+
 		// Consulta todos os assuntos do processo
 		nsAssuntos.setString("nr_processo", nrProcesso);
 		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
@@ -562,7 +592,7 @@ public class Op_2_GeraXMLsIndividuais {
 				// raise notice '<assunto>'; -- principal="%">', assunto.in_assunto_principal;
 				// raise notice '<codigoNacional>%</codigoNacional>', assunto.cd_assunto_trf;
 				// raise notice '</assunto>';
-				
+
 				// Analisa o assunto, que pode ou não estar nas tabelas processuais unificadas do CNJ.
 				int codigo = Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf");
 				TipoAssuntoProcessual assunto = analisaAssuntosCNJ.getAssunto(codigo);
@@ -580,7 +610,7 @@ public class Op_2_GeraXMLsIndividuais {
 					}
 				}
 			}
-			
+
 			// Script TRT14:
 			// -- se não tiver assunto? 
 			// IF fl_assunto = 0 THEN 
@@ -590,28 +620,28 @@ public class Op_2_GeraXMLsIndividuais {
 			//   raise notice '</assunto>';
 			// END IF;
 			if (!encontrouAlgumAssunto) {
-				
+
 				// Se não há nenhum assunto no processo, verifica se deve ser utilizando um assunto
 				// padrão, conforme arquivo de configuração.
 				TipoAssuntoProcessual assuntoPadrao = analisaAssuntosCNJ.getAssuntoProcessualPadrao();
 				if (assuntoPadrao != null) {
 					assuntos.add(assuntoPadrao);
-					
+
 				} else {
-				    throw new DadosInvalidosException("Processo sem assunto cadastrado", nrProcesso);
+					throw new DadosInvalidosException("Processo sem assunto cadastrado", nrProcesso);
 					//LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
 				}
-				
+
 			} else if (!encontrouAssuntoPrincipal) {
 				LOGGER.info("Processo sem assunto principal: " + nrProcesso + ". O primeiro assunto será marcado como principal.");
 				assuntos.get(0).setPrincipal(true);
 			}
 		}
-		
+
 		return assuntos;
 	}
 
-	
+
 	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ResultSet rsProcesso) throws SQLException, DadosInvalidosException {
 		/*
 		 * Órgãos Julgadores
@@ -635,29 +665,29 @@ public class Op_2_GeraXMLsIndividuais {
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
 		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
 		if (grau == 1) {
-			
+
 			// Em 1G, pega como localidade do OJ o município do OJ do processo
 			orgaoJulgador.setCodigoMunicipioIBGE(Auxiliar.getCampoIntNotNull(rsProcesso, "id_municipio_ibge"));
-			
+
 			// Em 1G, instância será sempre originária
 			orgaoJulgador.setInstancia("ORIG");
 		} else {
-			
+
 			// Em 2G, pega como localidade do OJ o município do TRT, que está definido no arquivo de configurações
 			orgaoJulgador.setCodigoMunicipioIBGE(codigoMunicipioIBGETRT);
-			
+
 			// Em 2G, instância poderá ser originária ou não
 			orgaoJulgador.setInstancia("2".equals(rsProcesso.getString("nr_instancia")) ? "ORIG" : "REV");
 		}
-		
+
 		return orgaoJulgador;
 	}
 
-	
+
 	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(int idProcesso) throws SQLException {
-		
+
 		ArrayList<TipoMovimentoProcessual> movimentos = new ArrayList<>();
-		
+
 		// Consulta todos os movimentos do processo
 		nsMovimentos.setInt("id_processo", idProcesso);
 		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
@@ -681,7 +711,7 @@ public class Op_2_GeraXMLsIndividuais {
 					nsComplementos.setInt("id_processo_evento", idMovimento);
 					try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
 						while (rsComplementos.next()) {
-	
+
 							// Script TRT14:
 							//  IF '' = trim(compl.cd_complemento) THEN
 							//    raise notice '<complemento>%:%:%</complemento>'
@@ -701,7 +731,7 @@ public class Op_2_GeraXMLsIndividuais {
 								/*
 								O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
 								<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>
-									
+
 								Ex.: no movimento 123, seria
 									18:motivo_da_remessa:38:em grau de recurso
 									7:destino:1ª Vara Cível
@@ -716,20 +746,20 @@ public class Op_2_GeraXMLsIndividuais {
 				}
 			}
 		}
-		
+
 		return movimentos;
 	}
 
-	
+
 	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException {
 
 		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
-		
+
 		// Objeto que fará o de/para dos OJ e OJC do PJe para os do CNJ
 		if (processaServentiasCNJ == null) {
 			processaServentiasCNJ = new AnalisaServentiasCNJ();
 		}
-		
+
 		// Abre conexão com o banco de dados do PJe
 		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
 		conexaoBasePrincipal.setAutoCommit(false);
@@ -738,14 +768,14 @@ public class Op_2_GeraXMLsIndividuais {
 		// essa informação estiver ausente na instância atual.
 		int outraInstancia = grau == 1 ? 2 : 1;
 		identificaGeneroPessoa = new IdentificaGeneroPessoa(outraInstancia);
-		
+
 		// Objeto que auxiliará na identificação dos documentos de identificação das pessoas
 		identificaDocumentosPessoa = new IdentificaDocumentosPessoa(conexaoBasePrincipal);
-		
+
 		// SQL que fará a consulta de um processo
 		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/01_consulta_processo.sql");
 		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-		
+
 		// SQL que fará a consulta de todos os polos
 		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/02_consulta_polos.sql");
 		nsPolos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPolos);		
@@ -772,14 +802,14 @@ public class Op_2_GeraXMLsIndividuais {
 
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao(Parametro.codigo_municipio_ibge_trt);
-		
+
 		// Objeto que identificará os assuntos e movimentos processuais das tabelas nacionais do CNJ
 		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal);
 		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(grau, conexaoBasePrincipal);
 		analisaClassesProcessuaisCNJ = new AnalisaClassesProcessuaisCNJ(grau);
 	}
 
-	
+
 	public void close() {
 
 		// Fecha objeto que analisa os movimentos processuais do CNJ
@@ -791,7 +821,7 @@ public class Op_2_GeraXMLsIndividuais {
 				LOGGER.warn("Erro fechando 'analisaMovimentosCNJ': " + e.getLocalizedMessage(), e);
 			}
 		}
-				
+
 		// Fecha objeto que analisa os assuntos processuais do CNJ
 		if (analisaAssuntosCNJ != null) {
 			try {
@@ -801,7 +831,7 @@ public class Op_2_GeraXMLsIndividuais {
 				LOGGER.warn("Erro fechando 'analisaAssuntosCNJ': " + e.getLocalizedMessage(), e);
 			}
 		}
-		
+
 		// Fecha PreparedStatements
 		if (nsConsultaProcessos != null) {
 			try {
@@ -868,7 +898,8 @@ public class Op_2_GeraXMLsIndividuais {
 			identificaDocumentosPessoa.close();
 			identificaDocumentosPessoa = null;
 		}
-		
+		listaProcessos = null;
+
 		if (conexaoBasePrincipal != null) {
 			try {
 				conexaoBasePrincipal.close();

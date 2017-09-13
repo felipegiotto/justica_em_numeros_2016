@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,6 +55,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProdutorConsumidorMultiThread;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.XmlComInstancia;
 
 /**
@@ -63,7 +65,6 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.XmlComInstancia;
  */
 public class Op_4_ValidaEnviaArquivosCNJ {
 	
-	private static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
 	private static final String SUFIXO_ARQUIVO_TENTOU_ENVIAR = ".tentativa_envio";
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
 	private final CloseableHttpClient client;
@@ -73,6 +74,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private final int numeroThreads;
 	private static final Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
 	private static final String NOME_ARQUIVO_ABORTAR = "ABORTAR.txt"; // Arquivo que pode ser gravado na pasta "output/[tipo_carga]", que faz com que o envio dos dados ao CNJ seja abortado
+	private static ProgressoInterfaceGrafica progresso;
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -92,29 +94,37 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			LOGGER.info("Se ocorrer algum erro no envio, a operação será reiniciada quantas vezes for necessário!");
 		}
 		
-		boolean executar = true;
-		do {
-			Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
-			operacao.testarConexaoComCNJ();
-			operacao.consultarTotaisDeProcessosNoCNJ(); // Antes do envio
-			operacao.localizarEnviarXMLsAoCNJ();
-			operacao.consultarTotaisDeProcessosNoCNJ(); // Depois do envio
-			
-			DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
-			
-			// Verifica se deve executar novamente em caso de erros
-			if (continuarEnquantoHouverErro) {
-				if (DadosInvalidosException.getQtdErros() > 0) {
-					DadosInvalidosException.zerarQtdErros();
-					LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 5min... Se desejar, aborte este script.");
-					Thread.sleep(5 * 60_000);
+		progresso = new ProgressoInterfaceGrafica("(4/5) Envio dos arquivos ao CNJ");
+		try {
+			boolean executar = true;
+			do {
+				progresso.setProgress(0);
+				
+				Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
+				operacao.testarConexaoComCNJ();
+				operacao.consultarTotaisDeProcessosNoCNJ(); // Antes do envio
+				operacao.localizarEnviarXMLsAoCNJ();
+				operacao.consultarTotaisDeProcessosNoCNJ(); // Depois do envio
+				
+				DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+				
+				// Verifica se deve executar novamente em caso de erros
+				if (continuarEnquantoHouverErro) {
+					if (DadosInvalidosException.getQtdErros() > 0) {
+						DadosInvalidosException.zerarQtdErros();
+						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 5min... Se desejar, aborte este script.");
+						Thread.sleep(5 * 60_000);
+					} else {
+						executar = false;
+					}
 				} else {
 					executar = false;
 				}
-			} else {
-				executar = false;
-			}
-		} while (executar);
+			} while (executar);
+		} finally {
+			progresso.close();
+			progresso = null;
+		}
 		
 		LOGGER.info("Fim!");
 	}
@@ -318,7 +328,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
 		List<XmlComInstancia> arquivosParaEnviar = new ArrayList<>();
-		AtomicLong totalArquivosXML = new AtomicLong();
+		AtomicInteger totalArquivosXML = new AtomicInteger();
 		
 		// Consulta arquivos das instâncias selecionadas
 		if (Auxiliar.deveProcessarSegundoGrau()) {
@@ -327,6 +337,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		if (Auxiliar.deveProcessarPrimeiroGrau()) {
 			localizarXMLsPendentesDeEnvio(1, arquivosParaEnviar, totalArquivosXML);
 		}
+		progresso.setMax(totalArquivosXML.get());
+		progresso.setProgress(totalArquivosXML.get() - arquivosParaEnviar.size());
 		
 		// Coloca os arquivos que já tentou-se enviar (e, provavelmente, deu erro) no final da lista
 		ordenarArquivosNuncaEnviadosPrimeiro(arquivosParaEnviar);
@@ -348,7 +360,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @param grau
 	 * @throws DadosInvalidosException 
 	 */
-	private void localizarXMLsPendentesDeEnvio(int grau, List<XmlComInstancia> arquivosParaEnviar, AtomicLong totalArquivosXML) throws DadosInvalidosException {
+	private void localizarXMLsPendentesDeEnvio(int grau, List<XmlComInstancia> arquivosParaEnviar, AtomicInteger totalArquivosXML) throws DadosInvalidosException {
 		
 		// Lê arquivos da lista de XMLs individuais ou unificados, conforme parâmetros
 		File pastaXMLsParaEnvio;
@@ -361,7 +373,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		localizarArquivosRecursivamente(pastaXMLsParaEnvio, grau, arquivosParaEnviar, totalArquivosXML);
 	}
 
-	private void localizarArquivosRecursivamente(File pasta, int grau, List<XmlComInstancia> arquivosParaEnviar, AtomicLong totalArquivosXML) throws DadosInvalidosException {
+	private void localizarArquivosRecursivamente(File pasta, int grau, List<XmlComInstancia> arquivosParaEnviar, AtomicInteger totalArquivosXML) throws DadosInvalidosException {
 		
 		LOGGER.debug("Localizando todos os arquivos XML da pasta '" + pasta.getAbsolutePath() + "'...");
 		if (!pasta.isDirectory()) {
@@ -470,6 +482,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 					}
 				} catch (DadosInvalidosException ex) {
 					LOGGER.error("* Erro ao enviar arquivo: " + xml + " / Resposta: " + body + " / Erro: " + ex.getLocalizedMessage());
+				} finally {
+					progresso.incrementProgress();
 				}
 			}
 		};
@@ -559,7 +573,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		}
 		
 		// Não envia arquivos que já foram enviados NESTA REMESSA
-		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + SUFIXO_ARQUIVO_ENVIADO);
+		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_ARQUIVO_ENVIADO);
 		if (confirmacaoEnvio.exists()) {
 			//LOGGER.debug("Arquivo já foi enviado anteriormente: " + arquivo);
 			return false;
@@ -569,7 +583,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	}
 	
 	private void marcarArquivoComoEnviado(File arquivo) {
-		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + SUFIXO_ARQUIVO_ENVIADO);
+		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_ARQUIVO_ENVIADO);
 		try {
 			confirmacaoEnvio.createNewFile();
 		} catch (IOException ex) {

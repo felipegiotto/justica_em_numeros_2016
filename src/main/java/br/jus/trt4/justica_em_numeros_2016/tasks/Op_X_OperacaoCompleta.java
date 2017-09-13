@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
 
 /**
@@ -28,10 +29,11 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
  */
 public class Op_X_OperacaoCompleta {
 
+	private ProgressoInterfaceGrafica progresso;
+	
 	// Enum com todas as operações que serão executadas.
 	public enum ControleOperacoes {
 	    
-		OP_0_CRIACAO_PASTA_OUTPUT          (50),
 		OP_1_BAIXAR_LISTA                  (100),
 		OP_1_CONFERIR_SERVENTIAS           (150),
 		OP_2_GERAR_XMLS_INDIVIDUAIS        (200),
@@ -61,7 +63,11 @@ public class Op_X_OperacaoCompleta {
 	public static void main(String[] args) throws Exception {
 		try {
 			Op_X_OperacaoCompleta operacaoCompleta = new Op_X_OperacaoCompleta();
-			operacaoCompleta.executarOperacaoCompleta();
+			try {
+				operacaoCompleta.executarOperacaoCompleta();
+			} finally {
+				operacaoCompleta.close();
+			}
 		} catch (Exception ex) {
 			LOGGER.error("Op_X_OperacaoCompleta abortada", ex);
 		}
@@ -69,30 +75,21 @@ public class Op_X_OperacaoCompleta {
 
 	public Op_X_OperacaoCompleta() {
 		this.pastaOutput = Auxiliar.prepararPastaDeSaida();
+		this.progresso = new ProgressoInterfaceGrafica("Operação Completa");
+		this.progresso.setMax(ControleOperacoes.values().length);
 	}
 
+	public void close() {
+		this.progresso.close();
+		this.progresso = null;
+	}
+	
 	/**
 	 * Método que executa todas as operações que ainda estão pendentes.
 	 * 
 	 * @throws Exception
 	 */
 	private void executarOperacaoCompleta() throws Exception {
-
-		// CHECKLIST: 2. Verifique se existe uma pasta "output"
-		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_0_CRIACAO_PASTA_OUTPUT, new Operacao() {
-
-			@Override
-			public void run() {
-				File pasta1G = new File(pastaOutput, "G1");
-				if (pasta1G.isDirectory()) {
-					throw new RuntimeException("A pasta '" + pasta1G + "' já existe! Por questões de segurança, a operação completa deve ser executada desde o início, antes mesmo da criação desta pasta de saída! Exclua-a (fazendo backup, se necessário) e tente novamente.");
-				}
-				File pasta2G = new File(pastaOutput, "G2");
-				if (pasta2G.isDirectory()) {
-					throw new RuntimeException("A pasta '" + pasta1G + "' já existe! Por questões de segurança, a operação completa deve ser executada desde o início, antes mesmo da criação desta pasta de saída! Exclua-a (fazendo backup, se necessário) e tente novamente.");
-				}
-			}
-		});
 
 		// CHECKLIST: 4. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
@@ -151,7 +148,7 @@ public class Op_X_OperacaoCompleta {
 			
 			@Override
 			public void run() throws Exception {
-				Op_5_BackupConfiguracoes.efetuarBackupArquivosDeConfiguracao();
+				Op_5_BackupConfiguracoes.main(null);
 			}
 		});
 		
@@ -193,6 +190,8 @@ public class Op_X_OperacaoCompleta {
 		} else {
 			LOGGER.info("Operação " + descricaoOperacao + " já foi executada!");
 		}
+		
+		this.progresso.incrementProgress();
 	}
 
 	/**

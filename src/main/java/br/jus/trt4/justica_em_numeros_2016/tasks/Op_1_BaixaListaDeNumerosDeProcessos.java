@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 
 /**
  * Monta uma lista de processos, conforme o parâmetro "tipo_carga_xml" do arquivo "config.properties",
@@ -41,18 +42,31 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	
 	
 	public static void main(String[] args) throws SQLException, IOException {
-		Auxiliar.prepararPastaDeSaida();
 		
-		if (Auxiliar.deveProcessarSegundoGrau()) {
-			gerarListaProcessos(2);
+		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(1/5) Baixa lista de números de processos");
+		try {
+			progresso.setMax(3);
+			
+			Auxiliar.prepararPastaDeSaida();
+			progresso.incrementProgress();
+			
+			// Lista de processos do primeiro grau
+			if (Auxiliar.deveProcessarPrimeiroGrau()) {
+				gerarListaProcessos(1);
+			}
+			progresso.incrementProgress();
+			
+			// Lista de processos do segundo grau
+			if (Auxiliar.deveProcessarSegundoGrau()) {
+				gerarListaProcessos(2);
+			}
+			progresso.incrementProgress();
+			
+			DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+			LOGGER.info("Fim!");
+		} finally {
+			progresso.close();
 		}
-		
-		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			gerarListaProcessos(1);
-		}
-		
-		DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
-		LOGGER.info("Fim!");
 	}
 
 	
