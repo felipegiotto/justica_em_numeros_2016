@@ -101,19 +101,19 @@
                 </configuration>
             </plugin>
 
-<!--                         Make this jar executable -->
-<!--                         <plugin> -->
-<!--                                 <groupId>org.apache.maven.plugins</groupId> -->
-<!--                                 <artifactId>maven-jar-plugin</artifactId> -->
-<!--                                 <version>3.0.2</version> -->
-<!--                                 <configuration> -->
-<!--                                         <archive> -->
-<!--                                                 <manifest> -->
-<!--                                                         <mainClass>br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ValidaEnviaArquivosCNJ</mainClass> -->
-<!--                                                 </manifest> -->
-<!--                                         </archive> -->
-<!--                                 </configuration> -->
-<!--                         </plugin> -->
+			<!-- Make this jar executable -->
+			<plugin>
+			        <groupId>org.apache.maven.plugins</groupId>
+			        <artifactId>maven-jar-plugin</artifactId>
+			        <version>3.0.2</version>
+			        <configuration>
+			                <archive>
+			                        <manifest>
+			                                <mainClass>br.jus.trt4.justica_em_numeros_2016.auxiliar.MainClass</mainClass>
+			                        </manifest>
+			                </archive>
+			        </configuration>
+			</plugin>
 
 
 

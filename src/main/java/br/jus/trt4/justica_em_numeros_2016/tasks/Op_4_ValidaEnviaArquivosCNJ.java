@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,8 +111,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				if (continuarEnquantoHouverErro) {
 					if (DadosInvalidosException.getQtdErros() > 0) {
 						DadosInvalidosException.zerarQtdErros();
+						progresso.setInformacoes("Aguardando para reiniciar...");
 						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 5min... Se desejar, aborte este script.");
 						Thread.sleep(5 * 60_000);
+						progresso.setInformacoes("");
 					} else {
 						executar = false;
 					}
@@ -288,7 +289,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 					// Quantidade de processos enviados no lote
 					Processos processosXML;
 					try {
-						processosXML = (Processos) unmarshaller.unmarshal(arquivoXML);
+						synchronized(unmarshaller) {
+							processosXML = (Processos) unmarshaller.unmarshal(arquivoXML);
+						}
 					} catch (JAXBException e) {
 						throw new DadosInvalidosException("Erro ao tentar analisar a quantidade de processos: " + e.getLocalizedMessage(), arquivoXML.toString());
 					}
@@ -460,7 +463,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							
 							// Estatísticas de tempo dos últimos 1000 arquivos
 							tempo = System.currentTimeMillis() - tempo;
-							synchronized (this) {
+							synchronized (temposEnvioCNJ) {
 								temposEnvioCNJ.add(tempo);
 								if (temposEnvioCNJ.size() > 1000) {
 									temposEnvioCNJ.remove(0);
@@ -500,7 +503,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			StringBuilder sbProgresso = new StringBuilder();
 			sbProgresso.append("Progresso do envio: " + i + "/" + qtdArquivos);
 			sbProgresso.append(" (" + (i * 100 / qtdArquivos) + "%");
-			synchronized (this) {
+			synchronized (temposEnvioCNJ) {
 				int arquivosMedicao = temposEnvioCNJ.size();
 				if (arquivosMedicao > 0) {
 					long totalTempo = 0;

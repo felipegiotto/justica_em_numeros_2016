@@ -66,5 +66,6 @@ public class DadosInvalidosException extends Exception {
     public static void zerarQtdErros() {
     	qtdErros = 0;
     	errosPorTipo.clear();
+    	ProgressoInterfaceGrafica.setWarnings("");
     }
 }
