@@ -119,12 +119,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
 			LOGGER.info("Fim!");
 		} finally {
+			progresso.setInformacoes("");
 			progresso.close();
 			progresso = null;
 		}
 	}
 
-	private List<String> carregarListaDeProcessos() throws IOException {
+	private List<String> carregarListaDeProcessos() throws DadosInvalidosException {
 		listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		return listaProcessos;
 	}
@@ -143,7 +144,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		this.grau = grau;
 	}
 
-	private void gerarXML() throws IOException, SQLException, JAXBException {
+	private void gerarXML() throws SQLException, JAXBException, DadosInvalidosException, IOException {
 
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
 
@@ -188,17 +189,18 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				LOGGER.debug("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
 			} else {
 
-				// Calcula tempo restante
-				if (LOGGER.isDebugEnabled()) {
-					int xmlsRestantes = listaProcessos.size() - i;
-					long tempoRestante = 0;
-					long mediaPorProcesso = 0;
-					if (qtdXMLGerados > 0) {
-						mediaPorProcesso = tempoGasto / qtdXMLGerados;
-						tempoRestante = xmlsRestantes * mediaPorProcesso;
-					}
-
-					LOGGER.debug("Gravando Processo " + numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestante == 0 ? "" : " - ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante)) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + arquivoXML + "...");
+				// Calcula e mostra tempo restante
+				int xmlsRestantes = listaProcessos.size() - i;
+				long tempoRestante = 0;
+				long mediaPorProcesso = 0;
+				if (qtdXMLGerados > 0) {
+					mediaPorProcesso = tempoGasto / qtdXMLGerados;
+					tempoRestante = xmlsRestantes * mediaPorProcesso;
+				}
+				String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
+				LOGGER.debug("Gravando Processo " + numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + arquivoXML + "...");
+				if (tempoRestanteStr != null) {
+					progresso.setInformacoes("G" + grau + " - " + tempoRestanteStr);
 				}
 
 				// Executa a consulta desse processo no banco de dados do PJe

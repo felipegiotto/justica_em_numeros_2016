@@ -122,6 +122,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				}
 			} while (executar);
 		} finally {
+			progresso.setInformacoes("");
 			progresso.close();
 			progresso = null;
 		}
@@ -496,26 +497,26 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			enviarMultiThread.produzir(xml);
 			
 			// Mostra previsão de conclusão
-			if (i % 10 == 0) {
-				StringBuilder progresso = new StringBuilder();
-				progresso.append("Progresso do envio: " + i + "/" + qtdArquivos);
-				progresso.append(" (" + (i * 100 / qtdArquivos) + "%");
-				synchronized (this) {
-					int arquivosMedicao = temposEnvioCNJ.size();
-					if (arquivosMedicao > 0) {
-						long totalTempo = 0;
-						for (Long tempo: temposEnvioCNJ) {
-							totalTempo += tempo;
-						}
-						long tempoMedio = totalTempo / arquivosMedicao;
-						long tempoRestante = (qtdArquivos - i) * tempoMedio;
-						progresso.append(" - ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads) + " em " + numeroThreads + " thread(s)");
-						progresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
+			StringBuilder sbProgresso = new StringBuilder();
+			sbProgresso.append("Progresso do envio: " + i + "/" + qtdArquivos);
+			sbProgresso.append(" (" + (i * 100 / qtdArquivos) + "%");
+			synchronized (this) {
+				int arquivosMedicao = temposEnvioCNJ.size();
+				if (arquivosMedicao > 0) {
+					long totalTempo = 0;
+					for (Long tempo: temposEnvioCNJ) {
+						totalTempo += tempo;
 					}
-					progresso.append(")");
+					long tempoMedio = totalTempo / arquivosMedicao;
+					long tempoRestante = (qtdArquivos - i) * tempoMedio;
+					String tempoRestanteStr = "ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads);
+					sbProgresso.append(" - " + tempoRestanteStr + " em " + numeroThreads + " thread(s)");
+					sbProgresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
+					progresso.setInformacoes(tempoRestanteStr);
 				}
-				LOGGER.debug(progresso);
+				sbProgresso.append(")");
 			}
+			LOGGER.debug(sbProgresso);
 			
 			// Verifica se o usuário quer abortar o envio ao CNJ
 			if (arquivoAbortar.exists()) {

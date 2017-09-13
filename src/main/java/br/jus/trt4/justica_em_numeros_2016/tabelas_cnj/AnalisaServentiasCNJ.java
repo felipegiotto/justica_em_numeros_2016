@@ -113,7 +113,7 @@ public class AnalisaServentiasCNJ {
 		return false;
 	}
 	
-	public boolean diagnosticarServentiasInexistentes() throws IOException, SQLException {
+	public boolean diagnosticarServentiasInexistentes() throws SQLException, DadosInvalidosException {
 		LOGGER.info("Iniciando diagnóstico de serventias inexistentes...");
 		
 		if (Auxiliar.deveProcessarSegundoGrau()) {
@@ -129,7 +129,7 @@ public class AnalisaServentiasCNJ {
 		return AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
 	}
 
-	private void diagnosticarServentiasInexistentes(int grau) throws IOException, SQLException {
+	private void diagnosticarServentiasInexistentes(int grau) throws SQLException, DadosInvalidosException {
 		
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		if (!listaProcessos.isEmpty()) {

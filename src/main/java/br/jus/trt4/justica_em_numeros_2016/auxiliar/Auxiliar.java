@@ -108,7 +108,7 @@ public class Auxiliar {
 		if ("SIM".equals(valor)) {
 			return true;
 		}
-		if ("NAO".equals(valor)) {
+		if ("NAO".equals(valor) || "NÃO".equals(valor)) {
 			return false;
 		}
 		throw new RuntimeException("Defina o parâmetro '" + parametro + "' no arquivo '" + arquivoConfiguracoes + "' com os valores SIM ou NAO");
@@ -542,10 +542,14 @@ public class Auxiliar {
 	    }
 	}
 	
-	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws IOException {
-		List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
-		LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
-		return listaProcessos;
+	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws DadosInvalidosException {
+		try {
+			List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
+			LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
+			return listaProcessos;
+		} catch (IOException ex) {
+			throw new DadosInvalidosException("Lista de processos não foi encontrada! Execute operação '1'", arquivoEntrada.toString());
+		}
 	}
 
 
