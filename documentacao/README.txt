@@ -249,7 +249,19 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
         FROM processos
         WHERE existe_assunto = false OR existe_assunto_principal = false
         ORDER BY nr_processo
+
   
+* Quanto ao formato das partes dos tipos "Ministério Público do Trabalho" e "Órgão Público"
+  Dúvida enviada ao CNJ em "3 de julho de 2017 15:36", com assunto "Dúvidas sobre envio de dados para Justiça em Números"
+      Estou gerando os dados para o Selo Justiça em Números aqui no TRT4. Ocorre que o MNI 2.2, utilizado como referência, 
+      permite somente o envio de dados de pessoas dos tipos "Física", "Jurídica", "Autoridade" e "Órgão de Representação".
+      No PJe, os tipos são parecidos, mas ligeiramente diferentes: "Física", "Jurídica", "Autoridade", "MPT" e "Órgão Público". 
+      Quanto aos três primeiros, vejo que eles tem correspondência direta, mas fiquei na dúvida sobre como tratar os outros dois! 
+      Preciso, para cada pessoa do "lado" do PJe, encontrar um correspondente do "lado" do MNI.
+      Vocês saberiam me informar qual o tipo correto, no padrão MNI, para enviar partes dos tipos "MPT" e "Órgão Público"?
+  Resposta do CNJ (estatistica@cnj.jus.br), em "28 de julho de 2017 18:10"
+      Sugerimos enquadrar tanto o MPT como os órgãos públicos sem personalidade jurídica própria como “Órgãos de Representação”.
+
 
 
 ========== Referências ==========

@@ -431,16 +431,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						pessoa.setNome(nomeParte);
 
 						// Tipo de pessoa (física / jurídica / outros)
-						// Pergunta feita à ASSTECO: no e-mail com assunto "Dúvidas sobre envio de dados para Justiça em Números", em 03/07/2017 14:15:
+						// Pergunta feita à ASSTECO: no e-mail com assunto "Dúvidas sobre envio de dados para Justiça em Números", em "03/07/2017 14:15":
 						//   Estou gerando os dados para o Selo Justiça em Números, do CNJ. Ocorre que o MNI 2.2, utilizado como referência, permite somente o envio de dados de pessoas dos tipos "Física", "Jurídica", "Autoridade" e "Órgão de Representação".
 						//   No PJe, os tipos são parecidos, mas ligeiramente diferentes: "Física", "Jurídica", "Autoridade", "MPT" e "Órgão Público". Quanto aos três primeiros, vejo que eles tem correspondência direta, mas fiquei na dúvida sobre como tratar os outros dois! Preciso, para cada pessoa do "lado" do PJe, encontrar um correspondente do "lado" do MNI.
 						//   Vocês saberiam me informar qual o tipo correto, no padrão MNI, para enviar partes dos tipos "MPT" e "Órgão Público"?
-						// Resposta da ASSTECO no e-mail em 03/07/2017 15:30:
-						//   Não há um glossário do Selo Justiça em Números?
-						//   O termo "Órgão de representação" não é usual, e não sabemos o que se enquadraria nele.
-						//   O MPT deve se enquadrar como autoridade, e os órgãos públicos são pessoas jurídicas de direito público (pessoas jurídicas, portanto).
-						//   Se não houver um glossário, e se vocês não tiverem algum contato para esclarecer essa dúvida, enquadra dessa forma.
-						// Enquanto aguardo resposta do CNJ, mantenho a implementação sugerida.
+						// Resposta do CNJ no e-mail em "28/07/2017 18:10":
+						//   Sugerimos enquadrar tanto o MPT como os órgãos públicos sem personalidade jurídica própria como "Órgãos de Representação".
 						String tipoPessoaPJe = Auxiliar.getCampoStringNotNull(rsPartes, "in_tipo_pessoa");
 						if ("F".equals(tipoPessoaPJe)) {
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
@@ -449,9 +445,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						} else if ("A".equals(tipoPessoaPJe)) {
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.AUTORIDADE);
 						} else if ("M".equals(tipoPessoaPJe)) {
-							pessoa.setTipoPessoa(TipoQualificacaoPessoa.AUTORIDADE);
+							pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
 						} else if ("O".equals(tipoPessoaPJe)) {
-							pessoa.setTipoPessoa(TipoQualificacaoPessoa.JURIDICA);
+							pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
 						} else {
 							throw new DadosInvalidosException("Tipo de pessoa desconhecido: " + tipoPessoaPJe, "Processo " + numeroProcesso + ", polo '" + tipoPoloPJe + "', parte '" + nomeParte + "'");
 							//							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomeParte + "': " + tipoPessoaPJe);
