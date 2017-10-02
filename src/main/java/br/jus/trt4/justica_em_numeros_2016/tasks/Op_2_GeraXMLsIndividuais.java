@@ -89,6 +89,14 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		try {
 			Auxiliar.prepararPastaDeSaida();
 
+			// Verifica se há alguma serventia inexistente
+			AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ();
+			if (analisaServentiasCNJ.diagnosticarServentiasInexistentes()) {
+				
+				LOGGER.warn("Pressione ENTER ou aguarde 1 minuto para que a geração dos XMLs continue. Se você preferir, aborte este script e corrija o arquivo de serventias");
+				Auxiliar.aguardaUsuarioApertarENTERComTimeout(60);
+			}
+			
 			Op_2_GeraXMLsIndividuais baixaDados1g = Auxiliar.deveProcessarPrimeiroGrau() ? new Op_2_GeraXMLsIndividuais(1) : null;
 			Op_2_GeraXMLsIndividuais baixaDados2g = Auxiliar.deveProcessarSegundoGrau()  ? new Op_2_GeraXMLsIndividuais(2) : null;
 			try {

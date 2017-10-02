@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
-import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
 
 /**
  * Prototipo de rotina de envio completo dos dados ao CNJ
@@ -35,7 +34,6 @@ public class Op_X_OperacaoCompleta {
 	public enum ControleOperacoes {
 	    
 		OP_1_BAIXAR_LISTA                  (100),
-		OP_1_CONFERIR_SERVENTIAS           (150),
 		OP_2_GERAR_XMLS_INDIVIDUAIS        (200),
 		OP_3_UNIFICA_ARQUIVOS_XML          (300), 
 		OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ     (400), 
@@ -100,20 +98,6 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 
-		// Passo extra: Conferir lista de serventias CNJ
-		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_CONFERIR_SERVENTIAS, new Operacao() {
-			
-			@Override
-			public void run() throws Exception {
-				AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ();
-				if (analisaServentiasCNJ.diagnosticarServentiasInexistentes()) {
-					
-					LOGGER.warn("Pressione ENTER ou aguarde 2 minutos para que a geração dos XMLs continue. Se você preferir, aborte este script e corrija o arquivo de serventias");
-					Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
-				}
-			}
-		});
-		
 		// CHECKLIST: 5. Execute a classe "Op_2_GeraXMLsIndividuais"
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_GERAR_XMLS_INDIVIDUAIS, new Operacao() {
 
