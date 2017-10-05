@@ -35,6 +35,7 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -66,10 +67,11 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	
 	private static final String SUFIXO_ARQUIVO_TENTOU_ENVIAR = ".tentativa_envio";
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
-	private final CloseableHttpClient client;
+	private CloseableHttpClient httpClient;
+	//private long ultimaCriacaoHttpClient;
 	private final String authHeader;
 	private final File arquivoAbortar;
-	private final List<Long> temposEnvioCNJ = new ArrayList<Long>();
+	private final List<Long> temposEnvioCNJ = new ArrayList<>();
 	private final int numeroThreads;
 	private static final Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
 	private static final String NOME_ARQUIVO_ABORTAR = "ABORTAR.txt"; // Arquivo que pode ser gravado na pasta "output/[tipo_carga]", que faz com que o envio dos dados ao CNJ seja abortado
@@ -85,11 +87,11 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		validarEnviarArquivosCNJ("S".equals(resposta));
 	}
 
-	public static void validarEnviarArquivosCNJ(boolean continuarEnquantoHouverErro) throws Exception, DadosInvalidosException, IOException, InvalidCredentialsException, InterruptedException, JAXBException {
+	public static void validarEnviarArquivosCNJ(boolean continuarEmCasoDeErro) throws Exception, DadosInvalidosException, IOException, InvalidCredentialsException, InterruptedException, JAXBException {
 		
 		Auxiliar.prepararPastaDeSaida();
 		
-		if (continuarEnquantoHouverErro) {
+		if (continuarEmCasoDeErro) {
 			LOGGER.info("Se ocorrer algum erro no envio, a operação será reiniciada quantas vezes for necessário!");
 		}
 		
@@ -100,7 +102,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				progresso.setProgress(0);
 				
 				Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
-				operacao.testarConexaoComCNJ();
+				operacao.testarConexaoComCNJ(continuarEmCasoDeErro);
 				operacao.consultarTotaisDeProcessosNoCNJ(); // Antes do envio
 				operacao.localizarEnviarXMLsAoCNJ();
 				operacao.consultarTotaisDeProcessosNoCNJ(); // Depois do envio
@@ -108,7 +110,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
 				
 				// Verifica se deve executar novamente em caso de erros
-				if (continuarEnquantoHouverErro) {
+				if (continuarEmCasoDeErro) {
 					if (DadosInvalidosException.getQtdErros() > 0) {
 						DadosInvalidosException.zerarQtdErros();
 						progresso.setInformacoes("Aguardando para reiniciar...");
@@ -143,50 +145,73 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		// Número de threads simultâneas para conectar ao CNJ
 		numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
 		
-		// Objeto que criará cada request a ser feito ao CNJ
-        HttpClientBuilder httpClientBuilder = HttpClients.custom();
-        
-        // Aumenta o limite de conexoes, para permitir acesso multi-thread
-        httpClientBuilder.setMaxConnPerRoute(numeroThreads*2);
-        httpClientBuilder.setMaxConnTotal(numeroThreads*2);
-        
-        // SSL
-        SSLContext sslcontext = getSSLContext();
-        SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext);
-        httpClientBuilder.setSSLSocketFactory(factory);
-        
-        // Proxy
-        String proxyHost = Auxiliar.getParametroConfiguracao(Parametro.proxy_host, false);
-        if (proxyHost != null) {
-        	int proxyPort = Auxiliar.getParametroInteiroConfiguracao(Parametro.proxy_port, 3128);
-    		HttpHost proxy = new HttpHost(proxyHost, proxyPort);
-            httpClientBuilder.setProxy(proxy);
-    		LOGGER.info("Será utilizado proxy para conectar ao CNJ: " + proxyHost);
-    		
-            // Autenticação do Proxy
-            String proxyUsername = Auxiliar.getParametroConfiguracao(Parametro.proxy_username, false);
-            if (proxyUsername != null) {
-            	String proxyPassword = Auxiliar.getParametroConfiguracao(Parametro.proxy_password, false);
-            	Credentials credentials = new UsernamePasswordCredentials(proxyUsername, proxyPassword);
-            	AuthScope authScope = new AuthScope(proxyHost, proxyPort);
-            	CredentialsProvider credsProvider = new BasicCredentialsProvider();
-            	credsProvider.setCredentials(authScope, credentials);
-            	httpClientBuilder.setDefaultCredentialsProvider(credsProvider);
-        		LOGGER.info("Será utilizada autenticação no proxy: " + proxyUsername);
-            }
-        } else {
-    		LOGGER.info("Não será utilizado proxy para conectar ao CNJ.");
-        }
-
         // Autenticação do tribunal junto ao CNJ
 		String usuario = Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true);
 		String senha = Auxiliar.getParametroConfiguracao(Parametro.password_tribunal, true);
 		String autenticacao = usuario + ":" + senha;
 		byte[] encodedAuth = Base64.encodeBase64(autenticacao.getBytes(Charset.forName("UTF-8")));
 		authHeader = "Basic " + new String(encodedAuth);
-		
-		// Cria um HttpClient para acessar o CNJ
-		client = httpClientBuilder.build();
+	}
+	
+	/**
+	 * Retorna um objeto que fará a conexão com o site do CNJ.
+	 * 
+	 * Renova essa conexão de hora em hora, para tentar evitar que o desempenho diminua com o passar do tempo
+	 * 
+	 * @return
+	 * @throws IOException 
+	 * @throws CertificateException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws KeyStoreException 
+	 * @throws KeyManagementException 
+	 */
+	private synchronized CloseableHttpClient getHttpClient() {
+		//long agora = System.currentTimeMillis();
+		//if ((agora - ultimaCriacaoHttpClient) > 3600_000 || httpClient == null) {
+		if (httpClient == null) {
+			
+			LOGGER.info("Criando novo CloseableHttpClient");
+			//ultimaCriacaoHttpClient = agora;
+			
+			// Objeto que criará cada request a ser feito ao CNJ
+	        HttpClientBuilder httpClientBuilder = HttpClients.custom();
+	        
+	        // Aumenta o limite de conexoes, para permitir acesso multi-thread
+	        httpClientBuilder.setMaxConnPerRoute(numeroThreads*2);
+	        httpClientBuilder.setMaxConnTotal(numeroThreads*2);
+	        
+	        // SSL
+	        SSLContext sslcontext = getSSLContext();
+	        SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext);
+	        httpClientBuilder.setSSLSocketFactory(factory);
+	        
+	        // Proxy
+	        String proxyHost = Auxiliar.getParametroConfiguracao(Parametro.proxy_host, false);
+	        if (proxyHost != null) {
+	        	int proxyPort = Auxiliar.getParametroInteiroConfiguracao(Parametro.proxy_port, 3128);
+	    		HttpHost proxy = new HttpHost(proxyHost, proxyPort);
+	            httpClientBuilder.setProxy(proxy);
+	    		LOGGER.info("Será utilizado proxy para conectar ao CNJ: " + proxyHost);
+	    		
+	            // Autenticação do Proxy
+	            String proxyUsername = Auxiliar.getParametroConfiguracao(Parametro.proxy_username, false);
+	            if (proxyUsername != null) {
+	            	String proxyPassword = Auxiliar.getParametroConfiguracao(Parametro.proxy_password, false);
+	            	Credentials credentials = new UsernamePasswordCredentials(proxyUsername, proxyPassword);
+	            	AuthScope authScope = new AuthScope(proxyHost, proxyPort);
+	            	CredentialsProvider credsProvider = new BasicCredentialsProvider();
+	            	credsProvider.setCredentials(authScope, credentials);
+	            	httpClientBuilder.setDefaultCredentialsProvider(credsProvider);
+	        		LOGGER.info("Será utilizada autenticação no proxy: " + proxyUsername);
+	            }
+	        } else {
+	    		LOGGER.info("Não será utilizado proxy para conectar ao CNJ.");
+	        }
+	        
+			// Cria um novo HttpClient para acessar o CNJ
+			httpClient = httpClientBuilder.build();
+		}
+		return httpClient;
 	}
 	
 	/**
@@ -198,19 +223,23 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws IOException
 	 * @throws KeyManagementException
 	 */
-    private static SSLContext getSSLContext() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, KeyManagementException {
-    	
-        KeyStore trustStore  = KeyStore.getInstance(KeyStore.getDefaultType());
-        FileInputStream instream = new FileInputStream(new File("src/main/resources/certificados_rest_cnj/keystore/cnj.keystore"));
-        try {
-            trustStore.load(instream, "storepasscnj".toCharArray());
-        } finally {
-            instream.close();
-        }
-        return SSLContexts.custom().loadTrustMaterial(trustStore).build();
+    private static SSLContext getSSLContext() {
+    	try {
+	        KeyStore trustStore  = KeyStore.getInstance(KeyStore.getDefaultType());
+	        FileInputStream instream = new FileInputStream(new File("src/main/resources/certificados_rest_cnj/keystore/cnj.keystore"));
+	        try {
+	            trustStore.load(instream, "storepasscnj".toCharArray());
+	        } finally {
+	            instream.close();
+	        }
+	        return SSLContexts.custom().loadTrustMaterial(trustStore).build();
+    	} catch (Exception ex) {
+    		LOGGER.error("Erro ao iniciar contexto SSL: " + ex.getLocalizedMessage(), ex);
+    		throw new RuntimeException(ex);
+    	}
     }	
 	
-	private void testarConexaoComCNJ() throws DadosInvalidosException, IOException {
+	private void testarConexaoComCNJ(boolean continuarEmCasoDeErro) throws DadosInvalidosException, IOException {
 		
 		LOGGER.info("Testando conexão com o webservice do CNJ...");
 		
@@ -218,14 +247,16 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		adicionarCabecalhoAutenticacao(get);
 		
 		long tempo = System.currentTimeMillis();
-		HttpResponse response = client.execute(get);
+		HttpResponse response = getHttpClient().execute(get);
 		tempo = System.currentTimeMillis() - tempo;
 
 		HttpEntity entity = response.getEntity();
 		String body = EntityUtils.toString(entity, Charset.forName("UTF-8"));
 		LOGGER.info("Resposta recebida em " + tempo + "ms: " + body);
 
-		conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null, null, null);
+		if (!continuarEmCasoDeErro) {
+			conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null, null, null);
+		}
 	}
 
 	private void consultarTotaisDeProcessosNoCNJ() {
@@ -244,7 +275,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		HttpGet httpGet = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/G" + instancia);
 		adicionarCabecalhoAutenticacao(httpGet);
 		try {
-			HttpResponse httpResponse = client.execute(httpGet);
+			HttpResponse httpResponse = getHttpClient().execute(httpGet);
 			HttpEntity httpEntity = httpResponse.getEntity();
 			String body = EntityUtils.toString(httpEntity, Charset.forName("UTF-8"));
 			LOGGER.info("* G" + instancia + ": " + body);
@@ -317,7 +348,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		if (body != null && body.contains("\"ERRO\"")) {
 			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')", arquivoXML.toString());
 		}
-		LOGGER.debug("Resposta: " + statusCode);
+		//LOGGER.debug("Resposta: " + statusCode);
 	}
 
 	/**
@@ -436,13 +467,13 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				adicionarCabecalhoAutenticacao(post);
 				
 				// Timeout
-//				int CONNECTION_TIMEOUT_MS = 100_000; // Timeout in millis.
-//				RequestConfig requestConfig = RequestConfig.custom()
-//				    .setConnectionRequestTimeout(CONNECTION_TIMEOUT_MS)
-//				    .setConnectTimeout(CONNECTION_TIMEOUT_MS)
-//				    .setSocketTimeout(CONNECTION_TIMEOUT_MS)
-//				    .build();
-//				post.setConfig(requestConfig);
+				int CONNECTION_TIMEOUT_MS = 300_000; // Timeout in millis (5min)
+				RequestConfig requestConfig = RequestConfig.custom()
+				    .setConnectionRequestTimeout(CONNECTION_TIMEOUT_MS)
+				    .setConnectTimeout(CONNECTION_TIMEOUT_MS)
+				    .setSocketTimeout(CONNECTION_TIMEOUT_MS)
+				    .build();
+				post.setConfig(requestConfig);
 				
 				// Prepara um request com Multipart
 				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("file", xml.getArquivoXML()).build();
@@ -458,7 +489,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 						
 						// Executa o POST
 						long tempo = System.currentTimeMillis();
-						HttpResponse response = client.execute(post);
+						HttpResponse response = getHttpClient().execute(post);
 						try {
 							
 							// Estatísticas de tempo dos últimos 1000 arquivos
@@ -472,8 +503,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							
 							HttpEntity result = response.getEntity();
 							body = EntityUtils.toString(result, Charset.forName("UTF-8"));
-							LOGGER.debug("* Resposta em " + tempo + "ms: " + body);
-							conferirRespostaSucesso(response.getStatusLine().getStatusCode(), body, jaxbUnmarshaller, xml.getArquivoXML());
+							int statusCode = response.getStatusLine().getStatusCode();
+							LOGGER.debug("* Resposta em " + tempo + "ms (" + statusCode + "): " + body);
+							conferirRespostaSucesso(statusCode, body, jaxbUnmarshaller, xml.getArquivoXML());
 							LOGGER.info("* Arquivo enviado com sucesso: " + xml + " / Resposta: " + body);
 							marcarArquivoComoEnviado(xml.getArquivoXML());
 							
@@ -501,8 +533,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			
 			// Mostra previsão de conclusão
 			StringBuilder sbProgresso = new StringBuilder();
-			sbProgresso.append("Progresso do envio: " + i + "/" + qtdArquivos);
-			sbProgresso.append(" (" + (i * 100 / qtdArquivos) + "%");
+			sbProgresso.append("Envio dos arquivos pendentes: " + i + "/" + qtdArquivos);
+			sbProgresso.append(" (" + (i * 10000 / qtdArquivos / 100.0) + "%");
 			synchronized (temposEnvioCNJ) {
 				int arquivosMedicao = temposEnvioCNJ.size();
 				if (arquivosMedicao > 0) {
