@@ -13,7 +13,10 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -69,7 +72,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private static final String SUFIXO_ARQUIVO_TENTOU_ENVIAR = ".tentativa_envio";
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
 	private CloseableHttpClient httpClient;
-	//private long ultimaCriacaoHttpClient;
 	private final String authHeader;
 	private final File arquivoAbortar;
 	private final List<Long> temposEnvioCNJ = new ArrayList<>();
@@ -81,8 +83,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	
 	public static void main(String[] args) throws Exception {
 		
-		System.out.println("Se algum arquivo for negado n CNJ, você quer que a operação seja reiniciada?");
-		System.out.println("Responda 'S' para que o envio ao CNJ rode indefinidamente, até que o webservice não negue nenhum arquivo.");
+		System.out.println("Se algum arquivo for negado no CNJ, você quer que a operação seja reiniciada?");
+		System.out.println("Responda 'S' para que o envio ao CNJ rode diversas vezes, até que o webservice não recuse nenhum arquivo.");
 		System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
 		String resposta = Auxiliar.readStdin().toUpperCase();
 		
@@ -364,34 +366,70 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
-		List<XmlComInstancia> arquivosParaEnviar = new ArrayList<>();
-		AtomicInteger totalArquivosXML = new AtomicInteger();
+		List<XmlComInstancia> arquivosXML = new ArrayList<>();
 		
 		// Consulta arquivos das instâncias selecionadas
 		if (Auxiliar.deveProcessarSegundoGrau()) {
-			localizarXMLsPendentesDeEnvio(2, arquivosParaEnviar, totalArquivosXML);
+			localizarXMLs(2, arquivosXML);
 		}
 		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			localizarXMLsPendentesDeEnvio(1, arquivosParaEnviar, totalArquivosXML);
+			localizarXMLs(1, arquivosXML);
 		}
-		progresso.setMax(totalArquivosXML.get());
-		progresso.setProgress(totalArquivosXML.get() - arquivosParaEnviar.size());
+		
+		// Mostra o total de XMLs encontrados
+		LOGGER.info("Total de arquivos XML encontrados:");
+		mostrarTotalDeArquivosPorPasta(arquivosXML);
+		int totalArquivosXML = arquivosXML.size();
+		
+		// Filtra somente os arquivos que ainda não foram enviados
+		List<XmlComInstancia> arquivosXMLParaEnviar = new ArrayList<>();
+		for (XmlComInstancia xml: arquivosXML) {
+			if (deveEnviarArquivo(xml.getArquivoXML())) {
+				arquivosXMLParaEnviar.add(xml);
+			}
+		}
+		
+		// Mostra os arquivos que serão enviados
+		String msg = "Arquivos XML que precisam ser enviados";
+		if (totalArquivosXML > 0) {
+			msg += " (" + (arquivosXMLParaEnviar.size() * 10000 / totalArquivosXML / 100.0) + "%)";
+		}
+		LOGGER.info(msg);
+		mostrarTotalDeArquivosPorPasta(arquivosXMLParaEnviar);
+		
+		// Atualiza o progresso na interface
+		progresso.setMax(totalArquivosXML);
+		progresso.setProgress(totalArquivosXML - arquivosXMLParaEnviar.size());
 		
 		// Coloca os arquivos que já tentou-se enviar (e, provavelmente, deu erro) no final da lista
-		ordenarArquivosNuncaEnviadosPrimeiro(arquivosParaEnviar);
-		
-		// Mostra o total de arquivos e os pendentes de envio
-		String infoTotal = "Total de arquivos XML encontrados: " + totalArquivosXML.get() + ". Arquivos pendentes de envio: " + arquivosParaEnviar.size();
-		if (totalArquivosXML.get() > 0) {
-			infoTotal += " (" + (arquivosParaEnviar.size() * 100 / totalArquivosXML.get()) + "%)";
-		}
-		LOGGER.info(infoTotal);
+		ordenarArquivosNuncaEnviadosPrimeiro(arquivosXMLParaEnviar);
 		
 		// Inicia o envio
-		enviarXMLsAoCNJ(arquivosParaEnviar);
+		enviarXMLsAoCNJ(arquivosXMLParaEnviar);
 		
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
+	}
+
+	private void mostrarTotalDeArquivosPorPasta(List<XmlComInstancia> arquivosParaEnviar) {
+		
+		Map<File, AtomicInteger> qtdPorPasta = new TreeMap<>();
+		for (XmlComInstancia xml: arquivosParaEnviar) {
+			File pasta = xml.getArquivoXML().getParentFile();
+			if (qtdPorPasta.containsKey(pasta)) {
+				qtdPorPasta.get(pasta).incrementAndGet();
+			} else {
+				qtdPorPasta.put(pasta, new AtomicInteger(1));
+			}
+		}
+		
+		int total = 0;
+		for (File pasta: qtdPorPasta.keySet()) {
+			int totalPasta = qtdPorPasta.get(pasta).get();
+			LOGGER.info("* Pasta '" + pasta + "': " + totalPasta);
+			total += totalPasta;
+		}
+		LOGGER.info("* TOTAL: " + total);
 	}
 
 	/**
@@ -400,7 +438,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @param grau
 	 * @throws DadosInvalidosException 
 	 */
-	private void localizarXMLsPendentesDeEnvio(int grau, List<XmlComInstancia> arquivosParaEnviar, AtomicInteger totalArquivosXML) throws DadosInvalidosException {
+	private void localizarXMLs(int grau, List<XmlComInstancia> arquivosParaEnviar) throws DadosInvalidosException {
 		
 		// Lê arquivos da lista de XMLs individuais ou unificados, conforme parâmetros
 		File pastaXMLsParaEnvio;
@@ -410,10 +448,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			pastaXMLsParaEnvio = Auxiliar.getPastaXMLsIndividuais(grau);
 		}
 		
-		localizarArquivosRecursivamente(pastaXMLsParaEnvio, grau, arquivosParaEnviar, totalArquivosXML);
+		localizarArquivosRecursivamente(pastaXMLsParaEnvio, grau, arquivosParaEnviar);
 	}
 
-	private void localizarArquivosRecursivamente(File pasta, int grau, List<XmlComInstancia> arquivosParaEnviar, AtomicInteger totalArquivosXML) throws DadosInvalidosException {
+	private void localizarArquivosRecursivamente(File pasta, int grau, List<XmlComInstancia> arquivosParaEnviar) throws DadosInvalidosException {
 		
 		LOGGER.debug("Localizando todos os arquivos XML da pasta '" + pasta.getAbsolutePath() + "'...");
 		if (!pasta.isDirectory()) {
@@ -434,14 +472,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		for (File filho: arquivos) {
 			
 			if (filho.isDirectory()) {
-				localizarArquivosRecursivamente(filho, grau, arquivosParaEnviar, totalArquivosXML);
-				
+				localizarArquivosRecursivamente(filho, grau, arquivosParaEnviar);
 			} else {
-				
-				totalArquivosXML.incrementAndGet();
-				if (deveEnviarArquivo(filho)) {
-					arquivosParaEnviar.add(new XmlComInstancia(filho, grau));
-				}
+				arquivosParaEnviar.add(new XmlComInstancia(filho, grau));
 			}
 		}
 	}
