@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,6 +74,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private final File arquivoAbortar;
 	private final List<Long> temposEnvioCNJ = new ArrayList<>();
 	private final int numeroThreads;
+	private final AtomicLong qtdEnviadaComSucesso = new AtomicLong(0);
 	private static final Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
 	private static final String NOME_ARQUIVO_ABORTAR = "ABORTAR.txt"; // Arquivo que pode ser gravado na pasta "output/[tipo_carga]", que faz com que o envio dos dados ao CNJ seja abortado
 	private static ProgressoInterfaceGrafica progresso;
@@ -114,8 +116,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 					if (DadosInvalidosException.getQtdErros() > 0) {
 						DadosInvalidosException.zerarQtdErros();
 						progresso.setInformacoes("Aguardando para reiniciar...");
-						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 5min... Se desejar, aborte este script.");
-						Thread.sleep(5 * 60_000);
+						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 2min... Se desejar, aborte este script.");
+						Thread.sleep(2 * 60_000);
 						progresso.setInformacoes("");
 					} else {
 						executar = false;
@@ -387,6 +389,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Inicia o envio
 		enviarXMLsAoCNJ(arquivosParaEnviar);
+		
+		// Envio finalizado
+		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
 	}
 
 	/**
@@ -508,6 +513,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							conferirRespostaSucesso(statusCode, body, jaxbUnmarshaller, xml.getArquivoXML());
 							LOGGER.info("* Arquivo enviado com sucesso: " + xml + " / Resposta: " + body);
 							marcarArquivoComoEnviado(xml.getArquivoXML());
+							qtdEnviadaComSucesso.incrementAndGet();
 							
 							arquivoTentativaEnvio.delete();
 						} finally {
