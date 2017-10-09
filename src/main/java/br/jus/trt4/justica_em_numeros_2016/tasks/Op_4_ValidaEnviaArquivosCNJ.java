@@ -376,26 +376,14 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			localizarXMLs(1, arquivosXML);
 		}
 		
-		// Mostra o total de XMLs encontrados
-		LOGGER.info("Total de arquivos XML encontrados:");
-		mostrarTotalDeArquivosPorPasta(arquivosXML);
+		mostrarTotalDeArquivosPorPasta(arquivosXML, "Total de arquivos XML encontrados", null);
 		int totalArquivosXML = arquivosXML.size();
 		
 		// Filtra somente os arquivos que ainda não foram enviados
-		List<XmlComInstancia> arquivosXMLParaEnviar = new ArrayList<>();
-		for (XmlComInstancia xml: arquivosXML) {
-			if (deveEnviarArquivo(xml.getArquivoXML())) {
-				arquivosXMLParaEnviar.add(xml);
-			}
-		}
+		List<XmlComInstancia> arquivosXMLParaEnviar = filtrarSomenteArquivosPendentesDeEnvio(arquivosXML);
 		
 		// Mostra os arquivos que serão enviados
-		String msg = "Arquivos XML que precisam ser enviados";
-		if (totalArquivosXML > 0) {
-			msg += " (" + (arquivosXMLParaEnviar.size() * 10000 / totalArquivosXML / 100.0) + "%)";
-		}
-		LOGGER.info(msg);
-		mostrarTotalDeArquivosPorPasta(arquivosXMLParaEnviar);
+		mostrarTotalDeArquivosPorPasta(arquivosXMLParaEnviar, "Arquivos XML que precisam ser enviados", totalArquivosXML);
 		
 		// Atualiza o progresso na interface
 		progresso.setMax(totalArquivosXML);
@@ -409,10 +397,29 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
+		List<XmlComInstancia> arquivosXMLPendentes = filtrarSomenteArquivosPendentesDeEnvio(arquivosXMLParaEnviar);
+		mostrarTotalDeArquivosPorPasta(arquivosXMLPendentes, "Arquivos XML ainda pendentes de envio", totalArquivosXML);
 	}
 
-	private void mostrarTotalDeArquivosPorPasta(List<XmlComInstancia> arquivosParaEnviar) {
+	private List<XmlComInstancia> filtrarSomenteArquivosPendentesDeEnvio(List<XmlComInstancia> arquivosXML) {
+		List<XmlComInstancia> arquivosXMLParaEnviar = new ArrayList<>();
+		for (XmlComInstancia xml: arquivosXML) {
+			if (deveEnviarArquivo(xml.getArquivoXML())) {
+				arquivosXMLParaEnviar.add(xml);
+			}
+		}
+		return arquivosXMLParaEnviar;
+	}
+
+	private void mostrarTotalDeArquivosPorPasta(List<XmlComInstancia> arquivosParaEnviar, String msg, Integer totalParaCalcularPercentual) {
 		
+		// Se um total foi informado, calcula o percentual de "arquivosParaEnviar" em relação ao total 
+		if (totalParaCalcularPercentual != null && totalParaCalcularPercentual > 0) {
+			msg += " (" + (arquivosParaEnviar.size() * 10000 / totalParaCalcularPercentual / 100.0) + "%)";
+		}
+		LOGGER.info(msg);
+		
+		// Calcula quantos arquivos existem por pasta
 		Map<File, AtomicInteger> qtdPorPasta = new TreeMap<>();
 		for (XmlComInstancia xml: arquivosParaEnviar) {
 			File pasta = xml.getArquivoXML().getParentFile();
@@ -423,6 +430,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			}
 		}
 		
+		// Mostra os totais por pasta
 		int total = 0;
 		for (File pasta: qtdPorPasta.keySet()) {
 			int totalPasta = qtdPorPasta.get(pasta).get();
