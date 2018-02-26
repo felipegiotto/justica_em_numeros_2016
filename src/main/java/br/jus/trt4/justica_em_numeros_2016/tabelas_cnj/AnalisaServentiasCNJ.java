@@ -136,6 +136,10 @@ public class AnalisaServentiasCNJ {
 			
 			// Monta SQL para consultar os nomes dos OJs de todos os processos da instância
 			// OBS: PreparedStatement não funcionou, por causa do número de parâmetros muito grande!
+			// Sugestao TRT6, por causa de falha no PostgreSQL na conversão do caractere "º" para ASCII:
+			//                StringBuilder sql = new StringBuilder("SELECT DISTINCT upper(to_ascii(replace (oj.ds_orgao_julgador, 'º', 'O'))) as ds_orgao_julgador " +
+			//                Fonte: e-mail com assunto "Sugestões de alterações justica_em_numeros_2016" do TRT6
+			//                Fonte: https://www.postgresql.org/message-id/20040607212810.15543.qmail@web13125.mail.yahoo.com
 			StringBuilder sql = new StringBuilder("SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
 					"FROM tb_processo proc " +
 					"INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf) " +

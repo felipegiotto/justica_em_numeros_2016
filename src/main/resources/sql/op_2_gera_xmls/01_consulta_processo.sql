@@ -21,6 +21,12 @@ SELECT
   
   /*** orgaoJulgador ***/
   upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
+  -- Sugestao TRT6, por causa de falha no PostgreSQL na conversão do caractere "º" para ASCII:
+  -- upper(to_ascii(replace(oj.ds_orgao_julgador, 'º', 'O'))) as ds_orgao_julgador, upper(to_ascii(replace(ojc.ds_orgao_julgador_colegiado, 'º', 'O'))) as ds_orgao_julgador_colegiado,
+  -- Fonte: e-mail com assunto "Sugestões de alterações justica_em_numeros_2016" do TRT6
+  -- Fonte: https://www.postgresql.org/message-id/20040607212810.15543.qmail@web13125.mail.yahoo.com
+  
+  
   -- instancia
   pt.nr_instancia, 
  
