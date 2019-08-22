@@ -47,7 +47,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	private PreparedStatement psConsultaAssuntoPorID;
 	private TipoAssuntoProcessual assuntoProcessualPadrao;
 	
-	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException, DadosInvalidosException {
+	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException, DadosInvalidosException, InterruptedException {
 		super();
 		
 		File arquivoAssuntos = new File("src/main/resources/tabelas_cnj/assuntos_cnj.csv");
@@ -95,10 +95,29 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 				propertiesDePara.load(is);
 			}
 			
+			// Lista de assuntos do lado "PARA" que não existem na lista nacional (e, por isso, deverão ser negados pelo CNJ):
+			List<Integer> assuntosMapeadosIncorretamente = new ArrayList<>();
+			
 			// Grava os assuntos em um Map
 			for (String assuntoDe : propertiesDePara.stringPropertyNames()) {
 				String assuntoPara = propertiesDePara.getProperty(assuntoDe);
-				assuntosProcessuaisDePara.put(Integer.parseInt(assuntoDe), Integer.parseInt(assuntoPara));
+				int assuntoParaInt = Integer.parseInt(assuntoPara);
+				assuntosProcessuaisDePara.put(Integer.parseInt(assuntoDe), assuntoParaInt);
+				
+				if (!assuntoExisteNasTabelasNacionais(assuntoParaInt)) {
+					assuntosMapeadosIncorretamente.add(assuntoParaInt);
+				}
+			}
+			
+			
+			if (!assuntosMapeadosIncorretamente.isEmpty()) {
+				LOGGER.warn("");
+				LOGGER.warn("Há assuntos que estão descritos na tabela 'de-para' como válidos no CNJ, mas não estão na lista de assuntos nacionais do CNJ: ");
+				for (int codigo: assuntosMapeadosIncorretamente) {
+					LOGGER.warn("* " + codigo);
+				}
+				LOGGER.warn("Pressione ENTER ou aguarde 2min para continuar");
+				Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
 			}
 		}
 	}

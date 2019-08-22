@@ -757,7 +757,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	}
 
 
-	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException {
+	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException, InterruptedException {
 
 		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
 

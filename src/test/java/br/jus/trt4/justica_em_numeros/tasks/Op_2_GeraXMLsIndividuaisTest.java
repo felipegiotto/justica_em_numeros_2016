@@ -564,7 +564,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("3:tipo de conclusão:5:despacho", movimento.getMovimentoNacional().getComplemento().get(1)); // Complemento com código
 	}
 	
-	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException, DadosInvalidosException {
+	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException, DadosInvalidosException, InterruptedException {
 		
 		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);
 		try {
