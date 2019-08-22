@@ -2,12 +2,17 @@ package br.jus.trt4.justica_em_numeros_2016.tabelas_cnj;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +41,8 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 public class AnalisaAssuntosCNJ implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaAssuntosCNJ.class);
-	private List<Integer> assuntosProcessuaisCNJ;
+	private List<Integer> assuntosProcessuaisCNJ = new ArrayList<>();
+	private Map<Integer, Integer> assuntosProcessuaisDePara = new HashMap<>();
 	private PreparedStatement psConsultaAssuntoPorCodigo;
 	private PreparedStatement psConsultaAssuntoPorID;
 	private TipoAssuntoProcessual assuntoProcessualPadrao;
@@ -50,7 +56,6 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 		// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
 		// deverá ser registrado com as tags "<assunto><codigoNacional>" ou "<assunto><assuntoLocal>"
 		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
-		this.assuntosProcessuaisCNJ = new ArrayList<>();
 		for (String assuntoString: FileUtils.readLines(arquivoAssuntos, "UTF-8")) {
 			assuntosProcessuaisCNJ.add(Integer.parseInt(assuntoString));
 		}
@@ -79,6 +84,23 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			    throw new DadosInvalidosException("Foi definido um assunto padrão com código '" + codigoAssuntoPadraoString + "', mas esse assunto não foi localizado no PJe!", Auxiliar.getArquivoconfiguracoes().toString());
 			}
 		}
+		
+		// Tabela "de-para" de assuntos
+		File fileAssuntoDePara = getArquivoAssuntosDePara();
+		if (fileAssuntoDePara != null) {
+			
+			// Lê os assuntos do arquivo "de-para"
+			Properties propertiesDePara = new Properties();
+			try (InputStream is = Files.newInputStream(fileAssuntoDePara.toPath())) {
+				propertiesDePara.load(is);
+			}
+			
+			// Grava os assuntos em um Map
+			for (String assuntoDe : propertiesDePara.stringPropertyNames()) {
+				String assuntoPara = propertiesDePara.getProperty(assuntoDe);
+				assuntosProcessuaisDePara.put(Integer.parseInt(assuntoDe), Integer.parseInt(assuntoPara));
+			}
+		}
 	}
 	
 	
@@ -89,7 +111,13 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	public TipoAssuntoProcessual getAssunto(int codigoAssunto) throws SQLException {
 		TipoAssuntoProcessual assunto = new TipoAssuntoProcessual();
 		
-		if (assuntoExisteNasTabelasNacionais(codigoAssunto)) {
+		// Verifica se assunto está na tabela "de-para". Se estiver, utiliza diretamente o "para" como código nacional.
+		if (assuntosProcessuaisDePara.containsKey(codigoAssunto)) {
+			Integer novoCodigo = assuntosProcessuaisDePara.get(codigoAssunto);
+			LOGGER.trace("Processo possui assunto (código " + codigoAssunto + ") que será mapeado para outro (código " + novoCodigo + ") de acordo com tabela DE-PARA");
+			assunto.setCodigoNacional(novoCodigo);
+			
+		} else if (assuntoExisteNasTabelasNacionais(codigoAssunto)) {
 			
 			// Se o assunto estiver nas tabelas nacionais, o código é a única informação solicitada
 			// no XSD do CNJ
@@ -184,7 +212,20 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 		return assuntosProcessuaisCNJ.contains(codigoAssunto);
 	}
 	
-	
+	public static File getArquivoAssuntosDePara() throws IOException {
+		String param = Auxiliar.getParametroConfiguracao(Parametro.assuntos_de_para, false);
+		if (param != null) {
+			File file = new File("src/main/resources/assuntos_de-para/" + param);
+			if (file.isFile() && file.canRead()) {
+				return file;
+			} else {
+				throw new IOException("Parâmetro 'assuntos_de_para' solicitou leitura do arquivo '" + file + "', mas ele não pode ser lido. ");
+			}
+		} else {
+			return null;
+		}
+	}
+
 	@Override
 	public void close() throws SQLException {
 		psConsultaAssuntoPorCodigo.close();

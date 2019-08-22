@@ -16,6 +16,7 @@ public enum Parametro {
 	url_webservice_cnj,
 	assunto_padrao_1G,
 	assunto_padrao_2G,
+	assuntos_de_para,
 	arquivo_serventias_cnj,
 	pasta_saida_padrao,
 	tamanho_lote_processos,

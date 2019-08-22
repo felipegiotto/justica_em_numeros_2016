@@ -102,6 +102,11 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
   Pergunta: Devo usar somente as tabelas da JT (baixadas do site do CNJ, no botão "Gerar Excel", 
             ao lado de "Justiça do Trabalho") ou devo usar as tabelas "completas" do CNJ?
   Resposta: A tabela completa.
+  
+  * DE-PARA de assuntos: Como o PJe possui assuntos da JT que não possuem correspondentes na tabela
+    nacional do CNJ, é possível fazer com que determinados assuntos sejam convertidos para outros
+    assuntos antes do envio ao CNJ. Desta forma, é possível, nas configurações, habilitar o
+    parâmetro "assuntos_de_para"
 
 
 * Parte: não estão sendo tratados os casos de representação ou substituição processual em ações 
