@@ -70,13 +70,13 @@
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<!-- Não utilizar 4.5.3: Antonio Lucas encontrou uma falha que causava erro no envio ao CNJ -->
-			<version>4.5.2</version>
+			<version>4.5.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpmime</artifactId>
 			<!-- Não utilizar 4.5.3: Antonio Lucas encontrou uma falha que causava erro no envio ao CNJ -->
-			<version>4.5.2</version>
+			<version>4.5.6</version>
 		</dependency>
 		
         <!-- Utilizado por todos os testes unitários da ferramenta -->

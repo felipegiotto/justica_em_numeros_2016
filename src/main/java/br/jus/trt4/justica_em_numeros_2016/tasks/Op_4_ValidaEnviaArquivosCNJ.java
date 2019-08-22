@@ -375,14 +375,14 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			localizarXMLs(1, arquivosXML);
 		}
 		
-		mostrarTotalDeArquivosPorPasta(arquivosXML, "Total de arquivos XML encontrados", null);
+		mostrarTotalDeArquivosPorPasta(arquivosXML, "Total de arquivos XML encontrados");
 		int totalArquivosXML = arquivosXML.size();
 		
 		// Filtra somente os arquivos que ainda não foram enviados
 		List<XmlComInstancia> arquivosXMLParaEnviar = filtrarSomenteArquivosPendentesDeEnvio(arquivosXML);
 		
 		// Mostra os arquivos que serão enviados
-		mostrarTotalDeArquivosPorPasta(arquivosXMLParaEnviar, "Arquivos XML que precisam ser enviados", totalArquivosXML);
+		mostrarTotalDeArquivosPorPasta(arquivosXMLParaEnviar, "Arquivos XML que precisam ser enviados");
 		
 		// Atualiza o progresso na interface
 		progresso.setMax(totalArquivosXML);
@@ -397,7 +397,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
 		List<XmlComInstancia> arquivosXMLPendentes = filtrarSomenteArquivosPendentesDeEnvio(arquivosXMLParaEnviar);
-		mostrarTotalDeArquivosPorPasta(arquivosXMLPendentes, "Arquivos XML ainda pendentes de envio", totalArquivosXML);
+		mostrarTotalDeArquivosPorPasta(arquivosXMLPendentes, "Arquivos XML ainda pendentes de envio");
 	}
 
 	private List<XmlComInstancia> filtrarSomenteArquivosPendentesDeEnvio(List<XmlComInstancia> arquivosXML) {
@@ -410,12 +410,8 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		return arquivosXMLParaEnviar;
 	}
 
-	private void mostrarTotalDeArquivosPorPasta(List<XmlComInstancia> arquivosParaEnviar, String msg, Integer totalParaCalcularPercentual) {
+	private void mostrarTotalDeArquivosPorPasta(List<XmlComInstancia> arquivosParaEnviar, String msg) {
 		
-		// Se um total foi informado, calcula o percentual de "arquivosParaEnviar" em relação ao total 
-		if (totalParaCalcularPercentual != null && totalParaCalcularPercentual > 0) {
-			msg += " (" + (arquivosParaEnviar.size() * 10000 / totalParaCalcularPercentual / 100.0) + "%)";
-		}
 		LOGGER.info(msg);
 		
 		// Calcula quantos arquivos existem por pasta

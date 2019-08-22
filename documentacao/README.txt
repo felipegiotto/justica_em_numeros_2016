@@ -279,3 +279,4 @@ Essa ferramenta foi desenvolvida a partir de diversas fontes, ex:
 * E-mail "Re: Selo Justiça em Números" (Felypp, atual)
 * E-mail "Justiça em Números", de 2015 (Crisostomo Koling)
 * E-mail "Justiça em Números - XML 2015" (Felipe Cesar Stanzani Fonseca)
+* http://cnj.jus.br/noticias/judiciario/789-acoes-e-programas/programas-de-a-a-z/eficiencia-modernizacao-e-transparencia/justica-em-numeros/selo-justica-em-numeros
