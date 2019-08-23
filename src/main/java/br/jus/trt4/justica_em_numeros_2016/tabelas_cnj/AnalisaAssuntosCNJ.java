@@ -110,13 +110,14 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			}
 			
 			
+			// TODO: Instanciar somente uma vez esse objeto para as duas instâncias, para não ficar aparecendo warning duas vezes.
 			if (!assuntosMapeadosIncorretamente.isEmpty()) {
 				LOGGER.warn("");
 				LOGGER.warn("Há assuntos que estão descritos na tabela 'de-para' como válidos no CNJ, mas não estão na lista de assuntos nacionais do CNJ: ");
 				for (int codigo: assuntosMapeadosIncorretamente) {
 					LOGGER.warn("* " + codigo);
 				}
-				LOGGER.warn("Pressione ENTER ou aguarde 2min para continuar");
+				LOGGER.warn("Pressione ENTER para continuar ou aguarde 2min");
 				Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
 			}
 		}

@@ -367,13 +367,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		Auxiliar.prepararPastaDeSaida();
 		List<XmlComInstancia> arquivosXML = new ArrayList<>();
 		
-		// Consulta arquivos das instâncias selecionadas
-		if (Auxiliar.deveProcessarSegundoGrau()) {
-			localizarXMLs(2, arquivosXML);
-		}
-		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			localizarXMLs(1, arquivosXML);
-		}
+		localizarXMLsInstanciasHabilitadas(arquivosXML);
 		
 		mostrarTotalDeArquivosPorPasta(arquivosXML, "Total de arquivos XML encontrados");
 		int totalArquivosXML = arquivosXML.size();
@@ -400,7 +394,16 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		mostrarTotalDeArquivosPorPasta(arquivosXMLPendentes, "Arquivos XML ainda pendentes de envio");
 	}
 
-	private List<XmlComInstancia> filtrarSomenteArquivosPendentesDeEnvio(List<XmlComInstancia> arquivosXML) {
+	public void localizarXMLsInstanciasHabilitadas(List<XmlComInstancia> arquivosXML) throws DadosInvalidosException {
+		if (Auxiliar.deveProcessarSegundoGrau()) {
+			localizarXMLs(2, arquivosXML);
+		}
+		if (Auxiliar.deveProcessarPrimeiroGrau()) {
+			localizarXMLs(1, arquivosXML);
+		}
+	}
+
+	public List<XmlComInstancia> filtrarSomenteArquivosPendentesDeEnvio(List<XmlComInstancia> arquivosXML) {
 		List<XmlComInstancia> arquivosXMLParaEnviar = new ArrayList<>();
 		for (XmlComInstancia xml: arquivosXML) {
 			if (deveEnviarArquivo(xml.getArquivoXML())) {

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
 
 /**
@@ -33,7 +34,7 @@ public class Op_5_BackupConfiguracoes {
 		
 		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(5/5) Backup dos arquivos de configuração");
 		try {
-			progresso.setMax(3);
+			progresso.setMax(4);
 			File pastaOutput = Auxiliar.prepararPastaDeSaida();
 			
 			// Backup do arquivo de configurações
@@ -81,6 +82,15 @@ public class Op_5_BackupConfiguracoes {
 			File arquivoServentiasOrigem = AnalisaServentiasCNJ.getArquivoServentias();
 			File arquivoServentiasDestino = new File(pastaOutput, arquivoServentiasOrigem.getName());
 			FileUtils.copyFile(arquivoServentiasOrigem, arquivoServentiasDestino);
+			progresso.incrementProgress();
+			
+			// Backup do arquivo "de-para" de assuntos
+			File arquivoDeParaAssuntosOrigem = AnalisaAssuntosCNJ.getArquivoAssuntosDePara();
+			if (arquivoDeParaAssuntosOrigem != null) {
+				LOGGER.info("Efetuando backup do arquivo 'de-para' de assuntos CNJ...");
+				File arquivoDeParaAssuntosDestino = new File(pastaOutput, arquivoDeParaAssuntosOrigem.getName());
+				FileUtils.copyFile(arquivoDeParaAssuntosOrigem, arquivoDeParaAssuntosDestino);
+			}
 			progresso.incrementProgress();
 			
 			LOGGER.info("FIM!");
