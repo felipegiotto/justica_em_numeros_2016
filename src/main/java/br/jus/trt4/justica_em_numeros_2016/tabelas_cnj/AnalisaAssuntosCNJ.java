@@ -13,8 +13,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,7 +45,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaAssuntosCNJ.class);
 	private List<Integer> assuntosProcessuaisCNJ = new ArrayList<>();
-	private Map<Integer, Integer> assuntosProcessuaisDePara = new HashMap<>();
+	private Map<Integer, Integer> assuntosProcessuaisDePara;
 	private PreparedStatement psConsultaAssuntoPorCodigo;
 	private PreparedStatement psConsultaAssuntoPorID;
 	private TipoAssuntoProcessual assuntoProcessualPadrao;
@@ -55,9 +58,11 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 		
 		// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
 		// deverá ser registrado com as tags "<assunto><codigoNacional>" ou "<assunto><assuntoLocal>"
-		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
+		// Fonte: https://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
 		for (String assuntoString: FileUtils.readLines(arquivoAssuntos, "UTF-8")) {
-			assuntosProcessuaisCNJ.add(Integer.parseInt(assuntoString));
+			if (!StringUtils.isBlank(assuntoString) && !assuntoString.startsWith("#")) {
+				assuntosProcessuaisCNJ.add(Integer.parseInt(assuntoString));
+			}
 		}
 		
 		// PreparedStatements que localizarão assuntos no banco de dados do PJe
@@ -75,6 +80,45 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			throw new SQLException("Grau inválido: " + grau);
 		}
 		
+		// Tabela "de-para" de assuntos
+		if (assuntosProcessuaisDePara == null) {
+			assuntosProcessuaisDePara = new HashMap<>();
+			
+			File fileAssuntoDePara = getArquivoAssuntosDePara();
+			if (fileAssuntoDePara != null) {
+				
+				// Lê os assuntos do arquivo "de-para"
+				Properties propertiesDePara = new Properties();
+				try (InputStream is = Files.newInputStream(fileAssuntoDePara.toPath())) {
+					propertiesDePara.load(is);
+				}
+				
+				// Lista de assuntos do lado "PARA" que não existem na lista nacional (e, por isso, deverão ser negados pelo CNJ):
+				Set<Integer> assuntosMapeadosIncorretamente = new TreeSet<>();
+				
+				// Grava os assuntos em um Map
+				for (String assuntoDe : propertiesDePara.stringPropertyNames()) {
+					String assuntoPara = propertiesDePara.getProperty(assuntoDe);
+					int assuntoParaInt = Integer.parseInt(assuntoPara);
+					assuntosProcessuaisDePara.put(Integer.parseInt(assuntoDe), assuntoParaInt);
+					
+					if (!assuntoExisteNasTabelasNacionais(assuntoParaInt)) {
+						assuntosMapeadosIncorretamente.add(assuntoParaInt);
+					}
+				}
+				
+				if (!assuntosMapeadosIncorretamente.isEmpty()) {
+					LOGGER.warn("");
+					LOGGER.warn("Há assuntos que estão descritos na tabela 'de-para' como válidos no CNJ, mas não estão na lista de assuntos nacionais do CNJ: ");
+					for (int codigo: assuntosMapeadosIncorretamente) {
+						LOGGER.warn("* " + codigo);
+					}
+					LOGGER.warn("Pressione ENTER para continuar ou aguarde 2min");
+					Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
+				}
+			}
+		}
+		
 		if (codigoAssuntoPadraoString != null) {
 			int codigo = Integer.parseInt(codigoAssuntoPadraoString);
 			this.assuntoProcessualPadrao = getAssunto(codigo);
@@ -82,43 +126,6 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 				this.assuntoProcessualPadrao.setPrincipal(true);
 			} else {
 			    throw new DadosInvalidosException("Foi definido um assunto padrão com código '" + codigoAssuntoPadraoString + "', mas esse assunto não foi localizado no PJe!", Auxiliar.getArquivoconfiguracoes().toString());
-			}
-		}
-		
-		// Tabela "de-para" de assuntos
-		File fileAssuntoDePara = getArquivoAssuntosDePara();
-		if (fileAssuntoDePara != null) {
-			
-			// Lê os assuntos do arquivo "de-para"
-			Properties propertiesDePara = new Properties();
-			try (InputStream is = Files.newInputStream(fileAssuntoDePara.toPath())) {
-				propertiesDePara.load(is);
-			}
-			
-			// Lista de assuntos do lado "PARA" que não existem na lista nacional (e, por isso, deverão ser negados pelo CNJ):
-			List<Integer> assuntosMapeadosIncorretamente = new ArrayList<>();
-			
-			// Grava os assuntos em um Map
-			for (String assuntoDe : propertiesDePara.stringPropertyNames()) {
-				String assuntoPara = propertiesDePara.getProperty(assuntoDe);
-				int assuntoParaInt = Integer.parseInt(assuntoPara);
-				assuntosProcessuaisDePara.put(Integer.parseInt(assuntoDe), assuntoParaInt);
-				
-				if (!assuntoExisteNasTabelasNacionais(assuntoParaInt)) {
-					assuntosMapeadosIncorretamente.add(assuntoParaInt);
-				}
-			}
-			
-			
-			// TODO: Instanciar somente uma vez esse objeto para as duas instâncias, para não ficar aparecendo warning duas vezes.
-			if (!assuntosMapeadosIncorretamente.isEmpty()) {
-				LOGGER.warn("");
-				LOGGER.warn("Há assuntos que estão descritos na tabela 'de-para' como válidos no CNJ, mas não estão na lista de assuntos nacionais do CNJ: ");
-				for (int codigo: assuntosMapeadosIncorretamente) {
-					LOGGER.warn("* " + codigo);
-				}
-				LOGGER.warn("Pressione ENTER para continuar ou aguarde 2min");
-				Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
 			}
 		}
 	}
