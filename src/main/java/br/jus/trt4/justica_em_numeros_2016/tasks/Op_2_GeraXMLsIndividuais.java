@@ -83,7 +83,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
 	 */
-	public static void main(String[] args) throws SQLException, Exception {
+	public static void main(String[] args) throws Exception {
 
 		progresso = new ProgressoInterfaceGrafica("(2/5) Geração de XMLs individuais");
 		try {
@@ -342,7 +342,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
 
-		List<TipoPoloProcessual> polos = new ArrayList<TipoPoloProcessual>();
+		List<TipoPoloProcessual> polos = new ArrayList<>();
 
 		// Consulta todos os polos do processo
 		nsPolos.setInt("id_processo", idProcesso);
@@ -458,8 +458,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
 						} else {
 							throw new DadosInvalidosException("Tipo de pessoa desconhecido: " + tipoPessoaPJe, "Processo " + numeroProcesso + ", polo '" + tipoPoloPJe + "', parte '" + nomeParte + "'");
-							//							LOGGER.warn("Tipo de pessoa desconhecido para '" + nomeParte + "': " + tipoPessoaPJe);
-							//							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
 						}
 
 						// Consulta os documentos da parte
@@ -585,7 +583,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(String nrProcesso) throws SQLException, DadosInvalidosException {
 
-		List<TipoAssuntoProcessual> assuntos = new ArrayList<TipoAssuntoProcessual>();
+		List<TipoAssuntoProcessual> assuntos = new ArrayList<>();
 
 		// Consulta todos os assuntos do processo
 		nsAssuntos.setString("nr_processo", nrProcesso);
@@ -635,7 +633,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 				} else {
 					throw new DadosInvalidosException("Processo sem assunto cadastrado", nrProcesso);
-					//LOGGER.warn("Processo sem assunto cadastrado: " + nrProcesso);
 				}
 
 			} else if (!encontrouAssuntoPrincipal) {

@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -90,7 +91,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		validarEnviarArquivosCNJ("S".equals(resposta));
 	}
 
-	public static void validarEnviarArquivosCNJ(boolean continuarEmCasoDeErro) throws Exception, DadosInvalidosException, IOException, InvalidCredentialsException, InterruptedException, JAXBException {
+	public static void validarEnviarArquivosCNJ(boolean continuarEmCasoDeErro) throws Exception {
 		
 		Auxiliar.prepararPastaDeSaida();
 		
@@ -169,12 +170,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws KeyManagementException 
 	 */
 	private synchronized CloseableHttpClient getHttpClient() {
-		//long agora = System.currentTimeMillis();
-		//if ((agora - ultimaCriacaoHttpClient) > 3600_000 || httpClient == null) {
 		if (httpClient == null) {
 			
 			LOGGER.info("Criando novo CloseableHttpClient");
-			//ultimaCriacaoHttpClient = agora;
 			
 			// Objeto que criará cada request a ser feito ao CNJ
 	        HttpClientBuilder httpClientBuilder = HttpClients.custom();
@@ -250,7 +248,13 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		adicionarCabecalhoAutenticacao(get);
 		
 		long tempo = System.currentTimeMillis();
-		HttpResponse response = getHttpClient().execute(get);
+		HttpResponse response;
+		try {
+			response = getHttpClient().execute(get);
+		} catch (SSLHandshakeException ex) {
+			LOGGER.error("Erro na conexão SSL. Talvez o certificado SSL do CNJ tenha sido alterado. Tente baixar os novos certificados para a pasta 'src/main/resources/certificados_rest_cnj/certificados' e executar o arquivo 'src/main/resources/certificados_rest_cnj/_importar_certificados_para_keystore.sh'. Em seguida, execute novamente esta operação.");
+			throw ex;
+		}
 		tempo = System.currentTimeMillis() - tempo;
 
 		HttpEntity entity = response.getEntity();
@@ -351,7 +355,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		if (body != null && body.contains("\"ERRO\"")) {
 			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')", arquivoXML.toString());
 		}
-		//LOGGER.debug("Resposta: " + statusCode);
 	}
 
 	/**
@@ -656,7 +659,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		// Não envia arquivos que já foram enviados NESTA REMESSA
 		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_ARQUIVO_ENVIADO);
 		if (confirmacaoEnvio.exists()) {
-			//LOGGER.debug("Arquivo já foi enviado anteriormente: " + arquivo);
 			return false;
 		}
 		
