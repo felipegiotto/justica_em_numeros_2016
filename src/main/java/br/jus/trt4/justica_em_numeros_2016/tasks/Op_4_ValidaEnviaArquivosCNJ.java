@@ -36,7 +36,6 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
-import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
@@ -75,6 +74,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private final String authHeader;
 	private final File arquivoAbortar;
 	private final List<Long> temposEnvioCNJ = new ArrayList<>();
+	private long ultimaExibicaoProgresso;
 	private final int numeroThreads;
 	private final AtomicLong qtdEnviadaComSucesso = new AtomicLong(0);
 	private static final Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
@@ -508,7 +508,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				// Monta a URL para enviar processos ao CNJ.
 				// Exemplo de URL: https://wwwh.cnj.jus.br/selo-integracao-web/v1/processos/G2
 				final String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/G" + xml.getGrau();
-				LOGGER.info("* URL onde o arquivo será enviado: " + url);
+				LOGGER.trace("* URL para onde o arquivo será enviado: " + url);
 				
 				HttpPost post = new HttpPost(url);
 				adicionarCabecalhoAutenticacao(post);
@@ -551,7 +551,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							HttpEntity result = response.getEntity();
 							body = EntityUtils.toString(result, Charset.forName("UTF-8"));
 							int statusCode = response.getStatusLine().getStatusCode();
-							LOGGER.debug("* Resposta em " + tempo + "ms (" + statusCode + "): " + body);
+							LOGGER.trace("* Resposta em " + tempo + "ms (" + statusCode + "): " + body);
 							conferirRespostaSucesso(statusCode, body, jaxbUnmarshaller, xml.getArquivoXML());
 							LOGGER.info("* Arquivo enviado com sucesso: " + xml + " / Resposta: " + body);
 							marcarArquivoComoEnviado(xml.getArquivoXML());
@@ -580,26 +580,30 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			enviarMultiThread.produzir(xml);
 			
 			// Mostra previsão de conclusão
-			StringBuilder sbProgresso = new StringBuilder();
-			sbProgresso.append("Envio dos arquivos pendentes: " + i + "/" + qtdArquivos);
-			sbProgresso.append(" (" + (i * 10000 / qtdArquivos / 100.0) + "%");
-			synchronized (temposEnvioCNJ) {
-				int arquivosMedicao = temposEnvioCNJ.size();
-				if (arquivosMedicao > 0) {
-					long totalTempo = 0;
-					for (Long tempo: temposEnvioCNJ) {
-						totalTempo += tempo;
+			if ((System.currentTimeMillis() - ultimaExibicaoProgresso) > 5_000) {
+				ultimaExibicaoProgresso = System.currentTimeMillis();
+				StringBuilder sbProgresso = new StringBuilder();
+				sbProgresso.append("Envio dos arquivos pendentes: " + i + "/" + qtdArquivos);
+				double percentual = i * 10000 / qtdArquivos / 100.0;
+				sbProgresso.append(" (" + percentual + "%");
+				synchronized (temposEnvioCNJ) {
+					int arquivosMedicao = temposEnvioCNJ.size();
+					if (arquivosMedicao > 0) {
+						long totalTempo = 0;
+						for (Long tempo: temposEnvioCNJ) {
+							totalTempo += tempo;
+						}
+						long tempoMedio = totalTempo / arquivosMedicao;
+						long tempoRestante = (qtdArquivos - i) * tempoMedio;
+						String tempoRestanteStr = "ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads);
+						sbProgresso.append(" - " + tempoRestanteStr + " em " + numeroThreads + " thread(s)");
+						sbProgresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
+						progresso.setInformacoes(tempoRestanteStr);
 					}
-					long tempoMedio = totalTempo / arquivosMedicao;
-					long tempoRestante = (qtdArquivos - i) * tempoMedio;
-					String tempoRestanteStr = "ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads);
-					sbProgresso.append(" - " + tempoRestanteStr + " em " + numeroThreads + " thread(s)");
-					sbProgresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
-					progresso.setInformacoes(tempoRestanteStr);
+					sbProgresso.append(")");
 				}
-				sbProgresso.append(")");
+				LOGGER.debug(sbProgresso);
 			}
-			LOGGER.debug(sbProgresso);
 			
 			// Verifica se o usuário quer abortar o envio ao CNJ
 			if (arquivoAbortar.exists()) {
@@ -621,6 +625,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 */
 	private void ordenarArquivosNuncaEnviadosPrimeiro(List<XmlComInstancia> arquivos) {
 
+		LOGGER.debug("Ordenando lista de arquivos...");
 		Collections.sort(arquivos, new Comparator<XmlComInstancia>() {
 			
 			@Override
