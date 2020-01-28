@@ -7,3 +7,6 @@
 /saida.txt
 /*.zip
 /${ctx:logFolder}
+/.classpath
+/.settings
+/logs

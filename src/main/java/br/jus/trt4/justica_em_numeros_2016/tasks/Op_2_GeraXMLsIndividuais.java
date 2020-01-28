@@ -481,10 +481,17 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 								if (!StringUtils.isBlank(cep)) {
 									cep = cep.replaceAll("[^0-9]", "");
 								}
+								
+								// No PJe 2.5.1, endereços internacionais aparecem no banco de dados assim:
+								// nr_cep='0', cd_estado='X1', ds_municipio='Município Estrangeiro'
+								boolean isCepInternacional = "0".equals(cep);
 
 								if (!StringUtils.isBlank(cep)) {
 									TipoEndereco endereco = new TipoEndereco();
-									endereco.setCep(cep);
+									
+									if (!isCepInternacional) {
+										endereco.setCep(cep);
+									}
 
 									// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
 									// tais como rua, praça, quadra etc. O elemento é opcional para permitir 

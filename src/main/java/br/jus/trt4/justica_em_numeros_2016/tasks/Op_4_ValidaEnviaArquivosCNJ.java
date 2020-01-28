@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -364,8 +365,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws DadosInvalidosException 
 	 * @throws JAXBException 
 	 * @throws InterruptedException 
+	 * @throws IOException 
 	 */
-	private void localizarEnviarXMLsAoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException {
+	private void localizarEnviarXMLsAoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException, IOException {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
@@ -378,6 +380,24 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Filtra somente os arquivos que ainda não foram enviados
 		List<XmlComInstancia> arquivosXMLParaEnviar = filtrarSomenteArquivosPendentesDeEnvio(arquivosXML);
+		
+		// Verifica se não há arquivos muito pequenos, que com certeza não contém um processo dentro (como ocorreu em Jan/2020 no TRT4)
+		List<File> arquivosPequenos = arquivosXMLParaEnviar
+			.stream()
+			.map(XmlComInstancia::getArquivoXML)
+			.filter(a -> a.length() < 200)
+			.collect(Collectors.toList());
+		if (!arquivosPequenos.isEmpty()) {
+			LOGGER.warn("");
+			LOGGER.warn("");
+			LOGGER.warn("");
+			for (File arquivo: arquivosPequenos) {
+				LOGGER.warn("* " + arquivo);
+			}
+			LOGGER.warn("Os arquivos acima são muito pequenos e, por isso, provavelmente estão incompletos.");
+			LOGGER.warn("Pressione ENTER ou aguarde 1 minuto para que a geração dos XMLs continue. Se você preferir, aborte este script.");
+			Auxiliar.aguardaUsuarioApertarENTERComTimeout(60);
+		}
 		
 		// Mostra os arquivos que serão enviados
 		mostrarTotalDeArquivosPorPasta(arquivosXMLParaEnviar, "Arquivos XML que precisam ser enviados");
