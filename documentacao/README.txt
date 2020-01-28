@@ -152,8 +152,11 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
   
 * Assuntos CNJ: O arquivo XSD do CNJ explicita que os assuntos devem ser preenchidos de forma diferente
   se fizerem ou não parte das tabelas nacionais. Por isso, o arquivo "assuntos_cnj.csv", 
-  na pasta "src/main/resources/tabelas_cnj", contém listas com todos os assuntos do CNJ. Essa lista
-  foi extraída da ferramenta "replicacao-client".
+  na pasta "src/main/resources/tabelas_cnj", contém listas com todos os assuntos do CNJ.
+  Lista extraída de https://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
+  OBS: Foram filtradas somente os assuntos a partir do terceiro nível da planilha, conforme trecho (abaixo) do e-mail com assunto
+       "Fwd: Envio dos dados xml - informações do CNJ - Prêmio CNJ de Qualidade - Portaria CNJ nº 88/2019 artigo 8º inciso II":
+       b.5) campos tipoAssuntoProcessual.codigoNacional e/ou tipoAssuntoLocal. codigoPaiNacional a partir do terceiro nível ou no último nível das TPUs;
 
 
 * Movimentos CNJ: A mesma regra dos assuntos (que devem fazer parte da lista do CNJ) também se aplica

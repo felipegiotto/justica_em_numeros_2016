@@ -242,9 +242,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	
 	private void testarConexaoComCNJ(boolean continuarEmCasoDeErro) throws DadosInvalidosException, IOException {
 		
-		LOGGER.info("Testando conexão com o webservice do CNJ...");
+		String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true);
+		LOGGER.info("Testando conexão com o webservice do CNJ: " + url + "...");
 		
-		HttpGet get = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true));
+		HttpGet get = new HttpGet(url);
 		adicionarCabecalhoAutenticacao(get);
 		
 		long tempo = System.currentTimeMillis();
