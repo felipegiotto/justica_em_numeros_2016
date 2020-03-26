@@ -288,3 +288,5 @@ Essa ferramenta foi desenvolvida a partir de diversas fontes, ex:
 * E-mail "Justiça em Números", de 2015 (Crisostomo Koling)
 * E-mail "Justiça em Números - XML 2015" (Felipe Cesar Stanzani Fonseca)
 * http://cnj.jus.br/noticias/judiciario/789-acoes-e-programas/programas-de-a-a-z/eficiencia-modernizacao-e-transparencia/justica-em-numeros/selo-justica-em-numeros
+* E-mail "Fwd: Enc: Justiça em Números: Serviço Fora do Ar" (Carlos Fontoura)
+  * https://www.cnj.jus.br/pesquisas-judiciarias/premio-cnj-de-qualidade/orientacoes-para-envio-via-servico-rest/ 

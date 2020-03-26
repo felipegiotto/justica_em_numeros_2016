@@ -18,6 +18,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeRepresentanteProcessual
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoLocal;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoProcessual;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoCabecalhoProcesso;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoComplementoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoEndereco;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoOrgaoJulgador;
@@ -582,8 +583,24 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 				7:destino:1ª Vara Cível
 			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 		 */
-		assertEquals("5050:nome do magistrado:GRACIELA MAFFEI", movimento.getMovimentoNacional().getComplemento().get(0)); // Complemento sem código
-		assertEquals("3:tipo de conclusão:5:despacho", movimento.getMovimentoNacional().getComplemento().get(1)); // Complemento com código
+		List<String> complementosString = movimento.getMovimentoNacional().getComplemento();
+		assertEquals(2, complementosString.size());
+		assertEquals("5050:nome do magistrado:GRACIELA MAFFEI", complementosString.get(0)); // Complemento sem código
+		assertEquals("3:tipo de conclusão:5:despacho", complementosString.get(1)); // Complemento com código
+		
+		// Novo campo "TipoMovimentoProcessual.complementoNacional", conforme novo arquivo "modelo-de-transferencia-de-dados-1.0.xsd"
+		List<TipoComplementoNacional> complementos = movimento.getComplementoNacional();
+		assertEquals(2, complementos.size());
+		
+		// Complemento "nome do magistrado"
+		TipoComplementoNacional complementoNomeMagistrado = movimento.getComplementoNacional().get(0);
+		assertEquals(5050, complementoNomeMagistrado.getCodComplemento());
+		assertEquals("GRACIELA MAFFEI", complementoNomeMagistrado.getDescricaoComplemento());
+		
+		// Complemento "tipo de conclusão"
+		TipoComplementoNacional complementoTipoConclusao = movimento.getComplementoNacional().get(1);
+		assertEquals(3, complementoTipoConclusao.getCodComplemento());
+		assertEquals("despacho", complementoTipoConclusao.getDescricaoComplemento());
 	}
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException, DadosInvalidosException, InterruptedException {

@@ -25,6 +25,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadePoloProcessual;
 import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeRepresentanteProcessual;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoProcessual;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoCabecalhoProcesso;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoComplementoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoEndereco;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
@@ -762,6 +763,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							sb.append(":");
 							sb.append(rsComplementos.getString("nm_complemento"));
 							movimentoNacional.getComplemento().add(sb.toString());
+							
+							TipoComplementoNacional complemento = new TipoComplementoNacional();
+							movimento.getComplementoNacional().add(complemento);
+							complemento.setCodComplemento(rsComplementos.getInt("cd_tipo_complemento"));
+							complemento.setDescricaoComplemento(rsComplementos.getString("nm_complemento"));
 						}
 					}
 				}
