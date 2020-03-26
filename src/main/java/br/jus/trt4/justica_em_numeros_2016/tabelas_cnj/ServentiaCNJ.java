@@ -7,20 +7,20 @@ package br.jus.trt4.justica_em_numeros_2016.tabelas_cnj;
  */
 public class ServentiaCNJ {
 
-	private String codigo;
+	private int codigo;
 	private String nome;
 	
-	public ServentiaCNJ(String codigo, String nome) {
+	public ServentiaCNJ(int codigo, String nome) {
 		super();
 		this.codigo = codigo;
 		this.nome = nome;
 	}
 
-	public String getCodigo() {
+	public int getCodigo() {
 		return codigo;
 	}
 	
-	public void setCodigo(String codigo) {
+	public void setCodigo(int codigo) {
 		this.codigo = codigo;
 	}
 	

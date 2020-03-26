@@ -11,9 +11,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
-import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
-import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
+import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeDocumentoIdentificador;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoDocumentoIdentificacao;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 
 /**
  * Classe responsável por localizar todos os documentos de uma pessoa e gravar, nos objetos do MNI,

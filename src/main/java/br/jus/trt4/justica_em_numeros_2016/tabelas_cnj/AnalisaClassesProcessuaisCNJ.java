@@ -9,7 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.jus.cnj.intercomunicacao_2_2.TipoCabecalhoProcesso;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoCabecalhoProcesso;
 
 public class AnalisaClassesProcessuaisCNJ {
 

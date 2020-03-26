@@ -21,8 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoLocal;
-import br.jus.cnj.intercomunicacao_2_2.TipoAssuntoProcessual;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoLocal;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;

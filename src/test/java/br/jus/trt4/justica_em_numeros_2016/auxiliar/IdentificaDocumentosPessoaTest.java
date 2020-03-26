@@ -12,9 +12,9 @@ import java.util.List;
 
 import org.junit.Test;
 
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeDocumentoIdentificador;
-import br.jus.cnj.intercomunicacao_2_2.TipoDocumentoIdentificacao;
-import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
+import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeDocumentoIdentificador;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoDocumentoIdentificacao;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 
 public class IdentificaDocumentosPessoaTest extends AbstractTestCase {
 

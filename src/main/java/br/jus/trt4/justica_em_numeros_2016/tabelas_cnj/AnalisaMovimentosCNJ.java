@@ -13,9 +13,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoLocal;
-import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoNacional;
-import br.jus.cnj.intercomunicacao_2_2.TipoMovimentoProcessual;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoLocal;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoNacional;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
 
 /**
  * Classe que preencherá um objeto do tipo {@link TipoMovimentoProcessual}, conforme o dado no PJe:

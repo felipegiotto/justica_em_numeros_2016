@@ -1,0 +1,2420 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<schema
+		targetNamespace="http://www.cnj.jus.br/modelo-de-transferencia-de-dados-1.0"
+		elementFormDefault="qualified"
+		xmlns="http://www.w3.org/2001/XMLSchema"
+		xmlns:cnj="http://www.cnj.jus.br/modelo-de-transferencia-de-dados-1.0"
+		xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
+	<annotation>
+		<documentation>
+			Documento que define os objetos mais relevantes para
+			encaminhamento de
+			informações pelos tribunais
+			ao Conselho Nacional de Justiça.
+		</documentation>
+	</annotation>
+	<simpleType name="tipoCadastroIdentificador">
+		<annotation>
+			<documentation>
+				Tipo de dados destinado a limitar a entrada de dados
+				relativos a
+				cadastros no Ministério da Fazenda Brasileiro (CPF e
+				CNPJ) e/ou ao
+				registro individual do cidadão (riC). A restrição
+				imposta é que o
+				dado qualificado por este tipo seja integralmente
+				numérico, com 11
+				(CPF e riC) ou 14 (CNPJ) dígitos.
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<pattern value="(\d{11})|(\d{14})"></pattern>
+		</restriction>
+	</simpleType>
+	<simpleType name="tipoCadastroOAB">
+		<annotation>
+			<documentation>
+				Tipo destinado a permitir a inclusão de dados
+				relativos à inscrição do
+				advogado na Ordem dos Advogados do Brasil. O
+				número da ordem deve
+				ser incluído no formato CCDDDDDDDC, sendo os
+				primeiros 'C' dois
+				caracteres indicativos da unidade federativa
+				brasileira em que há a
+				inscrição, os sete digitos 'D' seguintes o
+				número da inscrição,
+				devendo incluir zeros ('0') à esquerda caso o
+				número tenha menos de 7
+				dígitos e o último caracter a letra
+				identificadora do tipo de
+				inscrição.
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<pattern value="[A-Za-z]{2}\d{7}[A-Za-z]{1}"></pattern>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoEndereco">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir o cadastro de
+				endereços. Esse tipo
+				tem o atributo opcional 'cep' e os elementos de
+				texto 'logradouro',
+				'numero', 'complemento', 'bairro', 'cidade',
+				'estado' e 'pais',
+				todos
+				opcionais. Na implementação de validação, a
+				presença do 'cep' deve
+				dispensar o preenchimento dos elementos
+				'cidade', 'estado' e 'pais' e
+				poderá dispensar a presença dos demais
+				elementos que já estiverem
+				presentes no diretório nacional de
+				endereços (DNE) como vinculados
+				ao
+				código de endereçamento postal
+				definido.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="logradouro" type="string" minOccurs="0"
+					 maxOccurs="1">
+				<annotation>
+					<documentation>O logradouro pertinente a este endereço, tais como
+						rua, praça, quadra etc. O elemento é opcional para permitir que as
+						implementações acatem a indicação de endereço exclusivamente pelo
+						CEP, quando o CEP já encerrar o dado respectivo.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="numero" type="string" minOccurs="0"
+					 maxOccurs="1">
+				<annotation>
+					<documentation>O número vinculado a este endereço. O elemento é
+						opcional para permitir que as implementações acatem a indicação de
+						endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado
+						respectivo.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="complemento" type="string" minOccurs="0"
+					 maxOccurs="1">
+				<annotation>
+					<documentation>O complemento vinculado a este endereço. O elemento
+						é opcional em razão de sua própria natureza.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="bairro" type="string" minOccurs="0"
+					 maxOccurs="1">
+				<annotation>
+					<documentation>O bairro vinculado a este endereço. O elemento é
+						opcional para permitir que as implementações acatem a indicação de
+						endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado
+						respectivo.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="cidade" type="string" minOccurs="0"
+					 maxOccurs="1">
+				<annotation>
+					<documentation>A cidade vinculada a este endereço. O elemento é
+						opcional para permitir que as implementações acatem a indicação de
+						endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado
+						respectivo.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="codCidade" type="int" minOccurs="0"
+					 maxOccurs="1">
+				<annotation>
+					<documentation> código do município IBGE com sete dígitos,
+						referente ao campo “cidade”.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="estado" type="string" minOccurs="0"
+					 maxOccurs="1">
+				<annotation>
+					<documentation>O estado federativo vinculado a este endereço.
+						O
+						elemento é opcional para permitir que as implementações acatem a
+						indicação de endereço exclusivamente pelo CEP, quando o CEP já
+						encerrar o dado respectivo.
+						A implementação de codificação e
+						decodificação deverão IGNORAR o
+						elemento quando indicado um CEP
+						válido.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="pais" type="string" minOccurs="0"
+					 maxOccurs="1">
+				<annotation>
+					<documentation>O país vinculado a este endereço.
+						Dever-se-á
+						utilizar, preferencialmente, o código ISO-3166-1-alpha-2
+						(http://www.iso.org/iso/english_country_names_and_code_elements)
+						pertinente ao país respectivo.
+						A implementação deverá IGNORAR esse
+						elemento caso tenha sido indicado um CEP válido.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="cep" use="optional">
+			<annotation>
+				<documentation>
+					Atributo indicador do código de endereçamento postal
+					do endereço no diretório nacional de endereços da
+					ECT. O valor
+					deverá ser uma sequência de 8 dígitos,
+					sem qualquer separador. O
+					atributo é opcional para
+					permitir a apresentação de endereços
+					desprovidos de
+					CEP e de endereços internacionais.
+				</documentation>
+			</annotation>
+			<simpleType>
+				<restriction base="string">
+					<pattern value="\d{8}"></pattern>
+				</restriction>
+			</simpleType>
+		</attribute>
+	</complexType>
+	<simpleType name="tipoQualificacaoPessoa">
+		<annotation>
+			<documentation>
+				Elemento definidor dos tipos possíveis de pessoa.
+				Trata-se de enumeração dos tipos possíveis, que são: -
+				fisica: pessoa
+				física
+				- juridica: pessoa jurídica, seja
+				de direito público, seja de
+				direito
+				privado
+				- autoridade: enfeixamento de funções;
+				-
+				orgaorepresentacao:
+				órgão de representação jurídica de interesses sem
+				personalidade
+				jurídica própria
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="fisica" />
+			<enumeration value="juridica" />
+			<enumeration value="autoridade" />
+			<enumeration value="orgaorepresentacao" />
+		</restriction>
+	</simpleType>
+	<simpleType name="modalidadeDocumentoIdentificador">
+		<annotation>
+			<documentation>
+				Elemento destinado a permitir a identificação dos
+				diversos tipos de documentos de identificação
+				existentes. Trata-se de
+				enumeração dos seguintes tipos:
+				- CI: carteira de identidade
+				- CNH:
+				carteira nacional de habilitação
+				- TE: título de eleitor
+				- CN:
+				certidão de nascimento
+				- CC: certidão de casamento - PAS: passaporte
+				- CT: carteira de
+				trabalho - RIC: registro individual do
+				cidadão -
+				CMF: cadastro no
+				Ministério da Fazenda
+				Brasileiro - PIS_PASEP: número
+				no programa de
+				integração
+				social –
+				CEI: cadastro específico do INSS -
+				NIT: número de identificação do
+				trabalho –
+				CP: cadastro em conselhos profissionais -
+				IF: identidade funcional -
+				OAB: número de cadastro na Ordem dos
+				Advogados do Brasil
+				- RJC: número
+				de inscrição empresarial;
+				- RGE: registro de identificação do
+				estrangeiro
+				- NB: número do benefício no INSS
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="CI"></enumeration>
+			<enumeration value="CNH"></enumeration>
+			<enumeration value="TE"></enumeration>
+			<enumeration value="CN"></enumeration>
+			<enumeration value="CC"></enumeration>
+			<enumeration value="PAS"></enumeration>
+			<enumeration value="CT"></enumeration>
+			<enumeration value="RIC"></enumeration>
+			<enumeration value="CMF"></enumeration>
+			<enumeration value="PIS_PASEP"></enumeration>
+			<enumeration value="CEI"></enumeration>
+			<enumeration value="NIT"></enumeration>
+			<enumeration value="CP"></enumeration>
+			<enumeration value="IF"></enumeration>
+			<enumeration value="OAB"></enumeration>
+			<enumeration value="RJC"></enumeration>
+			<enumeration value="RGE"></enumeration>
+			<enumeration value="NB"></enumeration>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoDocumentoIdentificacao">
+		<annotation>
+			<documentation>Tipo destinado a permitir a criação de documentos
+				identificadores de uma determinada pessoa.
+			</documentation>
+		</annotation>
+		<attribute name="codigoDocumento" type="string"
+				   use="required">
+			<annotation>
+				<documentation>Sequência de caracteres que tornam único o documento
+					descrito sem os separadores característicos.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="emissorDocumento" type="string"
+				   use="required">
+			<annotation>
+				<documentation>Órgão emissor do documento de identificação.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoDocumento"
+				   type="cnj:modalidadeDocumentoIdentificador" use="required">
+			<annotation>
+				<documentation>Tipo do documento, conforme emuneração existente no
+					tipo "tipoDocumento".
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="nome" type="string" use="optional">
+			<annotation>
+				<documentation>Nome existente no documento. Deve ser utilizado
+					apenas se existente nome diverso daquele ordinariamente usado.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoPessoa">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir a
+				individualização
+				de uma pessoa física ou jurídica.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="outroNome" type="string" maxOccurs="unbounded"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a inclusão de
+						outros
+						nomes da pessoa individualizada. Devem
+						ser incluídos sob esse
+						elemento os nomes que NÃO
+						constam em documentos específicos. Em
+						caso de
+						nomes divergentes do principal existentes em
+						documentos
+						específicos,
+						esses nomes devem ser
+						indicados no atributo pertinente
+						do
+						documento.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="documento"
+					 type="cnj:tipoDocumentoIdentificacao" maxOccurs="unbounded"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento que permite a inclusão de um ou mais
+						documentos identificadores vinculados à pessoa
+						individualizada.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="endereco" type="cnj:tipoEndereco"
+					 maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento que permite a indicação de endereços
+						conhecidos da pessoa individualizada.
+					</documentation>
+				</annotation>
+			</element>
+			<element maxOccurs="unbounded" minOccurs="0"
+					 name="pessoaRelacionada" nillable="true"
+					 type="cnj:tipoRelacionamentoPessoal">
+				<annotation>
+					<documentation>Indicação da existência de um relacionamento pessoal
+						independente de uma relação processual. Exemplo: tutoria legal,
+						curadoria, sucessão etc.
+					</documentation>
+				</annotation>
+			</element>
+			<element minOccurs="0" name="pessoaVinculada"
+					 type="cnj:tipoPessoa">
+				<annotation>
+					<documentation>Indicação da existência de um relacionamento entre
+						uma autoridade e uma pessoa jurídica ou ente que ela representa.
+						Exemplo: a escola é vinculada a seu diretor ou reitor
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="nome" type="string" use="required">
+			<annotation>
+				<documentation>
+					Nome da pessoa individualizada. Deve ser utilizado,
+					sempre que possível, o nome disponível no registro
+					individual do
+					cidadão, se disponível, ou no cadastro
+					do Ministério da Fazenda,
+					nessa ordem de
+					preferência.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="sexo" type="cnj:modalidadeGeneroPessoa"
+				   use="required">
+			<annotation>
+				<documentation>Sexo da pessoa</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="nomeGenitor" type="string" use="optional">
+			<annotation>
+				<documentation>
+					Nome do pai da pessoa individualizada.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="nomeGenitora" type="string" use="optional">
+			<annotation>
+				<documentation>
+					Nome da mãe da pessoa individualizada.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="dataNascimento" type="cnj:tipoData"
+				   use="optional">
+			<annotation>
+				<documentation>
+					Data de criação da pessoa jurídica ou de nascimento
+					da pessoa individualizada no
+					formato AAAAMMDD.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="dataObito" type="cnj:tipoData"
+				   use="optional">
+			<annotation>
+				<documentation>
+					Data de encerramento da pessoa jurídica ou de morte
+					da pessoa individualizada no
+					formato AAAAMMDD.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="numeroDocumentoPrincipal"
+				   type="cnj:tipoCadastroIdentificador" use="optional">
+			<annotation>
+				<documentation>
+					Número do documento principal da pessoa
+					individualizada, devendo ser utilizado o RIC ou o
+					CPF para pessoas
+					físicas, nessa ordem, ou o CNPJ
+					para pessoas jurídicas. O atributo é
+					opcional em
+					razão da possibilidade de haver pessoas sem
+					documentos ou
+					cujos dados não estão disponíveis.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoPessoa"
+				   type="cnj:tipoQualificacaoPessoa" use="required">
+			<annotation>
+				<documentation>
+					Indicação do tipo de pessoa, se física ('fisica') ou
+					jurídica ('juridica').
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="cidadeNatural" type="string">
+			<annotation>
+				<documentation>Cidade de nascimento da pessoa individualizada.
+					O
+					atributo é opcional.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="estadoNatural">
+			<annotation>
+				<documentation>
+					Unidade federativa brasileira de origem da pessoa
+					individualizada. A implementação de
+					codificação/decodificação deverá
+					interpretar do
+					valor do campo como se tratando da sigla de duas
+					letras identificadoras das unidades federativas
+					brasileiras.
+				</documentation>
+			</annotation>
+			<simpleType>
+				<restriction base="string">
+					<pattern value="[A-Za-z]{2}"></pattern>
+				</restriction>
+			</simpleType>
+		</attribute>
+		<attribute name="nacionalidade" use="optional" default="BR">
+			<annotation>
+				<documentation>País da nacionalidade da pessoa individualizada, no
+					formato ISO-3166-1-alpha-2
+					(http://www.iso.org/iso/english_country_names_and_code_elements).
+					O
+					elemento é opcional e o seu valor padrão é 'BR'.
+				</documentation>
+			</annotation>
+			<simpleType>
+				<restriction base="string">
+					<pattern value="[A-Za-z]{2}"></pattern>
+				</restriction>
+			</simpleType>
+		</attribute>
+	</complexType>
+	<complexType name="tipoRepresentanteProcessual">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir a identificação
+				de
+				um advogado inscrito na Ordem dos Advogados do Brasil,
+				de um
+				escritório de advocacia inscrito ou de um órgão de
+				representação
+				processual (advocacia pública, MP e
+				defensoria pública).
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="endereco" type="cnj:tipoEndereco"
+					 minOccurs="0" maxOccurs="unbounded">
+				<annotation>
+					<documentation>
+						Endereço pertinente ao advogado. Pode ser
+						indicado
+						mais de um.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="nome" type="string" use="required">
+			<annotation>
+				<documentation>
+					Nome do advogado ou do escritório de advocacia ou
+					órgão de representação processual (MP, advocacia
+					pública ou
+					defensoria pública. A identificação
+					relativa a se tratar de advogado
+					ou de escritório de
+					advocacia será feita pelo
+					numeroDocumentoPrincipal,
+					caso se trate de CPF, deverá ser tratado
+					como
+					advogado, caso se trate de CNPJ, como escritório de
+					advocacia ou
+					órgão de representação de interesses
+					(MP, advocacia pública e
+					defensoria pública).
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="inscricao" type="cnj:tipoCadastroOAB"
+				   use="optional">
+			<annotation>
+				<documentation>
+					Inscrição do advogado ou escritório de advocacia no
+					cadastro da Ordem dos Advogados do Brasil. O campo
+					deve ser
+					preenchido no formato CCDDDDDDDC, sendo os
+					primeiros 'C' dois
+					caracteres indicativos da unidade
+					federativa brasileira em que há a
+					inscrição, os sete
+					digitos 'D' seguintes o número da inscrição,
+					devendo
+					incluir zeros ('0') à esquerda caso o número tenha
+					menos de 7
+					dígitos e o último caracter a letra
+					identificadora do tipo de
+					inscrição.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="numeroDocumentoPrincipal" type="string"
+				   use="optional">
+			<annotation>
+				<documentation>
+					O número RIC ou o CPF, para advogados, ou o CNPJ,
+					para escritórios de advocacia e órgãos de
+					representação processual
+					(MP, advocacia pública e
+					defensoria pública).
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="intimacao" type="boolean" use="required">
+			<annotation>
+				<documentation>
+					Indicativo verdadeiro (true) ou falso (false)
+					relativo à escolha de o advogado, escritório ou
+					órgão de
+					representação ser o(s) preferencial(is)
+					para a realização de
+					intimações.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoRepresentante" use="required"
+				   type="cnj:modalidadeRepresentanteProcessual">
+			<annotation>
+				<documentation>
+					Atributo que permite indicar o tipo de representante
+					processual, se advogado ('A'), escritório de
+					advocacia ('E'),
+					ministério público ('M'),
+					defensoria pública ('D') ou outros órgãos
+					de
+					representação processual pública (advocacia pública
+					em geral,
+					'P').
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<simpleType name="modalidadeRepresentanteProcessual">
+		<annotation>
+			<documentation>Atributo que permite indicar o tipo de representante
+				processual, se advogado ('A'), escritório de advocacia ('E'),
+				ministério público ('M'), defensoria pública ('D') ou outros órgãos
+				de representação processual pública (advocacia pública em geral,
+				'P').
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="A"></enumeration>
+			<enumeration value="E"></enumeration>
+			<enumeration value="M"></enumeration>
+			<enumeration value="D"></enumeration>
+			<enumeration value="P"></enumeration>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoParte">
+		<annotation>
+			<documentation>
+				Tipo de elemento que permite a identificação de uma
+				parte que compõe o processo. Cada parte deve ter apenas
+				uma pessoa
+				física ou jurídica.
+			</documentation>
+		</annotation>
+		<sequence>
+			<choice minOccurs="1" maxOccurs="1">
+				<element name="pessoa" type="cnj:tipoPessoa" maxOccurs="1"
+						 minOccurs="1">
+					<annotation>
+						<documentation>
+							Pessoa que compõe essa parte.
+						</documentation>
+					</annotation>
+				</element>
+				<element name="interessePublico" type="string">
+					<annotation>
+						<documentation>
+							Elemento destinado a identificar se esta
+							parte
+							representa, em verdade, um interesse
+							público abstrato cuja defesa
+							está a cargo do
+							Ministério Público ou da Defensoria Pública.
+							Caso
+							esteja presente, essa parte será tida
+							como mero interesse público,
+							tal como
+							acontece nos processo propostos pelo MP,
+							pela Defensoria
+							Pública no caso de exercício
+							de ações coletivas e de inquéritos.
+						</documentation>
+					</annotation>
+				</element>
+			</choice>
+			<element name="advogado"
+					 type="cnj:tipoRepresentanteProcessual" maxOccurs="unbounded"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Advogado, escritório ou entidade de
+						representação
+						processual que atua em favor ou em
+						nome desta parte.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="pessoaProcessualRelacionada"
+					 type="cnj:tipoParte" maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Pessoa relacionada com a parte em situações como
+						as
+						de representação e assistência dos pais,
+						representação ou
+						substituição processual em
+						ações coletivas, tutela e curatela.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="assistenciaJudiciaria" type="boolean"
+				   use="optional">
+			<annotation>
+				<documentation>
+					Indicação se a parte pediu ou teve concedida
+					assistência judiciária gratuita. Em caso positivo,
+					marcar com
+					'true'; em caso negativo, com 'false'.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="intimacaoPendente" use="optional">
+			<annotation>
+				<documentation>
+					Indicativo da existência de intimações pendentes
+					para
+					essa parte.
+				</documentation>
+			</annotation>
+			<simpleType>
+				<restriction base="int">
+					<minInclusive value="0"></minInclusive>
+				</restriction>
+			</simpleType>
+		</attribute>
+		<attribute name="relacionamentoProcessual"
+				   type="cnj:modalidadeRelacionamentoProcessual" use="optional">
+			<annotation>
+				<documentation>
+					Atributo facultativo destinado a permitir que se
+					indique a modalidade de relacionamento existente
+					entre esta parte e
+					outra parte que a ela está
+					ligada, quando não se trata de um
+					relacionamento de
+					representação de advogado. Pode ser: CP (curador
+					processual); RP (representante processual); TF
+					(testemunha de fato);
+					AT (assistente técnico); AS
+					(assistente).
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<simpleType name="modalidadesRelacionamentoPessoal">
+		<annotation>
+			<documentation>
+				Destinado a permitir identificar qual o
+				relacionamento
+				existente entre uma parte processual
+				(pessoa) e outra pessoa. Por
+				meio disso é que se permite
+				conhecer se é caso de: - 'P':
+				representação legal de
+				ascendente (pais); - 'AP': assistência dos
+				pais - 'SP':
+				substituição ou representação processual nos casos de
+				ações coletivas - 'T': tutoria - 'C': curadoria
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="P"></enumeration>
+			<enumeration value="AP"></enumeration>
+			<enumeration value="SP"></enumeration>
+			<enumeration value="T"></enumeration>
+			<enumeration value="C"></enumeration>
+		</restriction>
+	</simpleType>
+	<simpleType name="modalidadePoloProcessual">
+		<annotation>
+			<documentation>
+				Tipo destinado a permitir a identificação do tipo de
+				polo processual. Deve ser definido usando um dos
+				seguintes códigos: -
+				AT: polo ativo - PA: polo passivo -
+				TC: terceiro - FL: fiscal da lei
+				diverso - TJ -
+				testemunha do juízo - AD - assistente simples
+				desinteressado (amicus curiae) - VI - vítima
+
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="AT"></enumeration>
+			<enumeration value="PA"></enumeration>
+			<enumeration value="TC"></enumeration>
+			<enumeration value="FL"></enumeration>
+			<enumeration value="TJ"></enumeration>
+			<enumeration value="AD"></enumeration>
+			<enumeration value="VI"></enumeration>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoPoloProcessual">
+		<annotation>
+			<documentation>
+				Tipo destinado a permitir a identificação do polo
+				ocupado por uma determinada parte no processo judicial.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="parte" type="cnj:tipoParte"
+					 maxOccurs="unbounded" minOccurs="1"></element>
+		</sequence>
+		<attribute name="polo" type="cnj:modalidadePoloProcessual">
+			<annotation>
+				<documentation> Atributo destinado destinado a permitir a
+					identificação do tipo de
+					polo processual. Deve ser definido usando um dos
+					seguintes códigos: - AT: polo ativo - PA: polo passivo -
+					TC: terceiro - FL: fiscal da lei diverso - TJ -
+					testemunha do juízo - AD - assistente simples
+					desinteressado (amicus curiae) - VI - vítima
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoAssuntoProcessual">
+		<annotation>
+			<documentation>
+				Tipo destinado a permitir a identificação de um
+				assunto
+				processual.
+			</documentation>
+		</annotation>
+		<choice>
+			<element name="codigoNacional" type="int" maxOccurs="1"
+					 minOccurs="1">
+				<annotation>
+					<documentation>
+						Elemento destinado a que se informe o código de
+						assunto existente na tabela nacional unificada
+						decorrente da
+						Resolução 46.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="assuntoLocal" type="cnj:tipoAssuntoLocal">
+				<annotation>
+					<documentation>Elemento destinado a que se possa informar um
+						assunto criado localmente, ou seja, que não faz parte da tabela
+						nacional unificada criada pela Resolução 46.
+					</documentation>
+				</annotation>
+			</element>
+		</choice>
+		<attribute name="principal" type="boolean" use="optional"
+				   default="false">
+			<annotation>
+				<documentation>Atributo que informa se o assunto referido é o
+					assunto principal do processo.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoAssuntoLocal">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir prestar
+				informações relativas a assuntos criados localmente pelo
+				tribunal.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="assuntoLocalPai" type="cnj:tipoAssuntoLocal"
+					 maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>Assunto local que é o pai imediato deste assunto, se
+						o pai não for nacional.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="codigoAssunto" type="int" use="required">
+			<annotation>
+				<documentation>
+					Atributo destinado a incluir a informação relativa
+					ao
+					código numérico utilizado localmente pelo
+					tribunal.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="codigoPaiNacional" type="int"
+				   use="required">
+			<annotation>
+				<documentation>
+					Atributo destinado à entrada do código de assunto
+					nacional de que o assunto local é filho.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="descricao" type="string" use="required">
+			<annotation>
+				<documentation>
+					Atributo destinado à entrada da descrição textual do
+					assunto local.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoParametro">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir a inclusão de
+				parâmetros na forma nome/valor, sendo nome e valor, atributos
+				do
+				elemento.
+			</documentation>
+		</annotation>
+		<attribute name="nome" type="string">
+			<annotation>
+				<documentation> Atributo indicativo do nome deste parâmetro.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="valor" type="string">
+			<annotation>
+				<documentation> Atributo indicativo do valor deste parâmetro.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<simpleType name="modalidadeVinculacaoProcesso">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir a identificação
+				entre processos judiciais. As vinculações podem ser: - -
+				'CX':
+				conexão - 'CT': continência - 'DP': dependência -
+				'AR': Ação
+				rescisória - 'CD': Competência delegada -
+				'RR': Recurso repetitivo -
+				'RG': Repercussão geral -
+				'OR': outro tipo de associação que não
+				osanteriores
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="CX" />
+			<enumeration value="CT" />
+			<enumeration value="DP" />
+			<enumeration value="AR" />
+			<enumeration value="CD" />
+			<enumeration value="OR" />
+			<enumeration value="RR"></enumeration>
+			<enumeration value="RG"></enumeration>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoVinculacaoProcessual">
+		<annotation>
+			<documentation>
+				Tipo de elemento que permite informar uma vinculação
+				entre um processo judicial e outro.
+			</documentation>
+		</annotation>
+		<attribute name="numeroProcesso" type="cnj:tipoNumeroUnico"
+				   use="required">
+			<annotation>
+				<documentation></documentation>
+			</annotation>
+		</attribute>
+		<attribute name="vinculo"
+				   type="cnj:modalidadeVinculacaoProcesso" use="required">
+			<annotation>
+				<documentation>Indicação da qualidade do vínculo mantido com o
+					processo indicado neste elemento.
+					As vinculações podem ser:
+					- 'CX':
+					conexão
+					- 'CT': continência
+					- 'DP': dependência
+					- 'AR': Ação
+					rescisória
+					- 'CD': Competência delegada
+					- 'RR': Recurso repetitivo
+					-
+					'RG': Repercussão geral
+					- 'OR': Outro tipo de vinculação
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoRelacaoIncidental">
+		<annotation>
+			<documentation>
+				Tipo de elemento que permite identificar se existe
+				algum elemento incidental que tenha
+				gerado novo processo judicial, em razão da existência de uma nova relação
+				processual jurídica
+				(por exemplo, como pode ocorrer em embargos à execução de títulos
+				extrajudiciais,
+				embargos de terceiro, em recursos internos, impugnações ao valor da causa,
+				entre outras
+				Situações, em que há criação de novos autos vinculados ao processo principal).
+			</documentation>
+		</annotation>
+		<attribute name="numeroProcesso" type="cnj:tipoNumeroUnico"
+				   use="optional">
+			<annotation>
+				<documentation> Inserir o número único do processo ou dos processos
+					vinculados, conforme resolução 65. </documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoRelacao" type="string" use="optional">
+			<annotation>
+				<documentation> Indicar se o processo é principal ou incidental.
+					Podem ser classificados como:
+					- 'PP': processo principal
+					- 'PI': processo incidental
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="classeProcessual" type="int" use="optional">
+			<annotation>
+				<documentation>
+					Código da classe processual do processo vinculado,
+					conforme Resolução 46.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<simpleType name="tipoNumeroUnico">
+		<annotation>
+			<documentation>
+				Tipo de elemento que limita a indicação de um número
+				de
+				processo ao padrão da numeração única.
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<pattern value="\d{20}"></pattern>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoCabecalhoProcesso">
+		<sequence>
+			<element name="polo" type="cnj:tipoPoloProcessual"
+					 maxOccurs="unbounded" minOccurs="1">
+				<annotation>
+					<documentation>
+						Polos componentes do processo judicial.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="assunto" type="cnj:tipoAssuntoProcessual"
+					 maxOccurs="unbounded" minOccurs="1">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a inclusão dos
+						assuntos processuais vinculados.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="magistradoAtuante"
+					 type="cnj:tipoCadastroIdentificador" minOccurs="0"
+					 maxOccurs="unbounded">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a identificação de
+						zero ou mais magistrados que tenham atuado no
+						processo em
+						referência proferindo julgamentos ou
+						decisões conforme Resolução
+						CNJ 46.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="processoVinculado"
+					 type="cnj:tipoVinculacaoProcessual" maxOccurs="unbounded"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a indicação da
+						existência de um ou mais processos judiciais
+						vinculados.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="relacaoIncidental"
+					 type="cnj:tipoRelacaoIncidental" maxOccurs="unbounded"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir identificar se existe algum elemento incidental que tenha gerado novo 
+						processo judicial, em razão da existência de uma nova relação processual jurídica (por 
+						exemplo, como pode ocorrer em embargos à execução de títulos extrajudiciais, embargos de 
+						terceiro, em recursos internos, impugnações ao valor da causa, entre outras Situações, em 
+						que há criação de novos autos vinculados ao processo principal)
+					</documentation>
+				</annotation>
+			</element>
+			<element name="siglaTribunal" type="string" maxOccurs="1"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Inserção da Sigla do Tribunal.
+						
+						Deve ser preenchido em formato maiúsculo, sem caractere especial e sem espaço.
+                        Valores possíveis  (primeira coluna - apenas a sigla):
+						
+						STF		Supremo Tribunal Federal
+						CNJ		Conselho Nacional de Justiça						
+						STJ		Superior Tribunal de Justiça
+						TST		Tribunal Superior do Trabalho
+						TSE		Tribunal Superior Eleitoral						
+						STM		Superior Tribunal Militar
+						TJAC	Tribunal de Justiça do Estado do Acre
+						TJAL	Tribunal de Justiça do Estado de Alagoas
+						TJAM	Tribunal de Justiça do Estado do Amazonas
+						TJAP	Tribunal de Justiça do Estado do Amapá
+						TJBA	Tribunal de Justiça do Estado da Bahia
+						TJCE	Tribunal de Justiça do Estado do Ceará
+						TJDFT	Tribunal de Justiça do Distrito Federal e dos Territórios
+						TJES	Tribunal de Justiça do Estado do Espírito Santo
+						TJGO	Tribunal de Justiça do Estado de Goiás
+						TJMA	Tribunal de Justiça do Estado do Maranhão
+						TJMG	Tribunal de Justiça do Estado de Minas Gerais
+						TJMS	Tribunal de Justiça do Estado de Mato Grosso do Sul
+						TJMT	Tribunal de Justiça do Estado de Mato Grosso
+						TJPA	Tribunal de Justiça do Estado do Pará
+						TJPB	Tribunal de Justiça do Estado da Paraíba
+						TJPE	Tribunal de Justiça do Estado de Pernambuco
+						TJPI	Tribunal de Justiça do Estado do Piauí
+						TJPR	Tribunal de Justiça do Estado do Paraná
+						TJRJ	Tribunal de Justiça do Estado do Rio de Janeiro
+						TJRN	Tribunal de Justiça do Estado do Rio Grande do Norte
+						TJRO	Tribunal de Justiça do Estado de Rondônia
+						TJRR	Tribunal de Justiça do Estado de Roraima
+						TJRS	Tribunal de Justiça do Estado do Rio Grande do Sul
+						TJSC	Tribunal de Justiça do Estado de Santa Catarina
+						TJSE	Tribunal de Justiça do Estado de Sergipe
+						TJSP	Tribunal de Justiça do Estado de São Paulo
+						TJTO	Tribunal de Justiça do Estado de Tocantins
+						TRE-AC	Tribunal Regional Eleitoral do Acre
+						TRE-AL	Tribunal Regional Eleitoral de Alagoas
+						TRE-AM	Tribunal Regional Eleitoral do Amazonas
+						TRE-AP	Tribunal Regional Eleitoral do Amapá
+						TRE-BA	Tribunal Regional Eleitoral da Bahia
+						TRE-CE	Tribunal Regional Eleitoral do Ceará
+						TRE-DF	Tribunal Regional Eleitoral do Distrito Federal
+						TRE-ES	Tribunal Regional Eleitoral do Espírito Santo
+						TRE-GO	Tribunal Regional Eleitoral de Goiás
+						TRE-MA	Tribunal Regional Eleitoral do Maranhão
+						TRE-MG	Tribunal Regional Eleitoral de Minas Gerais
+						TRE-MS	Tribunal Regional Eleitoral do Mato Grosso do Sul
+						TRE-MT	Tribunal Regional Eleitoral do Mato Grosso
+						TRE-PA	Tribunal Regional Eleitoral do Pará
+						TRE-PB	Tribunal Regional Eleitoral da Paraíba
+						TRE-PE	Tribunal Regional Eleitoral de Pernambuco
+						TRE-PI	Tribunal Regional Eleitoral do Piauí
+						TRE-PR	Tribunal Regional Eleitoral do Paraná
+						TRE-RJ	Tribunal Regional Eleitoral do Rio de Janeiro
+						TRE-RN	Tribunal Regional Eleitoral do Rio Grande do Norte
+						TRE-RO	Tribunal Regional Eleitoral de Rondônia
+						TRE-RR	Tribunal Regional Eleitoral de Roraima
+						TRE-RS	Tribunal Regional Eleitoral do Rio Grande do Sul
+						TRE-SC	Tribunal Regional Eleitoral de Santa Catarina
+						TRE-SE	Tribunal Regional Eleitoral de Sergipe
+						TRE-SP	Tribunal Regional Eleitoral de São Paulo
+						TRE-TO	Tribunal Regional Eleitoral de Tocantins
+						TRF1	Tribunal Regional Federal da 1ª Região
+						TRF2	Tribunal Regional Federal da 2ª Região
+						TRF3	Tribunal Regional Federal da 3ª Região
+						TRF4	Tribunal Regional Federal da 4ª Região
+						TRF5	Tribunal Regional Federal da 5ª Região
+						TRT1	Tribunal Regional do Trabalho da 1ª Região
+						TRT10	Tribunal Regional do Trabalho da 10ª Região
+						TRT11	Tribunal Regional do Trabalho da 11ª Região
+						TRT12	Tribunal Regional do Trabalho da 12ª Região
+						TRT13	Tribunal Regional do Trabalho da 13ª Região
+						TRT14	Tribunal Regional do Trabalho da 14ª Região
+						TRT15	Tribunal Regional do Trabalho da 15ª Região
+						TRT16	Tribunal Regional do Trabalho da 16ª Região
+						TRT17	Tribunal Regional do Trabalho da 17ª Região
+						TRT18	Tribunal Regional do Trabalho da 18ª Região
+						TRT19	Tribunal Regional do Trabalho da 19ª Região
+						TRT2	Tribunal Regional do Trabalho da 2ª Região
+						TRT20	Tribunal Regional do Trabalho da 20ª Região
+						TRT21	Tribunal Regional do Trabalho da 21ª Região
+						TRT22	Tribunal Regional do Trabalho da 22ª Região
+						TRT23	Tribunal Regional do Trabalho da 23ª Região
+						TRT24	Tribunal Regional do Trabalho da 24ª Região
+						TRT3	Tribunal Regional do Trabalho da 3ª Região
+						TRT4	Tribunal Regional do Trabalho da 4ª Região
+						TRT5	Tribunal Regional do Trabalho da 5ª Região
+						TRT6	Tribunal Regional do Trabalho da 6ª Região
+						TRT7	Tribunal Regional do Trabalho da 7ª Região
+						TRT8	Tribunal Regional do Trabalho da 8ª Região
+						TRT9	Tribunal Regional do Trabalho da 9ª Região
+						
+					</documentation>
+				</annotation>
+			</element>
+			<element name="grau" type="string" maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>
+						Informar em qual grau de jurisdição o processo se encontra. Se estiver no
+						primeiro grau, deverá ser identificado se é um caso regido pelo
+						procedimento sumaríssimo das leis dos Juizados Especiais (9.099/95
+						e 12.153/2009, mesmo que tramite em varas de juízo único ou em
+						varas que acumulam competência de juizado especial.
+						Valores possíveis:
+						- 'SUP': Tribunal Superior
+						- 'G2': 2º Grau
+						- 'TR': Turma Recursal
+						- 'G1': 1º grau, justiça comum
+						- 'JE': Juizados Especiais (inclusive os regidos pelas leis dos
+						Juizados Especiais 9.099/95 e 12.153/2009 que tramitam em varas de
+						juízo único ou em varas que acumulam competência de juizado
+						especial)
+						- 'TRU': Turma Regional de Uniformização
+						- 'TNU': Turma Nacional de Uniformização
+						- 'TEU': Turma Estadual de Uniformização
+						- 'CJF': Conselho da Justiça Federal
+						- 'CSJT': Conselho Superior da Justiça do Trabalho
+					</documentation>
+				</annotation>
+			</element>
+			<element name="validaProcesso"	 type="string" maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>Flag auxiliar para os tribunais.</documentation>
+				</annotation>
+			</element>
+			<element name="prioridade" type="string" minOccurs="0"
+					 maxOccurs="unbounded">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a identificação da
+						existência de propriedades processuais não
+						óbvias, ou seja, aquelas
+						que não são resultado
+						direto da identificação da classe processual
+						(ex.: habeas corpus ou mandado de segurança). Na
+						versão 2.0, será
+						texto livre, mas é recomendável
+						utilizar os seguintes textos
+						identificadores:
+						"IDOSO" "RÉU PRESO" "PERECIMENTO" "MENOR"
+					</documentation>
+				</annotation>
+			</element>
+			<element name="outroParametro" type="cnj:tipoParametro"
+					 maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a inclusão de
+						parâmetros específicos do processo.
+					</documentation>
+				</annotation>
+			</element>
+			<element minOccurs="0" name="valorCausa" type="double">
+				<annotation>
+					<documentation>Valor da causa.</documentation>
+				</annotation>
+			</element>
+			<element name="orgaoJulgador" type="cnj:tipoOrgaoJulgador"
+					 minOccurs="1" maxOccurs="1">
+				<annotation>
+					<documentation>
+						Órgão julgador responsável atualmente pelo
+						processo
+						no órgão consultado.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="outrosnumeros" type="string" minOccurs="0"
+					 maxOccurs="unbounded">
+				<annotation>
+					<documentation>Outros números que o processo possa ter recebido
+						durante sua vida.</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="numero" type="cnj:tipoNumeroUnico"
+				   use="required">
+			<annotation>
+				<documentation>
+					Número do processo judicial, no formado da numeração
+					única determinado pela Resolução 65. Caso se trate
+					de processo
+					inicial, deverá ser utilizado o número
+					'00000000000000000000'
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="competencia" type="int" use="optional">
+			<annotation>
+				<documentation>
+					Identificador da competência a que pertence o
+					processo, ou da competência a que ele se destina
+					caso se trate de
+					processo inicial
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="classeProcessual" type="int" use="required">
+			<annotation>
+				<documentation>
+					Código da classe processual conforme Resolução 46.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="codigoLocalidade" type="string"
+				   use="required">
+			<annotation>
+				<documentation>
+					Código identificador da localidade a que pertence ou
+					deve pertencer o processo. O atributo é obrigatório,
+					especialmente
+					para permitir a distribuição de
+					processo iniciais por meio do uso
+					desse serviço.
+					Deve ser utilizado o código do município, segundo códigos do IBGE
+					disponíveis em www.ibge.gov.br (usar códigos com sete dígitos)
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="nivelSigilo" type="int" use="required">
+			<annotation>
+				<documentation>
+					Nível de sigilo a ser aplicado ao processo.
+					Dever-se-á utilizar os seguintes níveis: - 0:
+					públicos, acessíveis a
+					todos os servidores do
+					Judiciário e dos demais órgãos públicos de
+					colaboração na administração da Justiça, assim como
+					aos advogados e
+					a qualquer cidadão - 1: segredo de
+					justiça, acessíveis aos
+					servidores do Judiciário,
+					aos servidores dos órgãos públicos de
+					colaboração na
+					administração da Justiça e às partes do processo. -
+					2: sigilo mínimo, acessível aos servidores do
+					Judiciário e aos
+					demais órgãos públicos de
+					colaboração na administração da Justiça -
+					3: sigilo
+					médio, acessível aos servidores do órgão em que
+					tramita o
+					processo, à(s) parte(s) que provocou(ram)
+					o incidente e àqueles que
+					forem expressamente
+					incluídos - 4: sigilo intenso, acessível a
+					classes
+					de servidores qualificados (magistrado, diretor de
+					secretaria/escrivão, oficial de gabinete/assessor)
+					do órgão em que
+					tramita o processo, às partes que
+					provocaram o incidente e àqueles
+					que forem
+					expressamente incluídos - 5: sigilo absoluto,
+					acessível
+					apenas ao magistrado do órgão em que
+					tramita, aos servidores e
+					demais usuários por ele
+					indicado e às partes que provocaram o
+					incidente.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="intervencaoMP" type="boolean"
+				   use="optional">
+			<annotation>
+				<documentation>
+					Atributo destinado a identificar que o processo
+					exige
+					a intervenção do Ministério Público.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tamanhoProcesso" type="int" use="optional">
+			<annotation>
+				<documentation>
+					Volume, em bytes, dos documentos existentes no
+					processo judicial.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="dataAjuizamento" type="cnj:tipoDataHora">
+			<annotation>
+				<documentation>
+					Indica a data em que o processo foi inicialmente recebido pelo Poder
+					Judiciário no órgão consultado. Caso se trate de instância
+					recursal, especial ou extraordinária, deve refletir a data de
+					entrada do processo nessa instância.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="procEl" type="int" use="optional">
+			<annotation>
+				<documentation>
+					Informar se o processo tramita em sistema eletrônico
+					ou em papel. São valores possíveis
+					- 1: Sistema Eletrônico
+					- 2: Sistema Físico
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="dscSistema" type="string" use="optional">
+			<annotation>
+				<documentation>
+					Informar em qual o sistema eletrônico o processo
+					tramita. São valores possíveis:
+					- PJe
+					- ProJud
+					- SAJ
+					- EPROC
+					- Outros
+				</documentation>
+			</annotation>
+		</attribute>
+    </complexType>
+	<simpleType name="tipoComplemento">
+		<annotation>
+			<documentation>
+			    Tipo de elemento destinado a permitir a inclusão de
+				complementos de movimentações processuais.
+			</documentation>
+		</annotation>
+		<restriction base="string"/>
+	</simpleType>
+	<complexType name="tipoComplementoNacional">
+		<annotation>
+			<documentation>Tipo de elemento destinado a permitir a inclusão de
+				complementos de movimentações processuais.
+			</documentation>
+		</annotation>
+        <attribute name="codComplemento" type="int" use="required">
+            <annotation>
+                <documentation> Atributo destinado à entrada do código do
+                    complemento do movimento
+                    nacional ou do movimento local.
+                </documentation>
+            </annotation>
+        </attribute>
+        <attribute name="descricaoComplemento" type="string" use="required">
+            <annotation>
+                <documentation> Atributo destinado à entrada da descrição textual
+                    do
+                    complemento do movimento nacional ou do movimento local.
+                </documentation>
+            </annotation>
+        </attribute>
+	</complexType>
+	<complexType name="tipoMovimentoLocal">
+		<annotation>
+			<documentation>Tipo de elemento destinado a permitir prestar
+				informações relativas a movimentos criados localmente pelo tribunal.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="movimentoLocalPai"
+					 type="cnj:tipoMovimentoLocal" minOccurs="0" maxOccurs="1">
+				<annotation>
+					<documentation>Movimento local pai, se não se tratar de movimento
+						nacional.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="codigoMovimento" type="int" use="required">
+			<annotation>
+				<documentation>Atributo destinado a incluir a informação relativa ao
+					código numérico utilizado localmente pelo tribunal.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="codigoPaiNacional" type="int"
+				   use="required">
+			<annotation>
+				<documentation>Atributo destinado à entrada do código de movimento
+					nacional de que o movimento local é filho.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="descricao" type="string" use="required">
+			<annotation>
+				<documentation>Atributo destinado à entrada da descrição textual do
+					movimento local.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoMovimentoProcessual">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir apresentar
+				informações relativas à movimentação processual.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="complemento" type="cnj:tipoComplemento" maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a inclusão dos
+						complementos de movimentação.
+					</documentation>
+				</annotation>
+			</element>
+			<choice>
+				<element name="movimentoNacional"
+						 type="cnj:tipoMovimentoNacional" maxOccurs="1" minOccurs="1">
+					<annotation>
+						<documentation>
+							Elemento destinado à identificação de um
+							movimento
+							previsto na tabela unificada da
+							Resolução 46
+						</documentation>
+					</annotation>
+				</element>
+				<element name="movimentoLocal" type="cnj:tipoMovimentoLocal"
+						 maxOccurs="1" minOccurs="1">
+					<annotation>
+						<documentation>
+							Elemento destinado à identificação de um
+							movimento
+							criado localmente conforme
+							autorizado pela Resolução 46
+						</documentation>
+					</annotation>
+				</element>
+			</choice>
+
+			<element name="complementoNacional" type="cnj:tipoComplementoNacional" maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a inclusão dos
+						complementos de movimentação conforme tabela nacional de
+						complementos.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="magistradoProlator" type="cnj:tipoCadastroIdentificador" minOccurs="0" maxOccurs="unbounded">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a identificação do magistrado que prolatou a
+						sentença.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="idDocumentoVinculado" type="string"
+					 maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a vinculação de um
+						ou
+						mais documentos à movimentação.
+					</documentation>
+				</annotation>
+			</element>
+            <element name="orgaoJulgador" type="cnj:tipoOrgaoJulgador" minOccurs="0">
+                <annotation>
+                    <documentation>
+                        Órgão julgador responsável atualmente pelo
+                        processo no órgão consultado.
+                    </documentation>
+                </annotation>
+            </element>
+        </sequence>
+		<attribute name="dataHora" type="cnj:tipoDataHora"
+				   use="required">
+			<annotation>
+				<documentation>
+					Atributo destinado a indicar o momento em que foi
+					realizada a movimentação.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="nivelSigilo" type="int" use="optional">
+			<annotation>
+				<documentation>
+					Nível de sigilo a ser aplicado ao processo.
+					Dever-se-á utilizar os seguintes níveis: - 0:
+					públicos, acessíveis a
+					todos os servidores do
+					Judiciário e dos demais órgãos públicos de
+					colaboração na administração da Justiça, assim como
+					aos advogados e
+					a qualquer cidadão - 1: segredo de
+					justiça, acessíveis aos
+					servidores do Judiciário,
+					aos servidores dos órgãos públicos de
+					colaboração na
+					administração da Justiça e às partes do processo. -
+					2: sigilo mínimo, acessível aos servidores do
+					Judiciário e aos
+					demais órgãos públicos de
+					colaboração na administração da Justiça -
+					3: sigilo
+					médio, acessível aos servidores do órgão em que
+					tramita o
+					processo, à(s) parte(s) que provocou(ram)
+					o incidente e àqueles que
+					forem expressamente
+					incluídos - 4: sigilo intenso, acessível a
+					classes
+					de servidores qualificados (magistrado, diretor de
+					secretaria/escrivão, oficial de gabinete/assessor)
+					do órgão em que
+					tramita o processo, às partes que
+					provocaram o incidente e àqueles
+					que forem
+					expressamente incluídos - 5: sigilo absoluto,
+					acessível
+					apenas ao magistrado do órgão em que
+					tramita, aos servidores e
+					demais usuários por ele
+					indicado e às partes que provocaram o
+					incidente.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="identificadorMovimento" type="string"
+				   use="optional">
+			<annotation>
+				<documentation>Atributo incluído para permitir a atribuição de um
+					identificador específico para a movimentação realizada em um
+					determinado processo judicial.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="responsavelMovimento"	type="cnj:tipoCadastroIdentificador">
+			<annotation>
+				<documentation>
+					Informar o número do CPF do servidor ou magistrado responsável pelo
+					movimento.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoResponsavelMovimento" type="int">
+			<annotation>
+				<documentation>
+					Identificação do responsável pelo movimento: Servidor=0; Magistrado=1;.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoMovimentoNacional">
+		<annotation>
+			<documentation>
+				Tipo de elemento que permite a indicação da realização
+				de um movimento existente na tabela unificada de que
+				trata a	Resolução 46.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="complemento" type="cnj:tipoComplemento"
+				minOccurs="0" maxOccurs="unbounded">
+				<annotation>
+					<documentation>Elemento destinado a permitir a inclusão do
+						complemento da movimentação, em formato de texto.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="codigoNacional" type="int" use="required">
+			<annotation>
+				<documentation>
+					Atributo destinado à indicação do código do
+					movimento
+					previsto na tabela unificada de que trata
+					a Resolução 46.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoDocumento">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado à transferência ou à
+				viabilização de transferência de documento processual.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="conteudo" type="base64Binary"
+					 xmime:expectedContentTypes="application/octet-stream" maxOccurs="1"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a armazenar o conteúdo do
+						documento em formato binário.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="assinatura" type="cnj:tipoAssinatura"
+					 maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Tipo de elemento destinado a permitir o
+						armazenamento da chave pública e do hash de
+						assinatura de um
+						determinado documento, em
+						formato binário.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="outroParametro" type="cnj:tipoParametro"
+					 maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Elemento destinado a permitir a inclusão de
+						parâmetros variados do tipo nome/valor.
+					</documentation>
+				</annotation>
+			</element>
+			<any namespace="##other">
+				<annotation>
+					<documentation>
+						Ponto de extensão destinado a permitir o envio e
+						recebimento de documentos estruturados.
+					</documentation>
+				</annotation>
+			</any>
+			<element name="documentoVinculado" minOccurs="0"
+					 maxOccurs="unbounded" type="cnj:tipoDocumento">
+				<annotation>
+					<documentation>
+						Documento vinculado a este documento
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="idDocumento" type="string"></attribute>
+		<attribute name="idDocumentoVinculado" type="string">
+			<annotation>
+				<documentation>
+					Identificador do documento ao qual é vinculado este
+					documento.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoDocumento" type="string" use="required">
+			<annotation>
+				<documentation>
+					Atributo destinado a permitir a indicação do código
+					nacional do
+					tipo de documento que está sendo enviado. O tipo aqui indicado
+					deve ser
+					um dos tipos de documento ou petições previstos nas tabelas
+					de
+					complementos previstas na Resolução CNJ 46.
+					O código do tipo deve,
+					necessariamente, ser informado.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="dataHora" type="cnj:tipoDataHora"
+				   use="optional">
+			<annotation>
+				<documentation>
+					Atributo destinado a permitir a informação do
+					momento
+					em que o documento foi recebido pelo Poder
+					Judiciário. É opcional no
+					caso de documento enviado
+					para protocolo.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="mimetype" type="string" use="optional">
+			<annotation>
+				<documentation>
+					Atributo opcional destinado a auxiliar as aplicações
+					a identificar o conteúdo do documento quando se
+					tratar de documento
+					binário.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="nivelSigilo" type="int" use="optional">
+			<annotation>
+				<documentation>
+					Nível de sigilo a ser aplicado ao documento.
+					Dever-se-á utilizar os seguintes níveis: - 0:
+					públicos, acessíveis a
+					todos os servidores do
+					Judiciário e dos demais órgãos públicos de
+					colaboração na administração da Justiça, assim como
+					aos advogados e
+					a qualquer cidadão - 1: segredo de
+					justiça, acessíveis aos
+					servidores do Judiciário,
+					aos servidores dos órgãos públicos de
+					colaboração na
+					administração da Justiça e às partes do processo. -
+					2: sigilo mínimo, acessível aos servidores do
+					Judiciário e aos
+					demais órgãos públicos de
+					colaboração na administração da Justiça -
+					3: sigilo
+					médio, acessível aos servidores do órgão em que
+					tramita o
+					processo, à(s) parte(s) que provocou(ram)
+					o incidente e àqueles que
+					forem expressamente
+					incluídos - 4: sigilo intenso, acessível a
+					classes
+					de servidores qualificados (magistrado, diretor de
+					secretaria/escrivão, oficial de gabinete/assessor)
+					do órgão em que
+					tramita o processo, às partes que
+					provocaram o incidente e àqueles
+					que forem
+					expressamente incluídos - 5: sigilo absoluto,
+					acessível
+					apenas ao magistrado do órgão em que
+					tramita, aos servidores e
+					demais usuários por ele
+					indicado e às partes que provocaram o
+					incidente.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="movimento" type="int" use="optional">
+			<annotation>
+				<documentation>
+					Atributo destinado a permitir a identificação do
+					movimento relacionado com a produção deste
+					documento.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="hash" use="optional" type="string">
+			<annotation>
+				<documentation>
+					Resumo matemático do documento enviado pelo
+					algoritmo
+					SHA-256.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="descricao" type="string" use="optional"></attribute>
+		<attribute name="tipoDocumentoLocal" type="string"
+				   use="optional">
+			<annotation>
+				<documentation>Indica o código local do tipo deste documento.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoProcessoJudicial">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a armazenar os dados de um
+				processo judicial.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="dadosBasicos" type="cnj:tipoCabecalhoProcesso"
+					 maxOccurs="1" minOccurs="1"></element>
+			<element name="movimento" type="cnj:tipoMovimentoProcessual"
+					 maxOccurs="unbounded" minOccurs="0"></element>
+			<element name="documento" type="cnj:tipoDocumento"
+					 maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>Lista com zero ou mais documentos do processo
+						judicial. Caso o tribunal tenha capacidade, poderá enviar o
+						binário dos documentos criptografados com chave a ser fornecida
+						quando do envio da comunicacaoProcessual.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
+	<complexType name="tipoAvisoComunicacaoPendente">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a indicar a existência de
+				uma
+				comunicação pendente.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="destinatario" type="cnj:tipoParte"
+					 minOccurs="1" maxOccurs="1">
+				<annotation>
+					<documentation>
+						Destinatário da comunicação pendente.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="processo" type="cnj:tipoCabecalhoProcesso"
+					 maxOccurs="1" minOccurs="1">
+				<annotation>
+					<documentation>
+						Processo em que houve a disponibilização de
+						intimação/citação.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="dataDisponibilizacao" type="cnj:tipoDataHora"
+					 minOccurs="1" maxOccurs="1">
+				<annotation>
+					<documentation>
+						Momento em que foi disponibilizado o aviso de
+						comunicação no tribunal de origem.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="idAviso"
+				   type="cnj:identificadorComunicacao" use="required">
+			<annotation>
+				<documentation>
+					Identificador do aviso de comunicação.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoComunicacao" type="cnj:tipoComunicacao">
+			<annotation>
+				<documentation>Tipo de comunicação pendente de ciência.
+					São valores
+					possíveis:
+					- CIT: citação
+					- INT: intimação
+					- NOT: notificação
+					- VIS:
+					vista para manifestação
+					- URG: urgente
+					- PTA: pauta de
+					julgamento/audiência
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoComunicacaoProcessual">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a comunicar concretamente
+				uma
+				providência judicial para uma parte. A dataReferencia indica o
+				momento em que foi considerada a parte intimada, seja por provocação
+				do intimado/citado/notificado, seja por decurso do prazo legal para
+				tomada de ciência.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="destinatario" type="cnj:tipoParte"
+					 minOccurs="1" maxOccurs="1"></element>
+			<element name="processo" type="string" maxOccurs="1"
+					 minOccurs="1">
+				<annotation>
+					<documentation>
+						Dados básicos do processo em relação ao qual é
+						feita
+						a comunicação processual.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="teor" type="string" maxOccurs="1"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Teor da comunicação processual.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="documento" type="cnj:tipoDocumento"
+					 maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>
+						Documento relativo à comunicação processual.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="parametro" type="string" maxOccurs="unbounded"
+					 minOccurs="0">
+				<annotation>
+					<documentation>
+						Outros parâmetros úteis à comunicação.
+					</documentation>
+				</annotation>
+			</element>
+			<any namespace="##other">
+				<annotation>
+					<documentation>
+						Ponto de extensão destinado a permitir a
+						inclusão de
+						documentos estruturados.
+					</documentation>
+				</annotation>
+			</any>
+		</sequence>
+		<attribute name="id" type="cnj:identificadorComunicacao"
+				   use="required">
+			<annotation>
+				<documentation>Identificador da comunicacao processual.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoComunicacao" type="cnj:tipoComunicacao">
+			<annotation>
+				<documentation>
+					Atributo destinado a identificar o tipo de
+					comunicação realizada por este ato.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="tipoPrazo" type="cnj:tipoPrazo">
+			<annotation>
+				<documentation>
+					Atributo destinado a identificar o tipo de prazo
+					estabelecido para resposta a esta comunicação. Pode
+					ser HOR (horas),
+					DIA (dias), MES (meses), ANO
+					(anos), DATA_CERTA (data certa no
+					futuro) e
+					SEM_PRAZO (não há conduta a ser realizada pelo
+					intimado).
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="dataReferencia" type="cnj:tipoDataHora">
+			<annotation>
+				<documentation>
+					Atributo indicativo do momento em que,
+					presumivelmente, houve a concretização da
+					comunicação processual. A
+					implementação deve incluir
+					nesse campo o momento (data e hora) em
+					que a
+					comunicação está se concretizando, mas deverá
+					assegurar que a
+					comunicação se complete para o
+					registro da correspondente
+					movimentação no processo
+					judicial. Desse modo, assegura-se que a
+					data de
+					referência será mais antiga que o efetivo momento da
+					comunicação. No caso de prazo DATA_CERTA, deverá ser
+					a data limite
+					para cumprimento da medida
+					determinada.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="prazo" type="int">
+			<annotation>
+				<documentation>
+					O prazo, em unidades, estabelecido para cumprimento.
+					No caso de DATA_CERTA e SEM_PRAZO, poderá ser
+					omitido. No caso de
+					DATA_CERTA, a data de referência
+					é a data limite para cumprimento.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="nivelSigilo" type="int" use="optional">
+			<annotation>
+				<documentation>
+					Nível de sigilo a ser aplicado à comunicação.
+					Dever-se-á utilizar os seguintes níveis: - 0:
+					públicos, acessíveis a
+					todos os servidores do
+					Judiciário e dos demais órgãos públicos de
+					colaboração na administração da Justiça, assim como
+					aos advogados e
+					a qualquer cidadão - 1: segredo de
+					justiça, acessíveis aos
+					servidores do Judiciário,
+					aos servidores dos órgãos públicos de
+					colaboração na
+					administração da Justiça e às partes do processo. -
+					2: sigilo mínimo, acessível aos servidores do
+					Judiciário, às partes
+					que provocaram o processo e
+					aos demais órgãos públicos de
+					colaboração na
+					administração da Justiça - 3: sigilo médio,
+					acessível
+					aos servidores do órgão em que tramita o
+					processo, às partes que lhe
+					deram início e àqueles
+					que forem expressamente incluídos - 4: sigilo
+					intenso, acessível a classes de servidores
+					qualificados (magistrado,
+					diretor de
+					secretaria/escrivão, oficial de gabinete/assessor)
+					do
+					órgão em que tramita o processo, às partes que
+					lhe deram início e
+					àqueles que forem expressamente
+					incluídos - 5: sigilo absoluto,
+					acessível apenas ao
+					magistrado do órgão em que tramita, aos
+					servidores e
+					demais usuários por ele indicados e às partes que
+					provocaram o incidente.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<simpleType name="tipoComunicacao">
+		<annotation>
+			<documentation>Tipo de elemento destinado a permitir a identificacao
+				do tipo de comunicação processual realizada. São valores possíveis:
+				- CIT: citação
+				- INT: intimação
+				- NOT: notificação
+				- VIS: vista para
+				manifestação
+				- URG: urgente
+				- PTA: pauta de julgamento/audiência
+			</documentation>
+		</annotation>
+		<restriction base="string"></restriction>
+	</simpleType>
+	<simpleType name="tipoPrazo">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir a identificação
+				do
+				tipo de prazo estabelecido: - HOR: horas - DIA: dias - MES: meses
+				- ANO: anos -
+				DATA_CERTA: data certa - SEMPRAZO: não há prazo para
+				cumprimento (é mera ciência)
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="HOR"></enumeration>
+			<enumeration value="DIA"></enumeration>
+			<enumeration value="MES"></enumeration>
+			<enumeration value="ANO"></enumeration>
+			<enumeration value="DATA_CERTA"></enumeration>
+			<enumeration value="SEMPRAZO"></enumeration>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoIntercomunicacao">
+		<annotation>
+			<documentation>
+				Tipo de elemento raiz da intercomunicação. Ele deverá
+				conter um dos elementos principais (processojudicial,
+				avisocomunicacao e comunicacaoprocessual).
+			</documentation>
+		</annotation>
+		<choice>
+			<element name="processojudicial"
+					 type="cnj:tipoProcessoJudicial" maxOccurs="unbounded" minOccurs="1">
+				<annotation>
+					<documentation>
+						Processo judicial pertinente à comunicação
+						específica.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="avisocomunicacao"
+					 type="cnj:tipoAvisoComunicacaoPendente" maxOccurs="unbounded"
+					 minOccurs="1">
+				<annotation>
+					<documentation>
+						Aviso de comunicação solicitado.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="comunicacaoprocessual"
+					 type="cnj:tipoComunicacaoProcessual" maxOccurs="unbounded"
+					 minOccurs="1">
+				<annotation>
+					<documentation>
+						Comunicacação processual concreta.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="documento" type="cnj:tipoDocumento"
+					 maxOccurs="unbounded" minOccurs="1">
+				<annotation>
+					<documentation>Elemento destinado a respostas em que somente o
+						documento é retornado.
+					</documentation>
+				</annotation>
+			</element>
+		</choice>
+	</complexType>
+	<element name="intercomunicacao"
+			 type="cnj:tipoIntercomunicacao">
+		<annotation>
+			<documentation>Elemento raiz.</documentation>
+		</annotation>
+	</element>
+	<simpleType name="identificadorComunicacao">
+		<annotation>
+			<documentation>
+				Sequência de caracteres no formato AAAAMMDDNNNNNNN,
+				onde
+				AAAA é o ano, MM o mês e DD o dia de produção do aviso
+				ou da
+				comunicação e NNNNNNN o número identificador local
+				da intimação.
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<pattern value="\d{15}"></pattern>
+		</restriction>
+	</simpleType>
+	<simpleType name="tipoDataHora">
+		<annotation>
+			<documentation>Tipo de elemento destinado a permitir a indicação de
+				data e hora no formato
+				AAAAMMDDHHMMSS
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<pattern value="\d{4}[0-1]\d[0-3]\d[0-2]\d[0-6]\d[0-6]\d"></pattern>
+		</restriction>
+	</simpleType>
+	<simpleType name="tipoData">
+		<annotation>
+			<documentation>
+				Tipo destinado a identificar uma data no formato
+				AAAAMMDD.
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<pattern value="\d{4}[0-1]\d[0-3]\d"></pattern>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoRelacionamentoPessoal">
+		<annotation>
+			<documentation>
+				Tipo destinado a permitir a vinculação entre uma parte
+				e outra pessoa, sendo esclarecido o tipo de relacionamento
+				por meio
+				da modalidade indicada no atributo do elemento.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="pessoa" type="cnj:tipoPessoa" maxOccurs="1"
+					 minOccurs="1">
+				<annotation>
+					<documentation>Pessoa relacionada.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="modalidadeRelacionamento"
+				   type="cnj:modalidadesRelacionamentoPessoal">
+			<annotation>
+				<documentation>Modalidade do relacionamento existente entre uma
+					pessoa e a contida no elemento.
+					Pode receber os valores indicados no
+					tipo "modalidadesRelacionamentoPessoal".
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<simpleType name="modalidadeGeneroPessoa">
+		<annotation>
+			<documentation>Tipo destinado a permitir a identificação do gênero de
+				uma dada pessoa, podendo ser:
+				- M: masculino
+				- F: feminino
+				- D: desconhecido
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="M" />
+			<enumeration value="F" />
+			<enumeration value="D" />
+		</restriction>
+	</simpleType>
+	<simpleType name="modalidadeRelacionamentoProcessual">
+		<annotation>
+			<documentation>
+				Tipo destinado a permitir que se indique a modalidade
+				de
+				relacionamento existente entre esta parte e outra parte
+				que a ela
+				está ligada, quando não se trata de um
+				relacionamento de
+				representação de advogado. Pode ser:
+				CP (curador processual); RP
+				(representante processual);
+				TF (testemunha de fato); AT (assistente
+				técnico); AS
+				(assistente).
+			</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="CP"></enumeration>
+			<enumeration value="RP"></enumeration>
+			<enumeration value="TF"></enumeration>
+			<enumeration value="AT"></enumeration>
+			<enumeration value="AS"></enumeration>
+		</restriction>
+	</simpleType>
+	<complexType name="tipoOrgaoJulgador">
+		<attribute name="codigoOrgao" type="int" use="required">
+			<annotation>
+				<documentation>
+					Informar o código da Unidade Judiciária constante no Módulo de
+					Produtividade, Anexo II da Resolução 76.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="nomeOrgao" type="string" use="required">
+			<annotation>
+				<documentation>
+					Informar a descrição textual da Unidade Judiciária constante no Módulo de
+					Produtividade, Anexo II da Resolução 76.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="instancia" use="required">
+			<annotation>
+				<documentation>Os tipos de instância podem ser:
+					- ORIG: instância originária em que o processo teve início;
+					- REV: instância de revisão direta de um processo originariamente
+					proposto em outra instância;
+					- ESP: instância de revisão especial de processo submetido ou não à
+					revisão direta;
+					- EXT: instância de revisão extraordinária
+					- ADM: instância administrativa de análise.
+				</documentation>
+			</annotation>
+			<simpleType>
+				<restriction base="string">
+					<enumeration value="ORIG"></enumeration>
+					<enumeration value="REV"></enumeration>
+					<enumeration value="ESP"></enumeration>
+					<enumeration value="EXT"></enumeration>
+					<enumeration value="ADM"></enumeration>
+				</restriction>
+			</simpleType>
+		</attribute>
+		<attribute name="codigoMunicipioIBGE" type="int"
+				   use="required">
+			<annotation>
+				<documentation>
+					Informar o município-sede da unidade judiciária,
+					conforme código de municípios definidos pelo IBGE.
+					Usar código com sete dígitos. Fonte: www.ibge.gov.br.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoSignatarioSimples">
+		<annotation>
+			<documentation>
+				Tipo complexo destinado a permitir a identificação de
+				signatários de documentos caso a assinatura tenha sido
+				feita com o
+				uso de login e senha, sem prejuízo da
+				obrigatoriedade de o sistema
+				cliente assinar
+				eletronicamente o documento no padrão ICP-Br quando
+				do
+				envio.
+			</documentation>
+		</annotation>
+		<attribute name="identificador" type="string">
+			<annotation>
+				<documentation>
+					Código de inscrição do signatário no cadastro do
+					Ministério da Fazenda do Brasil, que pode ser CPF ou
+					CNPJ.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="dataHora" type="cnj:tipoDataHora">
+			<annotation>
+				<documentation>Data e hora em que a assinatura foi originalmente
+					aposta pelo signatário.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="tipoAssinatura">
+		<annotation>
+			<documentation>
+				Tipo de elemento destinado a permitir o armazenamento
+				dos dados relacionados à assinatura digital de um
+				objeto.
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="signatarioLogin"
+					 type="cnj:tipoSignatarioSimples" minOccurs="0" maxOccurs="unbounded">
+				<annotation>
+					<documentation>Informação referente a signatário que fez uso de
+						login e senha para assinar o documento.</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="assinatura" type="string">
+			<annotation>
+				<documentation>Hash da assinatura, em base64.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="dataAssinatura" type="cnj:tipoDataHora">
+			<annotation>
+				<documentation>Data e hora em que a assinatura se concretizou.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="cadeiaCertificado" type="string">
+			<annotation>
+				<documentation>Cadeia de certificação, no formato PEM ou, se
+					indicado, no formato indicado no atributo codificacaoCertificado.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="algoritmoHash" type="string">
+			<annotation>
+				<documentation>
+					A identificação do algoritmo de resumo matemático
+					utilizado para criar a assinatura. Recomenda-se o
+					tipo SHA-256.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="codificacaoCertificado" type="string">
+			<annotation>
+				<documentation>
+					Indica a codificação (PEM, DER etc.) de envio da
+					cadeia de certificação. Por padrão, essa codificação
+					deve ser a PEM,
+					e, quando não indicada a informação,
+					a implementação deve considerar
+					que essa codificação
+					foi utilizada. A implementação pode, mas não é
+					obrigada a, tolerar envio equivocado da informação,
+					de forma que as
+					implementações cliente não devem
+					contar com esse tipo de tratamento.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+</schema>

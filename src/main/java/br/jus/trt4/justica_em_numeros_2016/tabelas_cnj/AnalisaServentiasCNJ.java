@@ -60,7 +60,12 @@ public class AnalisaServentiasCNJ {
 					throw new IOException("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': a linha deve conter 3 campos, separados por ponto e vírgula: o nome do OJ/OJC no PJe, o código da serventia no CNJ e o nome da serventia no CNJ.");
 				}
 				String orgaoJulgadorPJe = partes[0];
-				String codigoServentiaCNJ = partes[1];
+				int codigoServentiaCNJ;
+				try {
+					codigoServentiaCNJ = Integer.parseInt(partes[1]);
+				} catch (NumberFormatException ex) {
+					throw new IOException("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': o código da serventia deve ser um valor numérico inteiro.");
+				}
 				String nomeServentiaCNJ = partes[2];
 				
 				if (!StringUtils.isBlank(orgaoJulgadorPJe)) {

@@ -10,9 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.jus.cnj.intercomunicacao_2_2.ModalidadeGeneroPessoa;
-import br.jus.cnj.intercomunicacao_2_2.TipoPessoa;
-import br.jus.cnj.intercomunicacao_2_2.TipoQualificacaoPessoa;
+import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeGeneroPessoa;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoQualificacaoPessoa;
 
 /**
  * Classe que visa contornar problema de ausência de informação de sexo no PJe.
