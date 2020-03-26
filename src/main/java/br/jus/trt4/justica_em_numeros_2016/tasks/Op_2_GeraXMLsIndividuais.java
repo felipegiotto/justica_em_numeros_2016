@@ -517,6 +517,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 									// é opcional para permitir que as implementações acatem a indicação 
 									// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
 									endereco.setCidade(rsEnderecos.getString("ds_municipio"));
+									
+									// modelo-de-transferencia-de-dados-1.0.xsd:
+									// código do município IBGE com sete dígitos, referente ao campo “cidade”.
+									endereco.setCodCidade(rsEnderecos.getInt("id_municipio_ibge"));
 
 									pessoa.getEndereco().add(endereco);
 								}

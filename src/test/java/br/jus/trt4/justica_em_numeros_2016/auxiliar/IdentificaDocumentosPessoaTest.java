@@ -73,6 +73,19 @@ public class IdentificaDocumentosPessoaTest extends AbstractTestCase {
 		assertEquals("16567898000114", pessoa.getNumeroDocumentoPrincipal());
 	}
 	
+	/**
+	 * Novo campo, conforme arquivo "modelo-de-transferencia-de-dados-1.0.xsd"
+	 */
+	@Test
+	public void testDocumentoINSS() throws Exception {
+		TipoPessoa pessoa = carregaDocumentosPessoa(1, "LUIZ SETIMO PALANDI", 50151);
+		
+		// Localiza CPF (CMF, no CNJ)
+		TipoDocumentoIdentificacao cnpj = getDocumentoDoTipo(ModalidadeDocumentoIdentificador.NB, pessoa.getDocumento());
+		assertEquals("500171813686", cnpj.getCodigoDocumento());
+		assertNull(cnpj.getNome()); // Nome só deve ser preenchido quando for diferente do nome da pessoa
+	}
+	
 	@Test
 	public void testDocumentosInvalidos() throws Exception {
 		TipoPessoa pessoa = carregaDocumentosPessoa(1, "ANDRE SOARES FARIAS", 6810);

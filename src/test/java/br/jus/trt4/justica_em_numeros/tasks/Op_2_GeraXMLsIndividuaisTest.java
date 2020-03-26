@@ -636,6 +636,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals("CAPAO DA CRUZ", endereco.getBairro());
 		assertEquals("SAPUCAIA DO SUL", endereco.getCidade());
 		assertEquals("93226476", endereco.getCep());
+		assertEquals(Integer.valueOf(4320008), endereco.getCodCidade());
 		assertNull(endereco.getEstado());
 		assertNull(endereco.getPais());
 		
