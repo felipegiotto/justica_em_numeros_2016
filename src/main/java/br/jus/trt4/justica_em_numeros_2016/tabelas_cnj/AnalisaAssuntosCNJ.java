@@ -113,8 +113,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 					for (int codigo: assuntosMapeadosIncorretamente) {
 						LOGGER.warn("* " + codigo);
 					}
-					LOGGER.warn("Pressione ENTER para continuar ou aguarde 2min");
-					Auxiliar.aguardaUsuarioApertarENTERComTimeout(120);
+					Auxiliar.aguardaUsuarioApertarENTERComTimeout(2);
 				}
 			}
 		}

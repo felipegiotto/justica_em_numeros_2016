@@ -83,6 +83,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
 	 */
+	@SuppressWarnings("deprecation")
 	public static void main(String[] args) throws Exception {
 
 		progresso = new ProgressoInterfaceGrafica("(2/5) Geração de XMLs individuais");
@@ -92,9 +93,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Verifica se há alguma serventia inexistente
 			AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ();
 			if (analisaServentiasCNJ.diagnosticarServentiasInexistentes()) {
-				
-				LOGGER.warn("Pressione ENTER ou aguarde 1 minuto para que a geração dos XMLs continue. Se você preferir, aborte este script e corrija o arquivo de serventias");
-				Auxiliar.aguardaUsuarioApertarENTERComTimeout(60);
+				Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
 			}
 			
 			Op_2_GeraXMLsIndividuais baixaDados1g = Auxiliar.deveProcessarPrimeiroGrau() ? new Op_2_GeraXMLsIndividuais(1) : null;
@@ -311,7 +310,15 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		TipoCabecalhoProcesso cabecalhoProcesso = new TipoCabecalhoProcesso();
 		cabecalhoProcesso.setNivelSigilo(Auxiliar.getCampoIntNotNull(rsProcesso, "nivelSigilo"));
 		cabecalhoProcesso.setNumero(Auxiliar.getCampoStringNotNull(rsProcesso, "nr_processo"));
-
+		cabecalhoProcesso.setSiglaTribunal(Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true));
+		cabecalhoProcesso.setGrau("G" + grau);
+		cabecalhoProcesso.setDscSistema("PJe");
+		
+		// Informar se o processo tramita em sistema eletrônico ou em papel. São valores possíveis
+		// 1: Sistema Eletrônico
+		// 2: Sistema Físico
+		cabecalhoProcesso.setProcEl(1);
+		
 		// Grava a classe processual, conferindo se ela está na tabela nacional do CNJ
 		analisaClassesProcessuaisCNJ.preencherClasseProcessualVerificandoTPU(cabecalhoProcesso, rsProcesso.getInt("cd_classe_judicial"), rsProcesso.getString("ds_classe_judicial"), numeroCompletoProcesso);
 

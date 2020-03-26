@@ -395,8 +395,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				LOGGER.warn("* " + arquivo);
 			}
 			LOGGER.warn("Os arquivos acima são muito pequenos e, por isso, provavelmente estão incompletos.");
-			LOGGER.warn("Pressione ENTER ou aguarde 1 minuto para que a geração dos XMLs continue. Se você preferir, aborte este script.");
-			Auxiliar.aguardaUsuarioApertarENTERComTimeout(60);
+			Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
 		}
 		
 		// Mostra os arquivos que serão enviados

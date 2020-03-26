@@ -41,6 +41,7 @@ public class Auxiliar {
 
 	private static final Logger LOGGER = LogManager.getLogger(Auxiliar.class);
 	private static Properties configs = null;
+	private static boolean permitirAguardarUsuarioApertarENTER = true;
 	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
 	private static File pastaSaida = null;
 	public static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
@@ -513,6 +514,7 @@ public class Auxiliar {
 	 * 
 	 * Fonte: http://stackoverflow.com/questions/23318383/compress-directory-into-a-zipfile-with-commons-io
 	 */
+	@SuppressWarnings("deprecation")
 	public static void compressZipfile(String sourceDir, String outputFile) throws IOException {
 	    ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream(outputFile));
 	    zipFile.setLevel(Deflater.BEST_COMPRESSION);
@@ -523,6 +525,7 @@ public class Auxiliar {
 	/**
 	 * Fonte: http://stackoverflow.com/questions/23318383/compress-directory-into-a-zipfile-with-commons-io
 	 */
+	@SuppressWarnings("deprecation")
 	private static void compressDirectoryToZipfile(String rootDir, String sourceDir, ZipOutputStream out) throws IOException {
 		
 	    File[] files = new File(sourceDir).listFiles();
@@ -553,9 +556,16 @@ public class Auxiliar {
 	}
 
 
-	public static void aguardaUsuarioApertarENTERComTimeout(int segundos) throws InterruptedException, IOException {
+	public static void aguardaUsuarioApertarENTERComTimeout(int minutos) throws InterruptedException, IOException {
 		
-		// Aguarda 2 minutos ou até usuário digite alguma coisa na STDIN
+		if (!permitirAguardarUsuarioApertarENTER) {
+			return;
+		}
+		
+		LOGGER.warn("Pressione ENTER ou aguarde " + minutos + " minuto(s) para continuar. Se preferir, aborte este script para resolver o problema.");
+
+		// Aguarda um tempo ou até usuário digite alguma coisa na STDIN
+		int segundos = 60 * minutos;
 		for (int i=0; i<segundos; i++) {
 			Thread.sleep(1000);
 			if (System.in.available() > 0) {
@@ -576,5 +586,9 @@ public class Auxiliar {
 	
 	public static File getArquivoconfiguracoes() {
 		return arquivoConfiguracoes;
+	}
+	
+	public static void setPermitirAguardarUsuarioApertarENTER(boolean permitirAguardarUsuarioApertarENTER) {
+		Auxiliar.permitirAguardarUsuarioApertarENTER = permitirAguardarUsuarioApertarENTER;
 	}
 }

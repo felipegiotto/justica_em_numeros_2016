@@ -167,6 +167,28 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 		*/
 		//            AAAAMMDDHHMMSS
 		assertEquals("20150922083157", dadosBasicos.getDataAjuizamento());
+		
+		// Sigla do Tribunal.Campo deve ser preenchido em formato maiúsculo, sem caractere especial, e sem espaço. Ex. TREBA; TJPA; STM
+		assertEquals("TRT4", dadosBasicos.getSiglaTribunal());
+		
+		// Informar em qual grau de jurisdição. Valores possíveis:
+		// 'G2': 2º Grau
+		// 'G1': 1º grau
+		// etc
+		assertEquals("G2", dadosBasicos.getGrau());
+		
+		// Informar se o processo tramita em sistema eletrônico ou em papel. São valores possíveis
+		// 1: Sistema Eletrônico
+		// 2: Sistema Físico
+		assertEquals(Integer.valueOf(1), dadosBasicos.getProcEl());
+		
+		// Informar em qual o sistema eletrônico o processo tramita. São valores possíveis:
+		// PJe
+		// ProJud
+		// SAJ
+		// EPROC
+		// Outros
+		assertEquals("PJe", dadosBasicos.getDscSistema());
 	}
 	
 	@Test
