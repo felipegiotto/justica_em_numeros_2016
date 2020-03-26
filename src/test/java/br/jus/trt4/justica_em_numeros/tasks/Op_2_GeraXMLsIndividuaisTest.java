@@ -601,6 +601,12 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoComplementoNacional complementoTipoConclusao = movimento.getComplementoNacional().get(1);
 		assertEquals(3, complementoTipoConclusao.getCodComplemento());
 		assertEquals("despacho", complementoTipoConclusao.getDescricaoComplemento());
+		
+		// responsavelMovimento: Informar o número do CPF do servidor ou magistrado responsável pelo movimento.
+		assertEquals("80804152004", movimento.getResponsavelMovimento());
+		
+		// tipoResponsavelMovimento: Identidficação do responsável pelo movimento: Servidor=0; Magistrado=1;
+		assertEquals(Integer.valueOf(0), movimento.getTipoResponsavelMovimento());
 	}
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException, DadosInvalidosException, InterruptedException {

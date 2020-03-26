@@ -722,6 +722,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				movimento.setDataHora(Auxiliar.getCampoStringNotNull(rsMovimentos, "dta_ocorrencia"));
 				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
 				movimento.setIdentificadorMovimento(rsMovimentos.getString("id_processo_evento"));
+				movimento.setResponsavelMovimento(rsMovimentos.getString("ds_login"));
+				
+				// tipoResponsavelMovimento: Identidficação do responsável pelo movimento: Servidor=0; Magistrado=1;
+				movimento.setTipoResponsavelMovimento(rsMovimentos.getString("id_magistrado") != null ? 1 : 0);
+				
 				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), rsMovimentos.getString("ds_texto_final_interno"), rsMovimentos.getString("ds_movimento"));
 				movimentos.add(movimento);
 
