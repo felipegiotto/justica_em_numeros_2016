@@ -597,12 +597,12 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// Complemento "nome do magistrado"
 		TipoComplementoNacional complementoNomeMagistrado = movimento.getComplementoNacional().get(0);
 		assertEquals(5050, complementoNomeMagistrado.getCodComplemento());
-		assertEquals("GRACIELA MAFFEI", complementoNomeMagistrado.getDescricaoComplemento());
+		assertEquals("nome do magistrado", complementoNomeMagistrado.getDescricaoComplemento());
 		
 		// Complemento "tipo de conclusão"
 		TipoComplementoNacional complementoTipoConclusao = movimento.getComplementoNacional().get(1);
 		assertEquals(3, complementoTipoConclusao.getCodComplemento());
-		assertEquals("despacho", complementoTipoConclusao.getDescricaoComplemento());
+		assertEquals("tipo de conclusão", complementoTipoConclusao.getDescricaoComplemento());
 		
 		// responsavelMovimento: Informar o número do CPF do servidor ou magistrado responsável pelo movimento.
 		assertEquals("80804152004", movimento.getResponsavelMovimento());

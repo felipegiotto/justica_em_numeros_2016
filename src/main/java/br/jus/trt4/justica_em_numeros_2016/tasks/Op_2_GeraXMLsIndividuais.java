@@ -831,7 +831,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							TipoComplementoNacional complemento = new TipoComplementoNacional();
 							movimento.getComplementoNacional().add(complemento);
 							complemento.setCodComplemento(rsComplementos.getInt("cd_tipo_complemento"));
-							complemento.setDescricaoComplemento(rsComplementos.getString("nm_complemento"));
+							complemento.setDescricaoComplemento(rsComplementos.getString("ds_nome"));
 						}
 					}
 				}
