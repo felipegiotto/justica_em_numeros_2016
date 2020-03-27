@@ -274,6 +274,48 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
       Sugerimos enquadrar tanto o MPT como os órgãos públicos sem personalidade jurídica própria como “Órgãos de Representação”.
 
 
+* Quanto ao campo "tipoRelacaoIncidental":
+  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+      Em qual dos processos (principal ou incidental) que eu devo preencher essa informação? 
+      O processo principal que deve conter uma lista com os seus incidentais ou o processo incidental que deve referenciar o seu principal? 
+      Outra coisa: esse campo normalmente indica uma associação entre um processo principal e um incidental. 
+      Então, qual o valor deve ser preenchido (PP ou PI)?
+  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+      O tipoRelacaoIncidental serve para qualquer caso, seja para informar a existência de incidentais num processo principal, 
+      seja pra informar um processo principal, num incidental. Desse modo o atributo tipoRelacao informa o que o processo
+      informado é em relação ao processo atual;
+
+
+* Quanto ao campo "siglaTribunal":
+  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+      Esse é o mesmo valor utilizado para autenticar na API (no nosso caso, TRT4)?
+  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+      Sim, siglaTribunal é o mesmo usado para logar;
+
+
+* Quanto ao campo "magistradoProlator":
+  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+      Como devo identificar o Magistrado (nome, CPF ou outro campo)?
+      A descrição fala sobre quem prolatou a sentença. Esse dado deve ser preenchido somente para os movimentos de prolação de sentença ou para todos os movimentos processuais?
+  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+      Conforme indicado na própria documentação, magistradoProlator é um CPF;
+      (... Deve ser preenchido ...) só pra quem prolatou a sentença/acórdão;
+
+
+* Quanto ao campo "descricaoComplemento":
+  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+      Devo preencher a descrição do complemento (ex: "motivo_da_remessa") ou efetivamente o conteúdo do complemento (ex: "em grau de recurso").
+  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+      Atributo descricaoComplemento seria motivo_da_remessa, não o valor de livre preenchimento;
+
+
+* Quanto ao serviço de testes que não está mais respondendo:
+  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+      Na versão anterior do serviço, eu consultava uma URL para obter o total de processos na base. 
+      Só que, utilizando a nova URL, esse serviço não retorna nada (https://wwwh.cnj.jus.br/modelo-de-transferencia-de-dados/v1/processos/total/G1).
+  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+      Não existe mais os endpoints de totais. Talvez nós liberemos alguns endpoints pra isso em outro momento.
+
 
 ========== Referências ==========
 
