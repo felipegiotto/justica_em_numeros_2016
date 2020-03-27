@@ -35,6 +35,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPoloProcessual;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoProcessoJudicial;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoQualificacaoPessoa;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRelacaoIncidental;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRepresentanteProcessual;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
@@ -72,6 +73,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private NamedParameterStatement nsAssuntos;
 	private NamedParameterStatement nsMovimentos;
 	private NamedParameterStatement nsComplementos;
+	private NamedParameterStatement nsIncidentes;
 	private int codigoMunicipioIBGETRT;
 	private static AnalisaServentiasCNJ processaServentiasCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
@@ -344,9 +346,66 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		// Preenche dados do órgão julgador do processo
 		cabecalhoProcesso.setOrgaoJulgador(analisarOrgaoJulgadorProcesso(rsProcesso));
 
+		// Preenche dados de processos incidentais / principais
+		analisarRelacaoIncidental(cabecalhoProcesso.getRelacaoIncidental(), rsProcesso);
+		
 		return cabecalhoProcesso;
 	}
 
+
+	/**
+	 * Preenche dados de processos incidentais / principais
+	 * 
+	 * @param relacaoIncidental : lista que será preenchida com os dados dos processos incidentais/principais
+	 * @param rsProcesso : ResultSet que contém os dados do processo atual e do processo de referência
+	 * @throws SQLException 
+	 */
+	private void analisarRelacaoIncidental(List<TipoRelacaoIncidental> relacaoIncidental, ResultSet rsProcesso) throws SQLException {
+		
+		// Verifica se esse processo é um incidente (possui um principal)
+		int idProcessoPrincipal = rsProcesso.getInt("id_proc_referencia");
+		if (idProcessoPrincipal > 0) {
+			
+			TipoRelacaoIncidental relacao = new TipoRelacaoIncidental();
+			String nrProcesso = rsProcesso.getString("nr_processo_ref");
+			relacao.setNumeroProcesso(nrProcesso);
+			
+			// Indicar se o processo é principal ou incidental.
+			// Podem ser classificados como:
+			// 'PP': processos principal
+			// 'PI': processos incidental
+			relacao.setTipoRelacao("PP");
+			
+			int idClasseJudicial = rsProcesso.getInt("cd_classe_judicial_ref");
+			relacao.setClasseProcessual(idClasseJudicial);
+			analisaClassesProcessuaisCNJ.validarClasseProcessualCNJ(idClasseJudicial, nrProcesso);
+			
+			relacaoIncidental.add(relacao);
+		}
+		
+		// Verifica se esse processo possui incidentes
+		nsIncidentes.setInt("id_proc_referencia", rsProcesso.getInt("id_processo_trf"));
+		try (ResultSet rsIncidentes = nsIncidentes.executeQuery()) {
+			while (rsIncidentes.next()) {
+			
+				TipoRelacaoIncidental relacao = new TipoRelacaoIncidental();
+				String nrProcesso = rsIncidentes.getString("nr_processo");
+				relacao.setNumeroProcesso(nrProcesso);
+				
+				// Indicar se o processo é principal ou incidental.
+				// Podem ser classificados como:
+				// 'PP': processos principal
+				// 'PI': processos incidental
+				relacao.setTipoRelacao("PI");
+				
+				int idClasseJudicial = rsIncidentes.getInt("cd_classe_judicial");
+				relacao.setClasseProcessual(idClasseJudicial);
+				analisaClassesProcessuaisCNJ.validarClasseProcessualCNJ(idClasseJudicial, nrProcesso);
+				
+				relacaoIncidental.add(relacao);
+			}
+		}
+	}
 
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
 
@@ -832,6 +891,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/07_consulta_complementos.sql");
 		nsComplementos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaComplementos);
 
+		// Le o SQL que fará a consulta dos processos incidentais
+		String sqlConsultaIncidentes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/08_consulta_incidentes.sql");
+		nsIncidentes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaIncidentes);
+		
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao(Parametro.codigo_municipio_ibge_trt);
 
@@ -921,6 +984,15 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				LOGGER.warn("Erro fechando consulta 'nsComplementos': " + e.getLocalizedMessage(), e);
 			}
 		}
+		if (nsIncidentes != null) {
+			try {
+				nsIncidentes.close();
+				nsIncidentes = null;
+			} catch (SQLException e) {
+				LOGGER.warn("Erro fechando consulta 'nsIncidentes': " + e.getLocalizedMessage(), e);
+			}
+		}
+		// TODO: Refatorar
 
 		if (identificaGeneroPessoa != null) {
 			identificaGeneroPessoa.close();

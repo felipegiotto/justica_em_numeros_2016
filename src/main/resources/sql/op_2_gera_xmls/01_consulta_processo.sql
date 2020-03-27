@@ -31,7 +31,10 @@ SELECT
   pt.nr_instancia, 
  
   /* TRT4 */
-  pt.vl_causa
+  pt.vl_causa,
+  pt.id_proc_referencia,
+  pref.nr_processo as nr_processo_ref,
+  cjref.cd_classe_judicial as cd_classe_judicial_ref
 FROM tb_processo_trf pt
 INNER JOIN tb_processo p ON (p.id_processo = pt.id_processo_trf)
 LEFT  JOIN tb_classe_judicial cj ON (cj.id_classe_judicial = pt.id_classe_judicial)
@@ -39,4 +42,10 @@ LEFT  JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = pt.id_orgao_julgador)
 LEFT  JOIN tb_orgao_julgador_colgiado ojc ON (ojc.id_orgao_julgador_colegiado = pt.id_orgao_julgador_colegiado)
 LEFT  JOIN tb_jurisdicao_municipio jm ON (jm.id_jurisdicao = oj.id_jurisdicao AND jm.in_sede = 'S')
 LEFT  JOIN tb_municipio_ibge ib ON (ib.id_municipio = jm.id_municipio)
+
+LEFT JOIN tb_processo pref ON (pt.id_proc_referencia = pref.id_processo)
+LEFT JOIN tb_processo_trf ptref ON (ptref.id_processo_trf = pref.id_processo)
+LEFT  JOIN tb_classe_judicial cjref ON (cjref.id_classe_judicial = ptref.id_classe_judicial)
+
+
 WHERE p.nr_processo = :numero_processo

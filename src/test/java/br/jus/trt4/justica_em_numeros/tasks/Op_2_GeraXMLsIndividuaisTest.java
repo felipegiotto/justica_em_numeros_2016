@@ -1,6 +1,7 @@
 package br.jus.trt4.justica_em_numeros.tasks;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -26,6 +27,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.TipoParte;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPoloProcessual;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoProcessoJudicial;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRelacaoIncidental;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRepresentanteProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -729,5 +731,47 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		// Processo deve ter somente três polos: Ativo, Passivo e Terceiros. 
 		// Teste inserido para contornar problema que fazia com que os polos pudessem aparecer várias vezes.
 		assertEquals(3, processoJudicial.getDadosBasicos().getPolo().size());
-	}	
+	}
+	
+	/**
+	 * Testa processos relacionados (principal e incidental), conforme novos campos contidos no
+	 * arquivo "modelo-de-transferencia-de-dados-1.0.xsd".
+	 * 
+	 * Informação recebida de "Rosfran Lins Borges" (CNJ) no assunto com e-mail "Re: Enc: Justiça em Números: Serviço Fora do Ar."
+	 * O tipoRelacaoIncidental serve para qualquer caso, seja para informar a existência de incidentais num processo principal, 
+	 * seja pra informar um processo principal, num incidental. Desse modo o atributo tipoRelacao informa o que o processo 
+	 * informado é em relação ao processo atual;
+	 * 
+	 * O processo "0010070-26.2012.5.04.0000" é um incidental em cima do processo "0010053-87.2012.5.04.0000", que é o principal.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void testTipoRelacaoIncidental() throws Exception {
+		
+		// Dentro do processo incidental, deve referenciar o principal
+		TipoProcessoJudicial processoIncidental = retornaDadosProcesso(2, "0010070-26.2012.5.04.0000");
+
+		List<TipoRelacaoIncidental> relacaoIncidental = processoIncidental.getDadosBasicos().getRelacaoIncidental();
+		assertNotNull(relacaoIncidental);
+		assertEquals(1, relacaoIncidental.size());
+		
+		TipoRelacaoIncidental relacaoIncidentalParaPrincipal = relacaoIncidental.get(0);
+		assertEquals("0010053-87.2012.5.04.0000", relacaoIncidentalParaPrincipal.getNumeroProcesso());
+		assertEquals("PP", relacaoIncidentalParaPrincipal.getTipoRelacao());
+		assertEquals(Integer.valueOf(120), relacaoIncidentalParaPrincipal.getClasseProcessual()); // Mandado de Segurança Cível
+		
+		
+		// Dentro do processo principal, deve referenciar o incidental
+		TipoProcessoJudicial processoPrincipal = retornaDadosProcesso(2, "0010053-87.2012.5.04.0000");
+
+		List<TipoRelacaoIncidental> relacaoPrincipal = processoPrincipal.getDadosBasicos().getRelacaoIncidental();
+		assertNotNull(relacaoPrincipal);
+		assertEquals(2, relacaoPrincipal.size());
+		
+		TipoRelacaoIncidental relacaoPrincipalParaIncidental = relacaoPrincipal.get(0);
+		assertEquals("0010070-26.2012.5.04.0000", relacaoPrincipalParaIncidental.getNumeroProcesso());
+		assertEquals("PI", relacaoPrincipalParaIncidental.getTipoRelacao());
+		assertEquals(Integer.valueOf(1005), relacaoPrincipalParaIncidental.getClasseProcessual()); // Agravo Regimental Trabalhista
+	}
 }
