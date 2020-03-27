@@ -907,110 +907,35 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	public void close() {
 
-		// Fecha objeto que analisa os movimentos processuais do CNJ
-		if (analisaMovimentosCNJ != null) {
-			try {
-				analisaMovimentosCNJ.close();
-				analisaMovimentosCNJ = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando 'analisaMovimentosCNJ': " + e.getLocalizedMessage(), e);
-			}
-		}
-
-		// Fecha objeto que analisa os assuntos processuais do CNJ
-		if (analisaAssuntosCNJ != null) {
-			try {
-				analisaAssuntosCNJ.close();
-				analisaAssuntosCNJ = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando 'analisaAssuntosCNJ': " + e.getLocalizedMessage(), e);
-			}
-		}
+		// Fecha objetos que auxiliam a carga de dados do PJe
+		Auxiliar.fechar(analisaMovimentosCNJ);
+		analisaMovimentosCNJ = null;
+		Auxiliar.fechar(analisaAssuntosCNJ);
+		analisaAssuntosCNJ = null;
+		Auxiliar.fechar(identificaGeneroPessoa);
+		identificaGeneroPessoa = null;
+		Auxiliar.fechar(identificaDocumentosPessoa);
+		identificaDocumentosPessoa = null;
 
 		// Fecha PreparedStatements
-		if (nsConsultaProcessos != null) {
-			try {
-				nsConsultaProcessos.close();
-				nsConsultaProcessos = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsConsultaProcessos': " + e.getLocalizedMessage(), e);
-			}
-		}
-		if (nsPolos != null) {
-			try {
-				nsPolos.close();
-				nsPolos = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsPolos': " + e.getLocalizedMessage(), e);
-			}
-		}
-		if (nsPartes != null) {
-			try {
-				nsPartes.close();
-				nsPartes = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsPartes': " + e.getLocalizedMessage(), e);
-			}
-		}
-		if (nsEnderecos != null) {
-			try {
-				nsEnderecos.close();
-				nsEnderecos = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsEnderecos': " + e.getLocalizedMessage(), e);
-			}
-		}
-		if (nsAssuntos != null) {
-			try {
-				nsAssuntos.close();
-				nsAssuntos = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsAssuntos': " + e.getLocalizedMessage(), e);
-			}
-		}
-		if (nsMovimentos != null) {
-			try {
-				nsMovimentos.close();
-				nsMovimentos = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsMovimentos': " + e.getLocalizedMessage(), e);
-			}
-		}
-		if (nsComplementos != null) {
-			try {
-				nsComplementos.close();
-				nsComplementos = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsComplementos': " + e.getLocalizedMessage(), e);
-			}
-		}
-		if (nsIncidentes != null) {
-			try {
-				nsIncidentes.close();
-				nsIncidentes = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando consulta 'nsIncidentes': " + e.getLocalizedMessage(), e);
-			}
-		}
-		// TODO: Refatorar
+		Auxiliar.fechar(nsConsultaProcessos);
+		nsConsultaProcessos = null;
+		Auxiliar.fechar(nsPolos);
+		nsPolos = null;
+		Auxiliar.fechar(nsPartes);
+		nsPartes = null;
+		Auxiliar.fechar(nsEnderecos);
+		nsEnderecos = null;
+		Auxiliar.fechar(nsAssuntos);
+		nsAssuntos = null;
+		Auxiliar.fechar(nsMovimentos);
+		nsMovimentos = null;
+		Auxiliar.fechar(nsComplementos);
+		nsComplementos = null;
+		Auxiliar.fechar(nsIncidentes);
+		nsIncidentes = null;
 
-		if (identificaGeneroPessoa != null) {
-			identificaGeneroPessoa.close();
-			identificaGeneroPessoa = null;
-		}
-		if (identificaDocumentosPessoa != null) {
-			identificaDocumentosPessoa.close();
-			identificaDocumentosPessoa = null;
-		}
-		listaProcessos = null;
-
-		if (conexaoBasePrincipal != null) {
-			try {
-				conexaoBasePrincipal.close();
-				conexaoBasePrincipal = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando 'conexaoBasePrincipal': " + e.getLocalizedMessage(), e);
-			}
-		}
+		Auxiliar.fechar(conexaoBasePrincipal);
+		conexaoBasePrincipal = null;
 	}
 }

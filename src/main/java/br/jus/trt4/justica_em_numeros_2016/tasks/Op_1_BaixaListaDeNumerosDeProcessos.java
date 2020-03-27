@@ -252,22 +252,10 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	 */
 	public void close() {
 
-		if (conexaoBaseStagingEGestao != null) {
-			try {
-				conexaoBaseStagingEGestao.close();
-				conexaoBaseStagingEGestao = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando conexaoBaseStagingEGestao: " + e.getLocalizedMessage(), e);
-			}
-		}
+		Auxiliar.fechar(conexaoBaseStagingEGestao);
+		conexaoBaseStagingEGestao = null;
 		
-		if (conexaoBasePrincipal != null) {
-			try {
-				conexaoBasePrincipal.close();
-				conexaoBasePrincipal = null;
-			} catch (SQLException e) {
-				LOGGER.warn("Erro fechando conexaoBasePrincipal: " + e.getLocalizedMessage(), e);
-			}
-		}
+		Auxiliar.fechar(conexaoBasePrincipal);
+		conexaoBasePrincipal = null;
 	}
 }

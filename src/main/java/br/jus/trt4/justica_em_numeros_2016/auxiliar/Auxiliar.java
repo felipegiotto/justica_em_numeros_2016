@@ -591,4 +591,15 @@ public class Auxiliar {
 	public static void setPermitirAguardarUsuarioApertarENTER(boolean permitirAguardarUsuarioApertarENTER) {
 		Auxiliar.permitirAguardarUsuarioApertarENTER = permitirAguardarUsuarioApertarENTER;
 	}
+
+
+	public static void fechar(AutoCloseable objeto) {
+		if (objeto != null) {
+			try {
+				objeto.close();
+			} catch (Exception e) {
+				LOGGER.error("Erro fechando " + objeto, e);
+			}
+		}
+	}
 }
