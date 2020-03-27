@@ -107,10 +107,17 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				progresso.setProgress(0);
 				
 				Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
+				
+				// O serviço de teste de conexão não funciona mais na API nova, por enquanto
 				// operacao.testarConexaoComCNJ(continuarEmCasoDeErro);
-				operacao.consultarTotaisDeProcessosNoCNJ(); // Antes do envio
+				
+				// O serviço de consulta de totais de arquivos não funciona mais na API nova, por enquanto.
+				// operacao.consultarTotaisDeProcessosNoCNJ(); // Antes do envio
+				
 				operacao.localizarEnviarXMLsAoCNJ();
-				operacao.consultarTotaisDeProcessosNoCNJ(); // Depois do envio
+				
+				// O serviço de consulta de totais de arquivos não funciona mais na API nova, por enquanto.
+				// operacao.consultarTotaisDeProcessosNoCNJ(); // Depois do envio
 				
 				DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
 				

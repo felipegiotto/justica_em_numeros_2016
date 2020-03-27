@@ -296,10 +296,11 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
 * Quanto ao campo "magistradoProlator":
   Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
       Como devo identificar o Magistrado (nome, CPF ou outro campo)?
-      A descrição fala sobre quem prolatou a sentença. Esse dado deve ser preenchido somente para os movimentos de prolação de sentença ou para todos os movimentos processuais?
+      A descrição fala sobre quem prolatou a sentença. Esse dado deve ser preenchido somente para os movimentos de prolação 
+      de sentença ou para todos os movimentos processuais?
   Resposta do CNJ (rosfran.borges@cnj.jus.br):
       Conforme indicado na própria documentação, magistradoProlator é um CPF;
-      (... Deve ser preenchido ...) só pra quem prolatou a sentença/acórdão;
+      (Deve ser preenchido) só pra quem prolatou a sentença/acórdão;
 
 
 * Quanto ao campo "descricaoComplemento":

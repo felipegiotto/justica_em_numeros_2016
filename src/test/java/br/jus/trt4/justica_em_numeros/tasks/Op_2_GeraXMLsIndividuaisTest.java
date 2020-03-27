@@ -611,6 +611,32 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals(Integer.valueOf(0), movimento.getTipoResponsavelMovimento());
 	}
 	
+	/**
+	 * É preciso preencher o CPF do Magistrado prolator das sentenças e acórdãos. Ver arquivo "documento_XML_exemplo_RNv2_25032020.pdf".
+	 * 
+	 * Mas, no PJe, não existe uma ligação explícita do movimento processual (ex: o movimento 240 - "Conhecimento em Parte e Provimento"
+	 * não está referenciando o magistrado).
+	 * 
+	 * Então será feita uma busca nos DOCUMENTOS (sentenças e acórdãos) do processo: a partir da data do movimento, 
+	 * se ele referir-se a um movimento de JULGAMENTO do MAGISTRADO, será identificado o usuário que assinou o 
+	 * documento (sentença ou acórdão) imediatamente anterior. Esse usuário será preenchido como "magistradoProlator".
+	 * 
+	 * @throws Exception 
+	 */
+	@Test
+	public void testPreencherMagistradoProlator() throws Exception {
+		TipoProcessoJudicial processo = retornaDadosProcesso(2, "0020912-65.2014.5.04.0333");
+		
+		// Recebidos os autos para incluir em pauta
+		TipoMovimentoProcessual movimentoServidor = getMovimentoComData("20150211113831", processo.getMovimento());
+		assertEquals(0, movimentoServidor.getMagistradoProlator().size());
+		
+		// Julgado(s) procedente(s) em parte o(s) pedido(s) (RECURSO ORDINÁRIO (1009) / ) de ....
+		TipoMovimentoProcessual movimentoMagistrado = getMovimentoComData("20150303112713", processo.getMovimento());
+		assertEquals(1, movimentoMagistrado.getMagistradoProlator().size());
+		assertEquals("30333369068", movimentoMagistrado.getMagistradoProlator().get(0));
+	}
+	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException, DadosInvalidosException, InterruptedException {
 		
 		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);

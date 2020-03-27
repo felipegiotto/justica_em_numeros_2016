@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoDto;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaClassesProcessuaisCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
@@ -74,6 +76,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private NamedParameterStatement nsMovimentos;
 	private NamedParameterStatement nsComplementos;
 	private NamedParameterStatement nsIncidentes;
+	private NamedParameterStatement nsSentencasAcordaos;
 	private int codigoMunicipioIBGETRT;
 	private static AnalisaServentiasCNJ processaServentiasCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
@@ -767,7 +770,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(int idProcesso) throws SQLException {
 
-		ArrayList<TipoMovimentoProcessual> movimentos = new ArrayList<>();
+		List<TipoMovimentoProcessual> movimentos = new ArrayList<>();
+		List<DocumentoDto> sentencasAcordaos = null;
 
 		// Consulta todos os movimentos do processo
 		nsMovimentos.setInt("id_processo", idProcesso);
@@ -783,7 +787,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				movimento.setIdentificadorMovimento(rsMovimentos.getString("id_processo_evento"));
 				movimento.setResponsavelMovimento(rsMovimentos.getString("ds_login"));
 				
-				// tipoResponsavelMovimento: Identidficação do responsável pelo movimento: Servidor=0; Magistrado=1;
+				// tipoResponsavelMovimento: Identificação do responsável pelo movimento: Servidor=0; Magistrado=1;
 				movimento.setTipoResponsavelMovimento(rsMovimentos.getString("id_magistrado") != null ? 1 : 0);
 				
 				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), rsMovimentos.getString("ds_texto_final_interno"), rsMovimentos.getString("ds_movimento"));
@@ -835,12 +839,62 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						}
 					}
 				}
+				
+				// Se for um movimento de JULGAMENTO de um MAGISTRADO, precisa identificar o CPF do prolator
+				if (rsMovimentos.getBoolean("is_magistrado_julgamento")) {
+					
+					// Busca a lista de sentenças e acórdãos do processo, somente uma vez para esse processo,
+					// para tentar encontrar qual o magistrado responsável pelo movimento de julgamento
+					if (sentencasAcordaos == null) {
+						sentencasAcordaos = baixarDadosSentencasAcordaos(idProcesso);
+					}
+					
+					LocalDateTime dataMovimento = rsMovimentos.getTimestamp("dt_atualizacao").toLocalDateTime();
+					DocumentoDto documentoRelacionado = sentencasAcordaos.stream()
+							
+						// Procura uma sentença ou acórdão ANTERIOR ao movimento para saber qual o magistrado prolator.
+						.filter(d -> d.getDataJuntada().isBefore(dataMovimento))
+						
+						// Volta no máximo uma semana, para evitar pegar um documento muito antigo
+						.filter(d -> d.getDataJuntada().isAfter(dataMovimento.minusDays(7)))
+						.findFirst().get();
+					
+					// Se encontrou, preenche CPF do magistrado prolator.
+					if (documentoRelacionado != null) {
+						movimento.getMagistradoProlator().add(documentoRelacionado.getCpfUsuarioAssinou());
+					}
+				}
 			}
 		}
 
 		return movimentos;
 	}
 
+
+	/**
+	 * Identifica dados de sentenças e acórdãos do processo
+	 * 
+	 * @param idProcesso
+	 * @return
+	 * @throws SQLException 
+	 */
+	private List<DocumentoDto> baixarDadosSentencasAcordaos(int idProcesso) throws SQLException {
+		
+		List<DocumentoDto> documentos = new ArrayList<>();
+		nsSentencasAcordaos.setInt("id_processo", idProcesso);
+		
+		try (ResultSet rs = nsSentencasAcordaos.executeQuery()) {
+			while (rs.next()) {
+				DocumentoDto documento = new DocumentoDto();
+				documento.setDataJuntada(rs.getTimestamp("dt_juntada").toLocalDateTime());
+				documento.setCpfUsuarioAssinou(rs.getString("ds_login"));
+				
+				documentos.add(documento);
+			}
+		}
+		
+		return documentos;
+	}
 
 	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException, InterruptedException {
 
@@ -895,6 +949,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		String sqlConsultaIncidentes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/08_consulta_incidentes.sql");
 		nsIncidentes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaIncidentes);
 		
+		// Le o SQL que fará a consulta das sentenças e acórdãos
+		String sqlConsultaSentencasAcordaos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/09_consulta_sentencas_acordaos.sql");
+		nsSentencasAcordaos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaSentencasAcordaos);
+		
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao(Parametro.codigo_municipio_ibge_trt);
 
@@ -934,6 +992,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsComplementos = null;
 		Auxiliar.fechar(nsIncidentes);
 		nsIncidentes = null;
+		Auxiliar.fechar(nsSentencasAcordaos);;
+		nsSentencasAcordaos = null;
 
 		Auxiliar.fechar(conexaoBasePrincipal);
 		conexaoBasePrincipal = null;
