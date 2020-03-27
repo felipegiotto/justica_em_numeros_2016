@@ -23,7 +23,7 @@ public class DadosInvalidosException extends Exception {
     private static final Map<String, Set<String>> errosPorTipo = new HashMap<>();
     private static int qtdErros = 0;
     
-    public DadosInvalidosException(String tipoErro, String origem) {
+    public DadosInvalidosException(String tipoErro, Object origem) {
         super(origem + ": " + tipoErro);
         
         // Armazena até 10 registros de cada tipo de erro, para mostrar um relatório no final da operação 
@@ -41,7 +41,7 @@ public class DadosInvalidosException extends Exception {
 			}
 			
 			if (listaOrigens.size() < 10) {
-				listaOrigens.add(origem);
+				listaOrigens.add(origem != null ? origem.toString() : "null");
 			}
 		}
         qtdErros++;

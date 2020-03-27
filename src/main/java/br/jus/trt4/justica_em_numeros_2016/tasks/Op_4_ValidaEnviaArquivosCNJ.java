@@ -107,7 +107,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				progresso.setProgress(0);
 				
 				Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
-				operacao.testarConexaoComCNJ(continuarEmCasoDeErro);
+				// operacao.testarConexaoComCNJ(continuarEmCasoDeErro);
 				operacao.consultarTotaisDeProcessosNoCNJ(); // Antes do envio
 				operacao.localizarEnviarXMLsAoCNJ();
 				operacao.consultarTotaisDeProcessosNoCNJ(); // Depois do envio
@@ -333,7 +333,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							processosXML = (Processos) unmarshaller.unmarshal(arquivoXML);
 						}
 					} catch (JAXBException e) {
-						throw new DadosInvalidosException("Erro ao tentar analisar a quantidade de processos: " + e.getLocalizedMessage(), arquivoXML.toString());
+						throw new DadosInvalidosException("Erro ao tentar analisar a quantidade de processos: " + e.getLocalizedMessage(), arquivoXML);
 					}
 					qtdProcessosXML = processosXML.getProcesso().size();
 					
@@ -352,10 +352,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		}
 		
 		if (statusCode != 200 && statusCode != 201) {
-			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)", arquivoXML.toString());
+			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)", arquivoXML);
 		}
 		if (body != null && body.contains("\"ERRO\"")) {
-			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')", arquivoXML.toString());
+			throw new DadosInvalidosException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')", arquivoXML);
 		}
 	}
 

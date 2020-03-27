@@ -31,6 +31,12 @@ public class AnalisaClassesProcessuaisCNJ {
 	}
 	
 	
+	public void validarClasseProcessualCNJ(int codigoClasseProcessual, String numeroProcesso) {
+		if (!classesProcessuaisCNJ.contains(codigoClasseProcessual)) {
+			LOGGER.warn("Processo '" + numeroProcesso + "' referencia uma classe processual que não existe nas tabelas do CNJ: " + codigoClasseProcessual);
+		}
+	}
+	
 	public void preencherClasseProcessualVerificandoTPU(TipoCabecalhoProcesso cabecalhoProcesso, int codigoClasseProcessual, String descricaoClasseProcessual, String numeroProcesso) {
 		cabecalhoProcesso.setClasseProcessual(codigoClasseProcessual);
 		if (!classesProcessuaisCNJ.contains(codigoClasseProcessual)) {
