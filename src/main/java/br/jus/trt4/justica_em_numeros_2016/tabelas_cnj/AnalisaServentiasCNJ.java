@@ -139,40 +139,63 @@ public class AnalisaServentiasCNJ {
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		if (!listaProcessos.isEmpty()) {
 			
-			// Monta SQL para consultar os nomes dos OJs de todos os processos da instância
+			// Monta um SQL plano com todos os números de processo
 			// OBS: PreparedStatement não funcionou, por causa do número de parâmetros muito grande!
-			// Sugestao TRT6, por causa de falha no PostgreSQL na conversão do caractere "º" para ASCII:
-			//                StringBuilder sql = new StringBuilder("SELECT DISTINCT upper(to_ascii(replace (oj.ds_orgao_julgador, 'º', 'O'))) as ds_orgao_julgador " +
-			//                Fonte: e-mail com assunto "Sugestões de alterações justica_em_numeros_2016" do TRT6
-			//                Fonte: https://www.postgresql.org/message-id/20040607212810.15543.qmail@web13125.mail.yahoo.com
-			StringBuilder sql = new StringBuilder("SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
-					"FROM tb_processo proc " +
-					"INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf) " +
-					"INNER JOIN tb_orgao_julgador oj USING (id_orgao_julgador) " +
-					"WHERE proc.nr_processo IN (");
+			StringBuilder sqlNumerosProcessos = new StringBuilder();
 			for (int i=0; i<listaProcessos.size(); i++) {
 				if (i > 0) {
-					sql.append(", ");
+					sqlNumerosProcessos.append(", ");
 				}
-				sql.append("'" + listaProcessos.get(i) + "'");
+				sqlNumerosProcessos.append("'" + listaProcessos.get(i) + "'");
 			}
-			sql.append(")");
 			
-			// Executa consulta
 			try (Connection conexao = Auxiliar.getConexaoPJe(grau)) {
+				
+				// Monta SQL para consultar os nomes dos OJs de todos os processos da lista, nessa instância
+				// Sugestao TRT6, por causa de falha no PostgreSQL na conversão do caractere "º" para ASCII:
+				//                StringBuilder sql = new StringBuilder("SELECT DISTINCT upper(to_ascii(replace (oj.ds_orgao_julgador, 'º', 'O'))) as ds_orgao_julgador " +
+				//                Fonte: e-mail com assunto "Sugestões de alterações justica_em_numeros_2016" do TRT6
+				//                Fonte: https://www.postgresql.org/message-id/20040607212810.15543.qmail@web13125.mail.yahoo.com
+				String sql = "SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
+						"FROM tb_processo proc " +
+						"INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf) " +
+						"INNER JOIN tb_orgao_julgador oj USING (id_orgao_julgador) " +
+						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
 				try (ResultSet rs = conexao.createStatement().executeQuery(sql.toString())) {
-					while (rs.next()) {
-						try {
-							getServentiaByOJ(rs.getString("ds_orgao_julgador"), false);
-						} catch (DadosInvalidosException e) {
-							// Não vai acontecer, por causa do parametro "false"
-						}
-					}
+					analisarExistenciaServentias(rs);
 				}
+				
+				// Monta SQL para consultar os nomes de todos os outros OJs que o processo já passou, com base na tabela "tb_hist_desloca_oj".
+				// Esses dados serão utilizados para identificar o OJ que emitiu cada movimento processual.
+				String sqlHistorico = "SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
+						"FROM tb_hist_desloca_oj hdo " + 
+						"INNER JOIN tb_processo proc ON (proc.id_processo = hdo.id_processo_trf) " + 
+						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_origem) " + 
+						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ") " + 
+						"UNION " + 
+						"SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
+						"FROM tb_hist_desloca_oj hdo " + 
+						"INNER JOIN tb_processo proc ON (proc.id_processo = hdo.id_processo_trf) " + 
+						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_destino) " + 
+						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
+				try (ResultSet rs = conexao.createStatement().executeQuery(sqlHistorico.toString())) {
+					analisarExistenciaServentias(rs);
+				}
+				
 			}
 		}
 	}
 	
+	private void analisarExistenciaServentias(ResultSet rs) throws SQLException {
+		while (rs.next()) {
+			try {
+				getServentiaByOJ(rs.getString("ds_orgao_julgador"), false);
+			} catch (DadosInvalidosException e) {
+				// Não vai acontecer, por causa do parametro "false"
+			}
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
 		AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ();
 		analisaServentiasCNJ.diagnosticarServentiasInexistentes();

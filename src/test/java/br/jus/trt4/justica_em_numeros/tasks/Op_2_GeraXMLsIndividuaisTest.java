@@ -280,7 +280,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		
 		// Processo 2G, responsabilidade do gabinete: GABINETE VANIA MATTOS;47074;GABINETE VANIA MARIA CUNHA MATTOS
 		TipoOrgaoJulgador orgaoJulgador2G = retornaDadosProcesso(2, "0020821-54.2013.5.04.0221").getDadosBasicos().getOrgaoJulgador(); 
-		assertEquals("47176", orgaoJulgador2G.getCodigoOrgao()); 
+		assertEquals(47176, orgaoJulgador2G.getCodigoOrgao()); 
 		assertEquals("Gabinete da Vice Presidência", orgaoJulgador2G.getNomeOrgao());
 		
 		// Processo 1G, responsabilidade da vara: 46904;VT Encantado
@@ -635,6 +635,68 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		TipoMovimentoProcessual movimentoMagistrado = getMovimentoComData("20150303112713", processo.getMovimento());
 		assertEquals(1, movimentoMagistrado.getMagistradoProlator().size());
 		assertEquals("30333369068", movimentoMagistrado.getMagistradoProlator().get(0));
+	}
+	
+	/**
+	 * Preenche o órgão julgador nos movimentos processuais.
+	 * 
+	 * A ideia é identificar o OJ no intante em que o movimento foi registrado, por isso será preciso utilizar 
+	 * a tabela "tb_hist_desloca_oj", que armazena o histórico de órgãos julgadores do processo.
+	 * 
+	 * @throws Exception 
+	 */
+	@Test
+	public void testPreencherOrgaoJulgadorMovimentos() throws Exception {
+		TipoProcessoJudicial processo = retornaDadosProcesso(1, "0021040-51.2015.5.04.0333");
+		TipoOrgaoJulgador orgaoJulgador = processo.getDadosBasicos().getOrgaoJulgador();
+		assertEquals("Posto de São Sebastião do Caí", orgaoJulgador.getNomeOrgao()); // Conforme arquivo "serventias_trt4.csv"
+		assertEquals(4318705, orgaoJulgador.getCodigoMunicipioIBGE()); // SAO LEOPOLDO (município sede)
+		
+		// Distribuído por sorteio
+		// Esse momento é antes de todos os deslocamentos, então o processo estava no "id_oj_origem" antes do primeiro deslocamento
+		// id_hist_desloca_oj=3254
+		// id_oj_origem=47 - 3ª Sao Leopoldo
+		// dt_deslocamento=2015-09-10 17:02:27.4
+		// 
+		// id_oj_destino=53 - Posto de São Sebastião do Caí
+		// dt_retorno=2016-10-03 16:51:36.523
+		TipoMovimentoProcessual movimentoDistribuicao = getMovimentoComData("20150708152305", processo.getMovimento());
+		assertNotNull(movimentoDistribuicao.getOrgaoJulgador());
+		assertEquals("3ª Sao Leopoldo", movimentoDistribuicao.getOrgaoJulgador().getNomeOrgao()); // Conforme arquivo "serventias_trt4.csv"
+		assertEquals(4318705, movimentoDistribuicao.getOrgaoJulgador().getCodigoMunicipioIBGE()); // SAO LEOPOLDO (município sede)
+		
+		// Iniciada a liquidação por cálculos
+		// Esse momento é no meio de um deslocamento, então deve considerar o OJ de Destino (pois o processo está dentro da janela de deslocamento)
+		// id_hist_desloca_oj=15120
+		// id_oj_origem=47 - 3ª Sao Leopoldo
+		// dt_deslocamento=2016-12-12 15:42:22.808
+		// 
+		// id_oj_destino=53 - Posto de São Sebastião do Caí
+		// dt_retorno=2017-05-04 09:45:06.422
+		TipoMovimentoProcessual iniciadaLiquidacao = getMovimentoComData("20170116162649", processo.getMovimento());
+		assertNotNull(iniciadaLiquidacao.getOrgaoJulgador());
+		assertEquals("Posto de São Sebastião do Caí", iniciadaLiquidacao.getOrgaoJulgador().getNomeOrgao());
+		assertEquals(4318705, iniciadaLiquidacao.getOrgaoJulgador().getCodigoMunicipioIBGE()); // SAO LEOPOLDO (município sede)
+		
+		// Distribuído por sorteio
+		// Esse momento é entre dois deslocamentos, então o processo estava no "id_oj_origem" antes do próximo deslocamento
+		// id_hist_desloca_oj=15120
+		// id_oj_origem=47 - 3ª Sao Leopoldo
+		// dt_deslocamento=2016-12-12 15:42:22.808
+		// 
+		// id_oj_destino=53 - Posto de São Sebastião do Caí
+		// dt_retorno=2017-05-04 09:45:06.422
+		TipoMovimentoProcessual movimentoDecurso = getMovimentoComData("20161212143717", processo.getMovimento());
+		assertNotNull(movimentoDecurso.getOrgaoJulgador());
+		assertEquals("3ª Sao Leopoldo", movimentoDecurso.getOrgaoJulgador().getNomeOrgao()); // Conforme arquivo "serventias_trt4.csv"
+		assertEquals(4318705, movimentoDecurso.getOrgaoJulgador().getCodigoMunicipioIBGE()); // SAO LEOPOLDO (município sede)
+		
+		// Arquivados os autos definitivamente
+		// (esse momento é depois de todos os deslocamentos, então o processo estava no seu OJ conforme tabela de processos)
+		TipoMovimentoProcessual movimentoArquivamento = getMovimentoComData("20180806131456", processo.getMovimento());
+		assertNotNull(movimentoArquivamento.getOrgaoJulgador());
+		assertEquals("Posto de São Sebastião do Caí", movimentoArquivamento.getOrgaoJulgador().getNomeOrgao());
+		assertEquals(4318705, movimentoArquivamento.getOrgaoJulgador().getCodigoMunicipioIBGE()); // SAO LEOPOLDO (município sede)
 	}
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException, DadosInvalidosException, InterruptedException {

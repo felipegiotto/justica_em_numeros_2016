@@ -48,6 +48,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.HistoricoDeslocamentoOJDto;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaClassesProcessuaisCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
@@ -77,6 +78,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private NamedParameterStatement nsComplementos;
 	private NamedParameterStatement nsIncidentes;
 	private NamedParameterStatement nsSentencasAcordaos;
+	private NamedParameterStatement nsHistoricoDeslocamentoOJ;
 	private int codigoMunicipioIBGETRT;
 	private static AnalisaServentiasCNJ processaServentiasCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
@@ -275,6 +277,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			if (rsProcessos.next()) {
 				return analisarProcessoJudicialCompleto(rsProcessos);
 			} else {
+				LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado na base " + grau + "G!");
 				return null;
 			}
 		}
@@ -297,10 +300,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
 
 		// Cabeçalho com dados básicos do processo:
-		processoJudicial.setDadosBasicos(analisarCabecalhoProcesso(rsProcesso));
+		TipoCabecalhoProcesso cabecalho = analisarCabecalhoProcesso(rsProcesso);
+		processoJudicial.setDadosBasicos(cabecalho);
 
 		// Movimentos processuais e complementos
-		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(rsProcesso.getInt("id_processo_trf")));
+		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(rsProcesso.getInt("id_processo_trf"), rsProcesso.getInt("nr_instancia"), cabecalho.getOrgaoJulgador()));
 
 		return processoJudicial;
 	}
@@ -727,6 +731,22 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 
 	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ResultSet rsProcesso) throws SQLException, DadosInvalidosException {
+		return analisarOrgaoJulgadorProcesso(rsProcesso.getString("ds_orgao_julgador"), Auxiliar.getCampoIntNotNull(rsProcesso, "id_municipio_ibge"), rsProcesso.getInt("nr_instancia"));
+	}
+	
+	
+	/**
+	 * Retorna um órgão julgador com os dados das serventias do CNJ.
+	 * 
+	 * @param nomeOrgaoJulgadorProcesso : nome do órgão julgador conforme campo "ds_orgao_julgador" da tabela "tb_orgao_julgador".
+	 * @param idMunicipioIBGEOrgaoJulgador : código IBGE do município do órgão julgador. Se estiver gerando dados do segundo grau, 
+	 * 		esse parâmetro será ignorado e, em vez dele, será sempre preenchido o conteúdo do parâmetro "codigo_municipio_ibge_trt".
+	 * @param instanciaProcesso : instância originária do processo, conforme campo "nr_instancia" da tabela "tb_processo_trf"
+	 * @return
+	 * @throws SQLException
+	 * @throws DadosInvalidosException
+	 */
+	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(String nomeOrgaoJulgadorProcesso, int idMunicipioIBGEOrgaoJulgador, int instanciaProcesso) throws SQLException, DadosInvalidosException {
 		/*
 		 * Órgãos Julgadores
 				Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
@@ -744,14 +764,14 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
-		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(rsProcesso.getString("ds_orgao_julgador"), true);
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, true);
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
 		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
 		if (grau == 1) {
 
 			// Em 1G, pega como localidade do OJ o município do OJ do processo
-			orgaoJulgador.setCodigoMunicipioIBGE(Auxiliar.getCampoIntNotNull(rsProcesso, "id_municipio_ibge"));
+			orgaoJulgador.setCodigoMunicipioIBGE(idMunicipioIBGEOrgaoJulgador);
 
 			// Em 1G, instância será sempre originária
 			orgaoJulgador.setInstancia("ORIG");
@@ -761,17 +781,18 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			orgaoJulgador.setCodigoMunicipioIBGE(codigoMunicipioIBGETRT);
 
 			// Em 2G, instância poderá ser originária ou não
-			orgaoJulgador.setInstancia("2".equals(rsProcesso.getString("nr_instancia")) ? "ORIG" : "REV");
+			orgaoJulgador.setInstancia(instanciaProcesso == 2 ? "ORIG" : "REV");
 		}
 
 		return orgaoJulgador;
 	}
 
 
-	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(int idProcesso) throws SQLException {
+	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(int idProcesso, int instanciaProcesso, TipoOrgaoJulgador orgaoJulgadorProcesso) throws SQLException, DadosInvalidosException {
 
 		List<TipoMovimentoProcessual> movimentos = new ArrayList<>();
 		List<DocumentoDto> sentencasAcordaos = null;
+		List<HistoricoDeslocamentoOJDto> historicoDeslocamentoOJ = null;
 
 		// Consulta todos os movimentos do processo
 		nsMovimentos.setInt("id_processo", idProcesso);
@@ -792,6 +813,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				
 				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), rsMovimentos.getString("ds_texto_final_interno"), rsMovimentos.getString("ds_movimento"));
 				movimentos.add(movimento);
+				LocalDateTime dataMovimento = rsMovimentos.getTimestamp("dt_atualizacao").toLocalDateTime();
 
 				// Consulta os complementos desse movimento processual.
 				// OBS: os complementos só existem no MovimentoNacional
@@ -849,7 +871,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						sentencasAcordaos = baixarDadosSentencasAcordaos(idProcesso);
 					}
 					
-					LocalDateTime dataMovimento = rsMovimentos.getTimestamp("dt_atualizacao").toLocalDateTime();
 					DocumentoDto documentoRelacionado = sentencasAcordaos.stream()
 							
 						// Procura uma sentença ou acórdão ANTERIOR ao movimento para saber qual o magistrado prolator.
@@ -857,12 +878,35 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						
 						// Volta no máximo uma semana, para evitar pegar um documento muito antigo
 						.filter(d -> d.getDataJuntada().isAfter(dataMovimento.minusDays(7)))
-						.findFirst().get();
+						.findFirst().orElse(null);
 					
 					// Se encontrou, preenche CPF do magistrado prolator.
 					if (documentoRelacionado != null) {
 						movimento.getMagistradoProlator().add(documentoRelacionado.getCpfUsuarioAssinou());
 					}
+				}
+
+				// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
+				// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
+				if (historicoDeslocamentoOJ == null) {
+					historicoDeslocamentoOJ = baixarDadosHistoricoDeslocamentoOJ(idProcesso);
+				}
+				for (HistoricoDeslocamentoOJDto historico : historicoDeslocamentoOJ) {
+					LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
+					LocalDateTime dataRetorno = historico.getDataRetorno();
+					if (dataDeslocamento.isAfter(dataMovimento)) {
+						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(historico.getNomeOrgaoJulgadorOrigem(), historico.getIdMunicipioOrigem(), instanciaProcesso);
+						movimento.setOrgaoJulgador(orgaoJulgador);
+						break;
+						
+					} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
+						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(historico.getNomeOrgaoJulgadorDestino(), historico.getIdMunicipioDestino(), instanciaProcesso);
+						movimento.setOrgaoJulgador(orgaoJulgador);
+						break;
+					}
+				}
+				if (movimento.getOrgaoJulgador() == null) {
+					movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
 				}
 			}
 		}
@@ -870,6 +914,27 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		return movimentos;
 	}
 
+
+	private List<HistoricoDeslocamentoOJDto> baixarDadosHistoricoDeslocamentoOJ(int idProcesso) throws SQLException {
+		List<HistoricoDeslocamentoOJDto> deslocamentos = new ArrayList<>();
+		
+		nsHistoricoDeslocamentoOJ.setInt("id_processo", idProcesso);
+		
+		try (ResultSet rs = nsHistoricoDeslocamentoOJ.executeQuery()) {
+			while (rs.next()) {
+				HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto();
+				historico.setDataDeslocamento(rs.getTimestamp("dt_deslocamento").toLocalDateTime());
+				historico.setDataRetorno(rs.getTimestamp("dt_retorno").toLocalDateTime());
+				historico.setNomeOrgaoJulgadorOrigem(rs.getString("ds_oj_origem"));
+				historico.setNomeOrgaoJulgadorDestino(rs.getString("ds_oj_destino"));
+				historico.setIdMunicipioOrigem(rs.getInt("id_municipio_origem"));
+				historico.setIdMunicipioDestino(rs.getInt("id_municipio_destino"));
+				deslocamentos.add(historico);
+			}
+		}
+		
+		return deslocamentos;
+	}
 
 	/**
 	 * Identifica dados de sentenças e acórdãos do processo
@@ -953,6 +1018,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		String sqlConsultaSentencasAcordaos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/09_consulta_sentencas_acordaos.sql");
 		nsSentencasAcordaos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaSentencasAcordaos);
 		
+		// Le o SQL que fará a consulta do histórico de deslocamento
+		String sqlConsultaHistoricoDeslocamentoOJ = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/10_consulta_deslocamento_oj.sql");
+		nsHistoricoDeslocamentoOJ = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaHistoricoDeslocamentoOJ);
+
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao(Parametro.codigo_municipio_ibge_trt);
 
@@ -992,8 +1061,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsComplementos = null;
 		Auxiliar.fechar(nsIncidentes);
 		nsIncidentes = null;
-		Auxiliar.fechar(nsSentencasAcordaos);;
+		Auxiliar.fechar(nsSentencasAcordaos);
 		nsSentencasAcordaos = null;
+		Auxiliar.fechar(nsHistoricoDeslocamentoOJ);
+		nsHistoricoDeslocamentoOJ = null;
 
 		Auxiliar.fechar(conexaoBasePrincipal);
 		conexaoBasePrincipal = null;
