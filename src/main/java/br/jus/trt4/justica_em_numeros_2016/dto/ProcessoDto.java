@@ -27,17 +27,22 @@ public class ProcessoDto {
 	public ProcessoDto() {
 	}
 	
-	public ProcessoDto(ResultSet rsProcesso) throws SQLException {
-		this.numeroProcesso = rsProcesso.getString("numero_completo_processo");
-		this.idProcesso = rsProcesso.getInt("id_processo_trf");
-		this.numeroInstancia = rsProcesso.getInt("nr_instancia");
-		this.segredoJustica = "S".equals(rsProcesso.getString("in_segredo_justica"));
-		this.dataAutuacao = rsProcesso.getTimestamp("dt_autuacao").toLocalDateTime();
-		this.valorCausa = Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa");
+	public ProcessoDto(ResultSet rsProcesso, boolean somenteProcessoEClasse) throws SQLException {
+		this.numeroProcesso = rsProcesso.getString("nr_processo");
+		this.idProcesso = rsProcesso.getInt("id_processo");
 		
 		this.classeJudicial = new ClasseJudicialDto();
 		this.classeJudicial.setCodigo(rsProcesso.getInt("cd_classe_judicial"));
 		this.classeJudicial.setDescricao(rsProcesso.getString("ds_classe_judicial"));
+		
+		if (somenteProcessoEClasse) {
+			return;
+		}
+		
+		this.numeroInstancia = rsProcesso.getInt("nr_instancia");
+		this.segredoJustica = "S".equals(rsProcesso.getString("in_segredo_justica"));
+		this.dataAutuacao = rsProcesso.getTimestamp("dt_autuacao").toLocalDateTime();
+		this.valorCausa = Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa");
 		
 		this.orgaoJulgador = new OrgaoJulgadorDto();
 		this.orgaoJulgador.setIdMunicipioIBGE(rsProcesso.getInt("id_municipio_ibge"), rsProcesso.getString("ds_orgao_julgador"));

@@ -282,7 +282,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
 			if (rsProcessos.next()) {
-				ProcessoDto processo = new ProcessoDto(rsProcessos);
+				ProcessoDto processo = new ProcessoDto(rsProcessos, false);
 				return analisarProcessoJudicialCompleto(processo);
 			} else {
 				LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado na base " + grau + "G!");
@@ -398,26 +398,30 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 		
 		// Verifica se esse processo possui incidentes
+		List<ProcessoDto> processoIncidentesDto = new ArrayList<>();
 		nsIncidentes.setInt("id_proc_referencia", processo.getIdProcesso());
 		try (ResultSet rsIncidentes = nsIncidentes.executeQuery()) {
 			while (rsIncidentes.next()) {
-			
-				TipoRelacaoIncidental relacao = new TipoRelacaoIncidental();
-				String nrProcesso = rsIncidentes.getString("nr_processo");
-				relacao.setNumeroProcesso(nrProcesso);
-				
-				// Indicar se o processo é principal ou incidental.
-				// Podem ser classificados como:
-				// 'PP': processos principal
-				// 'PI': processos incidental
-				relacao.setTipoRelacao("PI");
-				
-				int idClasseJudicial = rsIncidentes.getInt("cd_classe_judicial");
-				relacao.setClasseProcessual(idClasseJudicial);
-				analisaClassesProcessuaisCNJ.validarClasseProcessualCNJ(idClasseJudicial, nrProcesso);
-				
-				relacaoIncidental.add(relacao);
+				processoIncidentesDto.add(new ProcessoDto(rsIncidentes, true));
 			}
+		}
+		
+		for (ProcessoDto incidenteDto : processoIncidentesDto) {
+			TipoRelacaoIncidental relacao = new TipoRelacaoIncidental();
+			String nrProcesso = incidenteDto.getNumeroProcesso();
+			relacao.setNumeroProcesso(nrProcesso);
+			
+			// Indicar se o processo é principal ou incidental.
+			// Podem ser classificados como:
+			// 'PP': processos principal
+			// 'PI': processos incidental
+			relacao.setTipoRelacao("PI");
+			
+			int idClasseJudicial = incidenteDto.getClasseJudicial().getCodigo();
+			relacao.setClasseProcessual(idClasseJudicial);
+			analisaClassesProcessuaisCNJ.validarClasseProcessualCNJ(idClasseJudicial, nrProcesso);
+			
+			relacaoIncidental.add(relacao);
 		}
 	}
 

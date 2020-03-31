@@ -1,7 +1,7 @@
 -- Trecho de SQL adaptado do script do TRT14: trt14_original__pje2grau_script.sql
 SELECT 
-      p.nr_processo as numero_completo_processo,
-      pt.id_processo_trf,
+      p.nr_processo,
+      p.id_processo,
       pt.nr_sequencia,
       pt.nr_ano,
       pt.nr_origem_processo,
