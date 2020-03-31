@@ -14,6 +14,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -432,6 +433,14 @@ public class Auxiliar {
 	 */
 	public static String formataDataAAAAMMDD(Date data) {
 		return dfDataNascimento.format(data);
+	}
+	
+	/**
+	 * Formata uma data conforme estabelecido no arquivo de intercomunicação: AAAAMMDD
+	 */
+	public static String formataDataAAAAMMDD(LocalDate data) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+		return formatter.format(data);
 	}
 	
 	/**

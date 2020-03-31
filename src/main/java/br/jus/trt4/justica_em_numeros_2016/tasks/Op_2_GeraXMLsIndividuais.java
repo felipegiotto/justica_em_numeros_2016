@@ -49,6 +49,8 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.HistoricoDeslocamentoOJDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.ParteProcessualDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.PoloDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaClassesProcessuaisCNJ;
@@ -417,250 +419,258 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
 
-		List<TipoPoloProcessual> polos = new ArrayList<>();
-
 		// Consulta todos os polos do processo
+		List<PoloDto> polosDtos = new ArrayList<>();
 		nsPolos.setInt("id_processo", idProcesso);
 		try (ResultSet rsPolos = nsPolos.executeQuery()) {
 			while (rsPolos.next()) {
+				polosDtos.add(new PoloDto(rsPolos));
+			}
+		}
+		
+		// Itera sobre os polos processuais
+		List<TipoPoloProcessual> polos = new ArrayList<>();
+		for (PoloDto poloDto : polosDtos) {
+			// Script TRT14:
+			// raise notice '<polo polo="%">', polo.in_polo_participacao;
+			TipoPoloProcessual polo = new TipoPoloProcessual();
+			String tipoPoloPJe = poloDto.getInParticipacao();
+			if ("A".equals(tipoPoloPJe)) {
+				polo.setPolo(ModalidadePoloProcessual.AT); // AT: polo ativo
+			} else if ("P".equals(tipoPoloPJe)) {
+				polo.setPolo(ModalidadePoloProcessual.PA); // PA: polo passivo
+			} else if ("T".equals(tipoPoloPJe)) {
+				polo.setPolo(ModalidadePoloProcessual.TC); // TC: terceiro
+			} else {
+				throw new DadosInvalidosException("Tipo de polo não reconhecido: " + tipoPoloPJe, numeroProcesso);
+			}
+			polos.add(polo);
+
+			// Consulta as partes de um determinado polo no processo
+			List<ParteProcessualDto> partes = new ArrayList<>();
+			nsPartes.setInt("id_processo", idProcesso);
+			nsPartes.setString("in_participacao", tipoPoloPJe);
+			try (ResultSet rsPartes = nsPartes.executeQuery()) {
+				while (rsPartes.next()) {
+					partes.add(new ParteProcessualDto(rsPartes));
+				}
+			}
+			
+			// O PJe considera, como partes, tanto os autores e réus quanto seus advogados,
+			// procuradores, tutores, curadores, assistentes, etc.
+			// Por isso, a identificação das partes será feita em etapas:
+			// 1. Todas as partes e advogados serão identificados e gravados no HashMap
+			//    "partesPorIdParte"
+			// 2. As partes representadas e seus representantes serão gravados no HashMap
+			//    "partesERepresentantes"
+			// 2. As partes identificadas que forem representantes de alguma outra parte 
+			//    serão removidas de "partesPorIdParte" e registradas efetivamente como 
+			//    representantes no atributo "advogado" da classe TipoParte
+			// 3. As partes que "restarem" no HashMap, então, serão inseridas no XML.
+			HashMap<Integer, TipoParte> partesPorIdParte = new HashMap<>(); // id_processo_parte -> TipoParte
+			HashMap<Integer, List<Integer>> partesERepresentantes = new HashMap<>(); // id_processo_parte -> lista dos id_processo_parte dos seus representantes
+			HashMap<Integer, ModalidadeRepresentanteProcessual> tiposRepresentantes = new HashMap<>(); // id_processo_parte -> Modalidade do representante (advogado, procurador, etc).
+			for (ParteProcessualDto parteProcessual : partes) {
+
+				String nomeParte = parteProcessual.getNomeParte();
 
 				// Script TRT14:
-				// raise notice '<polo polo="%">', polo.in_polo_participacao;
-				TipoPoloProcessual polo = new TipoPoloProcessual();
-				String tipoPoloPJe = rsPolos.getString("in_participacao");
-				if ("A".equals(tipoPoloPJe)) {
-					polo.setPolo(ModalidadePoloProcessual.AT); // AT: polo ativo
-				} else if ("P".equals(tipoPoloPJe)) {
-					polo.setPolo(ModalidadePoloProcessual.PA); // PA: polo passivo
-				} else if ("T".equals(tipoPoloPJe)) {
-					polo.setPolo(ModalidadePoloProcessual.TC); // TC: terceiro
+				// raise notice '<parte>';
+				TipoParte parte = new TipoParte();
+				int idProcessoParte = parteProcessual.getIdProcessoParte();
+				Integer idProcessoParteRepresentante = parteProcessual.getIdProcessoParteRepresentante();
+				partesPorIdParte.put(idProcessoParte, parte);
+
+				// Verifica se, no PJe, essa parte possui representante (advogado, procurador, tutor, curador, etc)
+				if (idProcessoParteRepresentante != null) {
+					if (!partesERepresentantes.containsKey(idProcessoParte)) {
+						partesERepresentantes.put(idProcessoParte, new ArrayList<Integer>());
+					}
+					partesERepresentantes.get(idProcessoParte).add(idProcessoParteRepresentante);
+
+					String tipoParteRepresentante = parteProcessual.getTipoParteRepresentante();
+					if ("ADVOGADO".equals(tipoParteRepresentante)) {
+						tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.A);
+
+					} else if ("PROCURADOR".equals(tipoParteRepresentante)) {
+						tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.P);
+
+					} else if ("ADMINISTRADOR".equals(tipoParteRepresentante)
+							|| "ASSISTENTE".equals(tipoParteRepresentante)
+							|| "ASSISTENTE TÉCNICO".equals(tipoParteRepresentante)
+							|| "CURADOR".equals(tipoParteRepresentante)
+							|| "INVENTARIANTE".equals(tipoParteRepresentante)
+							|| "REPRESENTANTE".equals(tipoParteRepresentante)
+							|| "TERCEIRO INTERESSADO".equals(tipoParteRepresentante)
+							|| "TUTOR".equals(tipoParteRepresentante)) {
+						// Não fazer nada, pois esses tipos de parte (PJe), apesar de estarem descritos
+						// no arquivo "intercomunicacao-2.2.2", não estão sendo enviados ao CNJ
+						// pela ferramenta "replicacao-client".
+
+					} else {
+						LOGGER.warn("O representante da parte '" + nomeParte + "' (id_processo_parte=" + idProcessoParte + ") possui um tipo de parte que ainda não foi tratado: " + tipoParteRepresentante);
+					}
+				}
+
+				// Script TRT4:
+				// -- pessoa
+				//   IF parte.nr_documento IS NOT NULL THEN
+				//     raise notice '<pessoa nome="%" tipoPessoa="%" sexo="%" numeroDocumentoPrincipal="%">'
+				//     , parte.ds_nome, parte.in_tipo_pessoa, parte.tp_sexo, parte.nr_documento;
+				//   ELSE 
+				//     raise notice '<pessoa nome="%" tipoPessoa="%" sexo="%">'
+				//     , parte.ds_nome, parte.in_tipo_pessoa, parte.tp_sexo;
+				//   END IF;
+				TipoPessoa pessoa = new TipoPessoa();
+				parte.setPessoa(pessoa);
+				pessoa.setNome(nomeParte);
+
+				// Tipo de pessoa (física / jurídica / outros)
+				// Pergunta feita à ASSTECO: no e-mail com assunto "Dúvidas sobre envio de dados para Justiça em Números", em "03/07/2017 14:15":
+				//   Estou gerando os dados para o Selo Justiça em Números, do CNJ. Ocorre que o MNI 2.2, utilizado como referência, permite somente o envio de dados de pessoas dos tipos "Física", "Jurídica", "Autoridade" e "Órgão de Representação".
+				//   No PJe, os tipos são parecidos, mas ligeiramente diferentes: "Física", "Jurídica", "Autoridade", "MPT" e "Órgão Público". Quanto aos três primeiros, vejo que eles tem correspondência direta, mas fiquei na dúvida sobre como tratar os outros dois! Preciso, para cada pessoa do "lado" do PJe, encontrar um correspondente do "lado" do MNI.
+				//   Vocês saberiam me informar qual o tipo correto, no padrão MNI, para enviar partes dos tipos "MPT" e "Órgão Público"?
+				// Resposta do CNJ no e-mail em "28/07/2017 18:10":
+				//   Sugerimos enquadrar tanto o MPT como os órgãos públicos sem personalidade jurídica própria como "Órgãos de Representação".
+				String tipoPessoaPJe = parteProcessual.getTipoPessoa();
+				if ("F".equals(tipoPessoaPJe)) {
+					pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
+				} else if ("J".equals(tipoPessoaPJe)) {
+					pessoa.setTipoPessoa(TipoQualificacaoPessoa.JURIDICA);
+				} else if ("A".equals(tipoPessoaPJe)) {
+					pessoa.setTipoPessoa(TipoQualificacaoPessoa.AUTORIDADE);
+				} else if ("M".equals(tipoPessoaPJe)) {
+					pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
+				} else if ("O".equals(tipoPessoaPJe)) {
+					pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
 				} else {
-					throw new DadosInvalidosException("Tipo de polo não reconhecido: " + tipoPoloPJe, numeroProcesso);
+					throw new DadosInvalidosException("Tipo de pessoa desconhecido: " + tipoPessoaPJe, "Processo " + numeroProcesso + ", polo '" + tipoPoloPJe + "', parte '" + nomeParte + "'");
 				}
-				polos.add(polo);
 
-				// Consulta as partes de um determinado polo no processo
-				nsPartes.setInt("id_processo", idProcesso);
-				nsPartes.setString("in_participacao", rsPolos.getString("in_participacao"));
-				try (ResultSet rsPartes = nsPartes.executeQuery()) {
+				// Consulta os documentos da parte
+				identificaDocumentosPessoa.preencherDocumentosPessoa(pessoa, parteProcessual.getIdPessoa());
 
-					// O PJe considera, como partes, tanto os autores e réus quanto seus advogados,
-					// procuradores, tutores, curadores, assistentes, etc.
-					// Por isso, a identificação das partes será feita em etapas:
-					// 1. Todas as partes e advogados serão identificados e gravados no HashMap
-					//    "partesPorIdParte"
-					// 2. As partes representadas e seus representantes serão gravados no HashMap
-					//    "partesERepresentantes"
-					// 2. As partes identificadas que forem representantes de alguma outra parte 
-					//    serão removidas de "partesPorIdParte" e registradas efetivamente como 
-					//    representantes no atributo "advogado" da classe TipoParte
-					// 3. As partes que "restarem" no HashMap, então, serão inseridas no XML.
-					HashMap<Integer, TipoParte> partesPorIdParte = new HashMap<>(); // id_processo_parte -> TipoParte
-					HashMap<Integer, List<Integer>> partesERepresentantes = new HashMap<>(); // id_processo_parte -> lista dos id_processo_parte dos seus representantes
-					HashMap<Integer, ModalidadeRepresentanteProcessual> tiposRepresentantes = new HashMap<>(); // id_processo_parte -> Modalidade do representante (advogado, procurador, etc).
-					while (rsPartes.next()) {
+				// Identifica o gênero (sexo) da pessoa (pode ser necessário consultar na outra instância)
+				identificaGeneroPessoa.preencherSexoPessoa(pessoa, parteProcessual.getSexoPessoa(), parteProcessual.getNomeConsultaParte());
 
-						String nomeParte = Auxiliar.getCampoStringNotNull(rsPartes, "ds_nome");
+				// Identifica os endereços da parte
+				nsEnderecos.setInt("id_processo_parte", parteProcessual.getIdProcessoParte());
+				try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
+					while (rsEnderecos.next()) {
 
-						// Script TRT14:
-						// raise notice '<parte>';
-						TipoParte parte = new TipoParte();
-						int idProcessoParte = rsPartes.getInt("id_processo_parte");
-						int idProcessoParteRepresentante = rsPartes.getInt("id_parte_representante");
-						partesPorIdParte.put(idProcessoParte, parte);
+						// intercomunicacao-2.2.2: Atributo indicador do código de endereçamento 
+						// postal do endereço no diretório nacional de endereços da ECT. O 
+						// valor deverá ser uma sequência de 8 dígitos, sem qualquer separador. 
+						// O atributo é opcional para permitir a apresentação de endereços 
+						// desprovidos de CEP e de endereços internacionais.
+						// <restriction base="string"><pattern value="\d{8}"></pattern></restriction>
+						String cep = rsEnderecos.getString("nr_cep");
+						if (!StringUtils.isBlank(cep)) {
+							cep = cep.replaceAll("[^0-9]", "");
+						}
+						
+						// No PJe 2.5.1, endereços internacionais aparecem no banco de dados assim:
+						// nr_cep='0', cd_estado='X1', ds_municipio='Município Estrangeiro'
+						boolean isCepInternacional = "0".equals(cep);
 
-						// Verifica se, no PJe, essa parte possui representante (advogado, procurador, tutor, curador, etc)
-						if (idProcessoParteRepresentante > 0) {
-							if (!partesERepresentantes.containsKey(idProcessoParte)) {
-								partesERepresentantes.put(idProcessoParte, new ArrayList<Integer>());
+						if (!StringUtils.isBlank(cep)) {
+							TipoEndereco endereco = new TipoEndereco();
+							
+							if (!isCepInternacional) {
+								endereco.setCep(cep);
 							}
-							partesERepresentantes.get(idProcessoParte).add(idProcessoParteRepresentante);
 
-							String tipoParteRepresentante = rsPartes.getString("ds_tipo_parte_representante");
-							if ("ADVOGADO".equals(tipoParteRepresentante)) {
-								tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.A);
+							// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
+							// tais como rua, praça, quadra etc. O elemento é opcional para permitir 
+							// que as implementações acatem a indicação de endereço exclusivamente 
+							// pelo CEP, quando o CEP já encerrar o dado respectivo.
+							endereco.setLogradouro(rsEnderecos.getString("nm_logradouro"));
 
-							} else if ("PROCURADOR".equals(tipoParteRepresentante)) {
-								tiposRepresentantes.put(idProcessoParteRepresentante, ModalidadeRepresentanteProcessual.P);
+							// intercomunicacao-2.2.2: O número vinculado a este endereço. O elemento 
+							// é opcional para permitir que as implementações acatem a indicação de 
+							// endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+							endereco.setNumero(rsEnderecos.getString("nr_endereco"));
 
-							} else if ("ADMINISTRADOR".equals(tipoParteRepresentante)
-									|| "ASSISTENTE".equals(tipoParteRepresentante)
-									|| "ASSISTENTE TÉCNICO".equals(tipoParteRepresentante)
-									|| "CURADOR".equals(tipoParteRepresentante)
-									|| "INVENTARIANTE".equals(tipoParteRepresentante)
-									|| "REPRESENTANTE".equals(tipoParteRepresentante)
-									|| "TERCEIRO INTERESSADO".equals(tipoParteRepresentante)
-									|| "TUTOR".equals(tipoParteRepresentante)) {
-								// Não fazer nada, pois esses tipos de parte (PJe), apesar de estarem descritos
-								// no arquivo "intercomunicacao-2.2.2", não estão sendo enviados ao CNJ
-								// pela ferramenta "replicacao-client".
+							// intercomunicacao-2.2.2: O complemento vinculado a este endereço. 
+							// O elemento é opcional em razão de sua própria natureza.
+							endereco.setComplemento(rsEnderecos.getString("ds_complemento"));
 
-							} else {
-								LOGGER.warn("O representante da parte '" + nomeParte + "' (id_processo_parte=" + idProcessoParte + ") possui um tipo de parte que ainda não foi tratado: " + tipoParteRepresentante);
-							}
+							// intercomunicacao-2.2.2: O bairro vinculado a este endereço. O elemento 
+							// é opcional para permitir que as implementações acatem a indicação 
+							// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+							endereco.setBairro(rsEnderecos.getString("nm_bairro"));
+
+							// intercomunicacao-2.2.2: A cidade vinculada a este endereço. O elemento 
+							// é opcional para permitir que as implementações acatem a indicação 
+							// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+							endereco.setCidade(rsEnderecos.getString("ds_municipio"));
+							
+							// modelo-de-transferencia-de-dados-1.0.xsd:
+							// código do município IBGE com sete dígitos, referente ao campo “cidade”.
+							endereco.setCodCidade(rsEnderecos.getInt("id_municipio_ibge"));
+
+							pessoa.getEndereco().add(endereco);
 						}
-
-						// Script TRT4:
-						// -- pessoa
-						//   IF parte.nr_documento IS NOT NULL THEN
-						//     raise notice '<pessoa nome="%" tipoPessoa="%" sexo="%" numeroDocumentoPrincipal="%">'
-						//     , parte.ds_nome, parte.in_tipo_pessoa, parte.tp_sexo, parte.nr_documento;
-						//   ELSE 
-						//     raise notice '<pessoa nome="%" tipoPessoa="%" sexo="%">'
-						//     , parte.ds_nome, parte.in_tipo_pessoa, parte.tp_sexo;
-						//   END IF;
-						TipoPessoa pessoa = new TipoPessoa();
-						parte.setPessoa(pessoa);
-						pessoa.setNome(nomeParte);
-
-						// Tipo de pessoa (física / jurídica / outros)
-						// Pergunta feita à ASSTECO: no e-mail com assunto "Dúvidas sobre envio de dados para Justiça em Números", em "03/07/2017 14:15":
-						//   Estou gerando os dados para o Selo Justiça em Números, do CNJ. Ocorre que o MNI 2.2, utilizado como referência, permite somente o envio de dados de pessoas dos tipos "Física", "Jurídica", "Autoridade" e "Órgão de Representação".
-						//   No PJe, os tipos são parecidos, mas ligeiramente diferentes: "Física", "Jurídica", "Autoridade", "MPT" e "Órgão Público". Quanto aos três primeiros, vejo que eles tem correspondência direta, mas fiquei na dúvida sobre como tratar os outros dois! Preciso, para cada pessoa do "lado" do PJe, encontrar um correspondente do "lado" do MNI.
-						//   Vocês saberiam me informar qual o tipo correto, no padrão MNI, para enviar partes dos tipos "MPT" e "Órgão Público"?
-						// Resposta do CNJ no e-mail em "28/07/2017 18:10":
-						//   Sugerimos enquadrar tanto o MPT como os órgãos públicos sem personalidade jurídica própria como "Órgãos de Representação".
-						String tipoPessoaPJe = Auxiliar.getCampoStringNotNull(rsPartes, "in_tipo_pessoa");
-						if ("F".equals(tipoPessoaPJe)) {
-							pessoa.setTipoPessoa(TipoQualificacaoPessoa.FISICA);
-						} else if ("J".equals(tipoPessoaPJe)) {
-							pessoa.setTipoPessoa(TipoQualificacaoPessoa.JURIDICA);
-						} else if ("A".equals(tipoPessoaPJe)) {
-							pessoa.setTipoPessoa(TipoQualificacaoPessoa.AUTORIDADE);
-						} else if ("M".equals(tipoPessoaPJe)) {
-							pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
-						} else if ("O".equals(tipoPessoaPJe)) {
-							pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
-						} else {
-							throw new DadosInvalidosException("Tipo de pessoa desconhecido: " + tipoPessoaPJe, "Processo " + numeroProcesso + ", polo '" + tipoPoloPJe + "', parte '" + nomeParte + "'");
-						}
-
-						// Consulta os documentos da parte
-						identificaDocumentosPessoa.preencherDocumentosPessoa(pessoa, rsPartes.getInt("id_pessoa"));
-
-						// Identifica o gênero (sexo) da pessoa (pode ser necessário consultar na outra instância)
-						identificaGeneroPessoa.preencherSexoPessoa(pessoa, rsPartes.getString("in_sexo"), rsPartes.getString("ds_nome_consulta"));
-
-						// Identifica os endereços da parte
-						nsEnderecos.setInt("id_processo_parte", rsPartes.getInt("id_processo_parte"));
-						try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
-							while (rsEnderecos.next()) {
-
-								// intercomunicacao-2.2.2: Atributo indicador do código de endereçamento 
-								// postal do endereço no diretório nacional de endereços da ECT. O 
-								// valor deverá ser uma sequência de 8 dígitos, sem qualquer separador. 
-								// O atributo é opcional para permitir a apresentação de endereços 
-								// desprovidos de CEP e de endereços internacionais.
-								// <restriction base="string"><pattern value="\d{8}"></pattern></restriction>
-								String cep = rsEnderecos.getString("nr_cep");
-								if (!StringUtils.isBlank(cep)) {
-									cep = cep.replaceAll("[^0-9]", "");
-								}
-								
-								// No PJe 2.5.1, endereços internacionais aparecem no banco de dados assim:
-								// nr_cep='0', cd_estado='X1', ds_municipio='Município Estrangeiro'
-								boolean isCepInternacional = "0".equals(cep);
-
-								if (!StringUtils.isBlank(cep)) {
-									TipoEndereco endereco = new TipoEndereco();
-									
-									if (!isCepInternacional) {
-										endereco.setCep(cep);
-									}
-
-									// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
-									// tais como rua, praça, quadra etc. O elemento é opcional para permitir 
-									// que as implementações acatem a indicação de endereço exclusivamente 
-									// pelo CEP, quando o CEP já encerrar o dado respectivo.
-									endereco.setLogradouro(rsEnderecos.getString("nm_logradouro"));
-
-									// intercomunicacao-2.2.2: O número vinculado a este endereço. O elemento 
-									// é opcional para permitir que as implementações acatem a indicação de 
-									// endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-									endereco.setNumero(rsEnderecos.getString("nr_endereco"));
-
-									// intercomunicacao-2.2.2: O complemento vinculado a este endereço. 
-									// O elemento é opcional em razão de sua própria natureza.
-									endereco.setComplemento(rsEnderecos.getString("ds_complemento"));
-
-									// intercomunicacao-2.2.2: O bairro vinculado a este endereço. O elemento 
-									// é opcional para permitir que as implementações acatem a indicação 
-									// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-									endereco.setBairro(rsEnderecos.getString("nm_bairro"));
-
-									// intercomunicacao-2.2.2: A cidade vinculada a este endereço. O elemento 
-									// é opcional para permitir que as implementações acatem a indicação 
-									// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-									endereco.setCidade(rsEnderecos.getString("ds_municipio"));
-									
-									// modelo-de-transferencia-de-dados-1.0.xsd:
-									// código do município IBGE com sete dígitos, referente ao campo “cidade”.
-									endereco.setCodCidade(rsEnderecos.getInt("id_municipio_ibge"));
-
-									pessoa.getEndereco().add(endereco);
-								}
-							}
-						}
-
-						// Outras dados da pessoa
-						if (rsPartes.getDate("dt_nascimento") != null) {
-							pessoa.setDataNascimento(Auxiliar.formataDataAAAAMMDD(rsPartes.getDate("dt_nascimento")));
-						}
-						if (rsPartes.getDate("dt_obito") != null) {
-							pessoa.setDataObito(Auxiliar.formataDataAAAAMMDD(rsPartes.getDate("dt_obito")));
-						}
-						pessoa.setNomeGenitor(rsPartes.getString("nm_genitor"));
-						pessoa.setNomeGenitora(rsPartes.getString("nm_genitora"));
-					}
-
-					// Para cada parte identificada, localiza todos os seus representantes
-					for (int idProcessoParte: partesERepresentantes.keySet()) {
-						for (int idProcessoParteRepresentante : partesERepresentantes.get(idProcessoParte)) {
-
-							// Isola a parte e seu representante
-							TipoParte parte = partesPorIdParte.get(idProcessoParte);
-							TipoParte representante = partesPorIdParte.get(idProcessoParteRepresentante);
-
-							// Pode ocorrer de a parte estar ATIVA e possuir um advogado cujo registro 
-							// em tb_processo_parte está INATIVO. Nesse caso, não insere o advogado
-							// como representante.
-							if (representante != null) {
-
-								// Cria um objeto TipoRepresentanteProcessual a partir dos dados do representante
-								// OBS: somente se o tipo do representante foi identificado, pois
-								//      alguns tipos (como tutores e curadores) não são processados
-								//      pelo "replicacao-client", do CNJ, e não serão incluídos no
-								//      arquivo XML.
-								if (tiposRepresentantes.containsKey(idProcessoParteRepresentante)) {
-									TipoRepresentanteProcessual representanteProcessual = new TipoRepresentanteProcessual();
-									parte.getAdvogado().add(representanteProcessual);
-									representanteProcessual.setNome(representante.getPessoa().getNome());
-									representanteProcessual.setIntimacao(true); // intercomunicacao-2.2.2: Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
-									representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
-									representanteProcessual.setTipoRepresentante(tiposRepresentantes.get(idProcessoParteRepresentante));
-									representanteProcessual.getEndereco().addAll(representante.getPessoa().getEndereco());
-								}
-							}
-						}
-					}
-
-					// Retira, da lista de partes do processo, as partes que são representantes
-					// (e, por isso, já estão constando dentro das suas partes representadas)
-					for (List<Integer> idProcessoParteRepresentantes: partesERepresentantes.values()) {
-						for (int idProcessoParteRepresentante: idProcessoParteRepresentantes) {
-							partesPorIdParte.remove(idProcessoParteRepresentante);
-						}
-					}
-
-					// Insere as partes "restantes" no XML
-					for (TipoParte parte: partesPorIdParte.values()) {
-						polo.getParte().add(parte);
 					}
 				}
 
-				if (polo.getParte().isEmpty()) {
-					throw new DadosInvalidosException("O polo " + polo.getPolo() + " do processo não contém nenhuma parte no XML gerado!", numeroProcesso);
+				// Outras dados da pessoa
+				if (parteProcessual.getDataNascimento() != null) {
+					pessoa.setDataNascimento(Auxiliar.formataDataAAAAMMDD(parteProcessual.getDataNascimento()));
 				}
+				if (parteProcessual.getDataObito() != null) {
+					pessoa.setDataObito(Auxiliar.formataDataAAAAMMDD(parteProcessual.getDataObito()));
+				}
+				pessoa.setNomeGenitor(parteProcessual.getNomeGenitor());
+				pessoa.setNomeGenitora(parteProcessual.getNomeGenitora());
+			}
+
+			// Para cada parte identificada, localiza todos os seus representantes
+			for (int idProcessoParte: partesERepresentantes.keySet()) {
+				for (int idProcessoParteRepresentante : partesERepresentantes.get(idProcessoParte)) {
+
+					// Isola a parte e seu representante
+					TipoParte parte = partesPorIdParte.get(idProcessoParte);
+					TipoParte representante = partesPorIdParte.get(idProcessoParteRepresentante);
+
+					// Pode ocorrer de a parte estar ATIVA e possuir um advogado cujo registro 
+					// em tb_processo_parte está INATIVO. Nesse caso, não insere o advogado
+					// como representante.
+					if (representante != null) {
+
+						// Cria um objeto TipoRepresentanteProcessual a partir dos dados do representante
+						// OBS: somente se o tipo do representante foi identificado, pois
+						//      alguns tipos (como tutores e curadores) não são processados
+						//      pelo "replicacao-client", do CNJ, e não serão incluídos no
+						//      arquivo XML.
+						if (tiposRepresentantes.containsKey(idProcessoParteRepresentante)) {
+							TipoRepresentanteProcessual representanteProcessual = new TipoRepresentanteProcessual();
+							parte.getAdvogado().add(representanteProcessual);
+							representanteProcessual.setNome(representante.getPessoa().getNome());
+							representanteProcessual.setIntimacao(true); // intercomunicacao-2.2.2: Indicativo verdadeiro (true) ou falso (false) relativo à escolha de o advogado, escritório ou órgão de representação ser o(s) preferencial(is) para a realização de intimações.
+							representanteProcessual.setNumeroDocumentoPrincipal(representante.getPessoa().getNumeroDocumentoPrincipal());
+							representanteProcessual.setTipoRepresentante(tiposRepresentantes.get(idProcessoParteRepresentante));
+							representanteProcessual.getEndereco().addAll(representante.getPessoa().getEndereco());
+						}
+					}
+				}
+			}
+
+			// Retira, da lista de partes do processo, as partes que são representantes
+			// (e, por isso, já estão constando dentro das suas partes representadas)
+			for (List<Integer> idProcessoParteRepresentantes: partesERepresentantes.values()) {
+				for (int idProcessoParteRepresentante: idProcessoParteRepresentantes) {
+					partesPorIdParte.remove(idProcessoParteRepresentante);
+				}
+			}
+
+			// Insere as partes "restantes" no XML
+			for (TipoParte parte: partesPorIdParte.values()) {
+				polo.getParte().add(parte);
+			}
+
+			if (polo.getParte().isEmpty()) {
+				throw new DadosInvalidosException("O polo " + polo.getPolo() + " do processo não contém nenhuma parte no XML gerado!", numeroProcesso);
 			}
 		}
 		return polos;
