@@ -95,6 +95,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private IdentificaDocumentosPessoa identificaDocumentosPessoa;
 	private List<String> listaProcessos;
 
+	private class OperacaoGeracaoXML {
+		String numeroProcesso;
+		File arquivoXML;
+		File arquivoXMLTemporario;
+	}
+	
 	/**
 	 * Gera todos os XMLs (1G e/ou 2G), conforme definido no arquivo "config.properties"
 	 */
@@ -186,12 +192,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
-		int i=0;
+		
+		// Monta uma lista de "operações" (cada operação é um processo a ser baixado)
+		LOGGER.info("Analisando arquivos pendentes...");
+		List<OperacaoGeracaoXML> operacoes = new ArrayList<>();
 		for (String numeroProcesso: listaProcessos) {
-
-			// Cálculo do tempo restante
-			long antes = System.currentTimeMillis();
-			i++;
 
 			// Arquivo XML que conterá os dados do processo
 			// Depois da geração do XML temporário, visando garantir a integridade do arquivo XML 
@@ -209,60 +214,76 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Verifica se o XML do processo já foi gerado
 			if (arquivoXML.exists()) {
 				LOGGER.debug("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
+				progresso.incrementProgress();
+				
 			} else {
 
-				// Calcula e mostra tempo restante
-				int xmlsRestantes = listaProcessos.size() - i;
-				long tempoRestante = 0;
-				long mediaPorProcesso = 0;
-				if (qtdXMLGerados > 0) {
-					mediaPorProcesso = tempoGasto / qtdXMLGerados;
-					tempoRestante = xmlsRestantes * mediaPorProcesso;
-				}
-				String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
-				LOGGER.debug("Gravando Processo " + numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + arquivoXML + "...");
-				if (tempoRestanteStr != null) {
-					progresso.setInformacoes("G" + grau + " - " + tempoRestanteStr);
-				}
-
-				// Executa a consulta desse processo no banco de dados do PJe
-				TipoProcessoJudicial processoJudicial = null;
-				try {
-					processoJudicial = analisarProcessoJudicialCompleto(numeroProcesso);
-				} catch (Exception ex) {
-					LOGGER.warn("Erro gerando XML do processo " + numeroProcesso + " (" + grau + "): " + ex.getLocalizedMessage(), ex);
-				}
-
-				if (processoJudicial != null) {
-
-					// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
-					// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
-					// processo serão unificados, junto com os XMLs dos outros sistemas legados.
-					Processos processos = factory.createProcessos();
-					processos.getProcesso().add(processoJudicial);
-
-					// Gera o arquivo XML temporário
-					arquivoXML.getParentFile().mkdirs();
-					jaxbMarshaller.marshal(processos, arquivoXMLTemporario);
-
-					// Copia o XML temporário sobre o definitivo e exclui o temporário
-					FileUtils.copyFile(arquivoXMLTemporario, arquivoXML);
-					arquivoXMLTemporario.delete();
-
-					LOGGER.debug("Processo gravado com sucesso no arquivo " + arquivoXML);
-
-					// Cálculo do tempo restante
-					tempoGasto += System.currentTimeMillis() - antes;
-					qtdXMLGerados++;
-
-				} else {
-					LOGGER.warn("O XML do processo " + numeroProcesso + " não foi gerado na base " + grau + "G!");
-				}
+				// Cadastra uma operação para ser executada posteriormente
+				OperacaoGeracaoXML operacao = new OperacaoGeracaoXML();
+				operacao.numeroProcesso = numeroProcesso;
+				operacao.arquivoXMLTemporario = arquivoXMLTemporario;
+				operacao.arquivoXML = arquivoXML;
+				operacoes.add(operacao);
 			}
-
-			progresso.incrementProgress();
 		}
 
+		int i=0;
+		for (OperacaoGeracaoXML operacao : operacoes) {
+			
+			// Cálculo do tempo restante
+			long antes = System.currentTimeMillis();
+			i++;
+			
+			// Calcula e mostra tempo restante
+			int xmlsRestantes = listaProcessos.size() - i;
+			long tempoRestante = 0;
+			long mediaPorProcesso = 0;
+			if (qtdXMLGerados > 0) {
+				mediaPorProcesso = tempoGasto / qtdXMLGerados;
+				tempoRestante = xmlsRestantes * mediaPorProcesso;
+			}
+			String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
+			LOGGER.debug("Gravando Processo " + operacao.numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + operacao.arquivoXML + "...");
+			if (tempoRestanteStr != null) {
+				progresso.setInformacoes("G" + grau + " - " + tempoRestanteStr);
+			}
+
+			// Executa a consulta desse processo no banco de dados do PJe
+			TipoProcessoJudicial processoJudicial = null;
+			try {
+				processoJudicial = analisarProcessoJudicialCompleto(operacao.numeroProcesso);
+			} catch (Exception ex) {
+				LOGGER.warn("Erro gerando XML do processo " + operacao.numeroProcesso + " (" + grau + "): " + ex.getLocalizedMessage(), ex);
+			}
+
+			if (processoJudicial != null) {
+
+				// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
+				// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
+				// processo serão unificados, junto com os XMLs dos outros sistemas legados.
+				Processos processos = factory.createProcessos();
+				processos.getProcesso().add(processoJudicial);
+
+				// Gera o arquivo XML temporário
+				operacao.arquivoXML.getParentFile().mkdirs();
+				jaxbMarshaller.marshal(processos, operacao.arquivoXMLTemporario);
+
+				// Copia o XML temporário sobre o definitivo e exclui o temporário
+				FileUtils.copyFile(operacao.arquivoXMLTemporario, operacao.arquivoXML);
+				operacao.arquivoXMLTemporario.delete();
+
+				LOGGER.debug("Processo gravado com sucesso no arquivo " + operacao.arquivoXML);
+
+				// Cálculo do tempo restante
+				tempoGasto += System.currentTimeMillis() - antes;
+				qtdXMLGerados++;
+
+			} else {
+				LOGGER.warn("O XML do processo " + operacao.numeroProcesso + " não foi gerado na base " + grau + "G!");
+			}
+			
+			progresso.incrementProgress();
+		}
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerados!");
 	}
 
