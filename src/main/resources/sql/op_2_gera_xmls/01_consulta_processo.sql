@@ -8,19 +8,19 @@ SELECT
 
       /*** dadosBasicos ***/
   /* nivelSigilo */
-  case when pt.in_segredo_justica = 'S' then 5 else 0 end as nivelSigilo,
-  /* numero */
-  regexp_replace(p.nr_processo, '[\.\-]', '', 'g') nr_processo,
+  pt.in_segredo_justica,
+  --case when pt.in_segredo_justica = 'S' then 5 else 0 end as nivelSigilo,
   /* classeProcessual */
   cj.cd_classe_judicial,
   cj.ds_classe_judicial,
   /* codigoLocalidade */
   ib.id_municipio_ibge,
   /* dataAjuizamento */
-  to_char(pt.dt_autuacao, 'yyyymmddhh24miss') dt_autuacao,
+  pt.dt_autuacao,
   
   /*** orgaoJulgador ***/
-  upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
+  upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, 
+  upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
   -- Sugestao TRT6, por causa de falha no PostgreSQL na conversão do caractere "º" para ASCII:
   -- upper(to_ascii(replace(oj.ds_orgao_julgador, 'º', 'O'))) as ds_orgao_julgador, upper(to_ascii(replace(ojc.ds_orgao_julgador_colegiado, 'º', 'O'))) as ds_orgao_julgador_colegiado,
   -- Fonte: e-mail com assunto "Sugestões de alterações justica_em_numeros_2016" do TRT6
@@ -34,7 +34,8 @@ SELECT
   pt.vl_causa,
   pt.id_proc_referencia,
   pref.nr_processo as nr_processo_ref,
-  cjref.cd_classe_judicial as cd_classe_judicial_ref
+  cjref.cd_classe_judicial as cd_classe_judicial_ref,
+  cjref.ds_classe_judicial as ds_classe_judicial_ref
 FROM tb_processo_trf pt
 INNER JOIN tb_processo p ON (p.id_processo = pt.id_processo_trf)
 LEFT  JOIN tb_classe_judicial cj ON (cj.id_classe_judicial = pt.id_classe_judicial)

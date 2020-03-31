@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoCabecalhoProcesso;
+import br.jus.trt4.justica_em_numeros_2016.dto.ClasseJudicialDto;
 
 public class AnalisaClassesProcessuaisCNJ {
 
@@ -37,10 +38,10 @@ public class AnalisaClassesProcessuaisCNJ {
 		}
 	}
 	
-	public void preencherClasseProcessualVerificandoTPU(TipoCabecalhoProcesso cabecalhoProcesso, int codigoClasseProcessual, String descricaoClasseProcessual, String numeroProcesso) {
-		cabecalhoProcesso.setClasseProcessual(codigoClasseProcessual);
-		if (!classesProcessuaisCNJ.contains(codigoClasseProcessual)) {
-			LOGGER.warn("Processo '" + numeroProcesso + "' possui uma classe processual que não existe nas tabelas do CNJ: " + codigoClasseProcessual + " - " + descricaoClasseProcessual);
+	public void preencherClasseProcessualVerificandoTPU(TipoCabecalhoProcesso cabecalhoProcesso, ClasseJudicialDto classe, String numeroProcesso) {
+		cabecalhoProcesso.setClasseProcessual(classe.getCodigo());
+		if (!classesProcessuaisCNJ.contains(classe.getCodigo())) {
+			LOGGER.warn("Processo '" + numeroProcesso + "' possui uma classe processual que não existe nas tabelas do CNJ: " + classe.getCodigo() + " - " + classe.getDescricao());
 		}
 	}
 }

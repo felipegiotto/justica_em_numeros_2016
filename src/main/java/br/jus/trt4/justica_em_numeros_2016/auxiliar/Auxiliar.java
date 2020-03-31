@@ -14,6 +14,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -385,6 +387,18 @@ public class Auxiliar {
 	}
 	
 	/**
+	 * Lê um campo "int" de um ResultSet, retornando NULL se estiver em branco no banco de dados.
+	 */
+	public static Integer getCampoIntOrNull(ResultSet rs, String fieldName) throws SQLException {
+		int result = rs.getInt(fieldName);
+		if (rs.wasNull()) {
+			return null;
+		} else {
+			return result;
+		}
+	}
+	
+	/**
 	 * Retorna o arquivo onde deve ser gravada e lida a lista de processos de uma determinada
 	 * instância do PJe.
 	 */
@@ -428,6 +442,11 @@ public class Auxiliar {
 	 */
 	public static String formataDataMovimento(Date data) {
 		return dfDataMovimentoProcessual.format(data);
+	}
+	
+	public static String formataDataMovimento(LocalDateTime data) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+		return formatter.format(data);
 	}
 	
 	/**
