@@ -235,7 +235,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			i++;
 			
 			// Calcula e mostra tempo restante
-			int xmlsRestantes = listaProcessos.size() - i;
+			int xmlsRestantes = operacoes.size() - i;
 			long tempoRestante = 0;
 			long mediaPorProcesso = 0;
 			if (qtdXMLGerados > 0) {
@@ -243,7 +243,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				tempoRestante = xmlsRestantes * mediaPorProcesso;
 			}
 			String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
-			LOGGER.debug("Gravando Processo " + operacao.numeroProcesso + " (" + i + "/" + listaProcessos.size() + " - " + i * 100 / listaProcessos.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + operacao.arquivoXML + "...");
+			LOGGER.debug("Gravando Processo " + operacao.numeroProcesso + " (" + i + "/" + operacoes.size() + " - " + i * 100 / operacoes.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + operacao.arquivoXML + "...");
 			if (tempoRestanteStr != null) {
 				progresso.setInformacoes("G" + grau + " - " + tempoRestanteStr);
 			}
