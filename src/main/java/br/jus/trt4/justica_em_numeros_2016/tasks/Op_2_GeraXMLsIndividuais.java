@@ -959,14 +959,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 		try (ResultSet rs = nsHistoricoDeslocamentoOJ.executeQuery()) {
 			while (rs.next()) {
-				HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto();
-				historico.setDataDeslocamento(rs.getTimestamp("dt_deslocamento").toLocalDateTime());
-				historico.setDataRetorno(rs.getTimestamp("dt_retorno").toLocalDateTime());
-				historico.setNomeOrgaoJulgadorOrigem(rs.getString("ds_oj_origem"));
-				historico.setNomeOrgaoJulgadorDestino(rs.getString("ds_oj_destino"));
-				historico.setIdMunicipioOrigem(rs.getInt("id_municipio_origem"));
-				historico.setIdMunicipioDestino(rs.getInt("id_municipio_destino"));
-				deslocamentos.add(historico);
+				deslocamentos.add(new HistoricoDeslocamentoOJDto(rs));
 			}
 		}
 		
@@ -987,11 +980,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 		try (ResultSet rs = nsSentencasAcordaos.executeQuery()) {
 			while (rs.next()) {
-				DocumentoDto documento = new DocumentoDto();
-				documento.setDataJuntada(rs.getTimestamp("dt_juntada").toLocalDateTime());
-				documento.setCpfUsuarioAssinou(rs.getString("ds_login"));
-				
-				documentos.add(documento);
+				documentos.add(new DocumentoDto(rs));
 			}
 		}
 		
