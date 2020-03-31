@@ -2,8 +2,6 @@ SELECT
     pe.id_processo_evento, 
     
     /*** movimento ***/
-    /* dataHora */
-    to_char(pe.dt_atualizacao, 'yyyymmddhh24miss') AS dta_ocorrencia,
     /* nivelSigilo */
     case when pe.in_visibilidade_externa = true then 0 else 5 end AS in_visibilidade_externa,
     /* identificadorMovimento */

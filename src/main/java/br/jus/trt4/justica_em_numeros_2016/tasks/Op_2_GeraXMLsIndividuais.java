@@ -803,7 +803,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				// raise notice '<movimento dataHora="%" nivelSigilo="%">', mov.dta_ocorrencia, mov.in_visibilidade_externa;
 				// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
 				TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
-				movimento.setDataHora(Auxiliar.getCampoStringNotNull(rsMovimentos, "dta_ocorrencia"));
+				movimento.setDataHora(Auxiliar.formataDataMovimento(rsMovimentos.getTimestamp("dt_atualizacao")));
 				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
 				movimento.setIdentificadorMovimento(rsMovimentos.getString("id_processo_evento"));
 				movimento.setResponsavelMovimento(rsMovimentos.getString("ds_login"));

@@ -43,6 +43,7 @@ public class Auxiliar {
 	private static Properties configs = null;
 	private static boolean permitirAguardarUsuarioApertarENTER = true;
 	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
+	private static final SimpleDateFormat dfDataMovimentoProcessual = new SimpleDateFormat("yyyyMMddHHmmss");
 	private static File pastaSaida = null;
 	public static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
 
@@ -419,6 +420,15 @@ public class Auxiliar {
 		return dfDataNascimento.format(data);
 	}
 	
+	/**
+	 * Formata uma data para preencher nos movimentos processuais.
+	 * 
+	 * @param data
+	 * @return
+	 */
+	public static String formataDataMovimento(Date data) {
+		return dfDataMovimentoProcessual.format(data);
+	}
 	
 	/**
 	 * Retorna a pasta padrão onde os arquivos TXT e XML serão gerados pela ferramenta.
