@@ -285,12 +285,12 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		
 		// Processo 1G, responsabilidade da vara: 46904;VT Encantado
 		TipoOrgaoJulgador orgaoJulgador1G = retornaDadosProcesso(1, "0020450-29.2013.5.04.0791").getDadosBasicos().getOrgaoJulgador();
-		assertEquals("46904", orgaoJulgador1G.getCodigoOrgao());
+		assertEquals(46904, orgaoJulgador1G.getCodigoOrgao());
 		assertEquals("VT Encantado", orgaoJulgador1G.getNomeOrgao());
 		
 		// Processo 1G, nome de vara com caracteres acentuados
 		TipoOrgaoJulgador orgaoJulgadorAcentuado = retornaDadosProcesso(1, "0020150-49.2015.5.04.0451").getDadosBasicos().getOrgaoJulgador();
-		assertEquals("46994", orgaoJulgadorAcentuado.getCodigoOrgao());
+		assertEquals(46994, orgaoJulgadorAcentuado.getCodigoOrgao());
 		assertEquals("VT São Jerônimo", orgaoJulgadorAcentuado.getNomeOrgao());
 	}
 	
