@@ -47,8 +47,12 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.dto.AssuntoDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.EnderecoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.HistoricoDeslocamentoOJDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ParteProcessualDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.PoloDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
@@ -554,63 +558,68 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				identificaGeneroPessoa.preencherSexoPessoa(pessoa, parteProcessual.getSexoPessoa(), parteProcessual.getNomeConsultaParte());
 
 				// Identifica os endereços da parte
+				List<EnderecoDto> enderecos = new ArrayList<>();
 				nsEnderecos.setInt("id_processo_parte", parteProcessual.getIdProcessoParte());
 				try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
 					while (rsEnderecos.next()) {
+						enderecos.add(new EnderecoDto(rsEnderecos));
+					}
+				}
+				
+				for (EnderecoDto enderecoDto : enderecos) {
+					
+					// intercomunicacao-2.2.2: Atributo indicador do código de endereçamento 
+					// postal do endereço no diretório nacional de endereços da ECT. O 
+					// valor deverá ser uma sequência de 8 dígitos, sem qualquer separador. 
+					// O atributo é opcional para permitir a apresentação de endereços 
+					// desprovidos de CEP e de endereços internacionais.
+					// <restriction base="string"><pattern value="\d{8}"></pattern></restriction>
+					String cep = enderecoDto.getCep();
+					if (!StringUtils.isBlank(cep)) {
+						cep = cep.replaceAll("[^0-9]", "");
+					}
+					
+					// No PJe 2.5.1, endereços internacionais aparecem no banco de dados assim:
+					// nr_cep='0', cd_estado='X1', ds_municipio='Município Estrangeiro'
+					boolean isCepInternacional = "0".equals(cep);
 
-						// intercomunicacao-2.2.2: Atributo indicador do código de endereçamento 
-						// postal do endereço no diretório nacional de endereços da ECT. O 
-						// valor deverá ser uma sequência de 8 dígitos, sem qualquer separador. 
-						// O atributo é opcional para permitir a apresentação de endereços 
-						// desprovidos de CEP e de endereços internacionais.
-						// <restriction base="string"><pattern value="\d{8}"></pattern></restriction>
-						String cep = rsEnderecos.getString("nr_cep");
-						if (!StringUtils.isBlank(cep)) {
-							cep = cep.replaceAll("[^0-9]", "");
-						}
+					if (!StringUtils.isBlank(cep)) {
+						TipoEndereco endereco = new TipoEndereco();
 						
-						// No PJe 2.5.1, endereços internacionais aparecem no banco de dados assim:
-						// nr_cep='0', cd_estado='X1', ds_municipio='Município Estrangeiro'
-						boolean isCepInternacional = "0".equals(cep);
-
-						if (!StringUtils.isBlank(cep)) {
-							TipoEndereco endereco = new TipoEndereco();
-							
-							if (!isCepInternacional) {
-								endereco.setCep(cep);
-							}
-
-							// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
-							// tais como rua, praça, quadra etc. O elemento é opcional para permitir 
-							// que as implementações acatem a indicação de endereço exclusivamente 
-							// pelo CEP, quando o CEP já encerrar o dado respectivo.
-							endereco.setLogradouro(rsEnderecos.getString("nm_logradouro"));
-
-							// intercomunicacao-2.2.2: O número vinculado a este endereço. O elemento 
-							// é opcional para permitir que as implementações acatem a indicação de 
-							// endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-							endereco.setNumero(rsEnderecos.getString("nr_endereco"));
-
-							// intercomunicacao-2.2.2: O complemento vinculado a este endereço. 
-							// O elemento é opcional em razão de sua própria natureza.
-							endereco.setComplemento(rsEnderecos.getString("ds_complemento"));
-
-							// intercomunicacao-2.2.2: O bairro vinculado a este endereço. O elemento 
-							// é opcional para permitir que as implementações acatem a indicação 
-							// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-							endereco.setBairro(rsEnderecos.getString("nm_bairro"));
-
-							// intercomunicacao-2.2.2: A cidade vinculada a este endereço. O elemento 
-							// é opcional para permitir que as implementações acatem a indicação 
-							// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
-							endereco.setCidade(rsEnderecos.getString("ds_municipio"));
-							
-							// modelo-de-transferencia-de-dados-1.0.xsd:
-							// código do município IBGE com sete dígitos, referente ao campo “cidade”.
-							endereco.setCodCidade(rsEnderecos.getInt("id_municipio_ibge"));
-
-							pessoa.getEndereco().add(endereco);
+						if (!isCepInternacional) {
+							endereco.setCep(cep);
 						}
+
+						// intercomunicacao-2.2.2: O logradouro pertinente a este endereço, 
+						// tais como rua, praça, quadra etc. O elemento é opcional para permitir 
+						// que as implementações acatem a indicação de endereço exclusivamente 
+						// pelo CEP, quando o CEP já encerrar o dado respectivo.
+						endereco.setLogradouro(enderecoDto.getLogradouro());
+
+						// intercomunicacao-2.2.2: O número vinculado a este endereço. O elemento 
+						// é opcional para permitir que as implementações acatem a indicação de 
+						// endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+						endereco.setNumero(enderecoDto.getNumero());
+
+						// intercomunicacao-2.2.2: O complemento vinculado a este endereço. 
+						// O elemento é opcional em razão de sua própria natureza.
+						endereco.setComplemento(enderecoDto.getComplemento());
+
+						// intercomunicacao-2.2.2: O bairro vinculado a este endereço. O elemento 
+						// é opcional para permitir que as implementações acatem a indicação 
+						// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+						endereco.setBairro(enderecoDto.getBairro());
+
+						// intercomunicacao-2.2.2: A cidade vinculada a este endereço. O elemento 
+						// é opcional para permitir que as implementações acatem a indicação 
+						// de endereço exclusivamente pelo CEP, quando o CEP já encerrar o dado respectivo.
+						endereco.setCidade(enderecoDto.getMunicipio());
+						
+						// modelo-de-transferencia-de-dados-1.0.xsd:
+						// código do município IBGE com sete dígitos, referente ao campo “cidade”.
+						endereco.setCodCidade(enderecoDto.getIdMunicipioIBGE());
+
+						pessoa.getEndereco().add(endereco);
 					}
 				}
 
@@ -682,61 +691,65 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		List<TipoAssuntoProcessual> assuntos = new ArrayList<>();
 
 		// Consulta todos os assuntos do processo
+		List<AssuntoDto> assuntosDto = new ArrayList<>();
 		nsAssuntos.setString("nr_processo", nrProcesso);
 		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
-			boolean encontrouAlgumAssunto = false;
-			boolean encontrouAssuntoPrincipal = false;
 			while (rsAssuntos.next()) {
-
-				// Script TRT14:
-				// raise notice '<assunto>'; -- principal="%">', assunto.in_assunto_principal;
-				// raise notice '<codigoNacional>%</codigoNacional>', assunto.cd_assunto_trf;
-				// raise notice '</assunto>';
-
-				// Analisa o assunto, que pode ou não estar nas tabelas processuais unificadas do CNJ.
-				int codigo = Auxiliar.getCampoIntNotNull(rsAssuntos, "cd_assunto_trf");
-				TipoAssuntoProcessual assunto = analisaAssuntosCNJ.getAssunto(codigo);
-				assuntos.add(assunto);
-				encontrouAlgumAssunto = true;
-
-				// Trata o campo "assunto principal", verificando também se há mais de um assunto principal no processo.
-				boolean assuntoPrincipal = "S".equals(rsAssuntos.getString("in_assunto_principal"));
-				assunto.setPrincipal(assuntoPrincipal);
-				if (assuntoPrincipal) {
-					if (encontrouAssuntoPrincipal) {
-						LOGGER.warn("Processo possui mais de um assunto principal: " + nrProcesso);
-					} else {
-						encontrouAssuntoPrincipal = true;
-					}
-				}
-			}
-
-			// Script TRT14:
-			// -- se não tiver assunto? 
-			// IF fl_assunto = 0 THEN 
-			//   -- do something...
-			//   raise notice '<assunto>'; 
-			//   raise notice '<codigoNacional>2546</codigoNacional>'; -- Verbas Rescisórias
-			//   raise notice '</assunto>';
-			// END IF;
-			if (!encontrouAlgumAssunto) {
-
-				// Se não há nenhum assunto no processo, verifica se deve ser utilizando um assunto
-				// padrão, conforme arquivo de configuração.
-				TipoAssuntoProcessual assuntoPadrao = analisaAssuntosCNJ.getAssuntoProcessualPadrao();
-				if (assuntoPadrao != null) {
-					assuntos.add(assuntoPadrao);
-
-				} else {
-					throw new DadosInvalidosException("Processo sem assunto cadastrado", nrProcesso);
-				}
-
-			} else if (!encontrouAssuntoPrincipal) {
-				LOGGER.info("Processo sem assunto principal: " + nrProcesso + ". O primeiro assunto será marcado como principal.");
-				assuntos.get(0).setPrincipal(true);
+				assuntosDto.add(new AssuntoDto(rsAssuntos));
 			}
 		}
 
+		boolean encontrouAlgumAssunto = false;
+		boolean encontrouAssuntoPrincipal = false;
+		for (AssuntoDto assuntoDto : assuntosDto) {
+
+			// Script TRT14:
+			// raise notice '<assunto>'; -- principal="%">', assunto.in_assunto_principal;
+			// raise notice '<codigoNacional>%</codigoNacional>', assunto.cd_assunto_trf;
+			// raise notice '</assunto>';
+
+			// Analisa o assunto, que pode ou não estar nas tabelas processuais unificadas do CNJ.
+			int codigo = assuntoDto.getCodigo();
+			TipoAssuntoProcessual assunto = analisaAssuntosCNJ.getAssunto(codigo);
+			assuntos.add(assunto);
+			encontrouAlgumAssunto = true;
+
+			// Trata o campo "assunto principal", verificando também se há mais de um assunto principal no processo.
+			boolean assuntoPrincipal = assuntoDto.isPrincipal();
+			assunto.setPrincipal(assuntoPrincipal);
+			if (assuntoPrincipal) {
+				if (encontrouAssuntoPrincipal) {
+					LOGGER.warn("Processo possui mais de um assunto principal: " + nrProcesso);
+				} else {
+					encontrouAssuntoPrincipal = true;
+				}
+			}
+		}
+
+		// Script TRT14:
+		// -- se não tiver assunto? 
+		// IF fl_assunto = 0 THEN 
+		//   -- do something...
+		//   raise notice '<assunto>'; 
+		//   raise notice '<codigoNacional>2546</codigoNacional>'; -- Verbas Rescisórias
+		//   raise notice '</assunto>';
+		// END IF;
+		if (!encontrouAlgumAssunto) {
+
+			// Se não há nenhum assunto no processo, verifica se deve ser utilizando um assunto
+			// padrão, conforme arquivo de configuração.
+			TipoAssuntoProcessual assuntoPadrao = analisaAssuntosCNJ.getAssuntoProcessualPadrao();
+			if (assuntoPadrao != null) {
+				assuntos.add(assuntoPadrao);
+
+			} else {
+				throw new DadosInvalidosException("Processo sem assunto cadastrado", nrProcesso);
+			}
+
+		} else if (!encontrouAssuntoPrincipal) {
+			LOGGER.info("Processo sem assunto principal: " + nrProcesso + ". O primeiro assunto será marcado como principal.");
+			assuntos.get(0).setPrincipal(true);
+		}
 		return assuntos;
 	}
 
@@ -805,120 +818,130 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		List<HistoricoDeslocamentoOJDto> historicoDeslocamentoOJ = null;
 
 		// Consulta todos os movimentos do processo
+		List<MovimentoDto> movimentosDtos = new ArrayList<>();
 		nsMovimentos.setInt("id_processo", processo.getIdProcesso());
 		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
 			while (rsMovimentos.next()) {
+				movimentosDtos.add(new MovimentoDto(rsMovimentos));
+			}
+		}
+		
+		for (MovimentoDto movimentoDto : movimentosDtos) {
+			
+			// Script TRT14:
+			// raise notice '<movimento dataHora="%" nivelSigilo="%">', mov.dta_ocorrencia, mov.in_visibilidade_externa;
+			// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
+			TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
+			movimento.setDataHora(Auxiliar.formataDataMovimento(movimentoDto.getDataAtualizacao()));
+			movimento.setNivelSigilo(movimentoDto.isVisibilidadeExterna() ? 0 : 5);
+			movimento.setIdentificadorMovimento(Integer.toString(movimentoDto.getIdProcessoEvento()));
+			movimento.setResponsavelMovimento(movimentoDto.getCPFUsuarioMovimento());
+			
+			// tipoResponsavelMovimento: Identificação do responsável pelo movimento: Servidor=0; Magistrado=1;
+			movimento.setTipoResponsavelMovimento(movimentoDto.isUsuarioMagistrado() ? 1 : 0);
+			
+			analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, movimentoDto.getCodMovimentoCNJ(), movimentoDto.getTextoMovimento(), movimentoDto.getTextoEvento());
+			movimentos.add(movimento);
+			LocalDateTime dataMovimento = movimentoDto.getDataAtualizacao();
 
-				// Script TRT14:
-				// raise notice '<movimento dataHora="%" nivelSigilo="%">', mov.dta_ocorrencia, mov.in_visibilidade_externa;
-				// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
-				TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
-				movimento.setDataHora(Auxiliar.formataDataMovimento(rsMovimentos.getTimestamp("dt_atualizacao")));
-				movimento.setNivelSigilo(rsMovimentos.getInt("in_visibilidade_externa"));
-				movimento.setIdentificadorMovimento(rsMovimentos.getString("id_processo_evento"));
-				movimento.setResponsavelMovimento(rsMovimentos.getString("ds_login"));
-				
-				// tipoResponsavelMovimento: Identificação do responsável pelo movimento: Servidor=0; Magistrado=1;
-				movimento.setTipoResponsavelMovimento(rsMovimentos.getString("id_magistrado") != null ? 1 : 0);
-				
-				analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, Auxiliar.getCampoIntNotNull(rsMovimentos, "cd_movimento_cnj"), rsMovimentos.getString("ds_texto_final_interno"), rsMovimentos.getString("ds_movimento"));
-				movimentos.add(movimento);
-				LocalDateTime dataMovimento = rsMovimentos.getTimestamp("dt_atualizacao").toLocalDateTime();
-
-				// Consulta os complementos desse movimento processual.
-				// OBS: os complementos só existem no MovimentoNacional
-				TipoMovimentoNacional movimentoNacional = movimento.getMovimentoNacional();
-				if (movimentoNacional != null) {
-					int idMovimento = rsMovimentos.getInt("id_processo_evento");
-					nsComplementos.setInt("id_processo_evento", idMovimento);
-					try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
-						while (rsComplementos.next()) {
-
-							// Script TRT14:
-							//  IF '' = trim(compl.cd_complemento) THEN
-							//    raise notice '<complemento>%:%:%</complemento>'
-							//    , compl.cd_tipo_complemento, compl.ds_nome, compl.nm_complemento;
-							//  ELSE
-							//    raise notice '<complemento>%:%:%:%</complemento>'
-							//    , compl.cd_tipo_complemento, compl.ds_nome, compl.cd_complemento, compl.nm_complemento;
-							//  END IF;
-							StringBuilder sb = new StringBuilder();
-							sb.append(rsComplementos.getString("cd_tipo_complemento"));
-							sb.append(":");
-							sb.append(rsComplementos.getString("ds_nome"));
-							String codigoComplemento = rsComplementos.getString("cd_complemento");
-							if (!StringUtils.isBlank(codigoComplemento)) {
-								sb.append(":");
-								sb.append(codigoComplemento);
-								/*
-								O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
-								<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>
-
-								Ex.: no movimento 123, seria
-									18:motivo_da_remessa:38:em grau de recurso
-									7:destino:1ª Vara Cível
-								 */
-								// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
-							}
-							sb.append(":");
-							sb.append(rsComplementos.getString("nm_complemento"));
-							movimentoNacional.getComplemento().add(sb.toString());
-							
-							TipoComplementoNacional complemento = new TipoComplementoNacional();
-							movimento.getComplementoNacional().add(complemento);
-							complemento.setCodComplemento(rsComplementos.getInt("cd_tipo_complemento"));
-							complemento.setDescricaoComplemento(rsComplementos.getString("ds_nome"));
-						}
+			// Consulta os complementos desse movimento processual.
+			// OBS: os complementos só existem no MovimentoNacional
+			List<ComplementoDto> complementosDtos = new ArrayList<>();
+			TipoMovimentoNacional movimentoNacional = movimento.getMovimentoNacional();
+			if (movimentoNacional != null) {
+				int idMovimento = movimentoDto.getIdProcessoEvento();
+				nsComplementos.setInt("id_processo_evento", idMovimento);
+				try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
+					while (rsComplementos.next()) {
+						complementosDtos.add(new ComplementoDto(rsComplementos));
 					}
 				}
 				
-				// Se for um movimento de JULGAMENTO de um MAGISTRADO, precisa identificar o CPF do prolator
-				if (rsMovimentos.getBoolean("is_magistrado_julgamento")) {
+				for (ComplementoDto complementoDto : complementosDtos) {
 					
-					// Busca a lista de sentenças e acórdãos do processo, somente uma vez para esse processo,
-					// para tentar encontrar qual o magistrado responsável pelo movimento de julgamento
-					if (sentencasAcordaos == null) {
-						sentencasAcordaos = baixarDadosSentencasAcordaos(processo.getIdProcesso());
-					}
-					
-					DocumentoDto documentoRelacionado = sentencasAcordaos.stream()
-							
-						// Procura uma sentença ou acórdão ANTERIOR ao movimento para saber qual o magistrado prolator.
-						.filter(d -> d.getDataJuntada().isBefore(dataMovimento))
-						
-						// Volta no máximo uma semana, para evitar pegar um documento muito antigo
-						.filter(d -> d.getDataJuntada().isAfter(dataMovimento.minusDays(7)))
-						.findFirst().orElse(null);
-					
-					// Se encontrou, preenche CPF do magistrado prolator.
-					if (documentoRelacionado != null) {
-						movimento.getMagistradoProlator().add(documentoRelacionado.getCpfUsuarioAssinou());
-					}
-				}
+					// Script TRT14:
+					//  IF '' = trim(compl.cd_complemento) THEN
+					//    raise notice '<complemento>%:%:%</complemento>'
+					//    , compl.cd_tipo_complemento, compl.ds_nome, compl.nm_complemento;
+					//  ELSE
+					//    raise notice '<complemento>%:%:%:%</complemento>'
+					//    , compl.cd_tipo_complemento, compl.ds_nome, compl.cd_complemento, compl.nm_complemento;
+					//  END IF;
+					StringBuilder sb = new StringBuilder();
+					sb.append(complementoDto.getCodigoTipoComplemento());
+					sb.append(":");
+					sb.append(complementoDto.getNome());
+					String codigoComplemento = complementoDto.getCodigoComplemento();
+					if (!StringUtils.isBlank(codigoComplemento)) {
+						sb.append(":");
+						sb.append(codigoComplemento);
+						/*
+						O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
+						<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>
 
-				// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
-				// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
-				if (historicoDeslocamentoOJ == null) {
-					historicoDeslocamentoOJ = baixarDadosHistoricoDeslocamentoOJ(processo.getIdProcesso());
-				}
-				for (HistoricoDeslocamentoOJDto historico : historicoDeslocamentoOJ) {
-					LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
-					LocalDateTime dataRetorno = historico.getDataRetorno();
-					if (dataDeslocamento.isAfter(dataMovimento)) {
-						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(historico.getNomeOrgaoJulgadorOrigem(), historico.getIdMunicipioOrigem(), processo.getNumeroInstancia());
-						movimento.setOrgaoJulgador(orgaoJulgador);
-						break;
-						
-					} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
-						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(historico.getNomeOrgaoJulgadorDestino(), historico.getIdMunicipioDestino(), processo.getNumeroInstancia());
-						movimento.setOrgaoJulgador(orgaoJulgador);
-						break;
+						Ex.: no movimento 123, seria
+							18:motivo_da_remessa:38:em grau de recurso
+							7:destino:1ª Vara Cível
+						 */
+						// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 					}
-				}
-				if (movimento.getOrgaoJulgador() == null) {
-					movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
+					sb.append(":");
+					sb.append(complementoDto.getValor());
+					movimentoNacional.getComplemento().add(sb.toString());
+					
+					TipoComplementoNacional complemento = new TipoComplementoNacional();
+					movimento.getComplementoNacional().add(complemento);
+					complemento.setCodComplemento(complementoDto.getCodigoTipoComplemento());
+					complemento.setDescricaoComplemento(complementoDto.getNome());
 				}
 			}
+			
+			// Se for um movimento de JULGAMENTO de um MAGISTRADO, precisa identificar o CPF do prolator
+			if (movimentoDto.isMovimentoMagistradoJulgamento()) {
+				
+				// Busca a lista de sentenças e acórdãos do processo, somente uma vez para esse processo,
+				// para tentar encontrar qual o magistrado responsável pelo movimento de julgamento
+				if (sentencasAcordaos == null) {
+					sentencasAcordaos = baixarDadosSentencasAcordaos(processo.getIdProcesso());
+				}
+				
+				DocumentoDto documentoRelacionado = sentencasAcordaos.stream()
+						
+					// Procura uma sentença ou acórdão ANTERIOR ao movimento para saber qual o magistrado prolator.
+					.filter(d -> d.getDataJuntada().isBefore(dataMovimento))
+					
+					// Volta no máximo uma semana, para evitar pegar um documento muito antigo
+					.filter(d -> d.getDataJuntada().isAfter(dataMovimento.minusDays(7)))
+					.findFirst().orElse(null);
+				
+				// Se encontrou, preenche CPF do magistrado prolator.
+				if (documentoRelacionado != null) {
+					movimento.getMagistradoProlator().add(documentoRelacionado.getCpfUsuarioAssinou());
+				}
+			}
+
+			// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
+			// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
+			if (historicoDeslocamentoOJ == null) {
+				historicoDeslocamentoOJ = baixarDadosHistoricoDeslocamentoOJ(processo.getIdProcesso());
+			}
+			for (HistoricoDeslocamentoOJDto historico : historicoDeslocamentoOJ) {
+				LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
+				LocalDateTime dataRetorno = historico.getDataRetorno();
+				if (dataDeslocamento.isAfter(dataMovimento)) {
+					TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(historico.getNomeOrgaoJulgadorOrigem(), historico.getIdMunicipioOrigem(), processo.getNumeroInstancia());
+					movimento.setOrgaoJulgador(orgaoJulgador);
+					break;
+					
+				} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
+					TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(historico.getNomeOrgaoJulgadorDestino(), historico.getIdMunicipioDestino(), processo.getNumeroInstancia());
+					movimento.setOrgaoJulgador(orgaoJulgador);
+					break;
+				}
+			}
+			if (movimento.getOrgaoJulgador() == null) {
+				movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
+			}			
 		}
 
 		return movimentos;

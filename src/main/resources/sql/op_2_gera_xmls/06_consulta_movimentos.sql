@@ -3,7 +3,8 @@ SELECT
     
     /*** movimento ***/
     /* nivelSigilo */
-    case when pe.in_visibilidade_externa = true then 0 else 5 end AS in_visibilidade_externa,
+    pe.in_visibilidade_externa,
+    --case when pe.in_visibilidade_externa = true then 0 else 5 end AS in_visibilidade_externa,
     /* identificadorMovimento */
     -- pe.id_processo_evento,
     
