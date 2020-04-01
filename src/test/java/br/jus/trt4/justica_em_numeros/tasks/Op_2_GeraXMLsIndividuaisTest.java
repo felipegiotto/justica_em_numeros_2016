@@ -48,6 +48,32 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
  */
 public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 
+	/**
+	 * Testa a carga em lote de dados de processos.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void testGerarProcessosEmLote() throws Exception {
+		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(2);
+		try {
+			baixaDados.prepararConexao();
+			List<String> numeros = new ArrayList<>();
+			numeros.add("0020821-54.2013.5.04.0221");
+			numeros.add("0020583-31.2014.5.04.0017");
+			baixaDados.prepararCacheDadosProcessos(numeros);
+			
+			TipoProcessoJudicial processo1 = baixaDados.analisarProcessoJudicialCompleto("0020821-54.2013.5.04.0221");
+			assertEquals("00208215420135040221", processo1.getDadosBasicos().getNumero());
+			
+			TipoProcessoJudicial processo2 = baixaDados.analisarProcessoJudicialCompleto("0020583-31.2014.5.04.0017");
+			assertEquals("00205833120145040017", processo2.getDadosBasicos().getNumero());
+			
+		} finally {
+			baixaDados.close();
+		}
+	}
+	
 	@Test
 	public void testCamposProcesso2G() throws Exception {
 		
@@ -704,6 +730,9 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);
 		try {
 			baixaDados.prepararConexao();
+			List<String> numeros = new ArrayList<>();
+			numeros.add(numeroProcesso);
+			baixaDados.prepararCacheDadosProcessos(numeros);
 			return baixaDados.analisarProcessoJudicialCompleto(numeroProcesso);
 		} finally {
 			baixaDados.close();

@@ -3,6 +3,7 @@ package br.jus.trt4.justica_em_numeros_2016.tasks;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -94,7 +97,16 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private IdentificaGeneroPessoa identificaGeneroPessoa;
 	private IdentificaDocumentosPessoa identificaDocumentosPessoa;
 	private List<String> listaProcessos;
+	
+	// Objetos que armazenam os dados do PJe para poder trazer dados de processos em lote,
+	// resultando em menos consultas ao banco de dados.
+	private final Map<String, CacheDadosProcesso> cacheProcessosDtos = new HashMap<>();
 
+	private class CacheDadosProcesso {
+		ProcessoDto processoDto;
+		List<PoloDto> polos = new ArrayList<>();
+	}
+	
 	private class OperacaoGeracaoXML {
 		String numeroProcesso;
 		File arquivoXML;
@@ -228,6 +240,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 
 		int i=0;
+		
+		List<String> processosPendentes = operacoes.stream().map(o -> o.numeroProcesso).collect(Collectors.toList());
+		prepararCacheDadosProcessos(processosPendentes);
+		
 		for (OperacaoGeracaoXML operacao : operacoes) {
 			
 			// Cálculo do tempo restante
@@ -288,6 +304,34 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	}
 
 
+	public void prepararCacheDadosProcessos(List<String> numerosProcessos) throws SQLException {
+		this.cacheProcessosDtos.clear();
+
+		Array arrayNumerosProcessos = conexaoBasePrincipal.createArrayOf("varchar", numerosProcessos.toArray());
+		
+		// Carrega dados principais dos processos
+		nsConsultaProcessos.setArray("numeros_processos", arrayNumerosProcessos);
+		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
+			while (rsProcessos.next()) {
+				String nrProcesso = rsProcessos.getString("nr_processo");
+				CacheDadosProcesso cache = new CacheDadosProcesso();
+				cache.processoDto = new ProcessoDto(rsProcessos, false);
+				this.cacheProcessosDtos.put(nrProcesso, cache);
+			}
+		}
+		
+		// Consulta todos os polos dos processos
+		nsPolos.setArray("numeros_processos", arrayNumerosProcessos);
+		try (ResultSet rsPolos = nsPolos.executeQuery()) {
+			while (rsPolos.next()) {
+				String nrProcesso = rsPolos.getString("nr_processo");
+				PoloDto polo = new PoloDto(rsPolos);
+				cacheProcessosDtos.get(nrProcesso).polos.add(polo);
+			}
+		}
+
+	}
+
 	/**
 	 * Consulta os dados do processo informado no banco de dados e gera um objeto da classe
 	 * {@link TipoProcessoJudicial}
@@ -300,15 +344,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 */
 	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, DadosInvalidosException {
 
-		nsConsultaProcessos.setString("numero_processo", numeroProcesso);
-		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
-			if (rsProcessos.next()) {
-				ProcessoDto processo = new ProcessoDto(rsProcessos, false);
-				return analisarProcessoJudicialCompleto(processo);
-			} else {
-				LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado na base " + grau + "G!");
-				return null;
-			}
+		if (cacheProcessosDtos.containsKey(numeroProcesso)) {
+			return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso).processoDto);
+		} else {
+			LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado no cache da base " + grau + "G! O processo pode não existir OU faltou carregar em cache os dados desse processo (com o método 'prepararCacheDadosProcessos')");
+			return null;
 		}
 	}
 
@@ -448,16 +488,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
 
-		// Consulta todos os polos do processo
-		List<PoloDto> polosDtos = new ArrayList<>();
-		nsPolos.setInt("id_processo", idProcesso);
-		try (ResultSet rsPolos = nsPolos.executeQuery()) {
-			while (rsPolos.next()) {
-				polosDtos.add(new PoloDto(rsPolos));
-			}
-		}
-		
 		// Itera sobre os polos processuais
+		List<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).polos;
 		List<TipoPoloProcessual> polos = new ArrayList<>();
 		for (PoloDto poloDto : polosDtos) {
 			// Script TRT14:

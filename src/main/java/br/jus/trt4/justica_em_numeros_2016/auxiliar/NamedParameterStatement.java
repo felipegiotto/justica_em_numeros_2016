@@ -1,5 +1,6 @@
 package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -162,6 +163,22 @@ public class NamedParameterStatement implements AutoCloseable {
 		for(int i = 0; i < indexes.size(); i++) {
 			int xx = indexes.get(i);
 			statement.setString(xx, value);
+		}
+	}
+	
+	/**
+	 * Sets a parameter.
+	 * @param name parameter name
+	 * @param value parameter value
+	 * @throws SQLException if an error occurred
+	 * @throws IllegalArgumentException if the parameter does not exist
+	 * @see PreparedStatement#setString(int, java.lang.String)
+	 */
+	public void setArray(String name, Array value) throws SQLException {
+		List<Integer> indexes = getIndexes(name);
+		for(int i = 0; i < indexes.size(); i++) {
+			int xx = indexes.get(i);
+			statement.setArray(xx, value);
 		}
 	}
 	

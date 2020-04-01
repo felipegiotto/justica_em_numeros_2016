@@ -49,4 +49,4 @@ LEFT JOIN tb_processo_trf ptref ON (ptref.id_processo_trf = pref.id_processo)
 LEFT  JOIN tb_classe_judicial cjref ON (cjref.id_classe_judicial = ptref.id_classe_judicial)
 
 
-WHERE p.nr_processo = :numero_processo
+WHERE p.nr_processo = ANY(:numeros_processos)
