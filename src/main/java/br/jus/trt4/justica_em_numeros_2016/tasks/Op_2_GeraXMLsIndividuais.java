@@ -429,6 +429,16 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				}
 			}
 		}
+		
+		// Verifica se esse processo possui incidentes
+		nsIncidentes.setArray("numeros_processos", arrayNumerosProcessos);
+		try (ResultSet rsIncidentes = nsIncidentes.executeQuery()) {
+			while (rsIncidentes.next()) {
+				String nrProcesso = rsIncidentes.getString("nr_processo_referencia");
+				ProcessoDto incidente = new ProcessoDto(rsIncidentes, true);
+				cacheProcessosDtos.get(nrProcesso).processoDto.getIncidentes().add(incidente);
+			}
+		}
 	}
 
 	/**
@@ -557,16 +567,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			relacaoIncidental.add(relacao);
 		}
 		
-		// Verifica se esse processo possui incidentes
-		List<ProcessoDto> processoIncidentesDto = new ArrayList<>();
-		nsIncidentes.setInt("id_proc_referencia", processo.getIdProcesso());
-		try (ResultSet rsIncidentes = nsIncidentes.executeQuery()) {
-			while (rsIncidentes.next()) {
-				processoIncidentesDto.add(new ProcessoDto(rsIncidentes, true));
-			}
-		}
-		
-		for (ProcessoDto incidenteDto : processoIncidentesDto) {
+		for (ProcessoDto incidenteDto : processo.getIncidentes()) {
 			TipoRelacaoIncidental relacao = new TipoRelacaoIncidental();
 			String nrProcesso = incidenteDto.getNumeroProcesso();
 			relacao.setNumeroProcesso(nrProcesso);
