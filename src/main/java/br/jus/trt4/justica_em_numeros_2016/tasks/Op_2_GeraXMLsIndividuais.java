@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -358,8 +357,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 
 		// Consulta os endereços das partes
-		Set<Integer> idProcessosPartes = partesPorIdProcessoParte.keySet();
-		Array arrayIdProcessoParte = conexaoBasePrincipal.createArrayOf("int", idProcessosPartes.toArray());
+		Array arrayIdProcessoParte = conexaoBasePrincipal.createArrayOf("int", partesPorIdProcessoParte.keySet().toArray());
 		nsEnderecos.setArray("id_processo_parte", arrayIdProcessoParte);
 		try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
 			while (rsEnderecos.next()) {
@@ -370,14 +368,29 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 
 		// Consulta todos os movimentos dos processos
+		Map<Integer, MovimentoDto> movimentosPorIdProcessoEvento = new HashMap<>();
 		nsMovimentos.setArray("numeros_processos", arrayNumerosProcessos);
 		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
 			while (rsMovimentos.next()) {
 				String nrProcesso = rsMovimentos.getString("nr_processo");
 				MovimentoDto movimento = new MovimentoDto(rsMovimentos);
 				cacheProcessosDtos.get(nrProcesso).processoDto.getMovimentos().add(movimento);
+				movimentosPorIdProcessoEvento.put(movimento.getIdProcessoEvento(), movimento);
 			}
 		}
+		
+		// Consulta os complementos desses movimentos processuais.
+		// OBS: os complementos só existem no MovimentoNacional
+		Array arrayIdProcessoEvento = conexaoBasePrincipal.createArrayOf("int", movimentosPorIdProcessoEvento.keySet().toArray());
+		nsComplementos.setArray("id_movimento_processo", arrayIdProcessoEvento);
+		try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
+			while (rsComplementos.next()) {
+				int idMovimentoProcesso = rsComplementos.getInt("id_movimento_processo");
+				ComplementoDto complemento = new ComplementoDto(rsComplementos);
+				movimentosPorIdProcessoEvento.get(idMovimentoProcesso).getComplementos().add(complemento);
+			}
+		}
+
 	}
 
 	/**
@@ -925,18 +938,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 			// Consulta os complementos desse movimento processual.
 			// OBS: os complementos só existem no MovimentoNacional
-			List<ComplementoDto> complementosDtos = new ArrayList<>();
 			TipoMovimentoNacional movimentoNacional = movimento.getMovimentoNacional();
 			if (movimentoNacional != null) {
-				int idMovimento = movimentoDto.getIdProcessoEvento();
-				nsComplementos.setInt("id_processo_evento", idMovimento);
-				try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
-					while (rsComplementos.next()) {
-						complementosDtos.add(new ComplementoDto(rsComplementos));
-					}
-				}
-				
-				for (ComplementoDto complementoDto : complementosDtos) {
+				for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
 					
 					// Script TRT14:
 					//  IF '' = trim(compl.cd_complemento) THEN

@@ -3,6 +3,8 @@ package br.jus.trt4.justica_em_numeros_2016.dto;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
@@ -22,6 +24,8 @@ public class MovimentoDto {
 	private String textoMovimento;
 	private String textoEvento;
 	private boolean movimentoMagistradoJulgamento;
+	
+	private List<ComplementoDto> complementos = new ArrayList<>();
 	
 	public MovimentoDto(ResultSet rsMovimentos) throws SQLException {
 		this.dataAtualizacao = rsMovimentos.getTimestamp("dt_atualizacao").toLocalDateTime();
@@ -69,5 +73,9 @@ public class MovimentoDto {
 	
 	public boolean isMovimentoMagistradoJulgamento() {
 		return movimentoMagistradoJulgamento;
+	}
+	
+	public List<ComplementoDto> getComplementos() {
+		return complementos;
 	}
 }
