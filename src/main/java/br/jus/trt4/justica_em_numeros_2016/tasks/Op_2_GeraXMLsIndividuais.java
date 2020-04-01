@@ -431,6 +431,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 		
 		// Verifica se esse processo possui incidentes
+		LOGGER.trace("* nsIncidentes...");
 		nsIncidentes.setArray("numeros_processos", arrayNumerosProcessos);
 		try (ResultSet rsIncidentes = nsIncidentes.executeQuery()) {
 			while (rsIncidentes.next()) {
@@ -441,12 +442,24 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 		
 		// Baixa dados de sentenças e acórdãos dos processos, que auxiliarão na identificação do magistrado responsável
+		LOGGER.trace("* nsSentencasAcordaos...");
 		nsSentencasAcordaos.setArray("numeros_processos", arrayNumerosProcessos);
 		try (ResultSet rsSentencasAcordaos = nsSentencasAcordaos.executeQuery()) {
 			while (rsSentencasAcordaos.next()) {
 				String nrProcesso = rsSentencasAcordaos.getString("nr_processo");
 				DocumentoDto documentoDto = new DocumentoDto(rsSentencasAcordaos);
 				cacheProcessosDtos.get(nrProcesso).processoDto.getSentencasAcordaos().add(documentoDto);
+			}
+		}
+
+		// Baixa dados de deslocamentos de OJ, que auxiliarão na identificação dos movimentos processuais
+		LOGGER.trace("* nsHistoricoDeslocamentoOJ...");
+		nsHistoricoDeslocamentoOJ.setArray("numeros_processos", arrayNumerosProcessos);
+		try (ResultSet rsHistoricoDeslocamentoOJ = nsHistoricoDeslocamentoOJ.executeQuery()) {
+			while (rsHistoricoDeslocamentoOJ.next()) {
+				String nrProcesso = rsHistoricoDeslocamentoOJ.getString("nr_processo");
+				HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto(rsHistoricoDeslocamentoOJ);
+				cacheProcessosDtos.get(nrProcesso).processoDto.getHistoricosDeslocamentoOJ().add(historico);
 			}
 		}
 
@@ -955,8 +968,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(ProcessoDto processo, TipoOrgaoJulgador orgaoJulgadorProcesso) throws SQLException, DadosInvalidosException {
 
 		List<TipoMovimentoProcessual> movimentos = new ArrayList<>();
-		List<HistoricoDeslocamentoOJDto> historicoDeslocamentoOJ = null;
-
 		
 		for (MovimentoDto movimentoDto : processo.getMovimentos()) {
 			
@@ -1041,10 +1052,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 			// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
 			// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
-			if (historicoDeslocamentoOJ == null) {
-				historicoDeslocamentoOJ = baixarDadosHistoricoDeslocamentoOJ(processo.getIdProcesso());
-			}
-			for (HistoricoDeslocamentoOJDto historico : historicoDeslocamentoOJ) {
+			for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
 				LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
 				LocalDateTime dataRetorno = historico.getDataRetorno();
 				if (dataDeslocamento.isAfter(dataMovimento)) {
@@ -1066,20 +1074,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		return movimentos;
 	}
 
-
-	private List<HistoricoDeslocamentoOJDto> baixarDadosHistoricoDeslocamentoOJ(int idProcesso) throws SQLException {
-		List<HistoricoDeslocamentoOJDto> deslocamentos = new ArrayList<>();
-		
-		nsHistoricoDeslocamentoOJ.setInt("id_processo", idProcesso);
-		
-		try (ResultSet rs = nsHistoricoDeslocamentoOJ.executeQuery()) {
-			while (rs.next()) {
-				deslocamentos.add(new HistoricoDeslocamentoOJDto(rs));
-			}
-		}
-		
-		return deslocamentos;
-	}
 
 	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException, InterruptedException {
 

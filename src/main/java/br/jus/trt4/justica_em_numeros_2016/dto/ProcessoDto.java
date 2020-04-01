@@ -33,6 +33,7 @@ public class ProcessoDto {
 	private List<AssuntoDto> assuntos = new ArrayList<>();
 	private List<ProcessoDto> incidentes = new ArrayList<>();
 	private List<DocumentoDto> sentencasAcordaos = new ArrayList<>();
+	private List<HistoricoDeslocamentoOJDto> historicosDeslocamentoOJ = new ArrayList<>();
 	
 	public ProcessoDto() {
 	}
@@ -125,5 +126,9 @@ public class ProcessoDto {
 	
 	public List<DocumentoDto> getSentencasAcordaos() {
 		return sentencasAcordaos;
+	}
+	
+	public List<HistoricoDeslocamentoOJDto> getHistoricosDeslocamentoOJ() {
+		return historicosDeslocamentoOJ;
 	}
 }
