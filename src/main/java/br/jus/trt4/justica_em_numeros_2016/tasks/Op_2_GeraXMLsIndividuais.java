@@ -369,6 +369,15 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 		}
 
+		// Consulta todos os movimentos dos processos
+		nsMovimentos.setArray("numeros_processos", arrayNumerosProcessos);
+		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
+			while (rsMovimentos.next()) {
+				String nrProcesso = rsMovimentos.getString("nr_processo");
+				MovimentoDto movimento = new MovimentoDto(rsMovimentos);
+				cacheProcessosDtos.get(nrProcesso).processoDto.getMovimentos().add(movimento);
+			}
+		}
 	}
 
 	/**
@@ -895,16 +904,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		List<DocumentoDto> sentencasAcordaos = null;
 		List<HistoricoDeslocamentoOJDto> historicoDeslocamentoOJ = null;
 
-		// Consulta todos os movimentos do processo
-		List<MovimentoDto> movimentosDtos = new ArrayList<>();
-		nsMovimentos.setInt("id_processo", processo.getIdProcesso());
-		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
-			while (rsMovimentos.next()) {
-				movimentosDtos.add(new MovimentoDto(rsMovimentos));
-			}
-		}
 		
-		for (MovimentoDto movimentoDto : movimentosDtos) {
+		for (MovimentoDto movimentoDto : processo.getMovimentos()) {
 			
 			// Script TRT14:
 			// raise notice '<movimento dataHora="%" nivelSigilo="%">', mov.dta_ocorrencia, mov.in_visibilidade_externa;

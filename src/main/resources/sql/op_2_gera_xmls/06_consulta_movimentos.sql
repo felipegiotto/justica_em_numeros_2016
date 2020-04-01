@@ -1,4 +1,5 @@
-SELECT 
+SELECT
+	proc.nr_processo,
     pe.id_processo_evento, 
     
     /*** movimento ***/
@@ -22,11 +23,12 @@ SELECT
 	case when (ev.ds_caminho_completo ilike 'Magistrado|Julgamento%') then true else false end as is_magistrado_julgamento,
 	pe.dt_atualizacao
 FROM tb_processo_evento pe 
+INNER JOIN tb_processo proc ON (proc.id_processo = pe.id_processo)
 INNER JOIN tb_evento ev ON (ev.id_evento = pe.id_evento AND ev.in_ativo  = 'S') 
 LEFT  JOIN tb_evento_processual ep on ev.id_evento=ep.id_evento_processual
 LEFT  JOIN tb_usuario_login ul on (ul.id_usuario = pe.id_usuario AND pe.id_usuario <> 0) -- Para identificar o usuário responsável pelo MOVIMENTO
 LEFT  JOIN tb_pessoa_magistrado pm on (pm.id = ul.id_usuario)                            -- Para identificar se o usuário responsável pelo MOVIMENTO é Servidor ou Magistrado
 WHERE 1=1
     AND pe.id_processo_evento_excludente IS NULL
-    AND pe.id_processo = :id_processo
+    AND proc.nr_processo = ANY(:numeros_processos)
 ORDER BY pe.dt_atualizacao ASC

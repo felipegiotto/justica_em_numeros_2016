@@ -3,8 +3,10 @@ package br.jus.trt4.justica_em_numeros_2016.dto;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -28,6 +30,7 @@ public class ProcessoDto {
 	private ProcessoDto processoReferencia;
 	
 	private Map<String, PoloDto> polosPorTipoParticipacao = new LinkedHashMap<>();
+	private List<MovimentoDto> movimentos = new ArrayList<>();
 	
 	public ProcessoDto() {
 	}
@@ -104,5 +107,9 @@ public class ProcessoDto {
 	
 	public Map<String, PoloDto> getPolosPorTipoParticipacao() {
 		return polosPorTipoParticipacao;
+	}
+	
+	public List<MovimentoDto> getMovimentos() {
+		return movimentos;
 	}
 }
