@@ -1,4 +1,5 @@
 select 
+  proc.nr_processo, pp.in_participacao,
   pp.id_pessoa,
   
   /*** pessoa ***/
@@ -16,6 +17,7 @@ select
   
   pf.dt_nascimento, pf.dt_obito, pf.nm_genitora, pf.nm_genitor
 from tb_processo_parte pp
+inner join tb_processo proc on (pp.id_processo_trf = proc.id_processo)
 inner join tb_usuario_login ul on (pp.id_pessoa = ul.id_usuario) 
 left join tb_pessoa pes on (pp.id_pessoa = pes.id_pessoa) 
 left join tb_pessoa_fisica pf on (pf.id_pessoa_fisica = pes.id_pessoa)
@@ -25,5 +27,6 @@ LEFT JOIN tb_tipo_parte tprep ON (tprep.id_tipo_parte = ppr.id_tipo_representant
 
 WHERE 1=1
   and pp.in_situacao='A'
-  and pp.in_participacao = :in_participacao
-  and pp.id_processo_trf = :id_processo
+  and proc.nr_processo = ANY(:numeros_processos)
+  
+ORDER BY pp.in_participacao;

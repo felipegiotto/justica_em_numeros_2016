@@ -159,7 +159,7 @@ public class Op_3_UnificaArquivosXML {
 		
 		// Pesquisando todos os arquivos que serão unificados
 		LOGGER.info("Pesquisando todos os arquivos que serão unificados no " + grau + "o Grau...");
-		int tamanhoLote = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_processos);
+		int tamanhoLote = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_envio_processos);
 		LOGGER.info("Serão gerados lotes de até " + tamanhoLote + " Bytes");
 		
 		// Objetos responsáveis por ler e gravar os arquivos XML

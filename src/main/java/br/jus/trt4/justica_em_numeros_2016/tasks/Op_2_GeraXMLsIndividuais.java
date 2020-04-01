@@ -9,9 +9,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBContext;
@@ -80,7 +82,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private int grau;
 	private Connection conexaoBasePrincipal;
 	private NamedParameterStatement nsConsultaProcessos;
-	private NamedParameterStatement nsPolos;
 	private NamedParameterStatement nsPartes;
 	private NamedParameterStatement nsEnderecos;
 	private NamedParameterStatement nsAssuntos;
@@ -102,9 +103,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	// resultando em menos consultas ao banco de dados.
 	private final Map<String, CacheDadosProcesso> cacheProcessosDtos = new HashMap<>();
 
+	// TODO: Se, ao terminar a refatoração, só houver "processoDto" dentro dessa classe, remover a classe e usar diretamente o ProcessoDto.
 	private class CacheDadosProcesso {
 		ProcessoDto processoDto;
-		List<PoloDto> polos = new ArrayList<>();
 	}
 	
 	private class OperacaoGeracaoXML {
@@ -239,75 +240,84 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 		}
 
+		// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
+		final int tamanhoLote = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos, 1);
+		final AtomicInteger counter = new AtomicInteger();
+		final Collection<List<OperacaoGeracaoXML>> lotesOperacoes = operacoes.stream()
+		    .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote))
+		    .values();
+		
+		
 		int i=0;
-		
-		List<String> processosPendentes = operacoes.stream().map(o -> o.numeroProcesso).collect(Collectors.toList());
-		prepararCacheDadosProcessos(processosPendentes);
-		
-		for (OperacaoGeracaoXML operacao : operacoes) {
-			
-			// Cálculo do tempo restante
-			long antes = System.currentTimeMillis();
-			i++;
-			
-			// Calcula e mostra tempo restante
-			int xmlsRestantes = operacoes.size() - i;
-			long tempoRestante = 0;
-			long mediaPorProcesso = 0;
-			if (qtdXMLGerados > 0) {
-				mediaPorProcesso = tempoGasto / qtdXMLGerados;
-				tempoRestante = xmlsRestantes * mediaPorProcesso;
-			}
-			String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
-			LOGGER.debug("Gravando Processo " + operacao.numeroProcesso + " (" + i + "/" + operacoes.size() + " - " + i * 100 / operacoes.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + operacao.arquivoXML + "...");
-			if (tempoRestanteStr != null) {
-				progresso.setInformacoes("G" + grau + " - " + tempoRestanteStr);
-			}
-
-			// Executa a consulta desse processo no banco de dados do PJe
-			TipoProcessoJudicial processoJudicial = null;
-			try {
-				processoJudicial = analisarProcessoJudicialCompleto(operacao.numeroProcesso);
-			} catch (Exception ex) {
-				LOGGER.warn("Erro gerando XML do processo " + operacao.numeroProcesso + " (" + grau + "): " + ex.getLocalizedMessage(), ex);
-			}
-
-			if (processoJudicial != null) {
-
-				// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
-				// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
-				// processo serão unificados, junto com os XMLs dos outros sistemas legados.
-				Processos processos = factory.createProcessos();
-				processos.getProcesso().add(processoJudicial);
-
-				// Gera o arquivo XML temporário
-				operacao.arquivoXML.getParentFile().mkdirs();
-				jaxbMarshaller.marshal(processos, operacao.arquivoXMLTemporario);
-
-				// Copia o XML temporário sobre o definitivo e exclui o temporário
-				FileUtils.copyFile(operacao.arquivoXMLTemporario, operacao.arquivoXML);
-				operacao.arquivoXMLTemporario.delete();
-
-				LOGGER.debug("Processo gravado com sucesso no arquivo " + operacao.arquivoXML);
-
+		for (List<OperacaoGeracaoXML> lote : lotesOperacoes) {
+			List<String> processosPendentes = lote.stream().map(o -> o.numeroProcesso).collect(Collectors.toList());
+			prepararCacheDadosProcessos(processosPendentes);
+			for (OperacaoGeracaoXML operacao : operacoes) {
+				
 				// Cálculo do tempo restante
-				tempoGasto += System.currentTimeMillis() - antes;
-				qtdXMLGerados++;
-
-			} else {
-				LOGGER.warn("O XML do processo " + operacao.numeroProcesso + " não foi gerado na base " + grau + "G!");
+				long antes = System.currentTimeMillis();
+				i++;
+				
+				// Calcula e mostra tempo restante
+				int xmlsRestantes = operacoes.size() - i;
+				long tempoRestante = 0;
+				long mediaPorProcesso = 0;
+				if (qtdXMLGerados > 0) {
+					mediaPorProcesso = tempoGasto / qtdXMLGerados;
+					tempoRestante = xmlsRestantes * mediaPorProcesso;
+				}
+				String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
+				LOGGER.debug("Gravando Processo " + operacao.numeroProcesso + " (" + i + "/" + operacoes.size() + " - " + i * 100 / operacoes.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + operacao.arquivoXML + "...");
+				if (tempoRestanteStr != null) {
+					progresso.setInformacoes("G" + grau + " - " + tempoRestanteStr);
+				}
+	
+				// Executa a consulta desse processo no banco de dados do PJe
+				TipoProcessoJudicial processoJudicial = null;
+				try {
+					processoJudicial = analisarProcessoJudicialCompleto(operacao.numeroProcesso);
+				} catch (Exception ex) {
+					LOGGER.warn("Erro gerando XML do processo " + operacao.numeroProcesso + " (" + grau + "): " + ex.getLocalizedMessage(), ex);
+				}
+	
+				if (processoJudicial != null) {
+	
+					// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
+					// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
+					// processo serão unificados, junto com os XMLs dos outros sistemas legados.
+					Processos processos = factory.createProcessos();
+					processos.getProcesso().add(processoJudicial);
+	
+					// Gera o arquivo XML temporário
+					operacao.arquivoXML.getParentFile().mkdirs();
+					jaxbMarshaller.marshal(processos, operacao.arquivoXMLTemporario);
+	
+					// Copia o XML temporário sobre o definitivo e exclui o temporário
+					FileUtils.copyFile(operacao.arquivoXMLTemporario, operacao.arquivoXML);
+					operacao.arquivoXMLTemporario.delete();
+	
+					LOGGER.debug("Processo gravado com sucesso no arquivo " + operacao.arquivoXML);
+	
+					// Cálculo do tempo restante
+					tempoGasto += System.currentTimeMillis() - antes;
+					qtdXMLGerados++;
+	
+				} else {
+					LOGGER.warn("O XML do processo " + operacao.numeroProcesso + " não foi gerado na base " + grau + "G!");
+				}
+				
+				progresso.incrementProgress();
 			}
-			
-			progresso.incrementProgress();
 		}
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerados!");
 	}
 
 
 	public void prepararCacheDadosProcessos(List<String> numerosProcessos) throws SQLException {
-		this.cacheProcessosDtos.clear();
-
+		
+		LOGGER.info("Baixando cache de dados para " + numerosProcessos.size() + " processo(s)...");
 		Array arrayNumerosProcessos = conexaoBasePrincipal.createArrayOf("varchar", numerosProcessos.toArray());
+		this.cacheProcessosDtos.clear();
 		
 		// Carrega dados principais dos processos
 		nsConsultaProcessos.setArray("numeros_processos", arrayNumerosProcessos);
@@ -320,13 +330,26 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 		}
 		
-		// Consulta todos os polos dos processos
-		nsPolos.setArray("numeros_processos", arrayNumerosProcessos);
-		try (ResultSet rsPolos = nsPolos.executeQuery()) {
-			while (rsPolos.next()) {
-				String nrProcesso = rsPolos.getString("nr_processo");
-				PoloDto polo = new PoloDto(rsPolos);
-				cacheProcessosDtos.get(nrProcesso).polos.add(polo);
+		// Consulta as partes de um determinado polo no processo
+		nsPartes.setArray("numeros_processos", arrayNumerosProcessos);
+		try (ResultSet rsPartes = nsPartes.executeQuery()) {
+			while (rsPartes.next()) {
+				String nrProcesso = rsPartes.getString("nr_processo");
+				String inParticipacao = rsPartes.getString("in_participacao");
+				ProcessoDto processoDto = cacheProcessosDtos.get(nrProcesso).processoDto;
+				
+				// Busca o polo processual dentro do processo
+				PoloDto polo;
+				if (processoDto.getPolosPorTipoParticipacao().containsKey(inParticipacao)) {
+					polo = processoDto.getPolosPorTipoParticipacao().get(inParticipacao);
+				} else {
+					polo = new PoloDto();
+					polo.setInParticipacao(inParticipacao);
+					processoDto.getPolosPorTipoParticipacao().put(inParticipacao, polo);
+				}
+				
+				// Cadastra a parte dentro do polo
+				polo.getPartes().add(new ParteProcessualDto(rsPartes));
 			}
 		}
 
@@ -489,7 +512,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
 
 		// Itera sobre os polos processuais
-		List<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).polos;
+		Collection<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).processoDto.getPolosPorTipoParticipacao().values();
 		List<TipoPoloProcessual> polos = new ArrayList<>();
 		for (PoloDto poloDto : polosDtos) {
 			// Script TRT14:
@@ -507,16 +530,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 			polos.add(polo);
 
-			// Consulta as partes de um determinado polo no processo
-			List<ParteProcessualDto> partes = new ArrayList<>();
-			nsPartes.setInt("id_processo", idProcesso);
-			nsPartes.setString("in_participacao", tipoPoloPJe);
-			try (ResultSet rsPartes = nsPartes.executeQuery()) {
-				while (rsPartes.next()) {
-					partes.add(new ParteProcessualDto(rsPartes));
-				}
-			}
-			
 			// O PJe considera, como partes, tanto os autores e réus quanto seus advogados,
 			// procuradores, tutores, curadores, assistentes, etc.
 			// Por isso, a identificação das partes será feita em etapas:
@@ -531,7 +544,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			HashMap<Integer, TipoParte> partesPorIdParte = new HashMap<>(); // id_processo_parte -> TipoParte
 			HashMap<Integer, List<Integer>> partesERepresentantes = new HashMap<>(); // id_processo_parte -> lista dos id_processo_parte dos seus representantes
 			HashMap<Integer, ModalidadeRepresentanteProcessual> tiposRepresentantes = new HashMap<>(); // id_processo_parte -> Modalidade do representante (advogado, procurador, etc).
-			for (ParteProcessualDto parteProcessual : partes) {
+			for (ParteProcessualDto parteProcessual : poloDto.getPartes()) {
 
 				String nomeParte = parteProcessual.getNomeParte();
 
@@ -1065,10 +1078,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/01_consulta_processo.sql");
 		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 
-		// SQL que fará a consulta de todos os polos
-		String sqlConsultaPolos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/02_consulta_polos.sql");
-		nsPolos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPolos);		
-
 		// SQL que fará a consulta das partes
 		String sqlConsultaPartes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/03_consulta_partes.sql");
 		nsPartes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPartes);
@@ -1126,8 +1135,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		// Fecha PreparedStatements
 		Auxiliar.fechar(nsConsultaProcessos);
 		nsConsultaProcessos = null;
-		Auxiliar.fechar(nsPolos);
-		nsPolos = null;
 		Auxiliar.fechar(nsPartes);
 		nsPartes = null;
 		Auxiliar.fechar(nsEnderecos);

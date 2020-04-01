@@ -523,7 +523,7 @@ public class Auxiliar {
 	
 	private static boolean mostrouWarningLoteProcessos = false;
 	public static boolean deveMontarLotesDeProcessos() {
-		if (Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_processos) == 0) {
+		if (Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_envio_processos) == 0) {
 			if (!mostrouWarningLoteProcessos) {
 				LOGGER.info("A tarefa de unificação não será executada, pois o parâmetro 'tamanho_lote_processos' especifica o envio individual de processos");
 				mostrouWarningLoteProcessos = true;
