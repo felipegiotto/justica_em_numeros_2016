@@ -32,6 +32,7 @@ public class ProcessoDto {
 	private List<MovimentoDto> movimentos = new ArrayList<>();
 	private List<AssuntoDto> assuntos = new ArrayList<>();
 	private List<ProcessoDto> incidentes = new ArrayList<>();
+	private List<DocumentoDto> sentencasAcordaos = new ArrayList<>();
 	
 	public ProcessoDto() {
 	}
@@ -120,5 +121,9 @@ public class ProcessoDto {
 	
 	public List<ProcessoDto> getIncidentes() {
 		return incidentes;
+	}
+	
+	public List<DocumentoDto> getSentencasAcordaos() {
+		return sentencasAcordaos;
 	}
 }

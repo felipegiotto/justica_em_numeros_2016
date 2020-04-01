@@ -439,6 +439,17 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				cacheProcessosDtos.get(nrProcesso).processoDto.getIncidentes().add(incidente);
 			}
 		}
+		
+		// Baixa dados de sentenças e acórdãos dos processos, que auxiliarão na identificação do magistrado responsável
+		nsSentencasAcordaos.setArray("numeros_processos", arrayNumerosProcessos);
+		try (ResultSet rsSentencasAcordaos = nsSentencasAcordaos.executeQuery()) {
+			while (rsSentencasAcordaos.next()) {
+				String nrProcesso = rsSentencasAcordaos.getString("nr_processo");
+				DocumentoDto documentoDto = new DocumentoDto(rsSentencasAcordaos);
+				cacheProcessosDtos.get(nrProcesso).processoDto.getSentencasAcordaos().add(documentoDto);
+			}
+		}
+
 	}
 
 	/**
@@ -944,7 +955,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(ProcessoDto processo, TipoOrgaoJulgador orgaoJulgadorProcesso) throws SQLException, DadosInvalidosException {
 
 		List<TipoMovimentoProcessual> movimentos = new ArrayList<>();
-		List<DocumentoDto> sentencasAcordaos = null;
 		List<HistoricoDeslocamentoOJDto> historicoDeslocamentoOJ = null;
 
 		
@@ -1012,13 +1022,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Se for um movimento de JULGAMENTO de um MAGISTRADO, precisa identificar o CPF do prolator
 			if (movimentoDto.isMovimentoMagistradoJulgamento()) {
 				
-				// Busca a lista de sentenças e acórdãos do processo, somente uma vez para esse processo,
-				// para tentar encontrar qual o magistrado responsável pelo movimento de julgamento
-				if (sentencasAcordaos == null) {
-					sentencasAcordaos = baixarDadosSentencasAcordaos(processo.getIdProcesso());
-				}
-				
-				DocumentoDto documentoRelacionado = sentencasAcordaos.stream()
+				// Analisa a lista de sentenças e acórdãos do processo, para tentar encontrar qual o 
+				// magistrado responsável pelo movimento de julgamento
+				DocumentoDto documentoRelacionado = processo.getSentencasAcordaos().stream()
 						
 					// Procura uma sentença ou acórdão ANTERIOR ao movimento para saber qual o magistrado prolator.
 					.filter(d -> d.getDataJuntada().isBefore(dataMovimento))
@@ -1073,27 +1079,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 		
 		return deslocamentos;
-	}
-
-	/**
-	 * Identifica dados de sentenças e acórdãos do processo
-	 * 
-	 * @param idProcesso
-	 * @return
-	 * @throws SQLException 
-	 */
-	private List<DocumentoDto> baixarDadosSentencasAcordaos(int idProcesso) throws SQLException {
-		
-		List<DocumentoDto> documentos = new ArrayList<>();
-		nsSentencasAcordaos.setInt("id_processo", idProcesso);
-		
-		try (ResultSet rs = nsSentencasAcordaos.executeQuery()) {
-			while (rs.next()) {
-				documentos.add(new DocumentoDto(rs));
-			}
-		}
-		
-		return documentos;
 	}
 
 	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException, InterruptedException {
