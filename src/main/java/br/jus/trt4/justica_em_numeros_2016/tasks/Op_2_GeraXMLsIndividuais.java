@@ -55,6 +55,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.dto.AssuntoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoPessoaDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.EnderecoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.HistoricoDeslocamentoOJDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
@@ -83,6 +84,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private Connection conexaoBasePrincipal;
 	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPartes;
+	private NamedParameterStatement nsDocumentos;
 	private NamedParameterStatement nsEnderecos;
 	private NamedParameterStatement nsAssuntos;
 	private NamedParameterStatement nsMovimentos;
@@ -320,6 +322,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		this.cacheProcessosDtos.clear();
 		
 		// Carrega dados principais dos processos
+		LOGGER.trace("* nsConsultaProcessos...");
 		nsConsultaProcessos.setArray("numeros_processos", arrayNumerosProcessos);
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
 			while (rsProcessos.next()) {
@@ -331,8 +334,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 		
 		// Consulta as partes de um determinado polo no processo
+		LOGGER.trace("* nsPartes...");
 		nsPartes.setArray("numeros_processos", arrayNumerosProcessos);
 		Map<Integer, ParteProcessualDto> partesPorIdProcessoParte = new HashMap<>();
+		Map<Integer, List<ParteProcessualDto>> partesPorIdPessoa = new HashMap<>();
 		try (ResultSet rsPartes = nsPartes.executeQuery()) {
 			while (rsPartes.next()) {
 				String nrProcesso = rsPartes.getString("nr_processo");
@@ -352,11 +357,18 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				// Cadastra a parte dentro do polo
 				ParteProcessualDto parte = new ParteProcessualDto(rsPartes);
 				polo.getPartes().add(parte);
+				
+				// Variáveis auxiliares para carregar endereços e documentos das pessoas
 				partesPorIdProcessoParte.put(parte.getIdProcessoParte(), parte);
+				if (!partesPorIdPessoa.containsKey(parte.getIdPessoa())) {
+					partesPorIdPessoa.put(parte.getIdPessoa(), new ArrayList<>());
+				}
+				partesPorIdPessoa.get(parte.getIdPessoa()).add(parte);
 			}
 		}
 
 		// Consulta os endereços das partes
+		LOGGER.trace("* nsEnderecos...");
 		Array arrayIdProcessoParte = conexaoBasePrincipal.createArrayOf("int", partesPorIdProcessoParte.keySet().toArray());
 		nsEnderecos.setArray("id_processo_parte", arrayIdProcessoParte);
 		try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
@@ -368,6 +380,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 
 		// Consulta todos os movimentos dos processos
+		LOGGER.trace("* nsMovimentos...");
 		Map<Integer, MovimentoDto> movimentosPorIdProcessoEvento = new HashMap<>();
 		nsMovimentos.setArray("numeros_processos", arrayNumerosProcessos);
 		try (ResultSet rsMovimentos = nsMovimentos.executeQuery()) {
@@ -381,6 +394,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 		// Consulta os complementos desses movimentos processuais.
 		// OBS: os complementos só existem no MovimentoNacional
+		LOGGER.trace("* nsComplementos...");
 		Array arrayIdProcessoEvento = conexaoBasePrincipal.createArrayOf("int", movimentosPorIdProcessoEvento.keySet().toArray());
 		nsComplementos.setArray("id_movimento_processo", arrayIdProcessoEvento);
 		try (ResultSet rsComplementos = nsComplementos.executeQuery()) {
@@ -390,7 +404,20 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				movimentosPorIdProcessoEvento.get(idMovimentoProcesso).getComplementos().add(complemento);
 			}
 		}
-
+ 
+		// Consulta todos os documentos das pessoas, no banco de dados do PJe
+		LOGGER.trace("* nsDocumentos...");
+		Array arrayIdPessoa = conexaoBasePrincipal.createArrayOf("int", partesPorIdPessoa.keySet().toArray());
+		nsDocumentos.setArray("ids_pessoas", arrayIdPessoa);
+		try (ResultSet rsDocumentos = nsDocumentos.executeQuery()) {
+			while (rsDocumentos.next()) {
+				int idPessoa = rsDocumentos.getInt("id_pessoa");
+				for (ParteProcessualDto parte : partesPorIdPessoa.get(idPessoa)) {
+					DocumentoPessoaDto documentoDto = new DocumentoPessoaDto(rsDocumentos);
+					parte.getDocumentos().add(documentoDto);
+				}
+			}
+		}
 	}
 
 	/**
@@ -660,7 +687,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				}
 
 				// Consulta os documentos da parte
-				identificaDocumentosPessoa.preencherDocumentosPessoa(pessoa, parteProcessual.getIdPessoa());
+				identificaDocumentosPessoa.preencherDocumentosPessoa(pessoa, parteProcessual.getDocumentos());
 
 				// Identifica o gênero (sexo) da pessoa (pode ser necessário consultar na outra instância)
 				identificaGeneroPessoa.preencherSexoPessoa(pessoa, parteProcessual.getSexoPessoa(), parteProcessual.getNomeConsultaParte());
@@ -1096,6 +1123,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsPartes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPartes);
 
 		// SQL que fará a consulta dos endereços da parte
+		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_documentos_pessoa.sql");
+		nsDocumentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaDocumentos);
+		
+		// SQL que fará a consulta dos endereços da parte
 		String sqlConsultaEnderecos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_enderecos_pessoa.sql");
 		nsEnderecos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaEnderecos);
 
@@ -1150,6 +1181,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsConsultaProcessos = null;
 		Auxiliar.fechar(nsPartes);
 		nsPartes = null;
+		Auxiliar.fechar(nsDocumentos);
+		nsDocumentos = null;
 		Auxiliar.fechar(nsEnderecos);
 		nsEnderecos = null;
 		Auxiliar.fechar(nsAssuntos);

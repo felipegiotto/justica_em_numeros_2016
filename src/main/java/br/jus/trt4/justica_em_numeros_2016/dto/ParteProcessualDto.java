@@ -30,6 +30,7 @@ public class ParteProcessualDto {
 	private String nomeGenitora;
 	
 	private List<EnderecoDto> enderecos = new ArrayList<>();
+	private List<DocumentoPessoaDto> documentos = new ArrayList<>();
 	
 	public ParteProcessualDto(ResultSet rsPartes) throws SQLException {
 		this.nomeParte = rsPartes.getString("ds_nome");
@@ -103,5 +104,9 @@ public class ParteProcessualDto {
 	
 	public List<EnderecoDto> getEnderecos() {
 		return enderecos;
+	}
+	
+	public List<DocumentoPessoaDto> getDocumentos() {
+		return documentos;
 	}
 }

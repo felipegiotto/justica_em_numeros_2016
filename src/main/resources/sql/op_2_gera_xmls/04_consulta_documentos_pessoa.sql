@@ -1,4 +1,6 @@
-select 
+select
+  pdi.id_pessoa,
+  
   /*** documento ***/
   /* codigoDocumento */
   pdi.nr_documento_identificacao nr_documento,
@@ -10,5 +12,5 @@ select
   pdi.ds_nome_pessoa,
   pdi.in_principal
 from tb_pess_doc_identificacao pdi
-where pdi.id_pessoa = :id_pessoa
+where pdi.id_pessoa = ANY(:ids_pessoas)
   AND pdi.in_ativo = 'S'
