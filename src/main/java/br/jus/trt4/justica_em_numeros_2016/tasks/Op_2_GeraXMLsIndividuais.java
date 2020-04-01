@@ -379,6 +379,17 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 		}
 
+		// Consulta todos os assuntos do processo
+		LOGGER.trace("* nsAssuntos...");
+		nsAssuntos.setArray("numeros_processos", arrayNumerosProcessos);
+		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
+			while (rsAssuntos.next()) {
+				String nrProcesso = rsAssuntos.getString("nr_processo");
+				AssuntoDto assunto = new AssuntoDto(rsAssuntos);
+				cacheProcessosDtos.get(nrProcesso).processoDto.getAssuntos().add(assunto);
+			}
+		}
+
 		// Consulta todos os movimentos dos processos
 		LOGGER.trace("* nsMovimentos...");
 		Map<Integer, MovimentoDto> movimentosPorIdProcessoEvento = new HashMap<>();
@@ -505,7 +516,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(processo.getIdProcesso(), numeroCompletoProcesso));
 
 		// Consulta todos os assuntos desse processo
-		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(numeroCompletoProcesso));
+		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(processo));
 
 		// Preenche dados do órgão julgador do processo
 		cabecalhoProcesso.setOrgaoJulgador(analisarOrgaoJulgadorProcesso(processo));
@@ -813,22 +824,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	}
 
 
-	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(String nrProcesso) throws SQLException, DadosInvalidosException {
+	private List<TipoAssuntoProcessual> analisarAssuntosProcesso(ProcessoDto processo) throws SQLException, DadosInvalidosException {
 
 		List<TipoAssuntoProcessual> assuntos = new ArrayList<>();
 
-		// Consulta todos os assuntos do processo
-		List<AssuntoDto> assuntosDto = new ArrayList<>();
-		nsAssuntos.setString("nr_processo", nrProcesso);
-		try (ResultSet rsAssuntos = nsAssuntos.executeQuery()) {
-			while (rsAssuntos.next()) {
-				assuntosDto.add(new AssuntoDto(rsAssuntos));
-			}
-		}
-
 		boolean encontrouAlgumAssunto = false;
 		boolean encontrouAssuntoPrincipal = false;
-		for (AssuntoDto assuntoDto : assuntosDto) {
+		for (AssuntoDto assuntoDto : processo.getAssuntos()) {
 
 			// Script TRT14:
 			// raise notice '<assunto>'; -- principal="%">', assunto.in_assunto_principal;
@@ -846,7 +848,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			assunto.setPrincipal(assuntoPrincipal);
 			if (assuntoPrincipal) {
 				if (encontrouAssuntoPrincipal) {
-					LOGGER.warn("Processo possui mais de um assunto principal: " + nrProcesso);
+					LOGGER.warn("Processo possui mais de um assunto principal: " + processo.getNumeroProcesso());
 				} else {
 					encontrouAssuntoPrincipal = true;
 				}
@@ -870,11 +872,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				assuntos.add(assuntoPadrao);
 
 			} else {
-				throw new DadosInvalidosException("Processo sem assunto cadastrado", nrProcesso);
+				throw new DadosInvalidosException("Processo sem assunto cadastrado", processo.getNumeroProcesso());
 			}
 
 		} else if (!encontrouAssuntoPrincipal) {
-			LOGGER.info("Processo sem assunto principal: " + nrProcesso + ". O primeiro assunto será marcado como principal.");
+			LOGGER.info("Processo sem assunto principal: " + processo.getNumeroProcesso() + ". O primeiro assunto será marcado como principal.");
 			assuntos.get(0).setPrincipal(true);
 		}
 		return assuntos;

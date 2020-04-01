@@ -30,6 +30,7 @@ public class ProcessoDto {
 	
 	private Map<String, PoloDto> polosPorTipoParticipacao = new LinkedHashMap<>();
 	private List<MovimentoDto> movimentos = new ArrayList<>();
+	private List<AssuntoDto> assuntos = new ArrayList<>();
 	
 	public ProcessoDto() {
 	}
@@ -110,5 +111,9 @@ public class ProcessoDto {
 	
 	public List<MovimentoDto> getMovimentos() {
 		return movimentos;
+	}
+	
+	public List<AssuntoDto> getAssuntos() {
+		return assuntos;
 	}
 }
