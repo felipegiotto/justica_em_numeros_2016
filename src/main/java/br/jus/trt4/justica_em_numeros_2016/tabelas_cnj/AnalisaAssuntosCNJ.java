@@ -158,7 +158,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			// Pesquisa recursivamente os "pais" desse assunto, até encontrar um que exista nas
 			// tabelas nacionais do CNJ.
 			psConsultaAssuntoPorCodigo.setString(1, Integer.toString(codigoAssunto));
-			try (ResultSet rs = psConsultaAssuntoPorCodigo.executeQuery()) {
+			try (ResultSet rs = psConsultaAssuntoPorCodigo.executeQuery()) { // TODO: Otimizar acessos repetidos
 				if (rs.next()) {
 					String descricaoAssuntoLocal = Auxiliar.getCampoStringNotNull(rs, "ds_assunto_trf");
 					
@@ -181,7 +181,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 					// Itera, recursivamente, localizando assuntos "pai" na tabela
 					while (idProximoAssunto > 0 && tentativasRecursivas < 50) {
 						psConsultaAssuntoPorID.setInt(1, idProximoAssunto);
-						try (ResultSet rsAssunto = psConsultaAssuntoPorID.executeQuery()) {
+						try (ResultSet rsAssunto = psConsultaAssuntoPorID.executeQuery()) { // TODO: Otimizar acessos repetidos
 							
 							// Verifica se chegou no fim da árvore
 							if (!rsAssunto.next()) {

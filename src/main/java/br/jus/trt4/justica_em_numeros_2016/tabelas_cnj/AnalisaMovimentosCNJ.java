@@ -97,7 +97,7 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 		while (tentativas < 50) {
 			
 			psConsultaEventoPorID.setInt(1, idEvento);
-			try (ResultSet rsMovimento = psConsultaEventoPorID.executeQuery()) {
+			try (ResultSet rsMovimento = psConsultaEventoPorID.executeQuery()) { // TODO: Otimizar acessos repetidos
 				if (rsMovimento.next()) {
 					int codigo = rsMovimento.getInt("id_evento");
 					if (movimentoExisteNasTabelasNacionais(codigo)) {

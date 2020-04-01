@@ -77,7 +77,7 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 				// Gênero não está em cache, faz pesquisa na outra instância
 				nsConsultaGeneroOutraInstancia.setString("nome_consulta", nomeConsulta);
 				nsConsultaGeneroOutraInstancia.setString("documento", documentoPrincipal);
-				try (ResultSet rs = nsConsultaGeneroOutraInstancia.executeQuery()) {
+				try (ResultSet rs = nsConsultaGeneroOutraInstancia.executeQuery()) { // TODO: Otimizar acessos repetidos
 					if (rs.next()) {
 						ModalidadeGeneroPessoa sexo = ModalidadeGeneroPessoa.valueOf(rs.getString("in_sexo"));
 						cacheGenerosOutraInstancia.put(chaveCache, sexo);
