@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -252,7 +253,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		for (List<OperacaoGeracaoXML> lote : lotesOperacoes) {
 			List<String> processosPendentes = lote.stream().map(o -> o.numeroProcesso).collect(Collectors.toList());
 			prepararCacheDadosProcessos(processosPendentes);
-			for (OperacaoGeracaoXML operacao : operacoes) {
+			for (OperacaoGeracaoXML operacao : lote) {
 				
 				// Cálculo do tempo restante
 				long antes = System.currentTimeMillis();
@@ -332,6 +333,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 		// Consulta as partes de um determinado polo no processo
 		nsPartes.setArray("numeros_processos", arrayNumerosProcessos);
+		Map<Integer, ParteProcessualDto> partesPorIdProcessoParte = new HashMap<>();
 		try (ResultSet rsPartes = nsPartes.executeQuery()) {
 			while (rsPartes.next()) {
 				String nrProcesso = rsPartes.getString("nr_processo");
@@ -349,7 +351,21 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				}
 				
 				// Cadastra a parte dentro do polo
-				polo.getPartes().add(new ParteProcessualDto(rsPartes));
+				ParteProcessualDto parte = new ParteProcessualDto(rsPartes);
+				polo.getPartes().add(parte);
+				partesPorIdProcessoParte.put(parte.getIdProcessoParte(), parte);
+			}
+		}
+
+		// Consulta os endereços das partes
+		Set<Integer> idProcessosPartes = partesPorIdProcessoParte.keySet();
+		Array arrayIdProcessoParte = conexaoBasePrincipal.createArrayOf("int", idProcessosPartes.toArray());
+		nsEnderecos.setArray("id_processo_parte", arrayIdProcessoParte);
+		try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
+			while (rsEnderecos.next()) {
+				int idProcessoParte = rsEnderecos.getInt("id_processo_parte");
+				EnderecoDto endereco = new EnderecoDto(rsEnderecos);
+				partesPorIdProcessoParte.get(idProcessoParte).getEnderecos().add(endereco);
 			}
 		}
 
@@ -628,15 +644,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				identificaGeneroPessoa.preencherSexoPessoa(pessoa, parteProcessual.getSexoPessoa(), parteProcessual.getNomeConsultaParte());
 
 				// Identifica os endereços da parte
-				List<EnderecoDto> enderecos = new ArrayList<>();
-				nsEnderecos.setInt("id_processo_parte", parteProcessual.getIdProcessoParte());
-				try (ResultSet rsEnderecos = nsEnderecos.executeQuery()) {
-					while (rsEnderecos.next()) {
-						enderecos.add(new EnderecoDto(rsEnderecos));
-					}
-				}
-				
-				for (EnderecoDto enderecoDto : enderecos) {
+				for (EnderecoDto enderecoDto : parteProcessual.getEnderecos()) {
 					
 					// intercomunicacao-2.2.2: Atributo indicador do código de endereçamento 
 					// postal do endereço no diretório nacional de endereços da ECT. O 

@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -26,7 +27,7 @@ public class ProcessoDto {
 	private OrgaoJulgadorDto orgaoJulgador;
 	private ProcessoDto processoReferencia;
 	
-	private Map<String, PoloDto> polosPorTipoParticipacao = new HashMap<>();
+	private Map<String, PoloDto> polosPorTipoParticipacao = new LinkedHashMap<>();
 	
 	public ProcessoDto() {
 	}

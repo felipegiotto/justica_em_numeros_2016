@@ -4,6 +4,8 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 
@@ -26,6 +28,8 @@ public class ParteProcessualDto {
 	private LocalDate dataObito;
 	private String nomeGenitor;
 	private String nomeGenitora;
+	
+	private List<EnderecoDto> enderecos = new ArrayList<>();
 	
 	public ParteProcessualDto(ResultSet rsPartes) throws SQLException {
 		this.nomeParte = rsPartes.getString("ds_nome");
@@ -95,5 +99,9 @@ public class ParteProcessualDto {
 	
 	public String getNomeGenitora() {
 		return nomeGenitora;
+	}
+	
+	public List<EnderecoDto> getEnderecos() {
+		return enderecos;
 	}
 }
