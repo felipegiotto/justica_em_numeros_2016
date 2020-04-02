@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
@@ -161,8 +162,11 @@ public class AnalisaServentiasCNJ {
 						"INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf) " +
 						"INNER JOIN tb_orgao_julgador oj USING (id_orgao_julgador) " +
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
+				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de serventias");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sql.toString())) {
 					analisarExistenciaServentias(rs);
+				} finally {
+					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 				}
 				
 				// Monta SQL para consultar os nomes de todos os outros OJs que o processo já passou, com base na tabela "tb_hist_desloca_oj".
@@ -178,8 +182,11 @@ public class AnalisaServentiasCNJ {
 						"INNER JOIN tb_processo proc ON (proc.id_processo = hdo.id_processo_trf) " + 
 						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_destino) " + 
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
+				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de historicos de deslocamento");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sqlHistorico.toString())) {
 					analisarExistenciaServentias(rs);
+				} finally {
+					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 				}
 				
 			}

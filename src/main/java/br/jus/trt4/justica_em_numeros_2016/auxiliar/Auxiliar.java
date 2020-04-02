@@ -95,12 +95,15 @@ public class Auxiliar {
 	 * @throws SQLException
 	 */
 	private static Connection getConexaoDasConfiguracoes(Parametro parametro) throws SQLException {
+		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Abrindo conexão com banco de dados");
 		try {
 			Class.forName("org.postgresql.Driver");
+			return DriverManager.getConnection(getParametroConfiguracao(parametro, true));
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
+		} finally {
+			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
-		return DriverManager.getConnection(getParametroConfiguracao(parametro, true));
 	}
 
 	/**
@@ -551,12 +554,15 @@ public class Auxiliar {
 	 * Lê na entrada padrão um comando do usuário e retorna em uma String
 	 */
 	public static String readStdin() {
+		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Aguardando resposta do usuario");
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 		try {
 			String valorDigitado = in.readLine();
 			return valorDigitado;
 		} catch (IOException ex) {
 			throw new RuntimeException(ex);
+		} finally {
+			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
 	}
 	
@@ -597,12 +603,15 @@ public class Auxiliar {
 	}
 	
 	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws DadosInvalidosException {
+		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Carregando lista de processos do arquivo");
 		try {
 			List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
 			LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
 			return listaProcessos;
 		} catch (IOException ex) {
 			throw new DadosInvalidosException("Lista de processos não foi encontrada! Execute operação '1'", arquivoEntrada.toString());
+		} finally {
+			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
 	}
 
@@ -618,7 +627,9 @@ public class Auxiliar {
 		// Aguarda um tempo ou até usuário digite alguma coisa na STDIN
 		int segundos = 60 * minutos;
 		for (int i=0; i<segundos; i++) {
+			BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Aguardando resposta do usuario");
 			Thread.sleep(1000);
+			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 			if (System.in.available() > 0) {
 				Auxiliar.readStdin();
 				break;

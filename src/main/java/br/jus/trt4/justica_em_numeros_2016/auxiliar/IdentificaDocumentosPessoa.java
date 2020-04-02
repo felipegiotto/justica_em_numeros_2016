@@ -62,10 +62,13 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 		Array arrayIdPessoa = conexaoBasePrincipal.createArrayOf("int", idsPessoas.toArray());
 		List<DocumentoPessoaDto> documentos = new ArrayList<>();
 		nsDocumentos.setArray("ids_pessoas", arrayIdPessoa);
+		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consultando documento de pessoa");
 		try (ResultSet rsDocumentos = nsDocumentos.executeQuery()) {
 			while (rsDocumentos.next()) {
 				documentos.add(new DocumentoPessoaDto(rsDocumentos));
 			}
+		} finally {
+			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
 		
 		preencherDocumentosPessoa(pessoa, documentos);

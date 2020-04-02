@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoLocal;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 
@@ -158,6 +159,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			// Pesquisa recursivamente os "pais" desse assunto, até encontrar um que exista nas
 			// tabelas nacionais do CNJ.
 			psConsultaAssuntoPorCodigo.setString(1, Integer.toString(codigoAssunto));
+			BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de assunto por codigo");
 			try (ResultSet rs = psConsultaAssuntoPorCodigo.executeQuery()) { // TODO: Otimizar acessos repetidos
 				if (rs.next()) {
 					String descricaoAssuntoLocal = Auxiliar.getCampoStringNotNull(rs, "ds_assunto_trf");
@@ -181,6 +183,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 					// Itera, recursivamente, localizando assuntos "pai" na tabela
 					while (idProximoAssunto > 0 && tentativasRecursivas < 50) {
 						psConsultaAssuntoPorID.setInt(1, idProximoAssunto);
+						BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de assunto por ID");
 						try (ResultSet rsAssunto = psConsultaAssuntoPorID.executeQuery()) { // TODO: Otimizar acessos repetidos
 							
 							// Verifica se chegou no fim da árvore
@@ -205,6 +208,8 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 								// TODO: Verificar se isso pode ser substituído pelo campo "ds_assunto_completo" de "tb_assunto_trf"
 								descricaoAssuntoLocal = rsAssunto.getString("ds_assunto_trf") + " (" + codigo + ") / " + descricaoAssuntoLocal;
 							}
+						} finally {
+							BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 						}
 						tentativasRecursivas++;
 					}
@@ -218,6 +223,8 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 				} else {
 					throw new RuntimeException("Não foi encontrado assunto com código " + codigoAssunto + " na base do PJe!");
 				}
+			} finally {
+				BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 			}
 		}
 		return assunto;

@@ -46,6 +46,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRepresentanteProcessual;
 import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaDocumentosPessoa;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.IdentificaGeneroPessoa;
@@ -122,6 +123,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	@SuppressWarnings("deprecation")
 	public static void main(String[] args) throws Exception {
 
+		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Outros");
 		progresso = new ProgressoInterfaceGrafica("(2/5) Geração de XMLs individuais");
 		try {
 			Auxiliar.prepararPastaDeSaida();
@@ -162,10 +164,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
 			LOGGER.info("Fim!");
 		} finally {
+			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 			progresso.setInformacoes("");
 			progresso.close();
 			progresso = null;
 		}
+		LOGGER.info("Análise de desempenho:\n" + BenchmarkVariasOperacoes.globalInstance());
 	}
 
 	private List<String> carregarListaDeProcessos() throws DadosInvalidosException {
@@ -284,6 +288,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 				if (processoJudicial != null) {
 	
+					BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Gerando XML");
+					try {
 					// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
 					// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
 					// processo serão unificados, junto com os XMLs dos outros sistemas legados.
@@ -296,6 +302,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 					// Copia o XML temporário sobre o definitivo e exclui o temporário
 					FileUtils.copyFile(operacao.arquivoXMLTemporario, operacao.arquivoXML);
+					} finally {
+						BenchmarkVariasOperacoes.globalInstance().fimOperacao();
+					}
+					
 					operacao.arquivoXMLTemporario.delete();
 	
 					LOGGER.debug("Processo gravado com sucesso no arquivo " + operacao.arquivoXML);
@@ -317,6 +327,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	public void prepararCacheDadosProcessos(List<String> numerosProcessos) throws SQLException {
 		
+		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Baixando cache de dados do banco");
+		try {
 		LOGGER.info("Baixando cache de dados para " + numerosProcessos.size() + " processo(s)...");
 		Array arrayNumerosProcessos = conexaoBasePrincipal.createArrayOf("varchar", numerosProcessos.toArray());
 		this.cacheProcessosDtos.clear();
@@ -462,7 +474,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				cacheProcessosDtos.get(nrProcesso).processoDto.getHistoricosDeslocamentoOJ().add(historico);
 			}
 		}
-
+		} finally {
+			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
+		}
 	}
 
 	/**

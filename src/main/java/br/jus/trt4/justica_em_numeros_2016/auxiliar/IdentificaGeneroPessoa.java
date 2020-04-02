@@ -77,6 +77,7 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 				// Gênero não está em cache, faz pesquisa na outra instância
 				nsConsultaGeneroOutraInstancia.setString("nome_consulta", nomeConsulta);
 				nsConsultaGeneroOutraInstancia.setString("documento", documentoPrincipal);
+				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consuta de genero em outra instancia");
 				try (ResultSet rs = nsConsultaGeneroOutraInstancia.executeQuery()) { // TODO: Otimizar acessos repetidos
 					if (rs.next()) {
 						ModalidadeGeneroPessoa sexo = ModalidadeGeneroPessoa.valueOf(rs.getString("in_sexo"));
@@ -86,6 +87,8 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 						cacheGenerosOutraInstancia.put(chaveCache, ModalidadeGeneroPessoa.D);
 						// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " não existe em nenhuma instância");
 					}
+				} finally {
+					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 				}
 			}
 			pessoa.setSexo(cacheGenerosOutraInstancia.get(chaveCache));

@@ -7,7 +7,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +18,8 @@ import org.apache.logging.log4j.Logger;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoLocal;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
+import br.jus.trt4.justica_em_numeros_2016.dto.EventoDto;
 
 /**
  * Classe que preencherá um objeto do tipo {@link TipoMovimentoProcessual}, conforme o dado no PJe:
@@ -35,7 +39,7 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaMovimentosCNJ.class);
 	private List<Integer> movimentosProcessuaisCNJ;
-	private PreparedStatement psConsultaEventoPorID;
+	private Map<Integer, EventoDto> eventosPorId;
 	
 	public AnalisaMovimentosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException {
 		super();
@@ -52,7 +56,18 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 		}
 		
 		// PreparedStatements que localizarão movimentos no banco de dados do PJe
-		this.psConsultaEventoPorID = conexaoPJe.prepareStatement("SELECT * FROM tb_evento WHERE id_evento = ?");
+		this.eventosPorId = new HashMap<>();
+		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de eventos");
+		try (PreparedStatement psEventos = conexaoPJe.prepareStatement("SELECT * FROM tb_evento")) {
+			try (ResultSet rsEventos = psEventos.executeQuery()) {
+				while (rsEventos.next()) {
+					EventoDto evento = new EventoDto(rsEventos);
+					this.eventosPorId.put(evento.getId(), evento);
+				}
+			}
+		} finally {
+			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
+		}
 	}
 	
 	
@@ -96,19 +111,16 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 		int tentativas = 0;
 		while (tentativas < 50) {
 			
-			psConsultaEventoPorID.setInt(1, idEvento);
-			try (ResultSet rsMovimento = psConsultaEventoPorID.executeQuery()) { // TODO: Otimizar acessos repetidos
-				if (rsMovimento.next()) {
-					int codigo = rsMovimento.getInt("id_evento");
-					if (movimentoExisteNasTabelasNacionais(codigo)) {
-						return codigo;
-					} else {
-						idEvento = rsMovimento.getInt("id_evento_superior");
-					}
+			EventoDto evento = this.eventosPorId.get(idEvento);
+			if (evento != null) {
+				if (movimentoExisteNasTabelasNacionais(evento.getId())) {
+					return evento.getId();
 				} else {
-					LOGGER.warn("Não localizei assunto com id_evento = " + idEvento);
-					return 0;
+					idEvento = evento.getIdEventoSuperior();
 				}
+			} else {
+				LOGGER.warn("Não localizei assunto com id_evento = " + idEvento);
+				return 0;
 			}
 			
 			tentativas++;
@@ -125,7 +137,5 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 	
 	@Override
 	public void close() throws SQLException {
-		psConsultaEventoPorID.close();
-		psConsultaEventoPorID = null;
 	}
 }
