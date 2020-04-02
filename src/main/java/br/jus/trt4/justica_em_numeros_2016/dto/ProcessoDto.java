@@ -52,7 +52,7 @@ public class ProcessoDto {
 		
 		this.numeroInstancia = rsProcesso.getInt("nr_instancia");
 		this.segredoJustica = "S".equals(rsProcesso.getString("in_segredo_justica"));
-		this.dataAutuacao = rsProcesso.getTimestamp("dt_autuacao").toLocalDateTime();
+		this.dataAutuacao = Auxiliar.getCampoLocalDateTimeOrNull(rsProcesso, "dt_autuacao");
 		this.valorCausa = Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa");
 		
 		this.orgaoJulgador = new OrgaoJulgadorDto();
