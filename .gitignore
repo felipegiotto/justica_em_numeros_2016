@@ -10,3 +10,5 @@
 /.classpath
 /.settings
 /logs
+/.idea
+/*.iml
