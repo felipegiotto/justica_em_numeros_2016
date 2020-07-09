@@ -1070,10 +1070,10 @@
 					 minOccurs="0">
 				<annotation>
 					<documentation>
-						Elemento destinado a permitir identificar se existe algum elemento incidental que tenha gerado novo 
-						processo judicial, em razão da existência de uma nova relação processual jurídica (por 
-						exemplo, como pode ocorrer em embargos à execução de títulos extrajudiciais, embargos de 
-						terceiro, em recursos internos, impugnações ao valor da causa, entre outras Situações, em 
+						Elemento destinado a permitir identificar se existe algum elemento incidental que tenha gerado novo
+						processo judicial, em razão da existência de uma nova relação processual jurídica (por
+						exemplo, como pode ocorrer em embargos à execução de títulos extrajudiciais, embargos de
+						terceiro, em recursos internos, impugnações ao valor da causa, entre outras Situações, em
 						que há criação de novos autos vinculados ao processo principal)
 					</documentation>
 				</annotation>
@@ -1083,15 +1083,15 @@
 				<annotation>
 					<documentation>
 						Inserção da Sigla do Tribunal.
-						
+
 						Deve ser preenchido em formato maiúsculo, sem caractere especial e sem espaço.
-                        Valores possíveis  (primeira coluna - apenas a sigla):
-						
+						Valores possíveis  (primeira coluna - apenas a sigla):
+
 						STF		Supremo Tribunal Federal
-						CNJ		Conselho Nacional de Justiça						
+						CNJ		Conselho Nacional de Justiça
 						STJ		Superior Tribunal de Justiça
 						TST		Tribunal Superior do Trabalho
-						TSE		Tribunal Superior Eleitoral						
+						TSE		Tribunal Superior Eleitoral
 						STM		Superior Tribunal Militar
 						TJAC	Tribunal de Justiça do Estado do Acre
 						TJAL	Tribunal de Justiça do Estado de Alagoas
@@ -1176,7 +1176,7 @@
 						TRT7	Tribunal Regional do Trabalho da 7ª Região
 						TRT8	Tribunal Regional do Trabalho da 8ª Região
 						TRT9	Tribunal Regional do Trabalho da 9ª Região
-						
+
 					</documentation>
 				</annotation>
 			</element>
@@ -1386,24 +1386,27 @@
 				</documentation>
 			</annotation>
 		</attribute>
-		<attribute name="dscSistema" type="string" use="optional">
+		<attribute name="dscSistema" type="int" use="optional">
 			<annotation>
 				<documentation>
 					Informar em qual o sistema eletrônico o processo
 					tramita. São valores possíveis:
-					- PJe
-					- ProJud
-					- SAJ
-					- EPROC
-					- Outros
+					1 - PJe
+					2 - Projudi
+					3 - SAJ
+					4 - EPROC
+					5 - Apolo
+					6 - Themis
+					7 - Libra
+					8 - Outros
 				</documentation>
 			</annotation>
 		</attribute>
-    </complexType>
+	</complexType>
 	<simpleType name="tipoComplemento">
 		<annotation>
 			<documentation>
-			    Tipo de elemento destinado a permitir a inclusão de
+				Tipo de elemento destinado a permitir a inclusão de
 				complementos de movimentações processuais.
 			</documentation>
 		</annotation>
@@ -1415,22 +1418,29 @@
 				complementos de movimentações processuais.
 			</documentation>
 		</annotation>
-        <attribute name="codComplemento" type="int" use="required">
-            <annotation>
-                <documentation> Atributo destinado à entrada do código do
-                    complemento do movimento
-                    nacional ou do movimento local.
-                </documentation>
-            </annotation>
-        </attribute>
-        <attribute name="descricaoComplemento" type="string" use="required">
-            <annotation>
-                <documentation> Atributo destinado à entrada da descrição textual
-                    do
-                    complemento do movimento nacional ou do movimento local.
-                </documentation>
-            </annotation>
-        </attribute>
+		<attribute name="codComplemento" type="int" use="required">
+			<annotation>
+				<documentation> Atributo destinado à entrada do código do
+					complemento do movimento
+					nacional ou do movimento local.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="descricaoComplemento" type="string" use="required">
+			<annotation>
+				<documentation> Atributo destinado à entrada da descrição textual
+					do
+					complemento do movimento nacional ou do movimento local.
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="codComplementoTabelado" type="int" use="optional">
+			<annotation>
+				<documentation> Atributo destinado à entrada do código do complemento tabelado do movimento nacional ou do movimento local.
+				</documentation>
+			</annotation>
+		</attribute>
+
 	</complexType>
 	<complexType name="tipoMovimentoLocal">
 		<annotation>
@@ -1539,15 +1549,15 @@
 					</documentation>
 				</annotation>
 			</element>
-            <element name="orgaoJulgador" type="cnj:tipoOrgaoJulgador" minOccurs="0">
-                <annotation>
-                    <documentation>
-                        Órgão julgador responsável atualmente pelo
-                        processo no órgão consultado.
-                    </documentation>
-                </annotation>
-            </element>
-        </sequence>
+			<element name="orgaoJulgador" type="cnj:tipoOrgaoJulgador" minOccurs="0">
+				<annotation>
+					<documentation>
+						Órgão julgador responsável atualmente pelo
+						processo no órgão consultado.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
 		<attribute name="dataHora" type="cnj:tipoDataHora"
 				   use="required">
 			<annotation>
@@ -1625,6 +1635,17 @@
 				</documentation>
 			</annotation>
 		</attribute>
+		<attribute name="tipoDecisao" type="int"
+				   use="optional">
+			<annotation>
+				<documentation>Atributo que permite a atribuição da decisão como sendo
+					monocrática (proferida por um magistrado), ou colegiada;
+					Valores possíveis são numéricos (0 ou 1):
+					0 - decisão MONOCRATICA
+					1 - decisão COLEGIADA
+				</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 	<complexType name="tipoMovimentoNacional">
 		<annotation>
@@ -1636,7 +1657,7 @@
 		</annotation>
 		<sequence>
 			<element name="complemento" type="cnj:tipoComplemento"
-				minOccurs="0" maxOccurs="unbounded">
+					 minOccurs="0" maxOccurs="unbounded">
 				<annotation>
 					<documentation>Elemento destinado a permitir a inclusão do
 						complemento da movimentação, em formato de texto.

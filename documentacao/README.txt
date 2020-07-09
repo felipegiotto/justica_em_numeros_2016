@@ -40,6 +40,24 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
    
 
 
+========== Desenvolvimento - Perguntas frequentes ==========
+
+Se for necessário atualizar a estrutura de classes baseada em nova versão do arquivo XSD do CNJ:
+1. Excluir os dados do package "br.jus.cnj.modeloDeTransferenciaDeDados"
+2. No Eclipse, selecionar "File", "New", "Other", "JAXB Classes from Schema", selecionar o novo arquivo XSD, definir package de destino "br.jus.cnj.modeloDeTransferenciaDeDados", confirmar.
+
+
+
+O envio de dados ao CNJ via serviços REST depende da geração de uma keystore que contenha os certificados
+de homologação e de produção do CNJ. Esta keystore fica gravada no arquivo src/main/resources/certificados_rest_cnj/keystore/cnj.keystore
+e contém os certificados gravados na pasta src/main/resources/certificados_rest_cnj/certificados.
+Se for preciso atualizar algum certificado da keystore, seguir os passos abaixo:
+1. Gravar os novos certificados na pasta "src/main/resources/certificados_rest_cnj/certificados"
+2. Em um terminal Linux, abrir a pasta "src/main/resources/certificados_rest_cnj"
+3. Executar o script "_importar_certificados_para_keystore.sh"
+
+
+
 ========== Características técnicas / Funcionamento avançado ==========
 
 * Cada operação gerará um log de operações, por padrão na pasta "output/<TIPO_CARGA_XML>/log" (isso pode ser
@@ -175,14 +193,6 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
   os complementos estão sendo preenchidos da mesma forma, como texto.
 
 
-* O envio de dados ao CNJ via serviços REST depende da geração de uma keystore que contenha os certificados
-  de homologação e de produção do CNJ. Esta keystore fica gravada no arquivo src/main/resources/certificados_rest_cnj/keystore/cnj.keystore
-  e contém os certificados gravados na pasta src/main/resources/certificados_rest_cnj/certificados.
-  Se for preciso atualizar algum certificado da keystore, seguir os passos abaixo:
-  1. Gravar os novos certificados na pasta "src/main/resources/certificados_rest_cnj/certificados"
-  2. Em um terminal Linux, abrir a pasta "src/main/resources/certificados_rest_cnj"
-  3. Executar o script "_importar_certificados_para_keystore.sh"
-  
 
 ========== Dúvidas / Esclarecimentos / Pendências ==========
 

@@ -2,7 +2,7 @@
 // Este arquivo foi gerado pela Arquitetura JavaTM para Implementação de Referência (JAXB) de Bind XML, v2.2.8-b130911.1802 
 // Consulte <a href="http://java.sun.com/xml/jaxb">http://java.sun.com/xml/jaxb</a> 
 // Todas as modificações neste arquivo serão perdidas após a recompilação do esquema de origem. 
-// Gerado em: 2020.03.25 às 02:38:12 PM BRT 
+// Gerado em: 2020.07.09 às 02:03:35 PM BRT 
 //
 
 
@@ -29,6 +29,7 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;attribute name="codComplemento" use="required" type="{http://www.w3.org/2001/XMLSchema}int" />
  *       &lt;attribute name="descricaoComplemento" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *       &lt;attribute name="codComplementoTabelado" type="{http://www.w3.org/2001/XMLSchema}int" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -44,6 +45,8 @@ public class TipoComplementoNacional {
     protected int codComplemento;
     @XmlAttribute(name = "descricaoComplemento", required = true)
     protected String descricaoComplemento;
+    @XmlAttribute(name = "codComplementoTabelado")
+    protected Integer codComplementoTabelado;
 
     /**
      * Obtém o valor da propriedade codComplemento.
@@ -83,6 +86,30 @@ public class TipoComplementoNacional {
      */
     public void setDescricaoComplemento(String value) {
         this.descricaoComplemento = value;
+    }
+
+    /**
+     * Obtém o valor da propriedade codComplementoTabelado.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Integer }
+     *     
+     */
+    public Integer getCodComplementoTabelado() {
+        return codComplementoTabelado;
+    }
+
+    /**
+     * Define o valor da propriedade codComplementoTabelado.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Integer }
+     *     
+     */
+    public void setCodComplementoTabelado(Integer value) {
+        this.codComplementoTabelado = value;
     }
 
 }

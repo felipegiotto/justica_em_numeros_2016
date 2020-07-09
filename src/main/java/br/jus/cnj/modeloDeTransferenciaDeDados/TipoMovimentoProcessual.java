@@ -2,7 +2,7 @@
 // Este arquivo foi gerado pela Arquitetura JavaTM para Implementação de Referência (JAXB) de Bind XML, v2.2.8-b130911.1802 
 // Consulte <a href="http://java.sun.com/xml/jaxb">http://java.sun.com/xml/jaxb</a> 
 // Todas as modificações neste arquivo serão perdidas após a recompilação do esquema de origem. 
-// Gerado em: 2020.03.25 às 02:38:12 PM BRT 
+// Gerado em: 2020.07.09 às 02:03:35 PM BRT 
 //
 
 
@@ -46,6 +46,7 @@ import javax.xml.bind.annotation.XmlType;
  *       &lt;attribute name="identificadorMovimento" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="responsavelMovimento" type="{http://www.cnj.jus.br/modelo-de-transferencia-de-dados-1.0}tipoCadastroIdentificador" />
  *       &lt;attribute name="tipoResponsavelMovimento" type="{http://www.w3.org/2001/XMLSchema}int" />
+ *       &lt;attribute name="tipoDecisao" type="{http://www.w3.org/2001/XMLSchema}int" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -82,6 +83,8 @@ public class TipoMovimentoProcessual {
     protected String responsavelMovimento;
     @XmlAttribute(name = "tipoResponsavelMovimento")
     protected Integer tipoResponsavelMovimento;
+    @XmlAttribute(name = "tipoDecisao")
+    protected Integer tipoDecisao;
 
     /**
      * Gets the value of the complemento property.
@@ -389,6 +392,30 @@ public class TipoMovimentoProcessual {
      */
     public void setTipoResponsavelMovimento(Integer value) {
         this.tipoResponsavelMovimento = value;
+    }
+
+    /**
+     * Obtém o valor da propriedade tipoDecisao.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Integer }
+     *     
+     */
+    public Integer getTipoDecisao() {
+        return tipoDecisao;
+    }
+
+    /**
+     * Define o valor da propriedade tipoDecisao.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Integer }
+     *     
+     */
+    public void setTipoDecisao(Integer value) {
+        this.tipoDecisao = value;
     }
 
 }

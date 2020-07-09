@@ -2,7 +2,7 @@
 // Este arquivo foi gerado pela Arquitetura JavaTM para Implementação de Referência (JAXB) de Bind XML, v2.2.8-b130911.1802 
 // Consulte <a href="http://java.sun.com/xml/jaxb">http://java.sun.com/xml/jaxb</a> 
 // Todas as modificações neste arquivo serão perdidas após a recompilação do esquema de origem. 
-// Gerado em: 2020.03.25 às 02:38:12 PM BRT 
+// Gerado em: 2020.07.09 às 02:03:35 PM BRT 
 //
 
 
@@ -50,7 +50,7 @@ import javax.xml.bind.annotation.XmlType;
  *       &lt;attribute name="tamanhoProcesso" type="{http://www.w3.org/2001/XMLSchema}int" />
  *       &lt;attribute name="dataAjuizamento" type="{http://www.cnj.jus.br/modelo-de-transferencia-de-dados-1.0}tipoDataHora" />
  *       &lt;attribute name="procEl" type="{http://www.w3.org/2001/XMLSchema}int" />
- *       &lt;attribute name="dscSistema" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *       &lt;attribute name="dscSistema" type="{http://www.w3.org/2001/XMLSchema}int" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -111,7 +111,7 @@ public class TipoCabecalhoProcesso {
     @XmlAttribute(name = "procEl")
     protected Integer procEl;
     @XmlAttribute(name = "dscSistema")
-    protected String dscSistema;
+    protected Integer dscSistema;
 
     /**
      * Gets the value of the polo property.
@@ -670,10 +670,10 @@ public class TipoCabecalhoProcesso {
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getDscSistema() {
+    public Integer getDscSistema() {
         return dscSistema;
     }
 
@@ -682,10 +682,10 @@ public class TipoCabecalhoProcesso {
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setDscSistema(String value) {
+    public void setDscSistema(Integer value) {
         this.dscSistema = value;
     }
 
