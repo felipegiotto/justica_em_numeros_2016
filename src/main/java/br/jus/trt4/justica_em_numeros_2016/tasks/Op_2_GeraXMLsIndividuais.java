@@ -538,7 +538,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		cabecalhoProcesso.setNumero(processo.getNumeroProcessoSemSinais());
 		cabecalhoProcesso.setSiglaTribunal(Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true));
 		cabecalhoProcesso.setGrau("G" + grau);
-		cabecalhoProcesso.setDscSistema("PJe");
+		cabecalhoProcesso.setDscSistema("1");
 		
 		// Informar se o processo tramita em sistema eletrônico ou em papel. São valores possíveis
 		// 1: Sistema Eletrônico
