@@ -33,5 +33,7 @@ public enum Parametro {
 	sigla_tribunal,
 	password_tribunal,
 	contornar_falta_de_genero,
-	interface_grafica_fechar_automaticamente;
+	interface_grafica_fechar_automaticamente,
+	url_validador_cnj,
+	;
 }

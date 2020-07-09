@@ -67,6 +67,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.XmlComInstancia;
  * 
  * @author felipe.giotto@trt4.jus.br
  */
+@SuppressWarnings("deprecation")
 public class Op_4_ValidaEnviaArquivosCNJ {
 	
 	private static final String SUFIXO_ARQUIVO_TENTOU_ENVIAR = ".tentativa_envio";

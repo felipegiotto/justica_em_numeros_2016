@@ -108,14 +108,15 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 					}
 				}
 				
-				if (!assuntosMapeadosIncorretamente.isEmpty()) {
-					LOGGER.warn("");
-					LOGGER.warn("Há assuntos que estão descritos na tabela 'de-para' como válidos no CNJ, mas não estão na lista de assuntos nacionais do CNJ: ");
-					for (int codigo: assuntosMapeadosIncorretamente) {
-						LOGGER.warn("* " + codigo);
-					}
-					Auxiliar.aguardaUsuarioApertarENTERComTimeout(2);
-				}
+				// UPDATE: Não precisa mais fazer essa validação, já que há a opção de validar diretamente com o aplicativo do CNJ (parâmetro "url_validador_cnj").
+//				if (!assuntosMapeadosIncorretamente.isEmpty()) {
+//					LOGGER.warn("");
+//					LOGGER.warn("Há assuntos que estão descritos na tabela 'de-para' como válidos no CNJ, mas não estão na lista de assuntos nacionais do CNJ: ");
+//					for (int codigo: assuntosMapeadosIncorretamente) {
+//						LOGGER.warn("* " + codigo);
+//					}
+//					Auxiliar.aguardaUsuarioApertarENTERComTimeout(2);
+//				}
 			}
 		}
 		

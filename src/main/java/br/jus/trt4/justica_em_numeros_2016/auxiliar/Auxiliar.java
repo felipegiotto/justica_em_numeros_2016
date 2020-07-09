@@ -664,4 +664,8 @@ public class Auxiliar {
 			}
 		}
 	}
+	
+	public static String removerPontuacaoNumeroProcesso(String numeroProcesso) {
+		return numeroProcesso.replaceAll("[^0-9]", "");
+	}
 }

@@ -217,7 +217,7 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 		// SAJ
 		// EPROC
 		// Outros
-		assertEquals("PJe", dadosBasicos.getDscSistema());
+		assertEquals("1", dadosBasicos.getDscSistema());
 	}
 	
 	@Test
