@@ -51,7 +51,9 @@ Se for necessário atualizar a estrutura de classes baseada em nova versão do a
 O envio de dados ao CNJ via serviços REST depende da geração de uma keystore que contenha os certificados
 de homologação e de produção do CNJ. Esta keystore fica gravada no arquivo src/main/resources/certificados_rest_cnj/keystore/cnj.keystore
 e contém os certificados gravados na pasta src/main/resources/certificados_rest_cnj/certificados.
-Se for preciso atualizar algum certificado da keystore, seguir os passos abaixo:
+Se os certificados não estiverem corretos, ocorrerá um erro no envio:
+     PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target.
+Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os passos abaixo:
 1. Gravar os novos certificados na pasta "src/main/resources/certificados_rest_cnj/certificados"
 2. Em um terminal Linux, abrir a pasta "src/main/resources/certificados_rest_cnj"
 3. Executar o script "_importar_certificados_para_keystore.sh"
