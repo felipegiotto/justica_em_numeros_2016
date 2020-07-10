@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -603,6 +604,11 @@ public class Auxiliar {
 	}
 	
 	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws DadosInvalidosException {
+		if (!arquivoEntrada.exists()) {
+			LOGGER.warn("Arquivo de lista de processos não existe, nenhum processo será analisado nessa instância: " + arquivoEntrada);
+			return new ArrayList<String>();
+		}
+		
 		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Carregando lista de processos do arquivo");
 		try {
 			List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");

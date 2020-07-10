@@ -944,17 +944,19 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Analisa o assunto, que pode ou não estar nas tabelas processuais unificadas do CNJ.
 			int codigo = assuntoDto.getCodigo();
 			TipoAssuntoProcessual assunto = analisaAssuntosCNJ.getAssunto(codigo);
-			assuntos.add(assunto);
-			encontrouAlgumAssunto = true;
-
-			// Trata o campo "assunto principal", verificando também se há mais de um assunto principal no processo.
-			boolean assuntoPrincipal = assuntoDto.isPrincipal();
-			assunto.setPrincipal(assuntoPrincipal);
-			if (assuntoPrincipal) {
-				if (encontrouAssuntoPrincipal) {
-					LOGGER.warn("Processo possui mais de um assunto principal: " + processo.getNumeroProcesso());
-				} else {
-					encontrouAssuntoPrincipal = true;
+			if (assunto != null) {
+				assuntos.add(assunto);
+				encontrouAlgumAssunto = true;
+	
+				// Trata o campo "assunto principal", verificando também se há mais de um assunto principal no processo.
+				boolean assuntoPrincipal = assuntoDto.isPrincipal();
+				assunto.setPrincipal(assuntoPrincipal);
+				if (assuntoPrincipal) {
+					if (encontrouAssuntoPrincipal) {
+						LOGGER.warn("Processo possui mais de um assunto principal: " + processo.getNumeroProcesso());
+					} else {
+						encontrouAssuntoPrincipal = true;
+					}
 				}
 			}
 		}

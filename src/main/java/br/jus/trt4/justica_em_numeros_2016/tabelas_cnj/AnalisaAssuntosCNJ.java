@@ -168,7 +168,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 					// Variável que receberá um código de assunto que faça parte das TPUs, preenchida
 					// a partir de uma pesquisa recursiva na árvore de assuntos do processo, até
 					// encontrar algum nó pai que esteja nas TPUs.
-					int codigoPaiNacional = 0;
+					Integer codigoPaiNacional = null;
 					
 					// Limita a quantidade de nós recursivos, para evitar um possível loop infinito
 					int tentativasRecursivas = 0;
@@ -195,7 +195,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 							// Se ainda está pesquisando um codigoPaiNacional e encontrou um, grava
 							// seu código.
 							int codigo = rsAssunto.getInt("cd_assunto_trf");
-							if (codigoPaiNacional == 0 && assuntoExisteNasTabelasNacionais(codigo)) {
+							if (codigoPaiNacional == null && assuntoExisteNasTabelasNacionais(codigo)) {
 								codigoPaiNacional = codigo;
 							}
 							
@@ -215,11 +215,13 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 						tentativasRecursivas++;
 					}
 					
+					// UPDATE 10/07/2020: CNJ não está mais aceitando assuntos locais com "codigoPaiNacional=0", então caso não encontre um pai nacional o assunto não será informado.
+					if (codigoPaiNacional == null) {
+						LOGGER.warn("Não foi possível identificar um \"código pai nacional\" para o assunto " + assuntoLocal.getCodigoAssunto() + " - " + descricaoAssuntoLocal);
+						return null;
+					}
 					assuntoLocal.setDescricao(descricaoAssuntoLocal);
 					assuntoLocal.setCodigoPaiNacional(codigoPaiNacional);
-					if (codigoPaiNacional == 0) {
-						LOGGER.warn("Não foi possível identificar um \"código pai nacional\" para o assunto " + assuntoLocal.getCodigoAssunto() + " - " + assuntoLocal.getDescricao());
-					}
 					
 				} else {
 					throw new RuntimeException("Não foi encontrado assunto com código " + codigoAssunto + " na base do PJe!");
