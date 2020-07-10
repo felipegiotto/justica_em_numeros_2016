@@ -49,11 +49,7 @@ OBS: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa qu
                dessas serventias.
    
 
-6. Execute a classe "Op_3_UnificaArquivosXML"
-
-   6.1. Verifique novamente se algum problema foi registrado nos arquivos de log, conforme instrução anterior.
-   
-   6.2. Se algum problema for identificado, resolva-o e execute novamente esse passo.
+6. OBS: A classe "Op_3_UnificaArquivosXML" não deve mais ser utilizada.
 
 
 7. Execute a classe "Op_4_ValidaEnviaArquivosCNJ" para remeter os arquivos ao CNJ.
@@ -66,9 +62,9 @@ OBS: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa qu
    gerados (individuais e unificados) e os arquivos de log completos.
 
 
-10. SOMENTE TRT4: Compacte toda a pasta de backup, com o nome no padrão "MENSAL AAAA-MM.tar.gz", onde:
-    * "AAAA-MM" é o ano e o mês que os dados se referem (conforme parâmetro "tipo_carga_xml" nas configurações)
+   9.1. SOMENTE TRT4: Compacte toda a pasta de backup, com o nome no padrão "MENSAL AAAA-MM.tar.gz", onde:
+        "AAAA-MM" é o ano e o mês que os dados se referem (conforme parâmetro "tipo_carga_xml" nas configurações)
  
-    10.1. Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
+   9.2. SOMENTE TRT4: Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
 
 

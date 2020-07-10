@@ -23,6 +23,8 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 
 /**
+ * @deprecated: não é mais recomendável fazer a unificação
+ * 
  * Lê todos os arquivos XML na pasta "output/.../Xg/xmls_individuais", tanto do PJe quanto dos
  * sistemas legados, e gera arquivos XML unificados na pasta "output/.../xmls_unificados", no formato
  * definido pelo CNJ: <SIGLA_TRIBUNAL>_<GRAU_JURISDICAO>_<DIAMESANO>-<SEQ>.

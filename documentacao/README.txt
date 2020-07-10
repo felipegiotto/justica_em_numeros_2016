@@ -32,7 +32,7 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
 
 2. Importe este projeto no Eclipse. É necessário ter as seguintes ferramentas instaladas:
    * Eclipse
-   * Java 1.8 ou superior (necessária para executar o JAR do CNJ)
+   * Java 1.8 ou superior
    * Apache Maven (pode ser necessária configuração de proxy para baixar dependências)
 
 3. Leia as instruções do arquivo "CHECKLIST_RESUMO.txt", que conterá todos os
