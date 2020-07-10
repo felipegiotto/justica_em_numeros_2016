@@ -217,7 +217,7 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 		// SAJ
 		// EPROC
 		// Outros
-		assertEquals("1", dadosBasicos.getDscSistema());
+		assertEquals(1, (int) dadosBasicos.getDscSistema());
 	}
 	
 	@Test
@@ -758,7 +758,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	}
 	
 	@Test
-	public void testAssuntos() throws Exception {
+	public void testAssunto() throws Exception {
 		
 		// Processo que possui um assunto que PERTENCE às tabelas nacionais (deve ser lançado
 		// somente com codigoNacional
@@ -767,21 +767,33 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		
 		// Processo que possui um assunto que NÃO PERTENCE às tabelas nacionais (deve ser lançado
 		// como assuntoLocal
-		TipoProcessoJudicial processoJudicial2 = retornaDadosProcesso(2, "0000002-60.2012.5.04.0406");
-		TipoAssuntoLocal assuntoLocal2 = getAssuntoLocalComCodigo(55207, processoJudicial2.getDadosBasicos().getAssunto());
-		assertEquals(55207, assuntoLocal2.getCodigoAssunto());
-		assertEquals(2656, assuntoLocal2.getCodigoPaiNacional());
-		assertEquals("DIREITO DO TRABALHO (864) / Rescisão do Contrato de Trabalho (2620) / Reintegração / Readmissão ou Indenização (2656) / Outras Hipóteses de Estabilidade", assuntoLocal2.getDescricao());
-		
-		// Processo sem assunto deve receber um assunto principal baseado nas configurações (campos
-		// assunto_padrao_1G e assunto_padrao_2G)
+		// UPDATE: removi daqui, pois a rotina de análise de assuntos tem um teste próprio que trata isso (ver AnalisaAssuntosCNJTest.java)
+		// TipoProcessoJudicial processoJudicial2 = retornaDadosProcesso(2, "0000002-60.2012.5.04.0406");
+		// TipoAssuntoLocal assuntoLocal2 = getAssuntoLocalComCodigo(55207, processoJudicial2.getDadosBasicos().getAssunto());
+		// assertEquals(55207, assuntoLocal2.getCodigoAssunto());
+		// assertEquals(2656, assuntoLocal2.getCodigoPaiNacional());
+		// assertEquals("DIREITO DO TRABALHO (864) / Rescisão do Contrato de Trabalho (2620) / Reintegração / Readmissão ou Indenização (2656) / Outras Hipóteses de Estabilidade", assuntoLocal2.getDescricao());
+	}
+	
+	/**
+	 * Processo sem assunto deve receber um assunto principal baseado nas configurações (campos "assunto_padrao_1G" e "assunto_padrao_2G")
+	 *
+	 * @throws Exception  
+	 */
+	@Test
+	public void testAssuntoPadrao() throws Exception {
+		 
+		// UPDATE: O assunto padrão está definido como "1654", mas pelas tabelas de-para de assuntos, esse assunto é mapeado para "9596"
 		TipoProcessoJudicial processoJudicial3 = retornaDadosProcesso(1, "0021172-82.2013.5.04.0332");
 		assertEquals(1, processoJudicial3.getDadosBasicos().getAssunto().size());
-		TipoAssuntoLocal assuntoLocal3 = getAssuntoLocalComCodigo(1654, processoJudicial3.getDadosBasicos().getAssunto());
-		assertEquals(1654, assuntoLocal3.getCodigoAssunto());
-		assertEquals(864, assuntoLocal3.getCodigoPaiNacional());
-		assertEquals("DIREITO DO TRABALHO (864) / Contrato Individual de Trabalho", assuntoLocal3.getDescricao());
-		assertTrue(processoJudicial3.getDadosBasicos().getAssunto().get(0).isPrincipal());
+		assertTrue(existeAssuntoNacionalComCodigo(9596, processoJudicial3.getDadosBasicos().getAssunto()));
+		// Antigo:
+		// TipoAssuntoLocal assuntoLocal3 = getAssuntoLocalComCodigo(1654, processoJudicial3.getDadosBasicos().getAssunto());
+		// assertEquals(1654, assuntoLocal3.getCodigoAssunto());
+		// assertEquals(864, assuntoLocal3.getCodigoPaiNacional());
+		// assertEquals("DIREITO DO TRABALHO (864) / Contrato Individual de Trabalho", assuntoLocal3.getDescricao());
+		// assertTrue(processoJudicial3.getDadosBasicos().getAssunto().get(0).isPrincipal());
+
 	}
 	
 	@Test
@@ -873,8 +885,13 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertNotNull(relacaoIncidental);
 		assertEquals(1, relacaoIncidental.size());
 		
+		// De acordo com o validador do CNJ, deve gravar o número do processo de forma plana, sem sinais.
+		// Erro reportado:
+		// Caused by: org.xml.sax.SAXParseException; ... cvc-pattern-valid: Value '0020474-77.2016.5.04.0233' is not facet-valid with respect to pattern '\d{20}' for type 'tipoNumeroUnico'.
+		// Linha do XML:
+		// <relacaoIncidental numeroProcesso="0020474-77.2016.5.04.0233" tipoRelacao="PI" classeProcessual="1125"/>
 		TipoRelacaoIncidental relacaoIncidentalParaPrincipal = relacaoIncidental.get(0);
-		assertEquals("0010053-87.2012.5.04.0000", relacaoIncidentalParaPrincipal.getNumeroProcesso());
+		assertEquals("00100538720125040000", relacaoIncidentalParaPrincipal.getNumeroProcesso());
 		assertEquals("PP", relacaoIncidentalParaPrincipal.getTipoRelacao());
 		assertEquals(Integer.valueOf(120), relacaoIncidentalParaPrincipal.getClasseProcessual()); // Mandado de Segurança Cível
 		
@@ -887,7 +904,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		assertEquals(2, relacaoPrincipal.size());
 		
 		TipoRelacaoIncidental relacaoPrincipalParaIncidental = relacaoPrincipal.get(0);
-		assertEquals("0010070-26.2012.5.04.0000", relacaoPrincipalParaIncidental.getNumeroProcesso());
+		assertEquals("00100702620125040000", relacaoPrincipalParaIncidental.getNumeroProcesso());
 		assertEquals("PI", relacaoPrincipalParaIncidental.getTipoRelacao());
 		assertEquals(Integer.valueOf(1005), relacaoPrincipalParaIncidental.getClasseProcessual()); // Agravo Regimental Trabalhista
 	}

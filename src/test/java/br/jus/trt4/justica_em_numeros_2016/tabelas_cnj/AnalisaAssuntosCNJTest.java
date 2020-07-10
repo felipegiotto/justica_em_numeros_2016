@@ -17,7 +17,7 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 	@Test
 	public void analisaAssuntoNacional() throws Exception {
 		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
-		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal)) {
+		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
 		
 			// Assunto que existe em tabela nacional:
 			// 2540 - Vale Transporte
@@ -30,22 +30,28 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 		}
 	}
 
+	/**
+	 * Testa se o assunto está sendo exibido com seu nome completo (com toda a hierarquia)
+	 *
+	 * Se, eventualmente, esse assunto local for inserido nas tabelas nacionais, será preciso buscar outro assunto local e alterar esse teste.
+	 * @throws Exception
+	 */
 	@Test
 	public void analisaNomeCompletoAssuntoLocal() throws Exception {
 		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
-		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal)) {
-			TipoAssuntoProcessual assunto = a.getAssunto(55097);
+		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
+			TipoAssuntoProcessual assunto = a.getAssunto(10568);
 			
 			// Testa os campos do assunto local
-			assertEquals(55097, assunto.getAssuntoLocal().getCodigoAssunto());
-			assertEquals("DIREITO DO TRABALHO (864) / Duração do Trabalho (1658) / Horas Extras (2086) / Reflexos", assunto.getAssuntoLocal().getDescricao());
+			assertEquals(10568, assunto.getAssuntoLocal().getCodigoAssunto());
+			assertEquals("DIREITO DO TRABALHO (864) / Prescrição", assunto.getAssuntoLocal().getDescricao());
 		}
 	}
 	
 	@Test
 	public void analisaAssuntoLocal() throws Exception {
 		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
-		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal)) {
+		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
 		
 			// Assunto que NÃO existe em tabela nacional:
 			// 55492 - Honorários na Justiça do Trabalho
@@ -64,6 +70,26 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 			// 55492 - "Honorários na Justiça do Trabalho" não existe na tabela nacional, mas seu "pai" sim:
 			// 8874 - "Sucumbência".
 			assertEquals(8874, assunto.getAssuntoLocal().getCodigoPaiNacional());
+		}
+	}
+	
+	@Test
+	public void analisaAssuntoLocalMapeadoPorTabelaDePara() throws Exception {
+		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
+		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
+		
+			// Mapeia manualmente um assunto local, para executar o teste
+			// 55492 (Honorários da Justiça do Trabalho), mapeado para 10655 (Honorários Advocatícios)
+			a.getAssuntosProcessuaisDePara().put(55492, 10655);
+			
+			// Assunto que NÃO existe em tabela nacional, mas que foi mapeado por tabela DE-PARA
+			// 55492 (Honorários na Justiça do Trabalho)
+			TipoAssuntoProcessual assunto = a.getAssunto(55492);
+			assertNotNull(assunto);
+			
+			// Testa os campos do assunto nacional
+			assertEquals(10655, (int) assunto.getCodigoNacional());
+			assertNull(assunto.getAssuntoLocal());
 		}
 	}
 }

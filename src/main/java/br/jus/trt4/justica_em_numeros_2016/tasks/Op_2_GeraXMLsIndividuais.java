@@ -1219,7 +1219,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao(Parametro.codigo_municipio_ibge_trt);
 
 		// Objeto que identificará os assuntos e movimentos processuais das tabelas nacionais do CNJ
-		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal);
+		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal, true);
 		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(grau, conexaoBasePrincipal);
 		analisaClassesProcessuaisCNJ = new AnalisaClassesProcessuaisCNJ(grau);
 	}

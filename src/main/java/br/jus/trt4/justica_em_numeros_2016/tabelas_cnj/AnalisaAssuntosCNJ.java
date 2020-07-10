@@ -51,7 +51,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	private PreparedStatement psConsultaAssuntoPorID;
 	private TipoAssuntoProcessual assuntoProcessualPadrao;
 	
-	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException, DadosInvalidosException, InterruptedException {
+	public AnalisaAssuntosCNJ(int grau, Connection conexaoPJe, boolean carregarArquivoDePara) throws IOException, SQLException, DadosInvalidosException, InterruptedException {
 		super();
 		
 		File arquivoAssuntos = new File("src/main/resources/tabelas_cnj/assuntos_cnj.csv");
@@ -86,7 +86,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			assuntosProcessuaisDePara = new HashMap<>();
 			
 			File fileAssuntoDePara = getArquivoAssuntosDePara();
-			if (fileAssuntoDePara != null) {
+			if (carregarArquivoDePara && fileAssuntoDePara != null) {
 				
 				// Lê os assuntos do arquivo "de-para"
 				Properties propertiesDePara = new Properties();
@@ -258,6 +258,10 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 		} else {
 			return null;
 		}
+	}
+
+	public Map<Integer, Integer> getAssuntosProcessuaisDePara() {
+		return assuntosProcessuaisDePara;
 	}
 
 	@Override
