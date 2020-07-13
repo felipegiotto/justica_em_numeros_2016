@@ -35,5 +35,6 @@ public enum Parametro {
 	contornar_falta_de_genero,
 	interface_grafica_fechar_automaticamente,
 	url_validador_cnj,
+	debug_gravar_relatorio_validador_cnj,
 	;
 }

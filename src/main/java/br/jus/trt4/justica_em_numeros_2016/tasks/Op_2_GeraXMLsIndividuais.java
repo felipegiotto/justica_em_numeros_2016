@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -22,6 +23,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
@@ -368,6 +370,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				HttpEntity result = response.getEntity();
 				String json = EntityUtils.toString(result, Charset.forName("UTF-8"));
 				
+				// Grava o resultado do validador do CNJ, se solicitado
+				if (Auxiliar.getParametroBooleanConfiguracao(Parametro.debug_gravar_relatorio_validador_cnj, false)) {
+					File debugRelatorioCNJ = new File(arquivoXML.getParentFile(), FilenameUtils.getBaseName(arquivoXML.getName()) + "_validador_cnj.json");
+					FileUtils.write(debugRelatorioCNJ, json != null ? json : "null", StandardCharsets.UTF_8);
+				}
+				
+				// Verifica se o validador do CNJ apontou algum problema
 				ValidadorIntegridadeXMLCNJ.buscarProblemasValidadorCNJ(json);
 				
 			} catch (Exception ex) {
