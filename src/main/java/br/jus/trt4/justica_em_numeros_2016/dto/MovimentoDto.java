@@ -38,6 +38,9 @@ public class MovimentoDto {
 		this.textoEvento = rsMovimentos.getString("ds_movimento");
 		this.movimentoMagistradoJulgamento = rsMovimentos.getBoolean("is_magistrado_julgamento");
 	}
+	
+	public MovimentoDto() {
+	}
 
 	public LocalDateTime getDataAtualizacao() {
 		return dataAtualizacao;
@@ -55,6 +58,10 @@ public class MovimentoDto {
 		return codMovimentoCNJ;
 	}
 	
+	public void setCodMovimentoCNJ(int codMovimentoCNJ) {
+		this.codMovimentoCNJ = codMovimentoCNJ;
+	}
+	
 	public String getCPFUsuarioMovimento() {
 		return cpfUsuarioMovimento;
 	}
@@ -67,8 +74,16 @@ public class MovimentoDto {
 		return textoMovimento;
 	}
 	
+	public void setTextoMovimento(String textoMovimento) {
+		this.textoMovimento = textoMovimento;
+	}
+	
 	public String getTextoEvento() {
 		return textoEvento;
+	}
+	
+	public void setTextoEvento(String textoEvento) {
+		this.textoEvento = textoEvento;
 	}
 	
 	public boolean isMovimentoMagistradoJulgamento() {

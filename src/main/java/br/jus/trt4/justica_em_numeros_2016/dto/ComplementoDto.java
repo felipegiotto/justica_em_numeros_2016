@@ -22,19 +22,38 @@ public class ComplementoDto {
 		this.valor = rsComplementos.getString("ds_valor_complemento");
 	}
 	
+	public ComplementoDto() {
+	}
+	
 	public int getCodigoTipoComplemento() {
 		return codigoTipoComplemento;
+	}
+	
+	public void setCodigoTipoComplemento(int codigoTipoComplemento) {
+		this.codigoTipoComplemento = codigoTipoComplemento;
 	}
 	
 	public String getCodigoComplemento() {
 		return codigoComplemento;
 	}
 	
+	public void setCodigoComplemento(String codigoComplemento) {
+		this.codigoComplemento = codigoComplemento;
+	}
+	
 	public String getNome() {
 		return nome;
 	}
 	
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
+	
 	public String getValor() {
 		return valor;
+	}
+	
+	public void setValor(String valor) {
+		this.valor = valor;
 	}
 }

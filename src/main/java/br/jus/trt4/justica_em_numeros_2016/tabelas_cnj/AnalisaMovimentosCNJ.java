@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -18,8 +19,19 @@ import org.apache.logging.log4j.Logger;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoLocal;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
+import br.jus.trt3.depara.GerenteDeParaJTCNJ;
+import br.jus.trt3.depara.exception.DeParaJTCNJException;
+import br.jus.trt3.depara.vo.ComplementoCNJ;
+import br.jus.trt3.depara.vo.MovimentoCNJ;
+import br.jus.trt3.depara.vo.MovimentoJT;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.EventoDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
+import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
 
 /**
  * Classe que preencherá um objeto do tipo {@link TipoMovimentoProcessual}, conforme o dado no PJe:
@@ -40,6 +52,7 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaMovimentosCNJ.class);
 	private List<Integer> movimentosProcessuaisCNJ;
 	private Map<Integer, EventoDto> eventosPorId;
+	private GerenteDeParaJTCNJ gerenteDeParaJTCNJ;
 	
 	public AnalisaMovimentosCNJ(int grau, Connection conexaoPJe) throws IOException, SQLException {
 		super();
@@ -68,6 +81,16 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 		} finally {
 			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
+		
+		// Ferramenta DE-PARA de movimentos e complementos, criada pelo TRT3.
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.movimentos_aplicar_de_para, false)) {
+			try {
+				gerenteDeParaJTCNJ = GerenteDeParaJTCNJ.getInstancia();
+				gerenteDeParaJTCNJ.carregarDePara();
+			} catch (DeParaJTCNJException e) {
+				throw new IOException("Erro iniciando DE-PARA de movimentos", e);
+			}
+		}
 	}
 	
 	
@@ -77,14 +100,60 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 	 * 
 	 * Serão preenchidos os campos "TipoMovimentoNacional" ou "TipoMovimentoLocal", conforme a
 	 * existência (ou não) do código do movimento nas tabelas nacionais do CNJ. 
+	 * @param numeroInstancia 
 	 * 
 	 * @throws SQLException 
+	 * @throws DadosInvalidosException 
 	 */
-	public void preencheDadosMovimentoCNJ(TipoMovimentoProcessual movimento, int codigoMovimento, String descricao, String descricaoEventoProcessual) throws SQLException {
-		if (movimentoExisteNasTabelasNacionais(codigoMovimento)) {
+	public void preencheDadosMovimentoCNJ(ProcessoDto processo, TipoMovimentoProcessual movimento, MovimentoDto movimentoDto) throws SQLException, DadosInvalidosException {
+		
+		int codigoMovimento = movimentoDto.getCodMovimentoCNJ();
+		String descricao = movimentoDto.getTextoMovimento();
+		String descricaoEventoProcessual = movimentoDto.getTextoEvento();
+		
+		// Aplica o DE-PARA de movimentos e complementos, se solicitado.
+		boolean forcarMovimentoNacional = false;
+		if (gerenteDeParaJTCNJ != null) {
+			
+			// Instancia o movimento com os complementos, no formato esperado pelo DE-PARA
+			MovimentoJT movimentoJT = new MovimentoJT(processo.getNumeroInstancia(), Integer.toString(codigoMovimento));
+			for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
+				movimentoJT.adicionaComplementoJT(Integer.toString(complementoDto.getCodigoTipoComplemento()), complementoDto.getCodigoComplemento(), complementoDto.getValor());
+			}
+			try {
+				
+				// Verifica se o movimento está nas tabelas DE-PARA
+				Optional<MovimentoCNJ> recuperarMovimentoComplementosCNJ = gerenteDeParaJTCNJ.recuperarMovimentoComplementosCNJ(movimentoJT);
+				if (recuperarMovimentoComplementosCNJ.isPresent()) {
+					
+					// Se o movimento está nas tabelas DE-PARA, precisa substituir totalmente os dados dos movimentos e complementos
+					// do banco de dados do PJe pelos retornados pela ferramenta.
+					MovimentoCNJ movimentoCNJ = recuperarMovimentoComplementosCNJ.get();
+					forcarMovimentoNacional = true;
+					
+					// Substitui os complementos
+					codigoMovimento = Integer.parseInt(movimentoCNJ.getCodigoMovimento());
+					movimentoDto.getComplementos().clear();
+					for(ComplementoCNJ complementoCNJ : movimentoCNJ.getListaComplementos()) {
+						ComplementoDto complementoDto = new ComplementoDto();
+						complementoDto.setCodigoTipoComplemento(Integer.parseInt(complementoCNJ.getCodigoTipo()));
+						complementoDto.setNome(complementoCNJ.getDescricaoTipo());
+						complementoDto.setCodigoComplemento(complementoCNJ.getCodigoValor());
+						complementoDto.setValor(complementoCNJ.getDescricaoValor());
+						movimentoDto.getComplementos().add(complementoDto);
+					}
+				}
+			} catch (DeParaJTCNJException e) {
+				throw new DadosInvalidosException("Erro ao aplicar DE-PARA de movimentos e complementos do TRT3", processo.getNumeroProcesso());
+			}
+		}
+		
+		// Verifica se o movimento deve ser enviado como NACIONAL ou como LOCAL
+		if (forcarMovimentoNacional || movimentoExisteNasTabelasNacionais(codigoMovimento)) {
 			TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
 			movimentoNacional.setCodigoNacional(codigoMovimento);
 			movimento.setMovimentoNacional(movimentoNacional);
+			
 		} else {
 			if (descricao == null) {
 				LOGGER.info("Movimento com código " + codigoMovimento + " não possui descrição. Será utilizada a descrição da tabela tb_evento_processual: " + descricaoEventoProcessual);

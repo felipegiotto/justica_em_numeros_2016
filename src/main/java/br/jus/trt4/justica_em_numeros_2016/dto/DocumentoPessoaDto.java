@@ -24,7 +24,7 @@ public class DocumentoPessoaDto {
 		this.tipoDocumento = Auxiliar.getCampoStringNotNull(rsDocumentos, "cd_tp_documento_identificacao").trim();
 		this.numero = Auxiliar.getCampoStringNotNull(rsDocumentos, "nr_documento");
 		this.emissor = rsDocumentos.getString("ds_emissor");
-		this.nomePessoa = rsDocumentos.getString("ds_nome_pessoa");
+		this.nomePessoa = rsDocumentos.getString("ds_nome_pessoa").trim();
 		this.principal = "S".equals(rsDocumentos.getString("in_principal"));
 	}
 

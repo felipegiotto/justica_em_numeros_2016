@@ -1073,7 +1073,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// tipoResponsavelMovimento: Identificação do responsável pelo movimento: Servidor=0; Magistrado=1;
 			movimento.setTipoResponsavelMovimento(movimentoDto.isUsuarioMagistrado() ? 1 : 0);
 			
-			analisaMovimentosCNJ.preencheDadosMovimentoCNJ(movimento, movimentoDto.getCodMovimentoCNJ(), movimentoDto.getTextoMovimento(), movimentoDto.getTextoEvento());
+			analisaMovimentosCNJ.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto);
 			movimentos.add(movimento);
 			LocalDateTime dataMovimento = movimentoDto.getDataAtualizacao();
 
