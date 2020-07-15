@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -53,6 +54,10 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -582,7 +587,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							LOGGER.trace("* Resposta em " + tempo + "ms (" + statusCode + "): " + body);
 							conferirRespostaSucesso(statusCode, body, jaxbUnmarshaller, xml.getArquivoXML());
 							LOGGER.info("* Arquivo enviado com sucesso: " + xml + " / Resposta: " + body);
-							marcarArquivoComoEnviado(xml.getArquivoXML());
+							marcarArquivoComoEnviado(xml.getArquivoXML(), body);
 							qtdEnviadaComSucesso.incrementAndGet();
 							
 							arquivoTentativaEnvio.delete();
@@ -698,7 +703,27 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		return true;
 	}
 	
-	private void marcarArquivoComoEnviado(File arquivo) {
+	/**
+	 * Cria um arquivo indicando que o XML foi enviado (sufixo ".enviado") e um arquivo com o
+	 * protocolo do CNJ, para posterior validação (sufixo ".protocolo").
+	 *
+	 * @param arquivo
+	 * @param jsonRespostaCNJ
+	 * @throws IOException
+	 */
+	private void marcarArquivoComoEnviado(File arquivo, String jsonRespostaCNJ) throws IOException {
+		
+		// Verifica se o CNJ informou um protocolo no retorno JSON, para que esse protocolo seja validado posteriormente.
+		try {
+			JsonObject rootObject = JsonParser.parseString(jsonRespostaCNJ).getAsJsonObject();
+			String protocolo = rootObject.get("protocolo").getAsString();
+			File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_PROTOCOLO);
+			FileUtils.write(confirmacaoEnvio, protocolo, StandardCharsets.UTF_8);
+		} catch (JsonParseException ex) {
+			LOGGER.warn("Não foi possível ler o número do protocolo JSON do CNJ");
+		}
+		
+		// Cria um arquivo para indicar que o arquivo foi enviado com sucesso ao CNJ
 		File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_ARQUIVO_ENVIADO);
 		try {
 			confirmacaoEnvio.createNewFile();

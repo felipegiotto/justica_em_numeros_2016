@@ -51,6 +51,7 @@ public class Auxiliar {
 	private static final SimpleDateFormat dfDataMovimentoProcessual = new SimpleDateFormat("yyyyMMddHHmmss");
 	private static File pastaSaida = null;
 	public static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
+	public static final String SUFIXO_PROTOCOLO = ".protocolo";
 
 	
 	/**

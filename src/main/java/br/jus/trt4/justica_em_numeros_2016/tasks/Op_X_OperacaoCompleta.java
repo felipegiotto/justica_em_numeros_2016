@@ -132,7 +132,7 @@ public class Op_X_OperacaoCompleta {
 			
 			@Override
 			public void run() throws Exception {
-				Op_5_BackupConfiguracoes.main(null);
+				Op_6_BackupConfiguracoes.main(null);
 			}
 		});
 		

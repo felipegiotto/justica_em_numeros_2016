@@ -4,7 +4,7 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_1_BaixaListaDeNumerosDeProce
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_3_UnificaArquivosXML;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ValidaEnviaArquivosCNJ;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_5_BackupConfiguracoes;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_6_BackupConfiguracoes;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_X_OperacaoCompleta;
 
 public class MainClass {
@@ -15,7 +15,7 @@ public class MainClass {
 		System.out.println("2: GeraXMLsIndividuais");
 		System.out.println("3: UnificaArquivosXML");
 		System.out.println("4: ValidaEnviaArquivosCNJ");
-		System.out.println("5: BackupConfiguracoes");
+		System.out.println("6: BackupConfiguracoes");
 		System.out.println("X: OperacaoCompleta");
 		switch (Auxiliar.readStdin().toUpperCase()) {
 		case "1": 
@@ -30,8 +30,8 @@ public class MainClass {
 		case "4": 
 			Op_4_ValidaEnviaArquivosCNJ.main(null);
 			break;
-		case "5": 
-			Op_5_BackupConfiguracoes.main(null);
+		case "6": 
+			Op_6_BackupConfiguracoes.main(null);
 			break;
 		case "X": 
 			Op_X_OperacaoCompleta.main(null);
