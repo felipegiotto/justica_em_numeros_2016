@@ -38,7 +38,8 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
 3. Será preciso baixar manualmente a ferramenta "de-para" de movimentos e complementos, desenvolvida
    pelo TRT3. O repositório desta ferramenta está disponível em https://gitlab.trt15.jus.br/estatistica_cnj_jt/depara-jt-cnj ,
    mas deve ser solicitado o acesso no GitLab. Depois de baixar o código-fonte, acessar a
-   pasta raiz do projeto "depara-jt-cnj" em um terminal e digitar: "mvn clean package install" 
+   pasta raiz do projeto "depara-jt-cnj" em um terminal e digitar: "mvn clean package install".
+   Pode ser preciso, também, atualizar o "pom.xml" deste projeto para referenciar novas versões do "depara-jt-cnj".
 
 4. Leia as instruções do arquivo "CHECKLIST_RESUMO.txt", que conterá todos os
    passos que precisarão ser executados.
