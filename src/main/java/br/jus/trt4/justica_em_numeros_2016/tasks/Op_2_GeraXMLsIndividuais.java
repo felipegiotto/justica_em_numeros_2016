@@ -1083,14 +1083,20 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			if (movimentoNacional != null) {
 				for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
 					
-					// Script TRT14:
-					//  IF '' = trim(compl.cd_complemento) THEN
-					//    raise notice '<complemento>%:%:%</complemento>'
-					//    , compl.cd_tipo_complemento, compl.ds_nome, compl.nm_complemento;
-					//  ELSE
-					//    raise notice '<complemento>%:%:%:%</complemento>'
-					//    , compl.cd_tipo_complemento, compl.ds_nome, compl.cd_complemento, compl.nm_complemento;
-					//  END IF;
+					/*
+					Se o complemento for do tipo TABELADO, inserir somente o seu código tabelado (não precisa do valor). Ex:
+					
+					<movimento dataHora="20150206110014" identificadorMovimento="4">
+					  <movimentoNacional codigoNacional="123">
+					    <complemento>18:motivo_da_remessa:38</complemento>
+					  </movimentoNacional>
+					  <complementoNacional codComplemento="18" descricaoComplemento="motivo_da_remessa" codComplementoTabelado="38"/>
+					</movimento>
+					
+					Fonte: https://www.cnj.jus.br/wp-content/uploads/2020/07/documento_XML_exemplo_DataJud_06042020.pdf
+					 */
+					Integer codComplementoTabelado = (complementoDto.isComplementoTipoTabelado() && complementoDto.getCodigoComplemento() != null) ? Integer.parseInt(complementoDto.getCodigoComplemento()) : null;
+					
 					StringBuilder sb = new StringBuilder();
 					sb.append(complementoDto.getCodigoTipoComplemento());
 					sb.append(":");
@@ -1099,24 +1105,21 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 					if (!StringUtils.isBlank(codigoComplemento)) {
 						sb.append(":");
 						sb.append(codigoComplemento);
-						/*
-						O elemento <complemento> possui formato string e deverá ser preenchido da seguinte forma:
-						<código do complemento><”:”><descrição do complemento><”:”><código do complemento tabelado><descrição do complemento tabelado, ou de texto livre, conforme o caso>
-
-						Ex.: no movimento 123, seria
-							18:motivo_da_remessa:38:em grau de recurso
-							7:destino:1ª Vara Cível
-						 */
-						// Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 					}
-					sb.append(":");
-					sb.append(complementoDto.getValor());
+					if (codComplementoTabelado == null) {
+						sb.append(":");
+						sb.append(complementoDto.getValor());
+					}
 					movimentoNacional.getComplemento().add(sb.toString());
 					
 					TipoComplementoNacional complemento = new TipoComplementoNacional();
 					movimento.getComplementoNacional().add(complemento);
 					complemento.setCodComplemento(complementoDto.getCodigoTipoComplemento());
 					complemento.setDescricaoComplemento(complementoDto.getNome());
+					
+					if (codComplementoTabelado != null) {
+						complemento.setCodComplementoTabelado(codComplementoTabelado);
+					}
 				}
 			}
 			
@@ -1239,7 +1242,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	public void close() {
 
 		// Fecha objetos que auxiliam a carga de dados do PJe
-		Auxiliar.fechar(analisaMovimentosCNJ);
 		analisaMovimentosCNJ = null;
 		Auxiliar.fechar(analisaAssuntosCNJ);
 		analisaAssuntosCNJ = null;

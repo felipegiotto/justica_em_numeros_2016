@@ -14,6 +14,7 @@ public class ComplementoDto {
 	private String codigoComplemento;
 	private String nome;
 	private String valor;
+	private boolean complementoTipoTabelado;
 	
 	public ComplementoDto(ResultSet rsComplementos) throws SQLException {
 		this.codigoTipoComplemento = rsComplementos.getInt("cd_tipo_complemento");
@@ -55,5 +56,13 @@ public class ComplementoDto {
 	
 	public void setValor(String valor) {
 		this.valor = valor;
+	}
+	
+	public boolean isComplementoTipoTabelado() {
+		return complementoTipoTabelado;
+	}
+	
+	public void setComplementoTipoTabelado(boolean complementoTipoTabelado) {
+		this.complementoTipoTabelado = complementoTipoTabelado;
 	}
 }

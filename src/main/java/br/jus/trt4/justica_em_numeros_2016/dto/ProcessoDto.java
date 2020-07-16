@@ -84,6 +84,10 @@ public class ProcessoDto {
 		return numeroInstancia;
 	}
 	
+	public void setNumeroInstancia(int numeroInstancia) {
+		this.numeroInstancia = numeroInstancia;
+	}
+	
 	public boolean isSegredoJustica() {
 		return segredoJustica;
 	}

@@ -21,6 +21,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
 import br.jus.trt3.depara.GerenteDeParaJTCNJ;
 import br.jus.trt3.depara.exception.DeParaJTCNJException;
+import br.jus.trt3.depara.leitorarquivo.TipoTipoComplemento;
 import br.jus.trt3.depara.vo.ComplementoCNJ;
 import br.jus.trt3.depara.vo.MovimentoCNJ;
 import br.jus.trt3.depara.vo.MovimentoJT;
@@ -47,7 +48,7 @@ import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
  * 
  * @author fgiotto
  */
-public class AnalisaMovimentosCNJ implements AutoCloseable {
+public class AnalisaMovimentosCNJ {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaMovimentosCNJ.class);
 	private List<Integer> movimentosProcessuaisCNJ;
@@ -140,6 +141,7 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 						complementoDto.setNome(complementoCNJ.getDescricaoTipo());
 						complementoDto.setCodigoComplemento(complementoCNJ.getCodigoValor());
 						complementoDto.setValor(complementoCNJ.getDescricaoValor());
+						complementoDto.setComplementoTipoTabelado(TipoTipoComplemento.TABELADO.equals(complementoCNJ.getTipoTipoComplemento()));
 						movimentoDto.getComplementos().add(complementoDto);
 					}
 				}
@@ -147,6 +149,13 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 				throw new DadosInvalidosException("Erro ao aplicar DE-PARA de movimentos e complementos do TRT3", processo.getNumeroProcesso());
 			}
 		}
+		
+		// TODO: Preencher este novo campo do XSD
+		// Atributo que permite a atribuição da decisão como sendo monocrática (proferida por um magistrado), ou colegiada;
+		// Valores possíveis são numéricos (0 ou 1):
+		// 0 - decisão MONOCRATICA
+		// 1 - decisão COLEGIADA
+		// movimento.setTipoDecisao(...);
 		
 		// Verifica se o movimento deve ser enviado como NACIONAL ou como LOCAL
 		if (forcarMovimentoNacional || movimentoExisteNasTabelasNacionais(codigoMovimento)) {
@@ -201,10 +210,5 @@ public class AnalisaMovimentosCNJ implements AutoCloseable {
 	
 	public boolean movimentoExisteNasTabelasNacionais(int codigoAssunto) {
 		return movimentosProcessuaisCNJ.contains(codigoAssunto);
-	}
-	
-	
-	@Override
-	public void close() throws SQLException {
 	}
 }

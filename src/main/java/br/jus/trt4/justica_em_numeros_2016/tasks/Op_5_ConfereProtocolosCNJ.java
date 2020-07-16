@@ -184,14 +184,14 @@ public class Op_5_ConfereProtocolosCNJ {
 		try {
 			
 			// Executa o GET
-			long tempo = System.currentTimeMillis();
+			long antes = System.currentTimeMillis();
 			HttpResponse response = httpClient.execute(get);
 			try {
 				
 				HttpEntity result = response.getEntity();
 				String body = EntityUtils.toString(result, Charset.forName("UTF-8"));
 				int statusCode = response.getStatusLine().getStatusCode();
-				LOGGER.info("* Resposta em " + tempo + "ms (" + statusCode + ")");
+				LOGGER.info("* Resposta em " + (System.currentTimeMillis() - antes) + "ms (" + statusCode + ")");
 				if (statusCode != 200 && statusCode != 201) {
 					throw new IOException("Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)");
 				}
