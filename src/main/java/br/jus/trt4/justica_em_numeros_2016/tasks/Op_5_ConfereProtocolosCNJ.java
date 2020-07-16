@@ -45,7 +45,7 @@ public class Op_5_ConfereProtocolosCNJ {
 	private static ProgressoInterfaceGrafica progresso;
 	
 	public static void main(String[] args) throws Exception {
-		
+
 		System.out.println("Se algum arquivo ainda não foi processado no CNJ, ou se ocorrer algum erro na resposta do CNJ, você quer que a operação seja reiniciada?");
 		System.out.println("Responda 'S' para que as validações no CNJ rodem diversas vezes, até que o webservice não recuse nenhum arquivo e até que todos os XMLs sejam processados.");
 		System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
@@ -84,8 +84,8 @@ public class Op_5_ConfereProtocolosCNJ {
 					if (DadosInvalidosException.getQtdErros() > 0) {
 						DadosInvalidosException.zerarQtdErros();
 						progresso.setInformacoes("Aguardando para reiniciar...");
-						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 5min... Se desejar, aborte este script.");
-						Thread.sleep(5 * 60_000);
+						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 10min... Se desejar, aborte este script.");
+						Thread.sleep(10 * 60_000);
 						progresso.setInformacoes("");
 					} else {
 						executar = false;

@@ -114,7 +114,7 @@ public class Op_X_OperacaoCompleta {
 			public void run() throws Exception {
 				
 				// Envia os XMLs ao CNJ
-				Op_4_ValidaEnviaArquivosCNJ.validarEnviarArquivosCNJ(false);
+				Op_4_ValidaEnviaArquivosCNJ.validarEnviarArquivosCNJ(true);
 			}
 		});
 		
@@ -123,7 +123,7 @@ public class Op_X_OperacaoCompleta {
 
 			@Override
 			public void run() throws Exception {
-				Op_5_ConfereProtocolosCNJ.main(null);
+				Op_5_ConfereProtocolosCNJ.consultarProtocolosCNJ(true);
 			}
 		});
 
