@@ -11,10 +11,12 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Exceção lançada quando algum dado inválido é encontrado no processo, dado esse que faria com que o arquivo XML fosse
- * negado no CNJ.
+ * negado no CNJ. 
  * 
- * @author fgiotto
+ * Essa exception tem um significado especial para as rotinas de envio (operação 4) e conferência de protocolos (operação 5),
+ * pois se alguma exception desta for lançada durante a execução, a operação poderá ser posteriormente reiniciada.
  *
+ * @author felipe.giotto@trt4.jus.br
  */
 public class DadosInvalidosException extends Exception {
     
@@ -53,7 +55,7 @@ public class DadosInvalidosException extends Exception {
     
     public static void mostrarWarningSeHouveAlgumErro() {
         if (qtdErros > 0) {
-            LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 erro" : "Ocorreram " + qtdErros + " erros") + " durante a execução dessa rotina! Verifique atentamente os arquivos de log! Estes são alguns:");
+            LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 problema" : "Ocorreram " + qtdErros + " problemas") + " durante a execução dessa rotina! Verifique atentamente os arquivos de log! Estes são alguns:");
             for (String tipoErro: errosPorTipo.keySet()) {
             	LOGGER.warn("* " + tipoErro + ": ");
             	for (String origem: errosPorTipo.get(tipoErro)) {

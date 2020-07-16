@@ -1,11 +1,10 @@
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ArquivoComInstancia;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.XmlComInstancia;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ValidaEnviaArquivosCNJ;
 
 /**
@@ -21,10 +20,9 @@ public class ExcluirArquivosXMLAindaNaoEnviados {
 	private static final Logger LOGGER = LogManager.getLogger(ExcluirArquivosXMLAindaNaoEnviados.class);
 	
 	public static void main(String[] args) throws Exception {
-		List<XmlComInstancia> arquivosXML = new ArrayList<>();
 		
 		Op_4_ValidaEnviaArquivosCNJ op = new Op_4_ValidaEnviaArquivosCNJ();
-		op.localizarXMLsInstanciasHabilitadas(arquivosXML);
+		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml");
 		arquivosXML = op.filtrarSomenteArquivosPendentesDeEnvio(arquivosXML);
 		
 		if (arquivosXML.isEmpty()) {
@@ -33,15 +31,15 @@ public class ExcluirArquivosXMLAindaNaoEnviados {
 		}
 		
 		LOGGER.info("Arquivos para exclusão:" + arquivosXML.size());
-		for (XmlComInstancia xml: arquivosXML) {
-			LOGGER.info("* " + xml.getArquivoXML());
+		for (ArquivoComInstancia xml: arquivosXML) {
+			LOGGER.info("* " + xml.getArquivo());
 		}
 		
 		LOGGER.warn("Confirma a exclusão dos " + arquivosXML.size() + " arquivos acima? (S/N)");
 		if ("S".equals(Auxiliar.readStdin().toUpperCase())) {
-			for (XmlComInstancia xml: arquivosXML) {
-				LOGGER.info("* Excluindo " + xml.getArquivoXML());
-				xml.getArquivoXML().delete();
+			for (ArquivoComInstancia xml: arquivosXML) {
+				LOGGER.info("* Excluindo " + xml.getArquivo());
+				xml.getArquivo().delete();
 			}
 		}
 		

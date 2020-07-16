@@ -32,7 +32,7 @@ public class Op_6_BackupConfiguracoes {
 	
 	public static void efetuarBackupArquivosDeConfiguracao() throws IOException {
 		
-		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(5/5) Backup dos arquivos de configuração");
+		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(6/6) Backup dos arquivos de configuração");
 		try {
 			progresso.setMax(4);
 			File pastaOutput = Auxiliar.prepararPastaDeSaida();

@@ -43,7 +43,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	
 	public static void main(String[] args) throws SQLException, IOException {
 		
-		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(1/5) Baixa lista de números de processos");
+		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(1/6) Baixa lista de números de processos");
 		try {
 			progresso.setMax(3);
 			

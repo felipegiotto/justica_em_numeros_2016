@@ -135,7 +135,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	public static void main(String[] args) throws Exception {
 
 		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Outros");
-		progresso = new ProgressoInterfaceGrafica("(2/5) Geração de XMLs individuais");
+		progresso = new ProgressoInterfaceGrafica("(2/6) Geração de XMLs individuais");
 		try {
 			Auxiliar.prepararPastaDeSaida();
 

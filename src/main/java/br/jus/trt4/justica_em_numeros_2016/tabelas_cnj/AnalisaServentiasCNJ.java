@@ -182,7 +182,7 @@ public class AnalisaServentiasCNJ {
 						"INNER JOIN tb_processo proc ON (proc.id_processo = hdo.id_processo_trf) " + 
 						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_destino) " + 
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
-				LOGGER.info("Consultando de historicos de deslocamento...");
+				LOGGER.info("Consultando historicos de deslocamento...");
 				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de historicos de deslocamento");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sqlHistorico.toString())) {
 					analisarExistenciaServentias(rs);

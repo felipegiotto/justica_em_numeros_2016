@@ -52,7 +52,8 @@ public class Auxiliar {
 	private static File pastaSaida = null;
 	public static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
 	public static final String SUFIXO_PROTOCOLO = ".protocolo";
-
+	public static final String SUFIXO_PROTOCOLO_SUCESSO = ".sucesso";
+	public static final String SUFIXO_PROTOCOLO_ERRO = ".erro";
 	
 	/**
 	 * Cria uma conexão com o banco de dados do PJe, conforme a instância selecionada (1 ou 2),
@@ -436,17 +437,6 @@ public class Auxiliar {
 
 
 	/**
-	 * Retorna a pasta raiz onde serão gravados e lidos os arquivos XML unificados para serem
-	 * enviados ao CNJ
-	 */
-	public static File getPastaXMLsUnificados(int grau) {
-		File pasta = new File(prepararPastaDeSaida(), "xmls_unificados/G" + grau);
-		pasta.mkdirs();
-		return pasta;
-	}
-	
-	
-	/**
 	 * Formata uma data conforme estabelecido no arquivo de intercomunicação: AAAAMMDD
 	 */
 	public static String formataDataAAAAMMDD(Date data) {
@@ -539,19 +529,6 @@ public class Auxiliar {
 		}
 	}
 	
-	private static boolean mostrouWarningLoteProcessos = false;
-	public static boolean deveMontarLotesDeProcessos() {
-		if (Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_envio_processos) == 0) {
-			if (!mostrouWarningLoteProcessos) {
-				LOGGER.info("A tarefa de unificação não será executada, pois o parâmetro 'tamanho_lote_processos' especifica o envio individual de processos");
-				mostrouWarningLoteProcessos = true;
-			}
-			return false;
-		} else {
-			return true;
-		}
-	}
-
 	/**
 	 * Lê na entrada padrão um comando do usuário e retorna em uma String
 	 */

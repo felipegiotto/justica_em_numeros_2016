@@ -35,8 +35,8 @@ public class Op_X_OperacaoCompleta {
 	    
 		OP_1_BAIXAR_LISTA                  (100),
 		OP_2_GERAR_XMLS_INDIVIDUAIS        (200),
-		OP_3_UNIFICA_ARQUIVOS_XML          (300), 
 		OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ     (400), 
+		OP_5_CONFERE_PROTOCOLOS_CNJ        (500), 
 		OP_9_ULTIMOS_BACKUPS               (900);
 		
 	    private int ordem;
@@ -107,15 +107,6 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 
-		// CHECKLIST: 7. Execute a classe "Op_3_UnificaArquivosXML"
-		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_3_UNIFICA_ARQUIVOS_XML, new Operacao() {
-
-			@Override
-			public void run() throws Exception {
-				Op_3_UnificaArquivosXML.main(null);
-			}
-		});
-
 		// CHECKLIST: 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", ...
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ, new Operacao() {
 			
@@ -127,6 +118,15 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 		
+		// CHECKLIST: TODO
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_5_CONFERE_PROTOCOLOS_CNJ, new Operacao() {
+
+			@Override
+			public void run() throws Exception {
+				Op_5_ConfereProtocolosCNJ.main(null);
+			}
+		});
+
 		// CHECKLIST: 12. Efetue backup dos seguintes dados, para referência futura: ...
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_9_ULTIMOS_BACKUPS, new Operacao() {
 			
