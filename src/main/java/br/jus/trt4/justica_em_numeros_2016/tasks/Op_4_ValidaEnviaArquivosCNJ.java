@@ -11,7 +11,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.net.ssl.SSLHandshakeException;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.io.FileUtils;
@@ -19,7 +18,6 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -133,58 +131,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
 		
 		httpClient = HttpUtil.criarNovoHTTPClientComAutenticacaoCNJ();
-	}
-	
-	private void testarConexaoComCNJ(boolean continuarEmCasoDeErro) throws DadosInvalidosException, IOException {
-		
-		String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true);
-		LOGGER.info("Testando conexão com o webservice do CNJ: " + url + "...");
-		
-		HttpGet get = new HttpGet(url);
-		HttpUtil.adicionarCabecalhoAutenticacao(get);
-		
-		long tempo = System.currentTimeMillis();
-		HttpResponse response;
-		try {
-			response = httpClient.execute(get);
-		} catch (SSLHandshakeException ex) {
-			LOGGER.error("Erro na conexão SSL. Talvez o certificado SSL do CNJ tenha sido alterado. Tente baixar os novos certificados para a pasta 'src/main/resources/certificados_rest_cnj/certificados' e executar o arquivo 'src/main/resources/certificados_rest_cnj/_importar_certificados_para_keystore.sh'. Em seguida, execute novamente esta operação.");
-			throw ex;
-		}
-		tempo = System.currentTimeMillis() - tempo;
-
-		HttpEntity entity = response.getEntity();
-		String body = EntityUtils.toString(entity, Charset.forName("UTF-8"));
-		LOGGER.info("Resposta recebida em " + tempo + "ms: " + body);
-
-		if (!continuarEmCasoDeErro) {
-			conferirRespostaSucesso(response.getStatusLine().getStatusCode(), null, null);
-		}
-	}
-
-	private void consultarTotaisDeProcessosNoCNJ() {
-		
-		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			consultarTotalProcessosNoCNJ(1);
-		}
-		if (Auxiliar.deveProcessarSegundoGrau()) {
-			consultarTotalProcessosNoCNJ(2);
-		}
-	}
-	
-	private void consultarTotalProcessosNoCNJ(int instancia) {
-		
-		LOGGER.info("Consultando total de processos enviados ao serviço do CNJ em G" + instancia + "...");
-		HttpGet httpGet = new HttpGet(Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/total/G" + instancia);
-		HttpUtil.adicionarCabecalhoAutenticacao(httpGet);
-		try {
-			HttpResponse httpResponse = httpClient.execute(httpGet);
-			HttpEntity httpEntity = httpResponse.getEntity();
-			String body = EntityUtils.toString(httpEntity, Charset.forName("UTF-8"));
-			LOGGER.info("* G" + instancia + ": " + body);
-		} catch (IOException ex) {
-			LOGGER.error("* Erro ao consultar total em G" + instancia + ": " + ex.getLocalizedMessage(), ex);
-		}
 	}
 
 	/**

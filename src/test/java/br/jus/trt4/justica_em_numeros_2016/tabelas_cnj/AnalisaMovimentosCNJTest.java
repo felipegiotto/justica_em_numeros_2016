@@ -9,9 +9,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import br.jus.cnj.modeloDeTransferenciaDeDados.TipoComplementoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoLocal;
-import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
