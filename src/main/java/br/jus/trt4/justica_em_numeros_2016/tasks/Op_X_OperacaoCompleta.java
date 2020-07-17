@@ -24,6 +24,11 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
  * reexecutando a classe. O controle das operações já executadas ficará no arquivo "operacao_atual.dat", dentro
  * da pasta "output/<TIPO_CARGA_XML>_backup_operacao_completa"
  * 
+ * TODO: Tentar fazer uma nova operação completa, com processamento paralelo (enquanto alguns estão gerando, outros estão enviando, outros estão conferindo protocolo), como uma linha de produção.
+ * Para acompanhar, gerar constantemente um arquivo HTML que, ao ser aberto no navegador, mostra o status de cada uma das fases, os totais, os erros que precisam ser resolvidos,
+ * uma barra de progresso com várias cores (cada fase), instruções sobre como resolver os problemas encontrados. Esse HTML pode fazer refresh sozinho, para dar impressão de ser dinâmico.
+ * Ou então abrir uma porta TCP, acessível pelo navegador, onde dê para acompanhar.
+ *
  * @author felipe.giotto@trt4.jus.br
  */
 public class Op_X_OperacaoCompleta {

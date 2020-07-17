@@ -14,7 +14,9 @@ import java.util.stream.Collectors;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -282,8 +284,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							String body = EntityUtils.toString(result, Charset.forName("UTF-8"));
 							
 							int statusCode = response.getStatusLine().getStatusCode();
-							boolean isHtml = result.getContentType() != null && result.getContentType().getValue() != null && result.getContentType().getValue().contains("html");
-							LOGGER.trace("* Arquivo: '" + xml + "', tempo=" + tempo + "ms, statusCode=" + statusCode + ", body=" + (isHtml ? "[HTML]" : body));
+							LOGGER.trace("* Arquivo: '" + xml + "', tempo=" + tempo + "ms, statusCode=" + statusCode + ", body=" + resumirBodyRequisicao(body, result.getContentType()));
 							conferirRespostaSucesso(statusCode, body, xml.getArquivo());
 							marcarArquivoComoEnviado(xml.getArquivo(), body);
 							LOGGER.info("* Arquivo enviado com sucesso: " + xml);
@@ -350,6 +351,16 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		LOGGER.info("Threads de envio terminadas!");
 	}
 	
+	private String resumirBodyRequisicao(String body, Header contentType) {
+		boolean isHtml = contentType != null && contentType.getValue() != null && contentType.getValue().contains("html");
+
+		if (isHtml) {
+			return StringUtils.abbreviate(body, 200).replaceAll("\n", "");
+		} else {
+			return body;
+		}
+	}
+
 	/**
 	 * Verifica se um determinado arquivo deve ser enviado. Condições:
 	 * 1. Deve ser um XML

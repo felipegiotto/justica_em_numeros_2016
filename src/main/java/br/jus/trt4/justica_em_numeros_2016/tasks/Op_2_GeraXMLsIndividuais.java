@@ -46,6 +46,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.TipoEndereco;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoNacional;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoOrgaoJulgador;
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoParametro;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoParte;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPoloProcessual;
@@ -53,7 +54,6 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.TipoProcessoJudicial;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoQualificacaoPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRelacaoIncidental;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRepresentanteProcessual;
-import br.jus.cnj.replicacao_nacional.ObjectFactory;
 import br.jus.cnj.replicacao_nacional.Processos;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
@@ -207,7 +207,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
 
 		// Objetos auxiliares para gerar o XML a partir das classes Java
-		ObjectFactory factory = new ObjectFactory();
 		JAXBContext context = JAXBContext.newInstance(Processos.class);
 		Marshaller jaxbMarshaller = context.createMarshaller();
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
@@ -305,7 +304,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
 						// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
 						// processo serão unificados, junto com os XMLs dos outros sistemas legados.
-						Processos processos = factory.createProcessos();
+						Processos processos = new Processos();
 						processos.getProcesso().add(processoJudicial);
 		
 						// Gera o arquivo XML temporário
@@ -633,6 +632,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 		// Preenche dados de processos incidentais / principais
 		analisarRelacaoIncidental(cabecalhoProcesso.getRelacaoIncidental(), processo);
+		
+		// Preenche um campo timestamp como "outroParametro", para evitar que arquivo seja negado como duplicado, 
+		// garantindo que a última versão do processo será enviada ao CNJ
+		TipoParametro parametro = new TipoParametro();
+		parametro.setNome("timestamp");
+		parametro.setValor(Long.toString(System.currentTimeMillis()));
+		cabecalhoProcesso.getOutroParametro().add(parametro);
 		
 		return cabecalhoProcesso;
 	}
@@ -1068,7 +1074,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			movimento.setDataHora(Auxiliar.formataDataMovimento(movimentoDto.getDataAtualizacao()));
 			movimento.setNivelSigilo(movimentoDto.isVisibilidadeExterna() ? 0 : 5);
 			movimento.setIdentificadorMovimento(Integer.toString(movimentoDto.getIdProcessoEvento()));
-			movimento.setResponsavelMovimento(movimentoDto.getCPFUsuarioMovimento());
+			
+			// TRT4 possui um usuário utilizado pelo sistema e-Jus², cujo CPF está registrado como "ejus2".
+			// Então, preenche CPF somente quando for válido
+			if (movimentoDto.getCPFUsuarioMovimento() != null && movimentoDto.getCPFUsuarioMovimento().length() == 11) {
+				movimento.setResponsavelMovimento(movimentoDto.getCPFUsuarioMovimento());
+			}
 			
 			// tipoResponsavelMovimento: Identificação do responsável pelo movimento: Servidor=0; Magistrado=1;
 			movimento.setTipoResponsavelMovimento(movimentoDto.isUsuarioMagistrado() ? 1 : 0);
