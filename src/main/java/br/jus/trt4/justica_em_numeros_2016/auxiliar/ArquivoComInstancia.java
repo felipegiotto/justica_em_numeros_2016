@@ -100,7 +100,7 @@ public class ArquivoComInstancia {
 		
 		LOGGER.trace("Localizando arquivos na pasta '" + pasta.getAbsolutePath() + "'...");
 		if (!pasta.isDirectory()) {
-			throw new DadosInvalidosException("Pasta não existe, talvez falte executar tarefas anteriores", pasta.toString());
+			return;
 		}
 		
 		// Filtro para localizar arquivos XML a serem enviados, bem como pastas para fazer busca recursiva

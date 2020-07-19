@@ -53,7 +53,12 @@ public class DadosInvalidosException extends Exception {
 		return qtdErros;
 	}
     
-    public static void mostrarWarningSeHouveAlgumErro() {
+    /**
+     * Mostra warnings no console caso tenha ocorrido algum problema com a execução da rotina
+     *
+     * @return
+     */
+    public static boolean mostrarWarningSeHouveAlgumErro() {
         if (qtdErros > 0) {
             LOGGER.warn((qtdErros == 1 ? "Ocorreu 1 problema" : "Ocorreram " + qtdErros + " problemas") + " durante a execução dessa rotina! Verifique atentamente os arquivos de log! Estes são alguns:");
             for (String tipoErro: errosPorTipo.keySet()) {
@@ -62,7 +67,9 @@ public class DadosInvalidosException extends Exception {
                 	LOGGER.warn("    => " + origem);
             	}
             }
+            return false;
         }
+        return true;
     }
     
     public static void zerarQtdErros() {

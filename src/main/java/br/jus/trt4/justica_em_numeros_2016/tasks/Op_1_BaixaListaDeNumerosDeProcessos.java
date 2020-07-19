@@ -30,7 +30,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
  * 
  * @author felipe.giotto@trt4.jus.br
  */
-public class Op_1_BaixaListaDeNumerosDeProcessos {
+public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(Op_1_BaixaListaDeNumerosDeProcessos.class);
 	private int grau;
@@ -71,13 +71,10 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 
 	
 	private static void gerarListaProcessos(int grau) throws SQLException, IOException {
-		Op_1_BaixaListaDeNumerosDeProcessos baixaDados = new Op_1_BaixaListaDeNumerosDeProcessos(grau);
-		try {
-
-			// Executa consultas e grava arquivo XML
+		
+		// Executa consultas e grava arquivo XML
+		try (Op_1_BaixaListaDeNumerosDeProcessos baixaDados = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
 			baixaDados.baixarListaProcessos();
-		} finally {
-			baixaDados.close();
 		}
 	}
 	
@@ -88,7 +85,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	}
 
 	
-	private void baixarListaProcessos() throws IOException, SQLException {
+	public void baixarListaProcessos() throws IOException, SQLException {
 		
 		Set<String> listaProcessos = new TreeSet<>();
 		
@@ -231,6 +228,9 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 		return conexaoBaseStagingEGestao;
 	}
 	
+	public File getArquivoSaida() {
+		return arquivoSaida;
+	}
 	
 	public static void gravarListaProcessosEmArquivo(Set<String> listaProcessos, File arquivoSaida) throws IOException {
 		arquivoSaida.getParentFile().mkdirs();
@@ -250,6 +250,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos {
 	/**
 	 * Fecha conexão com o PJe
 	 */
+	@Override
 	public void close() {
 
 		Auxiliar.fechar(conexaoBaseStagingEGestao);

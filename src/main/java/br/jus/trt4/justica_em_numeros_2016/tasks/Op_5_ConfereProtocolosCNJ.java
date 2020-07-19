@@ -36,6 +36,11 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 /**
  * Chama os webservices do CNJ, validando cada um dos protocolos recebidos previamente do CNJ na fase 4: {@link Op_4_ValidaEnviaArquivosCNJ}.
  * 
+ * TODO: Conferência pode ser assim: armazena a faixa de dias que teve envio, armazena o último protocolo recebido do CNJ.
+ * Vai consultando quando que esse ÚLTIMO protocolo é analisado no CNJ. Nesse momento, presume-se que todos os demais também estão 
+ * processados. Então, faz uma busca paginada, considerando a faixa de dias e buscando somente os ERROS (tem vários tipos de erro).
+ * Os outros, presume-se que estão OK.
+ *
  * @author felipe.giotto@trt4.jus.br
  */
 public class Op_5_ConfereProtocolosCNJ {
@@ -160,6 +165,14 @@ public class Op_5_ConfereProtocolosCNJ {
 
 	private void consultarProtocolosNoCNJ(List<ArquivoComInstancia> arquivosParaConsultar) throws DadosInvalidosException {
 
+		// Campo "status" da URL de consulta de protocolos:
+		// 1 = Aguardando processamento
+		// 3 = Processado com sucesso
+		// 4 = Enviado
+		// 5 = Duplicado
+		// 6 = Processado com Erro
+		// 7 = Erro no Arquivo
+		
 		// Monta a URL para consultar protocolos no CNJ.
 		// Exemplo de URL: https://www.cnj.jus.br/modelo-de-transferencia-de-dados/v1/processos/protocolos/all
 		final String url = Auxiliar.getParametroConfiguracao(Parametro.url_webservice_cnj, true) + "/protocolos/all";

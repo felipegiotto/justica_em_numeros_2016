@@ -491,6 +491,7 @@ public class Auxiliar {
 	}
 
 	public static void prepararThreadLog() {
+		// TODO: Resolver problema reportado pelo Wiler: quando número de threads é maior que número de processos a gerar, dá um erro nos logs
 		ThreadContext.put("logFolder", pastaSaida.getAbsolutePath());
 	}
 
@@ -651,5 +652,13 @@ public class Auxiliar {
 	
 	public static String removerPontuacaoNumeroProcesso(String numeroProcesso) {
 		return numeroProcesso.replaceAll("[^0-9]", "");
+	}
+	
+	public static void safeSleep(int millis) {
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
