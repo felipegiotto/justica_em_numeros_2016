@@ -112,6 +112,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private IdentificaGeneroPessoa identificaGeneroPessoa;
 	private IdentificaDocumentosPessoa identificaDocumentosPessoa;
 	private List<String> listaProcessos;
+	private String statusString;
 	
 	// Objetos que armazenam os dados do PJe para poder trazer dados de processos em lote,
 	// resultando em menos consultas ao banco de dados.
@@ -204,8 +205,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	private void gerarXML() throws SQLException, JAXBException, DadosInvalidosException, IOException {
 
-		LOGGER.info("Gerando XMLs do " + grau + "o Grau...");
-
+		statusString = "Criando lotes de operações do " + grau + "o Grau";
+		LOGGER.info(statusString + "...");
+		
 		// Objetos auxiliares para gerar o XML a partir das classes Java
 		JAXBContext context = JAXBContext.newInstance(Processos.class);
 		Marshaller jaxbMarshaller = context.createMarshaller();
@@ -223,7 +225,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		
 		// Monta uma lista de "operações" (cada operação é um processo a ser baixado)
-		LOGGER.info("Analisando arquivos pendentes...");
 		List<OperacaoGeracaoXML> operacoes = new ArrayList<>();
 		for (String numeroProcesso: listaProcessos) {
 
@@ -264,6 +265,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		    .values();
 		
 		
+		statusString = "Gerando XMLs do " + grau + "o Grau";
+		LOGGER.info(statusString + "...");
 		int i=0;
 		for (List<OperacaoGeracaoXML> lote : lotesOperacoes) {
 			List<String> processosPendentes = lote.stream().map(o -> o.numeroProcesso).collect(Collectors.toList());
@@ -344,6 +347,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 		}
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerados!");
+		this.statusString = null;
 	}
 
 	/**
@@ -1182,6 +1186,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException, InterruptedException {
 
 		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
+		this.statusString = "Preparando dados";
 
 		// Objeto que fará o de/para dos OJ e OJC do PJe para os do CNJ
 		if (processaServentiasCNJ == null) {
@@ -1247,6 +1252,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal, true);
 		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(grau, conexaoBasePrincipal);
 		analisaClassesProcessuaisCNJ = new AnalisaClassesProcessuaisCNJ(grau);
+		
+		this.statusString = null;
 	}
 
 

@@ -7,8 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
@@ -33,6 +31,7 @@ import com.google.gson.JsonParser;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ArquivoComInstancia;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ControleAbortarOperacao;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
@@ -48,13 +47,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	
 	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
 	private CloseableHttpClient httpClient;
-	private final File arquivoAbortar;
 	private final List<Long> temposEnvioCNJ = new ArrayList<>();
 	private long ultimaExibicaoProgresso;
 	private final int numeroThreads;
 	private final AtomicLong qtdEnviadaComSucesso = new AtomicLong(0);
-	private static final Pattern pProcessoJaEnviado = Pattern.compile("\\{\"status\":\"ERRO\",\"mensagem\":\"(\\d+) processo\\(s\\) não foi\\(ram\\) inserido\\(s\\), pois já existe\\(m\\) na base de dados!\"\\}");
-	private static final String NOME_ARQUIVO_ABORTAR = "ABORTAR.txt"; // Arquivo que pode ser gravado na pasta "output/[tipo_carga]", que faz com que o envio dos dados ao CNJ seja abortado
 	private static ProgressoInterfaceGrafica progresso;
 	
 	public static void main(String[] args) throws Exception {
@@ -126,8 +122,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws Exception
 	 */
 	public Op_4_ValidaEnviaArquivosCNJ() throws Exception {
-		
-		arquivoAbortar = new File(Auxiliar.prepararPastaDeSaida(), NOME_ARQUIVO_ABORTAR);
 		
 		// Número de threads simultâneas para conectar ao CNJ
 		numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
@@ -332,9 +326,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			}
 			
 			// Verifica se o usuário quer abortar o envio ao CNJ
-			if (arquivoAbortar.exists()) {
-				LOGGER.info("Abortando envio ao CNJ por causa do arquivo '" + arquivoAbortar.getAbsolutePath() + "'!");
-				FileUtils.deleteQuietly(arquivoAbortar);
+			if (ControleAbortarOperacao.instance().isDeveAbortar()) {
 				break;
 			}
 		}
