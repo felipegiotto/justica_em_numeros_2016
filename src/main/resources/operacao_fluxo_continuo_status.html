@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="refresh" content="5" />
+	<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans" />
+	<style>
+	body {
+		font-family: Open Sans;
+		padding: 30px;
+		background-color: lightgray;
+	}
+	
+	.barra-progresso {
+		border: 2px gray solid;
+		max-width: 1000px;
+		border-radius: 50px;
+		overflow: hidden;
+	}
+	
+	.progresso {
+		height: 100%;
+		float: left;
+		padding: 10px 0px;
+		text-align: center;
+	}
+	
+	.INICIO {
+		background-color: #fef720;
+	}
+	.XML_GERADO {
+		background-color: #9bfa24;
+	}
+	.ENVIADO {
+		background-color: #31db92;
+	}
+	.CONCLUIDO {
+		background-color: #27bbe0;
+	}
+	.ERRO {
+		background-color: red;
+		color: white;
+	}
+	
+	table.detalhes td {
+		padding: 5px 20px;
+	}
+	table.detalhes td.valor {
+		text-align: right;
+	}
+	</style>
+</head>
+
+<body>
+	<h1>DataJud - NOME_TRIBUNAL - Carga ANO_MES</h1>
+	
+	<br />
+	
+	<div class="barra-progresso">
+		<div class="progresso ERRO" style="width: PERCENTUAL_ERRO%" title="Arquivos com erro na geração ou no retorno do CNJ">Erro</div>
+		<div class="progresso CONCLUIDO" style="width: PERCENTUAL_CONCLUIDO%" title="Arquivos validados e aceitos no CNJ">Concluído</div>
+		<div class="progresso ENVIADO" style="width: PERCENTUAL_ENVIADO%" title="Arquivos enviados, aguardando validação no CNJ">Enviado</div>
+		<div class="progresso XML_GERADO" style="width: PERCENTUAL_XML_GERADO%" title="Arquivos gerados localmente, ainda não enviados">Gerado</div>
+		<div class="progresso INICIO" style="width: PERCENTUAL_INICIO%" title="Arquivos na fila para geração dos arquivos XML">Fila</div>
+	</div>
+	
+	<br />
+	<br />
+	
+	<table class="detalhes">
+		<tr><td>Fila</td><td class="valor">TOTAL_INICIO</td><td class="valor">PERCENTUAL_INICIO %</td></tr>
+		<tr><td>Gerado</td><td class="valor">TOTAL_XML_GERADO</td><td class="valor">PERCENTUAL_XML_GERADO %</td></tr>
+		<tr><td>Enviado</td><td class="valor">TOTAL_ENVIADO</td><td class="valor">PERCENTUAL_ENVIADO %</td></tr>
+		<tr><td>Concluído</td><td class="valor">TOTAL_CONCLUIDO</td><td class="valor">PERCENTUAL_CONCLUIDO %</td></tr>
+		<tr><td>Erro</td><td class="valor">TOTAL_ERRO</td><td class="valor">PERCENTUAL_ERRO %</td></tr>
+		<tr><td><b>Total</td><td class="valor"><b>TOTAL_GERAL</b></td><td class="valor">100 %</td></tr>
+	</table>
+</body>
+
+</html>

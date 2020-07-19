@@ -289,19 +289,11 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * @return
 	 */
 	private boolean deveConsultarArquivo(File arquivo) {
-		return !recuperarArquivoProtocoloSucesso(arquivo).exists() && !recuperarArquivoProtocoloErro(arquivo).exists();
+		return !Auxiliar.gerarNomeArquivoProcessoSucesso(arquivo).exists() && !Auxiliar.gerarNomeArquivoProcessoNegado(arquivo).exists();
 	}
 
-	private File recuperarArquivoProtocoloSucesso(File arquivo) {
-		return new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_PROTOCOLO_SUCESSO);
-	}
-
-	private File recuperarArquivoProtocoloErro(File arquivo) {
-		return new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_PROTOCOLO_ERRO);
-	}
-	
 	private void marcarArquivoComoProcessado(File arquivo, String json, boolean sucesso) {
-		File arquivoConfirmacao = sucesso ? recuperarArquivoProtocoloSucesso(arquivo) : recuperarArquivoProtocoloErro(arquivo);
+		File arquivoConfirmacao = sucesso ? Auxiliar.gerarNomeArquivoProcessoSucesso(arquivo) : Auxiliar.gerarNomeArquivoProcessoNegado(arquivo);
 		try {
 			FileUtils.write(arquivoConfirmacao, json, StandardCharsets.UTF_8);
 		} catch (IOException ex) {

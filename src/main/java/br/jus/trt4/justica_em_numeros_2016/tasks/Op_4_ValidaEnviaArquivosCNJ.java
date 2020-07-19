@@ -392,7 +392,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		try {
 			JsonObject rootObject = JsonParser.parseString(jsonRespostaCNJ).getAsJsonObject();
 			String protocolo = rootObject.get("protocolo").getAsString();
-			File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_PROTOCOLO);
+			File confirmacaoEnvio = Auxiliar.gerarNomeArquivoProtocoloProcessoEnviado(arquivo);
 			FileUtils.write(confirmacaoEnvio, protocolo, StandardCharsets.UTF_8);
 		} catch (JsonParseException ex) {
 			LOGGER.warn("Não foi possível ler o número do protocolo JSON do CNJ");

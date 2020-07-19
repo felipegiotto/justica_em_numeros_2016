@@ -215,10 +215,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		int qtdXMLGerados = 0;
 		long tempoGasto = 0;
 
-		// Pasta onde serão gerados os arquivos XML
-		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
-		pastaRaiz = new File(pastaRaiz, "PJe");
-
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
 		
@@ -230,8 +226,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Arquivo XML que conterá os dados do processo
 			// Depois da geração do XML temporário, visando garantir a integridade do arquivo XML 
 			// definitivo, o temporário só será excluído depois da gravação completa do definitivo.
-			File arquivoXMLTemporario = new File(pastaRaiz, numeroProcesso + ".temp");
-			File arquivoXML = new File(pastaRaiz, numeroProcesso + ".xml");
+			File arquivoXML = Auxiliar.gerarNomeArquivoIndividualParaProcessoPJe(grau, numeroProcesso);
+			File arquivoXMLTemporario = new File(arquivoXML.getParentFile(), numeroProcesso + ".temp");
 			arquivoXMLTemporario.delete();
 
 			// Se o script for abortado bem na hora da cópia do arquivo temporário para o definitivo, o definitivo
