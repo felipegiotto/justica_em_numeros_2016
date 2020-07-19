@@ -136,28 +136,21 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	}
 
 	/**
-	 * Confere se a requisição HTTP teve reposta 200 (SUCCESS) ou 201 (CREATED)
-	 * 
-	 * UPDATE: Também confere se o serviço não retornou "ERRO" dentro do "body" do request,
-	 * pois algumas requisições retornam "200" mas informam erro no conteúdo. 
-	 * 
+	 * Confere se a requisição HTTP teve reposta válida
+	 *
 	 * @param statusCode
 	 * @throws DadosInvalidosException
 	 */
-	private void conferirRespostaSucesso(int statusCode, String body, File arquivoXML) throws IOException {
+	private void conferirRespostaSucesso(int statusCode, String body) throws IOException {
 		
-		// Se o serviço informar "processo(s) não foi(ram) inserido(s), pois já existe(m) na base de dados",
-		// considera que o envio foi bem sucedido, pois de alguma forma os processos já estão na base do CNJ
-		// (pode ser por algum outro envio anterior, por exemplo)
-		Matcher m = pProcessoJaEnviado.matcher(body);
-		if (m.find()) {
-			LOGGER.debug("CNJ informou que todos o processo do arquivo '" + arquivoXML + "' já foi recebido. Arquivo será marcado como 'enviado'");
-			return;
-		}
-		
-		if (statusCode != 200 && statusCode != 201) {
+		// 200: SUCCESS
+		// 201: CREATED
+		// 409: Arquivo duplicado (presume-se que já está no CNJ, então).
+		if (statusCode != 200 && statusCode != 201 && statusCode != 409) {
 			throw new IOException("Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)");
 		}
+		
+		// Ex: statusCode=202, body={"status":"ERRO","protocolo":"TRT479782202007171595018643017","mensagem":"Não foi possível fazer a recepção do arquivo. Tente novamente mais tarde"}
 		if (body != null && body.contains("\"ERRO\"")) {
 			throw new IOException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')");
 		}
@@ -285,7 +278,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 							
 							int statusCode = response.getStatusLine().getStatusCode();
 							LOGGER.trace("* Arquivo: '" + xml + "', tempo=" + tempo + "ms, statusCode=" + statusCode + ", body=" + resumirBodyRequisicao(body, result.getContentType()));
-							conferirRespostaSucesso(statusCode, body, xml.getArquivo());
+							conferirRespostaSucesso(statusCode, body);
 							marcarArquivoComoEnviado(xml.getArquivo(), body);
 							LOGGER.info("* Arquivo enviado com sucesso: " + xml);
 							qtdEnviadaComSucesso.incrementAndGet();
