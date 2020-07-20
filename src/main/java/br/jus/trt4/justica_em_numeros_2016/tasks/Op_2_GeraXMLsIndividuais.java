@@ -289,7 +289,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				long mediaPorProcesso = 0;
 				if (qtdXMLGerados.get() > 0) {
 					mediaPorProcesso = tempoGasto.get() / qtdXMLGerados.get();
-					tempoRestante = xmlsRestantes * mediaPorProcesso;
+					tempoRestante = xmlsRestantes * mediaPorProcesso / numeroThreads;
 				}
 				String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
 				LOGGER.debug("Gravando Processo " + operacao.numeroProcesso + " (" + i + "/" + operacoes.size() + " - " + i * 100 / operacoes.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + operacao.arquivoXML + "...");
