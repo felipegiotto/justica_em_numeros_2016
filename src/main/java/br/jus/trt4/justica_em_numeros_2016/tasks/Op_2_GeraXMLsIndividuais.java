@@ -118,13 +118,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 	// Objetos que armazenam os dados do PJe para poder trazer dados de processos em lote,
 	// resultando em menos consultas ao banco de dados.
-	private final Map<String, CacheDadosProcesso> cacheProcessosDtos = new HashMap<>();
+	private final Map<String, ProcessoDto> cacheProcessosDtos = new HashMap<>();
 
-	// TODO: Se, ao terminar a refatoração, só houver "processoDto" dentro dessa classe, remover a classe e usar diretamente o ProcessoDto.
-	private class CacheDadosProcesso {
-		ProcessoDto processoDto;
-	}
-	
 	private class OperacaoGeracaoXML {
 		String numeroProcesso;
 		File arquivoXML;
@@ -371,9 +366,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				
 				HttpClient httpClient = HttpClients.createDefault();
 				HttpResponse response = httpClient.execute(post);
-				
-				HttpEntity result = response.getEntity();
-				String json = EntityUtils.toString(result, Charset.forName("UTF-8"));
+				String json;
+				try {
+					HttpEntity result = response.getEntity();
+					json = EntityUtils.toString(result, Charset.forName("UTF-8"));
+				} finally {
+					EntityUtils.consumeQuietly(response.getEntity());
+				}
 				
 				// Grava o resultado do validador do CNJ, se solicitado
 				if (Auxiliar.getParametroBooleanConfiguracao(Parametro.debug_gravar_relatorio_validador_cnj, false)) {
@@ -406,10 +405,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
 			while (rsProcessos.next()) {
 				String nrProcesso = rsProcessos.getString("nr_processo");
-				CacheDadosProcesso cache = new CacheDadosProcesso();
-				cache.processoDto = new ProcessoDto(rsProcessos, false);
-				cache.processoDto.setNumeroInstancia(grau);
-				this.cacheProcessosDtos.put(nrProcesso, cache);
+				ProcessoDto processoDto = new ProcessoDto(rsProcessos, false);
+				processoDto.setNumeroInstancia(grau);
+				this.cacheProcessosDtos.put(nrProcesso, processoDto);
 			}
 		}
 		
@@ -422,7 +420,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsPartes.next()) {
 				String nrProcesso = rsPartes.getString("nr_processo");
 				String inParticipacao = rsPartes.getString("in_participacao");
-				ProcessoDto processoDto = cacheProcessosDtos.get(nrProcesso).processoDto;
+				ProcessoDto processoDto = cacheProcessosDtos.get(nrProcesso);
 				
 				// Busca o polo processual dentro do processo
 				PoloDto polo;
@@ -466,7 +464,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsAssuntos.next()) {
 				String nrProcesso = rsAssuntos.getString("nr_processo");
 				AssuntoDto assunto = new AssuntoDto(rsAssuntos);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getAssuntos().add(assunto);
+				cacheProcessosDtos.get(nrProcesso).getAssuntos().add(assunto);
 			}
 		}
 
@@ -478,7 +476,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsMovimentos.next()) {
 				String nrProcesso = rsMovimentos.getString("nr_processo");
 				MovimentoDto movimento = new MovimentoDto(rsMovimentos);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getMovimentos().add(movimento);
+				cacheProcessosDtos.get(nrProcesso).getMovimentos().add(movimento);
 				movimentosPorIdProcessoEvento.put(movimento.getIdProcessoEvento(), movimento);
 			}
 		}
@@ -517,7 +515,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsIncidentes.next()) {
 				String nrProcesso = rsIncidentes.getString("nr_processo_referencia");
 				ProcessoDto incidente = new ProcessoDto(rsIncidentes, true);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getIncidentes().add(incidente);
+				cacheProcessosDtos.get(nrProcesso).getIncidentes().add(incidente);
 			}
 		}
 		
@@ -528,7 +526,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsSentencasAcordaos.next()) {
 				String nrProcesso = rsSentencasAcordaos.getString("nr_processo");
 				DocumentoDto documentoDto = new DocumentoDto(rsSentencasAcordaos);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getSentencasAcordaos().add(documentoDto);
+				cacheProcessosDtos.get(nrProcesso).getSentencasAcordaos().add(documentoDto);
 			}
 		}
 
@@ -539,7 +537,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsHistoricoDeslocamentoOJ.next()) {
 				String nrProcesso = rsHistoricoDeslocamentoOJ.getString("nr_processo");
 				HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto(rsHistoricoDeslocamentoOJ);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getHistoricosDeslocamentoOJ().add(historico);
+				cacheProcessosDtos.get(nrProcesso).getHistoricosDeslocamentoOJ().add(historico);
 			}
 		}
 		} finally {
@@ -560,7 +558,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, DadosInvalidosException {
 
 		if (cacheProcessosDtos.containsKey(numeroProcesso)) {
-			return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso).processoDto);
+			return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso));
 		} else {
 			LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado no cache da base " + grau + "G! O processo pode não existir OU faltou carregar em cache os dados desse processo (com o método 'prepararCacheDadosProcessos')");
 			return null;
@@ -671,7 +669,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Caused by: org.xml.sax.SAXParseException; ... cvc-pattern-valid: Value '0020474-77.2016.5.04.0233' is not facet-valid with respect to pattern '\d{20}' for type 'tipoNumeroUnico'.
 			// Linha do XML:
 			// <relacaoIncidental numeroProcesso="0020474-77.2016.5.04.0233" tipoRelacao="PI" classeProcessual="1125"/>
-			relacao.setNumeroProcesso(Auxiliar.removerPontuacaoNumeroProcesso(numeroProcessoReferencia)); // TODO: Verificar se grava número plano ou formatado (ver aqui e no número principal do processo).
+			relacao.setNumeroProcesso(Auxiliar.removerPontuacaoNumeroProcesso(numeroProcessoReferencia));
 			
 			// Indicar se o processo é principal ou incidental.
 			// Podem ser classificados como:
@@ -714,7 +712,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
 
 		// Itera sobre os polos processuais
-		Collection<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).processoDto.getPolosPorTipoParticipacao().values();
+		Collection<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).getPolosPorTipoParticipacao().values();
 		List<TipoPoloProcessual> polos = new ArrayList<>();
 		for (PoloDto poloDto : polosDtos) {
 			// Script TRT14:
