@@ -50,7 +50,8 @@ public class ProcessoDto {
 			return;
 		}
 		
-		this.numeroInstancia = rsProcesso.getInt("nr_instancia");
+		// UPDATE: NÃO PEGA a instância do banco de dados, pois a grande maioria dos registros no segundo grau estão com nr_instancia NULAS
+		// this.numeroInstancia = rsProcesso.getInt("nr_instancia");
 		this.segredoJustica = "S".equals(rsProcesso.getString("in_segredo_justica"));
 		this.dataAutuacao = Auxiliar.getCampoLocalDateTimeOrNull(rsProcesso, "dt_autuacao");
 		this.valorCausa = Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa");

@@ -28,7 +28,8 @@ SELECT
   
   
   -- instancia
-  pt.nr_instancia, 
+  -- UPDATE: NÃO PEGA a instância do banco de dados, pois a grande maioria dos registros no segundo grau estão com nr_instancia NULAS
+  -- pt.nr_instancia, 
  
   /* TRT4 */
   pt.vl_causa,
@@ -50,3 +51,6 @@ LEFT  JOIN tb_classe_judicial cjref ON (cjref.id_classe_judicial = ptref.id_clas
 
 
 WHERE p.nr_processo = ANY(:numeros_processos)
+
+-- Reforça a condição da data de autuação, pois um bug no PJe fez com que houvesse mais que um processo com mesma numeração (um com data de autuação e outro sem)
+AND pt.dt_autuacao IS NOT NULL
