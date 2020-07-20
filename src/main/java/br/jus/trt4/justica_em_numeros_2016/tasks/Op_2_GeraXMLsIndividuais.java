@@ -15,7 +15,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBContext;
@@ -200,7 +204,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		this.grau = grau;
 	}
 
-	private void gerarXML() throws SQLException, JAXBException, DadosInvalidosException, IOException {
+	private void gerarXML() throws SQLException, JAXBException, DadosInvalidosException, IOException, InterruptedException {
 
 		statusString = "Criando lotes de operações do " + grau + "o Grau";
 		LOGGER.info(statusString + "...");
@@ -211,8 +215,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
 		// Variáveis auxiliares para calcular o tempo estimado
-		int qtdXMLGerados = 0;
-		long tempoGasto = 0;
+		AtomicInteger qtdXMLGerados = new AtomicInteger();
+		AtomicLong tempoGasto = new AtomicLong();
 
 		// Pasta onde serão gerados os arquivos XML
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
@@ -261,25 +265,30 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		    .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote))
 		    .values();
 		
+		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
 		
 		statusString = "Gerando XMLs do " + grau + "o Grau";
 		LOGGER.info(statusString + "...");
-		int i=0;
+		AtomicInteger posicaoAtual = new AtomicInteger();
 		for (List<OperacaoGeracaoXML> lote : lotesOperacoes) {
 			List<String> processosPendentes = lote.stream().map(o -> o.numeroProcesso).collect(Collectors.toList());
 			prepararCacheDadosProcessos(processosPendentes);
+			ExecutorService threadPool = Executors.newFixedThreadPool(numeroThreads);
 			for (OperacaoGeracaoXML operacao : lote) {
 				
 				// Cálculo do tempo restante
 				long antes = System.currentTimeMillis();
-				i++;
+				int i = posicaoAtual.incrementAndGet();
 				
+				threadPool.execute(() -> {
+				
+				Auxiliar.prepararThreadLog();
 				// Calcula e mostra tempo restante
 				int xmlsRestantes = operacoes.size() - i;
 				long tempoRestante = 0;
 				long mediaPorProcesso = 0;
-				if (qtdXMLGerados > 0) {
-					mediaPorProcesso = tempoGasto / qtdXMLGerados;
+				if (qtdXMLGerados.get() > 0) {
+					mediaPorProcesso = tempoGasto.get() / qtdXMLGerados.get();
 					tempoRestante = xmlsRestantes * mediaPorProcesso;
 				}
 				String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
@@ -299,7 +308,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 				if (processoJudicial != null) {
 	
-					BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Gerando XML");
 					try {
 						// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
 						// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
@@ -309,7 +317,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 						// Gera o arquivo XML temporário
 						operacao.arquivoXML.getParentFile().mkdirs();
-						jaxbMarshaller.marshal(processos, operacao.arquivoXMLTemporario);
+						synchronized(jaxbMarshaller) {
+							jaxbMarshaller.marshal(processos, operacao.arquivoXMLTemporario);
+						}
 		
 						// OPCIONAL: Valida o arquivo XML com o "Programa validador de arquivos XML" do CNJ
 						try {
@@ -327,21 +337,26 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							LOGGER.warn("O XML do processo " + operacao.numeroProcesso + " não passou na validação do CNJ" + ex.getLocalizedMessage());
 							ex.printStackTrace();
 						}
-						
-					} finally {
-						BenchmarkVariasOperacoes.globalInstance().fimOperacao();
+		
+					} catch (Exception ex) {
+						// TODO: Organizar essa exception (e outras) que devem ser reportadas na interface
+						LOGGER.error("Erro gerando dados do processo " + operacao.numeroProcesso + ": " + ex.getLocalizedMessage(), ex);
 					}
 					
 					// Cálculo do tempo restante
-					tempoGasto += System.currentTimeMillis() - antes;
-					qtdXMLGerados++;
+					tempoGasto.addAndGet(System.currentTimeMillis() - antes);
+					qtdXMLGerados.incrementAndGet();
 	
 				} else {
 					LOGGER.warn("O XML do processo " + operacao.numeroProcesso + " não foi gerado na base " + grau + "G!");
 				}
 				
 				progresso.incrementProgress();
+				});
 			}
+			
+			threadPool.shutdown();
+			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 		}
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerados!");
 		this.statusString = null;
@@ -350,10 +365,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	/**
 	 * Valida um arquivo no "Programa validador de arquivos XML", conforme parâmetro "url_validador_cnj" das configurações
 	 *
+	 * TODO: Quando CNJ resolver o bug de concorrência no validador local, retirar o synchronized
+	 *
 	 * @param arquivoXML
 	 * @throws DadosInvalidosException
 	 */
-	private void validarArquivoXML(File arquivoXML) throws DadosInvalidosException {
+	private synchronized void validarArquivoXML(File arquivoXML) throws DadosInvalidosException {
 		
 		String url = Auxiliar.getParametroConfiguracao(Parametro.url_validador_cnj, false);
 		if (url != null) {
