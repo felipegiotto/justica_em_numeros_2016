@@ -327,7 +327,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							
 							// Copia o XML temporário sobre o definitivo e exclui o temporário
 							FileUtils.copyFile(operacao.arquivoXMLTemporario, operacao.arquivoXML);
-							LOGGER.debug("Processo gravado com sucesso no arquivo " + operacao.arquivoXML);
+							LOGGER.trace("Processo gravado com sucesso no arquivo " + operacao.arquivoXML);
 							
 							// Apaga o arquivo temporário somente se deu certo, para que seja possível analisar problemas
 							// caso o XML não passe na validação.
