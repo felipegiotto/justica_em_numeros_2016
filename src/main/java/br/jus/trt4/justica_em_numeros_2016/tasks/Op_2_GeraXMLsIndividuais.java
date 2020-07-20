@@ -15,7 +15,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBContext;
@@ -118,13 +122,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 	// Objetos que armazenam os dados do PJe para poder trazer dados de processos em lote,
 	// resultando em menos consultas ao banco de dados.
-	private final Map<String, CacheDadosProcesso> cacheProcessosDtos = new HashMap<>();
+	private final Map<String, ProcessoDto> cacheProcessosDtos = new HashMap<>();
 
-	// TODO: Se, ao terminar a refatoração, só houver "processoDto" dentro dessa classe, remover a classe e usar diretamente o ProcessoDto.
-	private class CacheDadosProcesso {
-		ProcessoDto processoDto;
-	}
-	
 	private class OperacaoGeracaoXML {
 		String numeroProcesso;
 		File arquivoXML;
@@ -205,7 +204,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		this.grau = grau;
 	}
 
-	private void gerarXML() throws SQLException, JAXBException, DadosInvalidosException, IOException {
+	private void gerarXML() throws SQLException, JAXBException, DadosInvalidosException, IOException, InterruptedException {
 
 		statusString = "Criando lotes de operações do " + grau + "o Grau";
 		LOGGER.info(statusString + "...");
@@ -216,8 +215,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
 		// Variáveis auxiliares para calcular o tempo estimado
-		int qtdXMLGerados = 0;
-		long tempoGasto = 0;
+		AtomicInteger qtdXMLGerados = new AtomicInteger();
+		AtomicLong tempoGasto = new AtomicLong();
 
 		// Carrega a lista de processos que precisará ser analisada
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
@@ -262,26 +261,31 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		    .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote))
 		    .values();
 		
+		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
 		
 		statusString = "Gerando XMLs do " + grau + "o Grau";
 		LOGGER.info(statusString + "...");
-		int i=0;
+		AtomicInteger posicaoAtual = new AtomicInteger();
 		for (List<OperacaoGeracaoXML> lote : lotesOperacoes) {
 			List<String> processosPendentes = lote.stream().map(o -> o.numeroProcesso).collect(Collectors.toList());
 			prepararCacheDadosProcessos(processosPendentes);
+			ExecutorService threadPool = Executors.newFixedThreadPool(numeroThreads);
 			for (OperacaoGeracaoXML operacao : lote) {
 				
 				// Cálculo do tempo restante
 				long antes = System.currentTimeMillis();
-				i++;
+				int i = posicaoAtual.incrementAndGet();
 				
+				threadPool.execute(() -> {
+				
+				Auxiliar.prepararThreadLog();
 				// Calcula e mostra tempo restante
 				int xmlsRestantes = operacoes.size() - i;
 				long tempoRestante = 0;
 				long mediaPorProcesso = 0;
-				if (qtdXMLGerados > 0) {
-					mediaPorProcesso = tempoGasto / qtdXMLGerados;
-					tempoRestante = xmlsRestantes * mediaPorProcesso;
+				if (qtdXMLGerados.get() > 0) {
+					mediaPorProcesso = tempoGasto.get() / qtdXMLGerados.get();
+					tempoRestante = xmlsRestantes * mediaPorProcesso / numeroThreads;
 				}
 				String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
 				LOGGER.debug("Gravando Processo " + operacao.numeroProcesso + " (" + i + "/" + operacoes.size() + " - " + i * 100 / operacoes.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + "). Arquivo de saída: " + operacao.arquivoXML + "...");
@@ -300,7 +304,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 				if (processoJudicial != null) {
 	
-					BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Gerando XML");
 					try {
 						// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
 						// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
@@ -310,7 +313,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 						// Gera o arquivo XML temporário
 						operacao.arquivoXML.getParentFile().mkdirs();
-						jaxbMarshaller.marshal(processos, operacao.arquivoXMLTemporario);
+						synchronized(jaxbMarshaller) {
+							jaxbMarshaller.marshal(processos, operacao.arquivoXMLTemporario);
+						}
 		
 						// OPCIONAL: Valida o arquivo XML com o "Programa validador de arquivos XML" do CNJ
 						try {
@@ -318,7 +323,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							
 							// Copia o XML temporário sobre o definitivo e exclui o temporário
 							FileUtils.copyFile(operacao.arquivoXMLTemporario, operacao.arquivoXML);
-							LOGGER.debug("Processo gravado com sucesso no arquivo " + operacao.arquivoXML);
+							LOGGER.trace("Processo gravado com sucesso no arquivo " + operacao.arquivoXML);
 							
 							// Apaga o arquivo temporário somente se deu certo, para que seja possível analisar problemas
 							// caso o XML não passe na validação.
@@ -328,21 +333,26 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							LOGGER.warn("O XML do processo " + operacao.numeroProcesso + " não passou na validação do CNJ" + ex.getLocalizedMessage());
 							ex.printStackTrace();
 						}
-						
-					} finally {
-						BenchmarkVariasOperacoes.globalInstance().fimOperacao();
+		
+					} catch (Exception ex) {
+						// TODO: Organizar essa exception (e outras) que devem ser reportadas na interface
+						LOGGER.error("Erro gerando dados do processo " + operacao.numeroProcesso + ": " + ex.getLocalizedMessage(), ex);
 					}
 					
 					// Cálculo do tempo restante
-					tempoGasto += System.currentTimeMillis() - antes;
-					qtdXMLGerados++;
+					tempoGasto.addAndGet(System.currentTimeMillis() - antes);
+					qtdXMLGerados.incrementAndGet();
 	
 				} else {
 					LOGGER.warn("O XML do processo " + operacao.numeroProcesso + " não foi gerado na base " + grau + "G!");
 				}
 				
 				progresso.incrementProgress();
+				});
 			}
+			
+			threadPool.shutdown();
+			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 		}
 		LOGGER.info("Arquivos XML do " + grau + "o Grau gerados!");
 		this.statusString = null;
@@ -351,10 +361,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	/**
 	 * Valida um arquivo no "Programa validador de arquivos XML", conforme parâmetro "url_validador_cnj" das configurações
 	 *
+	 * TODO: Quando CNJ resolver o bug de concorrência no validador local, retirar o synchronized
+	 *
 	 * @param arquivoXML
 	 * @throws DadosInvalidosException
 	 */
-	private void validarArquivoXML(File arquivoXML) throws DadosInvalidosException {
+	private synchronized void validarArquivoXML(File arquivoXML) throws DadosInvalidosException {
 		
 		String url = Auxiliar.getParametroConfiguracao(Parametro.url_validador_cnj, false);
 		if (url != null) {
@@ -367,9 +379,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				
 				HttpClient httpClient = HttpClients.createDefault();
 				HttpResponse response = httpClient.execute(post);
-				
-				HttpEntity result = response.getEntity();
-				String json = EntityUtils.toString(result, Charset.forName("UTF-8"));
+				String json;
+				try {
+					HttpEntity result = response.getEntity();
+					json = EntityUtils.toString(result, Charset.forName("UTF-8"));
+				} finally {
+					EntityUtils.consumeQuietly(response.getEntity());
+				}
 				
 				// Grava o resultado do validador do CNJ, se solicitado
 				if (Auxiliar.getParametroBooleanConfiguracao(Parametro.debug_gravar_relatorio_validador_cnj, false)) {
@@ -402,10 +418,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		try (ResultSet rsProcessos = nsConsultaProcessos.executeQuery()) {
 			while (rsProcessos.next()) {
 				String nrProcesso = rsProcessos.getString("nr_processo");
-				CacheDadosProcesso cache = new CacheDadosProcesso();
-				cache.processoDto = new ProcessoDto(rsProcessos, false);
-				cache.processoDto.setNumeroInstancia(grau);
-				this.cacheProcessosDtos.put(nrProcesso, cache);
+				ProcessoDto processoDto = new ProcessoDto(rsProcessos, false);
+				processoDto.setNumeroInstancia(grau);
+				this.cacheProcessosDtos.put(nrProcesso, processoDto);
 			}
 		}
 		
@@ -418,7 +433,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsPartes.next()) {
 				String nrProcesso = rsPartes.getString("nr_processo");
 				String inParticipacao = rsPartes.getString("in_participacao");
-				ProcessoDto processoDto = cacheProcessosDtos.get(nrProcesso).processoDto;
+				ProcessoDto processoDto = cacheProcessosDtos.get(nrProcesso);
 				
 				// Busca o polo processual dentro do processo
 				PoloDto polo;
@@ -462,7 +477,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsAssuntos.next()) {
 				String nrProcesso = rsAssuntos.getString("nr_processo");
 				AssuntoDto assunto = new AssuntoDto(rsAssuntos);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getAssuntos().add(assunto);
+				cacheProcessosDtos.get(nrProcesso).getAssuntos().add(assunto);
 			}
 		}
 
@@ -474,7 +489,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsMovimentos.next()) {
 				String nrProcesso = rsMovimentos.getString("nr_processo");
 				MovimentoDto movimento = new MovimentoDto(rsMovimentos);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getMovimentos().add(movimento);
+				cacheProcessosDtos.get(nrProcesso).getMovimentos().add(movimento);
 				movimentosPorIdProcessoEvento.put(movimento.getIdProcessoEvento(), movimento);
 			}
 		}
@@ -513,7 +528,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsIncidentes.next()) {
 				String nrProcesso = rsIncidentes.getString("nr_processo_referencia");
 				ProcessoDto incidente = new ProcessoDto(rsIncidentes, true);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getIncidentes().add(incidente);
+				cacheProcessosDtos.get(nrProcesso).getIncidentes().add(incidente);
 			}
 		}
 		
@@ -524,7 +539,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsSentencasAcordaos.next()) {
 				String nrProcesso = rsSentencasAcordaos.getString("nr_processo");
 				DocumentoDto documentoDto = new DocumentoDto(rsSentencasAcordaos);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getSentencasAcordaos().add(documentoDto);
+				cacheProcessosDtos.get(nrProcesso).getSentencasAcordaos().add(documentoDto);
 			}
 		}
 
@@ -535,7 +550,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsHistoricoDeslocamentoOJ.next()) {
 				String nrProcesso = rsHistoricoDeslocamentoOJ.getString("nr_processo");
 				HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto(rsHistoricoDeslocamentoOJ);
-				cacheProcessosDtos.get(nrProcesso).processoDto.getHistoricosDeslocamentoOJ().add(historico);
+				cacheProcessosDtos.get(nrProcesso).getHistoricosDeslocamentoOJ().add(historico);
 			}
 		}
 		} finally {
@@ -556,7 +571,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, DadosInvalidosException {
 
 		if (cacheProcessosDtos.containsKey(numeroProcesso)) {
-			return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso).processoDto);
+			return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso));
 		} else {
 			LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado no cache da base " + grau + "G! O processo pode não existir OU faltou carregar em cache os dados desse processo (com o método 'prepararCacheDadosProcessos')");
 			return null;
@@ -667,7 +682,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Caused by: org.xml.sax.SAXParseException; ... cvc-pattern-valid: Value '0020474-77.2016.5.04.0233' is not facet-valid with respect to pattern '\d{20}' for type 'tipoNumeroUnico'.
 			// Linha do XML:
 			// <relacaoIncidental numeroProcesso="0020474-77.2016.5.04.0233" tipoRelacao="PI" classeProcessual="1125"/>
-			relacao.setNumeroProcesso(Auxiliar.removerPontuacaoNumeroProcesso(numeroProcessoReferencia)); // TODO: Verificar se grava número plano ou formatado (ver aqui e no número principal do processo).
+			relacao.setNumeroProcesso(Auxiliar.removerPontuacaoNumeroProcesso(numeroProcessoReferencia));
 			
 			// Indicar se o processo é principal ou incidental.
 			// Podem ser classificados como:
@@ -710,7 +725,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DadosInvalidosException {
 
 		// Itera sobre os polos processuais
-		Collection<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).processoDto.getPolosPorTipoParticipacao().values();
+		Collection<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).getPolosPorTipoParticipacao().values();
 		List<TipoPoloProcessual> polos = new ArrayList<>();
 		for (PoloDto poloDto : polosDtos) {
 			// Script TRT14:

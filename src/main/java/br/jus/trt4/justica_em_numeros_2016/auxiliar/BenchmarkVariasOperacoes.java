@@ -68,37 +68,37 @@ public class BenchmarkVariasOperacoes {
 		// LOGGER.info("BenchmarkVariasOperacoes inicioOperacao: " + nomeOperacao);
 		
 		// Se houver alguma operação em execução, interrompe a contagem dela (última da lista)
-		if (!operacoesEmExecucao.isEmpty()) {
-			StopWatch ultimo = operacoesEmExecucao.get(operacoesEmExecucao.size()-1);
-			ultimo.suspend();
-		}
-
-		// Instancia a nova operação que será contabilizada
-		StopWatch sw;
-		if (todasOperacoes.containsKey(nomeOperacao)) {
-			sw = todasOperacoes.get(nomeOperacao);
-			sw.resume();
-		} else {
-			sw = new StopWatch();
-			sw.start();
-			todasOperacoes.put(nomeOperacao, sw);
-		}
-		operacoesEmExecucao.add(sw);
-		
-		// Começa a contar o "tempo total"
-		if (tempoTotal != null && tempoTotal.isSuspended()) {
-			tempoTotal.resume();
-		}
-		
-		// Variável auxiliar para "alinhar" os tempos no método toString();
-		if (nomeOperacao.length() > tamanhoMaiorNomeOperacao) {
-			tamanhoMaiorNomeOperacao = nomeOperacao.length();
-		}
-		
-		// Escreve no LOG o início da operação.
-		if (logPrefix != null) {
-			LOGGER.info(logPrefix + ": INICIADO: " + nomeOperacao);
-		}
+//		if (!operacoesEmExecucao.isEmpty()) {
+//			StopWatch ultimo = operacoesEmExecucao.get(operacoesEmExecucao.size()-1);
+//			ultimo.suspend();
+//		}
+//
+//		// Instancia a nova operação que será contabilizada
+//		StopWatch sw;
+//		if (todasOperacoes.containsKey(nomeOperacao)) {
+//			sw = todasOperacoes.get(nomeOperacao);
+//			sw.resume();
+//		} else {
+//			sw = new StopWatch();
+//			sw.start();
+//			todasOperacoes.put(nomeOperacao, sw);
+//		}
+//		operacoesEmExecucao.add(sw);
+//		
+//		// Começa a contar o "tempo total"
+//		if (tempoTotal != null && tempoTotal.isSuspended()) {
+//			tempoTotal.resume();
+//		}
+//		
+//		// Variável auxiliar para "alinhar" os tempos no método toString();
+//		if (nomeOperacao.length() > tamanhoMaiorNomeOperacao) {
+//			tamanhoMaiorNomeOperacao = nomeOperacao.length();
+//		}
+//		
+//		// Escreve no LOG o início da operação.
+//		if (logPrefix != null) {
+//			LOGGER.info(logPrefix + ": INICIADO: " + nomeOperacao);
+//		}
 	}
 
 	public void fimOperacao() {
@@ -106,24 +106,24 @@ public class BenchmarkVariasOperacoes {
 		// LOGGER.info("BenchmarkVariasOperacoes fimOperacao");
 		
 		// Fecha a última operação em execução
-		if (!operacoesEmExecucao.isEmpty()) {
-			int ultimoIndex = operacoesEmExecucao.size()-1;
-			StopWatch ultimo = operacoesEmExecucao.get(ultimoIndex);
-			ultimo.suspend();
-			operacoesEmExecucao.remove(ultimoIndex);
-		}
-		
-		// Reinicia a "nova última", se houver.
-		if (!operacoesEmExecucao.isEmpty()) {
-			StopWatch ultimo = operacoesEmExecucao.get(operacoesEmExecucao.size()-1);
-			ultimo.resume();
-		} else {
-			
-			// Se não houver mais nada contando, para de contar o tempo total.
-			if (tempoTotal != null && !tempoTotal.isSuspended()) {
-				tempoTotal.suspend();
-			}
-		}
+//		if (!operacoesEmExecucao.isEmpty()) {
+//			int ultimoIndex = operacoesEmExecucao.size()-1;
+//			StopWatch ultimo = operacoesEmExecucao.get(ultimoIndex);
+//			ultimo.suspend();
+//			operacoesEmExecucao.remove(ultimoIndex);
+//		}
+//		
+//		// Reinicia a "nova última", se houver.
+//		if (!operacoesEmExecucao.isEmpty()) {
+//			StopWatch ultimo = operacoesEmExecucao.get(operacoesEmExecucao.size()-1);
+//			ultimo.resume();
+//		} else {
+//			
+//			// Se não houver mais nada contando, para de contar o tempo total.
+//			if (tempoTotal != null && !tempoTotal.isSuspended()) {
+//				tempoTotal.suspend();
+//			}
+//		}
 	}
 	
 	@Override

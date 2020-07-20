@@ -75,6 +75,7 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 			if (!cacheGenerosOutraInstancia.containsKey(chaveCache)) {
 				
 				// Gênero não está em cache, faz pesquisa na outra instância
+				synchronized (nsConsultaGeneroOutraInstancia) {
 				nsConsultaGeneroOutraInstancia.setString("nome_consulta", nomeConsulta);
 				nsConsultaGeneroOutraInstancia.setString("documento", documentoPrincipal);
 				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consuta de genero em outra instancia");
@@ -89,6 +90,7 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 					}
 				} finally {
 					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
+				}
 				}
 			}
 			pessoa.setSexo(cacheGenerosOutraInstancia.get(chaveCache));
