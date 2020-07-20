@@ -241,7 +241,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 			// Verifica se o XML do processo já foi gerado
 			if (arquivoXML.exists()) {
-				LOGGER.debug("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
+				LOGGER.trace("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
 				progresso.incrementProgress();
 				
 			} else {

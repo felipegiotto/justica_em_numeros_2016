@@ -158,7 +158,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws InterruptedException 
 	 * @throws IOException 
 	 */
-	private void localizarEnviarXMLsAoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException, IOException {
+	public void localizarEnviarXMLsAoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException, IOException {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
@@ -191,8 +191,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosParaEnviar, "Arquivos XML que precisam ser enviados");
 		
 		// Atualiza o progresso na interface
-		progresso.setMax(totalArquivos);
-		progresso.setProgress(totalArquivos - arquivosParaEnviar.size());
+		if (progresso != null) {
+			progresso.setMax(totalArquivos);
+			progresso.setProgress(totalArquivos - arquivosParaEnviar.size());
+		}
 		
 		// Inicia o envio
 		enviarXMLsAoCNJ(arquivosParaEnviar);
@@ -287,7 +289,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				} catch (DadosInvalidosException ex) {
 					LOGGER.error("* Erro ao enviar arquivo '" + xml + "': " + ex.getLocalizedMessage());
 				} finally {
-					progresso.incrementProgress();
+					if (progresso != null) {
+						progresso.incrementProgress();
+					}
 				}
 			}
 		};
@@ -318,7 +322,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 						String tempoRestanteStr = "ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads);
 						sbProgresso.append(" - " + tempoRestanteStr + " em " + numeroThreads + " thread(s)");
 						sbProgresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
-						progresso.setInformacoes(tempoRestanteStr);
+						if (progresso != null) {
+							progresso.setInformacoes(tempoRestanteStr);
+						}
 					}
 					sbProgresso.append(")");
 				}

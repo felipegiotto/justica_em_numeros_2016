@@ -40,8 +40,12 @@ public class HttpServerRequestHandler implements Runnable {
 					
 				// Request recebido
 				String input = in.readLine();
-				if (!input.startsWith("GET ")) {
+				if (input == null || !input.startsWith("GET ")) {
 					return;
+				}
+				
+				if (input.contains("parar")) {
+					ControleAbortarOperacao.instance().setAbortar(true);
 				}
 	
 				// Resposta
@@ -97,6 +101,22 @@ public class HttpServerRequestHandler implements Runnable {
 						html = html.replaceAll("PERCENTUAL_" + situacao, Integer.toString(percentuais.get(situacao)));
 					}
 					html = html.replaceAll("TOTAL_GERAL", decimalFormat.format(total));
+					
+					
+					// Mensagem de operação interrompida
+					if (ControleAbortarOperacao.instance().isDeveAbortar()) {
+						if (operacao.isExecutandoAlgumaOperacao()) {
+							html = html.replaceAll("MENSAGEM_INTERROMPER", "Interrompendo! Aguarde término das operações pendentes. CNJ pode demorar para responder ou abortar por timeout.");
+						} else {
+							html = html.replaceAll("MENSAGEM_INTERROMPER", "Operação interrompida! Finalize o gerador.");
+						}
+					} else {
+						html = html.replaceAll("MENSAGEM_INTERROMPER", "");
+					}
+					
+					// Status das operações
+					html = html.replaceAll("STATUS_GERACAO", operacao.isExecutandoOperacao2Geracao() ? "Gerando arquivos XML..." : "");
+					html = html.replaceAll("STATUS_ENVIO", operacao.isExecutandoOperacao4Envio() ? "Enviando dados ao CNJ..." : "");
 					
 					
 					out.print(html);

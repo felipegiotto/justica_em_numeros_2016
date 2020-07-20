@@ -2,7 +2,7 @@
 <html>
 
 <head>
-	<meta http-equiv="refresh" content="5" />
+	<meta http-equiv="refresh" content="5; url=/" />
 	<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans" />
 	<style>
 	body {
@@ -48,6 +48,10 @@
 	table.detalhes td.valor {
 		text-align: right;
 	}
+	
+	.mensagem-interromper {
+		color: red;
+	}
 	</style>
 </head>
 
@@ -68,13 +72,45 @@
 	<br />
 	
 	<table class="detalhes">
-		<tr><td>Fila</td><td class="valor">TOTAL_INICIO</td><td class="valor">PERCENTUAL_INICIO %</td></tr>
-		<tr><td>Gerado</td><td class="valor">TOTAL_XML_GERADO</td><td class="valor">PERCENTUAL_XML_GERADO %</td></tr>
-		<tr><td>Enviado</td><td class="valor">TOTAL_ENVIADO</td><td class="valor">PERCENTUAL_ENVIADO %</td></tr>
-		<tr><td>Concluído</td><td class="valor">TOTAL_CONCLUIDO</td><td class="valor">PERCENTUAL_CONCLUIDO %</td></tr>
-		<tr><td>Erro</td><td class="valor">TOTAL_ERRO</td><td class="valor">PERCENTUAL_ERRO %</td></tr>
-		<tr><td><b>Total</td><td class="valor"><b>TOTAL_GERAL</b></td><td class="valor">100 %</td></tr>
+		<tr>
+			<td>Fila</td>
+			<td class="valor">TOTAL_INICIO</td>
+			<td class="valor">PERCENTUAL_INICIO %</td>
+		</tr>
+		<tr>
+			<td>Gerado</td>
+			<td class="valor">TOTAL_XML_GERADO</td>
+			<td class="valor">PERCENTUAL_XML_GERADO %</td>
+			<td>STATUS_GERACAO</td>
+		</tr>
+		<tr>
+			<td>Enviado</td>
+			<td class="valor">TOTAL_ENVIADO</td>
+			<td class="valor">PERCENTUAL_ENVIADO %</td>
+			<td>STATUS_ENVIO</td>
+		</tr>
+		<tr>
+			<td>Concluído</td>
+			<td class="valor">TOTAL_CONCLUIDO</td>
+			<td class="valor">PERCENTUAL_CONCLUIDO %</td>
+		</tr>
+		<tr>
+			<td>Erro</td>
+			<td class="valor">TOTAL_ERRO</td>
+			<td class="valor">PERCENTUAL_ERRO %</td>
+		</tr>
+		<tr>
+			<td><b>Total</b></td>
+			<td class="valor"><b>TOTAL_GERAL</b></td>
+			<td class="valor">100 %</td>
+		</tr>
 	</table>
+	
+	<br />
+	<br />
+	
+	<p><a href="?parar" onClick="return confirm('A operação será interrompida DEPOIS que as requisições pendentes de resposta terminarem. Continuar?')">Interromper operação</a></p>
+	<p class="mensagem-interromper">MENSAGEM_INTERROMPER</p>
 </body>
 
 </html>

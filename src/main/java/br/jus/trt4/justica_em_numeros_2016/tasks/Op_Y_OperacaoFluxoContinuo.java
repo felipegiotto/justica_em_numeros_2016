@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.ControleAbortarOperacao;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpServerStatus;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoFluxo;
@@ -34,17 +35,8 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	
 	private Collection<ProcessoFluxo> processosFluxos = new ConcurrentLinkedDeque<>();
 	private HttpServerStatus serverStatus;
-	
-	public static void main(String[] args) throws Exception {
-		
-		// Não utilizar a interface AWT nessa operação (que será acompanhada via web)
-		ProgressoInterfaceGrafica.setTentarMontarInterface(false);
-		Auxiliar.prepararPastaDeSaida();
-		
-		Op_Y_OperacaoFluxoContinuo operacaoCompleta = new Op_Y_OperacaoFluxoContinuo();
-		operacaoCompleta.iniciar();
-	}
-
+	private boolean executandoOperacao2Geracao;
+	private boolean executandoOperacao4Envio;
 	
 	private void iniciar() throws IOException, SQLException, DadosInvalidosException {
 		
@@ -117,7 +109,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		new Thread(() -> {
 			Auxiliar.prepararThreadLog();
 			
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.CONCLUIDO)) {
+			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.CONCLUIDO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				for (ProcessoFluxo processoFluxo : processosFluxos) {
 					processoFluxo.identificarSituacao();
 				}
@@ -137,16 +129,19 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		new Thread(() -> {
 			Auxiliar.prepararThreadLog();
 			
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.XML_GERADO)) {
+			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.XML_GERADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				
 				// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (FILA)
 				try {
+					this.executandoOperacao2Geracao = true;
 					Op_2_GeraXMLsIndividuais.main(null);
 				} catch (Exception e) {
-					Auxiliar.safeSleep(10_000);
+					ControleAbortarOperacao.instance().aguardarSomenteSeOperacaoContinua(10_000);
+				} finally {
+					this.executandoOperacao2Geracao = false;
 				}
 				
-				Auxiliar.safeSleep(60_000);
+				ControleAbortarOperacao.instance().aguardarSomenteSeOperacaoContinua(60_000);
 			}
 			
 		}).start();
@@ -156,13 +151,18 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 			Auxiliar.prepararThreadLog();
 			
 			// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (XML_GERADO)
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.ENVIADO)) {
+			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.ENVIADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				try {
-					Op_4_ValidaEnviaArquivosCNJ.validarEnviarArquivosCNJ(false);
+					this.executandoOperacao4Envio = true;
+					Op_4_ValidaEnviaArquivosCNJ operacao4Envia = new Op_4_ValidaEnviaArquivosCNJ();
+					operacao4Envia.localizarEnviarXMLsAoCNJ();
 				} catch (Exception e) {
+					LOGGER.error("Erro enviando dados ao CNJ: " + e.getLocalizedMessage(), e);
+				} finally {
+					this.executandoOperacao4Envio = false;
 				}
 				
-				Auxiliar.safeSleep(60_000);
+				ControleAbortarOperacao.instance().aguardarSomenteSeOperacaoContinua(60_000);
 			}
 			
 		}).start();
@@ -192,5 +192,27 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	
 	public Collection<ProcessoFluxo> getProcessosFluxos() {
 		return processosFluxos;
+	}
+	
+	public boolean isExecutandoOperacao2Geracao() {
+		return executandoOperacao2Geracao;
+	}
+	
+	public boolean isExecutandoOperacao4Envio() {
+		return executandoOperacao4Envio;
+	}
+	
+	public boolean isExecutandoAlgumaOperacao() {
+		return isExecutandoOperacao2Geracao() || isExecutandoOperacao4Envio();
+	}
+	
+	public static void main(String[] args) throws Exception {
+		
+		// Não utilizar a interface AWT nessa operação (que será acompanhada via web)
+		ProgressoInterfaceGrafica.setTentarMontarInterface(false);
+		Auxiliar.prepararPastaDeSaida();
+		
+		Op_Y_OperacaoFluxoContinuo operacaoCompleta = new Op_Y_OperacaoFluxoContinuo();
+		operacaoCompleta.iniciar();
 	}
 }
