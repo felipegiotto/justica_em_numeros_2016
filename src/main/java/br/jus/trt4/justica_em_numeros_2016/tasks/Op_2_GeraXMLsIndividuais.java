@@ -84,6 +84,8 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
  * Carrega as listas de processos geradas pela classe {@link Op_1_BaixaListaDeNumerosDeProcessos} e,
  * para cada processo, gera seu arquivo XML na pasta "output/.../Xg/xmls_individuais".
  * 
+ * TODO: Tratar bug no PJe que faz com que haja mais de um processo com mesmo número. Sugestão: usar os IDs nas consultas SQL de partes, documentos, endereços, assuntos, movimentos, etc.
+ *
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
  * @author felipe.giotto@trt4.jus.br
@@ -402,6 +404,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				String nrProcesso = rsProcessos.getString("nr_processo");
 				CacheDadosProcesso cache = new CacheDadosProcesso();
 				cache.processoDto = new ProcessoDto(rsProcessos, false);
+				cache.processoDto.setNumeroInstancia(grau);
 				this.cacheProcessosDtos.put(nrProcesso, cache);
 			}
 		}
