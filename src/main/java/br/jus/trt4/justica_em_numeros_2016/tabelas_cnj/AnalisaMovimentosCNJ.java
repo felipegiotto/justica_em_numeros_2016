@@ -117,7 +117,7 @@ public class AnalisaMovimentosCNJ {
 		if (gerenteDeParaJTCNJ != null) {
 			
 			// Instancia o movimento com os complementos, no formato esperado pelo DE-PARA
-			MovimentoJT movimentoJT = new MovimentoJT(processo.getNumeroInstancia(), Integer.toString(codigoMovimento));
+			MovimentoJT movimentoJT = new MovimentoJT(processo.getNumeroInstancia(), Integer.toString(codigoMovimento), Integer.toString(processo.getClasseJudicial().getCodigo()));
 			for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
 				movimentoJT.adicionaComplementoJT(Integer.toString(complementoDto.getCodigoTipoComplemento()), complementoDto.getCodigoComplemento(), complementoDto.getValor());
 			}
