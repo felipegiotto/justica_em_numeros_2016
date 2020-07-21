@@ -12,7 +12,6 @@ public enum BaseEmAnaliseEnum {
     private BaseEmAnaliseEnum(String descricao, Integer id) {
         this.descricao = descricao;
         this.id = id;
-
     }
 
     public Integer getId() {
@@ -23,16 +22,12 @@ public enum BaseEmAnaliseEnum {
         return descricao;
     }
 
-    public boolean equals(BaseEmAnaliseEnum outro) {
-        return (this.id.equals(outro.getId()));
-    }
-
     public boolean isBasePJe() {
-        return (this.equals(BaseEmAnaliseEnum.PJE));
+        return BaseEmAnaliseEnum.PJE.equals(this);
     }
 
     public boolean isBaseLegado() {
-        return (this.equals(BaseEmAnaliseEnum.LEGADO));
+        return BaseEmAnaliseEnum.LEGADO.equals(this);
     }
 
 }

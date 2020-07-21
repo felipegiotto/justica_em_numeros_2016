@@ -58,7 +58,8 @@ public class ProcessoDto {
 		this.valorCausa = Auxiliar.getCampoDoubleOrNull(rsProcesso, "vl_causa");
 		
 		this.orgaoJulgador = new OrgaoJulgadorDto();
-		this.orgaoJulgador.setIdMunicipioIBGE(rsProcesso.getInt("id_municipio_ibge"), rsProcesso.getString("ds_orgao_julgador"), rsProcesso.getInt("cd_orgao_julgador"));
+		this.orgaoJulgador.setIdMunicipioIBGE(rsProcesso.getInt("id_municipio_ibge"), rsProcesso.getString("ds_orgao_julgador"));
+		this.orgaoJulgador.setCodigoServentiaJudiciariaLegado(rsProcesso.getInt("cd_orgao_julgador"));
 		
 		if (rsProcesso.getString("id_proc_referencia") != null) {
 			this.processoReferencia = new ProcessoDto();

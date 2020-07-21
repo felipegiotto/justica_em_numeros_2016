@@ -5,12 +5,11 @@ public class OrgaoJulgadorDto {
 	public int idMunicipioIBGE;
 	public String nomeNormalizado;
 	//Informação utilizada apenas pelo sistema judicial legado
-	public int codigo;
+	public int codigoServentiaJudiciariaLegado;
 	
-	public void setIdMunicipioIBGE(int idMunicipioIBGE, String nomeNormalizado, int codigo) {
+	public void setIdMunicipioIBGE(int idMunicipioIBGE, String nomeNormalizado) {
 		this.idMunicipioIBGE = idMunicipioIBGE;
 		this.nomeNormalizado = nomeNormalizado;
-		this.codigo = codigo;
 	}
 	
 	public String getNomeNormalizado() {
@@ -21,7 +20,11 @@ public class OrgaoJulgadorDto {
 		return idMunicipioIBGE;
 	}
 	
-	public int getCodigo() {
-		return codigo;
+	public int getCodigoServentiaJudiciariaLegado() {
+		return codigoServentiaJudiciariaLegado;
+	}
+	
+	public void setCodigoServentiaJudiciariaLegado(int codigo) {
+		this.codigoServentiaJudiciariaLegado = codigo;
 	}
 }

@@ -94,25 +94,31 @@ public class AnalisaServentiasCNJ {
 		return new File("src/main/resources/serventias_cnj/" + Auxiliar.getParametroConfiguracao(Parametro.arquivo_serventias_cnj, true));
 	}
 
-	public ServentiaCNJ getServentiaByOJ(String descricaoOrgao, int codigoOrgao, BaseEmAnaliseEnum baseEmAnaliseEnum, boolean obrigatorio) throws DadosInvalidosException {
+	/**
+	 * Busca os dados de uma serventia judicial.
+	 * 
+	 * Ao ler dados do PJe, deve obrigatoriamente existir um mapeamento no arquivo de serventias.
+	 * Ao ler dados do sistema legado, o mapeamento não será realizado: o código e a descrição recebidos por parâmetro deverão estar preenchidos já com os valores corretos.
+	 * 
+	 * @param descricaoOrgaoJudicial : nome do órgão julgador (PJe) ou nome da serventia do CNJ (sistemas legados)
+	 * @param codigoOrgaoJudicialLegado : código da serventia do CNJ (sistemas legados), não utilizado para o PJe.
+	 * @param baseEmAnaliseEnum : sistema (PJe ou Legado) que está sendo analisado
+	 * @return
+	 * @throws DadosInvalidosException
+	 */
+	public ServentiaCNJ getServentiaByOJ(String descricaoOrgaoJudicial, int codigoOrgaoJudicialLegado, BaseEmAnaliseEnum baseEmAnaliseEnum) {
 		if (baseEmAnaliseEnum.isBasePJe()) {
-			if (serventiasCNJ.containsKey(descricaoOrgao)) {
-				return serventiasCNJ.get(descricaoOrgao);
+			if (serventiasCNJ.containsKey(descricaoOrgaoJudicial)) {
+				return serventiasCNJ.get(descricaoOrgaoJudicial);
 			} else {
 				
-				//LOGGER.warn("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe. Para evitar interrupção da rotina, será utilizada uma serventia temporária.");
-				//return new ServentiaCNJ("CODIGO_INEXISTENTE", "SERVENTIA INEXISTENTE");
-				orgaosJulgadoresSemServentiasCadastradas.add(descricaoOrgao);
-				if (obrigatorio) {
-					throw new DadosInvalidosException("Inconsistência no arquivo '" + arquivoServentias + "'", "Não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + descricaoOrgao + "', do PJe.");
-				} else {
-					return null;
-				}
+				orgaosJulgadoresSemServentiasCadastradas.add(descricaoOrgaoJudicial);
+				return null;
 			}
 		} else {
 			//No sistema judicial legado, as informações de código e descrição já estarão com os
 			//valores corretos na base intermediária
-			return new ServentiaCNJ(codigoOrgao, descricaoOrgao);
+			return new ServentiaCNJ(codigoOrgaoJudicialLegado, descricaoOrgaoJudicial);
 		}
 	}
 	
@@ -206,11 +212,7 @@ public class AnalisaServentiasCNJ {
 	
 	private void analisarExistenciaServentiasPje(ResultSet rs) throws SQLException {
 		while (rs.next()) {
-			try {
-				getServentiaByOJ(rs.getString("ds_orgao_julgador"), 0, BaseEmAnaliseEnum.PJE, false);
-			} catch (DadosInvalidosException e) {
-				// Não vai acontecer, por causa do parametro "false"
-			}
+			getServentiaByOJ(rs.getString("ds_orgao_julgador"), 0, BaseEmAnaliseEnum.PJE);
 		}
 	}
 

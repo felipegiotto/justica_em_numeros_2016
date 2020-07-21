@@ -1191,22 +1191,21 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 
 	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ProcessoDto processo, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DadosInvalidosException {
-		return analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), processo.getOrgaoJulgador().getNomeNormalizado(), processo.getOrgaoJulgador().getCodigo(), processo.getOrgaoJulgador().getIdMunicipioIBGE(), processo.getNumeroInstancia(), baseEmAnalise);
+		return analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), processo.getOrgaoJulgador().getNomeNormalizado(), processo.getOrgaoJulgador().getCodigoServentiaJudiciariaLegado(), processo.getOrgaoJulgador().getIdMunicipioIBGE(), baseEmAnalise);
 	}
 	
 	/**
 	 * Retorna um órgão julgador com os dados das serventias do CNJ.
 	 * 
 	 * @param nomeOrgaoJulgadorProcesso : nome do órgão julgador conforme campo "ds_orgao_julgador" da tabela "tb_orgao_julgador".
-	 * @param codigoOrgaoJulgador: codigo do órgão julgador que é retornado apenas pelo sistema judicial legado.
+	 * @param codigoOrgaoJulgadorLegado: codigo do órgão julgador que é retornado apenas pelo sistema judicial legado (para composição da serventia)
 	 * @param idMunicipioIBGEOrgaoJulgador : código IBGE do município do órgão julgador. Se estiver gerando dados do segundo grau, 
 	 * 		esse parâmetro será ignorado e, em vez dele, será sempre preenchido o conteúdo do parâmetro "codigo_municipio_ibge_trt".
-	 * @param instanciaProcesso : instância originária do processo, conforme campo "nr_instancia" da tabela "tb_processo_trf"
 	 * @return
 	 * @throws SQLException
 	 * @throws DadosInvalidosException
 	 */
-	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ClasseJudicialDto classe, String nomeOrgaoJulgadorProcesso, int codigoOrgaoJulgador, int idMunicipioIBGE, int instanciaProcesso, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DadosInvalidosException {
+	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ClasseJudicialDto classe, String nomeOrgaoJulgadorProcesso, int codigoOrgaoJulgadorLegado, int idMunicipioIBGE, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DadosInvalidosException {
 		/*
 		 * Órgãos Julgadores
 				Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
@@ -1219,12 +1218,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			    R: Os Tribunais deverão seguir os mesmos códigos e descrições utilizadas no módulo de produtividade.
 			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
 		 */
-		// Script TRT14:
-		// -- orgaoJulgador
-		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
-		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
-		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, codigoOrgaoJulgador, baseEmAnalise, true);
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, codigoOrgaoJulgadorLegado, baseEmAnalise);
+		if (serventiaCNJ == null) {
+			throw new DadosInvalidosException("Inconsistência no mapeamento de serventias", "Não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomeOrgaoJulgadorProcesso + "', do PJe.");
+		}
+
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
 		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
@@ -1365,12 +1364,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 					LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
 					LocalDateTime dataRetorno = historico.getDataRetorno();
 					if (dataDeslocamento.isAfter(dataMovimento)) {
-						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), processo.getNumeroInstancia(), baseEmAnalise);
+						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), baseEmAnalise);
 						movimento.setOrgaoJulgador(orgaoJulgador);
 						break;
 
 					} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
-						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), 0, historico.getIdMunicipioDestino(), processo.getNumeroInstancia(), baseEmAnalise);
+						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), 0, historico.getIdMunicipioDestino(), baseEmAnalise);
 						movimento.setOrgaoJulgador(orgaoJulgador);
 						break;
 					}
