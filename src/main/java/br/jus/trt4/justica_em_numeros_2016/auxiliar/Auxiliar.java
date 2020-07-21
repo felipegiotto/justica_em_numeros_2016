@@ -647,19 +647,55 @@ public class Auxiliar {
 			return new ArrayList<String>();
 		}
 		
-		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Carregando lista de processos do arquivo");
 		try {
 			List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
 			LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
 			return listaProcessos;
+			
 		} catch (IOException ex) {
-			throw new DadosInvalidosException("Lista de processos não foi encontrada! Execute operação '1'", arquivoEntrada.toString());
-		} finally {
-			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
+			throw new RuntimeException(ex);
 		}
 	}
 
+	/**
+	 * Informa onde deve ser gravado o arquivo XML de um determinado processo do PJe
+	 * @param grau
+	 * @param numeroProcesso
+	 * @return
+	 */
+	public static File gerarNomeArquivoIndividualParaProcesso(BaseEmAnaliseEnum base, int grau, String numeroProcesso) {
+		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
+		File pastaRaizPJe = new File(pastaRaiz, base.isBasePJe() ? "PJe" : "Legado");
+		return new File(pastaRaizPJe, numeroProcesso + ".xml");
+	}
+	
+	/**
+	 * Informa onde deve ser gravado o arquivo com o número do protocolo de envio de um determinado processo do PJe
+	 * 
+	 * @return
+	 */
+	public static File gerarNomeArquivoProtocoloProcessoEnviado(File arquivoXMLProcesso) {
+		return new File(arquivoXMLProcesso.getAbsolutePath() + SUFIXO_PROTOCOLO);
+	}
+	
+	/**
+	 * Informa onde deve ser gravado o arquivo que indica que o processo foi ACEITO com sucesso no CNJ
+	 * 
+	 * @return
+	 */
+	public static File gerarNomeArquivoProcessoSucesso(File arquivoProtocolo) {
+		return new File(arquivoProtocolo.getAbsolutePath() + SUFIXO_PROTOCOLO_SUCESSO);
+	}
 
+	/**
+	 * Informa onde deve ser gravado o arquivo que indica que o processo foi NEGADO no CNJ
+	 * 
+	 * @return
+	 */
+	public static File gerarNomeArquivoProcessoNegado(File arquivoProtocolo) {
+		return new File(arquivoProtocolo.getAbsolutePath() + SUFIXO_PROTOCOLO_ERRO);
+	}
+	
 	public static void aguardaUsuarioApertarENTERComTimeout(int minutos) throws InterruptedException, IOException {
 		
 		if (!permitirAguardarUsuarioApertarENTER) {

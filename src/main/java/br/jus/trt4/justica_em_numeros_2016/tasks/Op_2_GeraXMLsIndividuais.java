@@ -135,8 +135,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private final Map<String, ProcessoDto> cacheProcessosDtos = new HashMap<>();
 	
 	// Objetos que armazenam os dados que foram migrados do Sistema Judicial Legado para o Pje, para poder trazer dados de processos em lote,
-		// resultando em menos consultas ao banco de dados.
-		private final Map<String, ProcessoDto> cacheProcessosLegadosMigradosDtos = new HashMap<>();
+	// resultando em menos consultas ao banco de dados.
+	private final Map<String, ProcessoDto> cacheProcessosLegadosMigradosDtos = new HashMap<>();
 
 	private class OperacaoGeracaoXML {
 		String numeroProcesso;
@@ -312,8 +312,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Arquivo XML que conterá os dados do processo
 			// Depois da geração do XML temporário, visando garantir a integridade do arquivo XML 
 			// definitivo, o temporário só será excluído depois da gravação completa do definitivo.
-			File arquivoXMLTemporario = new File(pastaRaiz, numeroProcesso + ".temp");
-			File arquivoXML = new File(pastaRaiz, numeroProcesso + ".xml");
+			File arquivoXML = Auxiliar.gerarNomeArquivoIndividualParaProcesso(this.baseEmAnalise, grau, numeroProcesso);
+			File arquivoXMLTemporario = new File(arquivoXML.getParentFile(), numeroProcesso + ".temp");
 			arquivoXMLTemporario.delete();
 
 			// Se o script for abortado bem na hora da cópia do arquivo temporário para o definitivo, o definitivo
@@ -324,7 +324,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 			// Verifica se o XML do processo já foi gerado
 			if (arquivoXML.exists()) {
-				LOGGER.debug("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
+				LOGGER.trace("O arquivo XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
 				progresso.incrementProgress();
 				
 			} else {
@@ -706,8 +706,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				}
 			}
 		}
-		
-		
 		} finally {
 			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
@@ -1518,27 +1516,21 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsIncidentes = null;
 		Auxiliar.fechar(nsSentencasAcordaos);
 		nsSentencasAcordaos = null;
-		if (this.baseEmAnalise.isBasePJe()) {
-			//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
-			//Em alguns Regionais pode ser diferente.
-			Auxiliar.fechar(nsHistoricoDeslocamentoOJ);
-			nsHistoricoDeslocamentoOJ = null;			
-		}
+		Auxiliar.fechar(nsHistoricoDeslocamentoOJ);
+		nsHistoricoDeslocamentoOJ = null;			
 
+		Auxiliar.fechar(nsConsultaProcessosLegadosMigrados);
+		nsConsultaProcessosLegadosMigrados = null;
+		Auxiliar.fechar(nsMovimentosLegadosMigrados);
+		nsMovimentosLegadosMigrados = null;
+		Auxiliar.fechar(nsComplementosLegadosMigrados);
+		nsComplementosLegadosMigrados = null;
+		Auxiliar.fechar(nsSentencasAcordaosLegadosMigrados);
+		nsSentencasAcordaosLegadosMigrados = null;
+		
 		Auxiliar.fechar(conexaoBasePrincipal);
 		conexaoBasePrincipal = null;
-		
-		if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-			Auxiliar.fechar(nsConsultaProcessosLegadosMigrados);
-			nsConsultaProcessosLegadosMigrados = null;
-			Auxiliar.fechar(nsMovimentosLegadosMigrados);
-			nsMovimentosLegadosMigrados = null;
-			Auxiliar.fechar(nsComplementosLegadosMigrados);
-			nsComplementosLegadosMigrados = null;
-			Auxiliar.fechar(nsSentencasAcordaosLegadosMigrados);
-			nsSentencasAcordaosLegadosMigrados = null;
-			Auxiliar.fechar(conexaoBaseLegadoMigrados);
-			conexaoBaseLegadoMigrados = null;
-		}
+		Auxiliar.fechar(conexaoBaseLegadoMigrados);
+		conexaoBaseLegadoMigrados = null;
 	}
 }

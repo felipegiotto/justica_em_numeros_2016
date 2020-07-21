@@ -137,9 +137,14 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 */
 	private void conferirRespostaSucesso(int statusCode, String body) throws IOException {
 		
+		// 20/07/2020: {"status":"ERRO","protocolo":"...","mensagem":"Arquivo duplicado"}
+		if (statusCode == 409 && body.contains("Arquivo duplicado")) {
+			LOGGER.info("Arquivo duplicado (já está no CNJ), será marcado como enviado");
+			return;
+		}
+		
 		// 200: SUCCESS
 		// 201: CREATED
-		// 409: Arquivo duplicado (presume-se que já está no CNJ, então).
 		if (statusCode != 200 && statusCode != 201 && statusCode != 409) {
 			throw new IOException("Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)");
 		}
@@ -158,7 +163,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws InterruptedException 
 	 * @throws IOException 
 	 */
-	private void localizarEnviarXMLsAoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException, IOException {
+	public void localizarEnviarXMLsAoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException, IOException {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
@@ -191,8 +196,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosParaEnviar, "Arquivos XML que precisam ser enviados");
 		
 		// Atualiza o progresso na interface
-		progresso.setMax(totalArquivos);
-		progresso.setProgress(totalArquivos - arquivosParaEnviar.size());
+		if (progresso != null) {
+			progresso.setMax(totalArquivos);
+			progresso.setProgress(totalArquivos - arquivosParaEnviar.size());
+		}
 		
 		// Inicia o envio
 		enviarXMLsAoCNJ(arquivosParaEnviar);
@@ -287,7 +294,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				} catch (DadosInvalidosException ex) {
 					LOGGER.error("* Erro ao enviar arquivo '" + xml + "': " + ex.getLocalizedMessage());
 				} finally {
-					progresso.incrementProgress();
+					if (progresso != null) {
+						progresso.incrementProgress();
+					}
 				}
 			}
 		};
@@ -318,7 +327,9 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 						String tempoRestanteStr = "ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads);
 						sbProgresso.append(" - " + tempoRestanteStr + " em " + numeroThreads + " thread(s)");
 						sbProgresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
-						progresso.setInformacoes(tempoRestanteStr);
+						if (progresso != null) {
+							progresso.setInformacoes(tempoRestanteStr);
+						}
 					}
 					sbProgresso.append(")");
 				}
@@ -384,7 +395,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		try {
 			JsonObject rootObject = JsonParser.parseString(jsonRespostaCNJ).getAsJsonObject();
 			String protocolo = rootObject.get("protocolo").getAsString();
-			File confirmacaoEnvio = new File(arquivo.getAbsolutePath() + Auxiliar.SUFIXO_PROTOCOLO);
+			File confirmacaoEnvio = Auxiliar.gerarNomeArquivoProtocoloProcessoEnviado(arquivo);
 			FileUtils.write(confirmacaoEnvio, protocolo, StandardCharsets.UTF_8);
 		} catch (JsonParseException ex) {
 			LOGGER.warn("Não foi possível ler o número do protocolo JSON do CNJ");

@@ -63,11 +63,12 @@ public class ControleAbortarOperacao {
 	/**
 	 * Espera um tempo, mas somente se a operação deve continuar (ou seja, se usuário não solicitou cancelamento)
 	 *
-	 * @param millis
+	 * @param segundos
 	 */
-	public void aguardarSomenteSeOperacaoContinua(int millis) {
-		if (!isDeveAbortar()) {
-			Auxiliar.safeSleep(millis);
+	public void aguardarTempoEnquantoNaoEncerrado(int segundos) {
+		while (!isDeveAbortar() && segundos > 0) {
+			Auxiliar.safeSleep(1000);
+			segundos--;
 		}
 	}
 }
