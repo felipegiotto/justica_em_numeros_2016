@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeGeneroPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoQualificacaoPessoa;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 /**
  * Classe que visa contornar problema de ausência de informação de sexo no PJe.
@@ -32,17 +33,24 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 	private HashMap<String, ModalidadeGeneroPessoa> cacheGenerosOutraInstancia = new HashMap<>();
 	private Connection conexaoBasePrincipalOutraInstancia;
 
-	public IdentificaGeneroPessoa(int grau) {
+	//FIXME: como no nosso sistema judicial legado o sexo será sempre desconhecido, essa estrutura teria que ser ajustada
+	//caso algum Regional deseje implementar essa funcionalidade para o sistema legado
+	public IdentificaGeneroPessoa(int grau, BaseEmAnaliseEnum baseEmAnalise) {
 		
 		// Abre conexão com o outro banco de dados do PJe, para localizar o sexo de pessoas que podem
 		// estar sem essa informação
 		// OBS: só busca o sexo na outra instância se o parâmetro estiver habilitado nas configurações
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.contornar_falta_de_genero, false)) {
+		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.contornar_falta_de_genero, false)
+				&& baseEmAnalise.isBasePJe()) {
 			
 			try {
-				conexaoBasePrincipalOutraInstancia = Auxiliar.getConexaoPJe(grau);
+				conexaoBasePrincipalOutraInstancia = Auxiliar.getConexao(grau, baseEmAnalise);
+				
+				String caminhoArquivo = "src/main/resources/sql/op_2_gera_xmls/" 
+						+ Auxiliar.getPastaResources(baseEmAnalise) 
+						+ "/consulta_genero_outra_instancia.sql";
 		
-				String sqlConsultaGeneroOutraInstancia = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/consulta_genero_outra_instancia.sql");
+				String sqlConsultaGeneroOutraInstancia = Auxiliar.lerConteudoDeArquivo(caminhoArquivo);
 				nsConsultaGeneroOutraInstancia = new NamedParameterStatement(conexaoBasePrincipalOutraInstancia, sqlConsultaGeneroOutraInstancia);
 			} catch (SQLException | IOException ex) {
 				LOGGER.warn("Não foi possível abrir conexão com a outra instância do PJe (" + grau + "G). O parâmetro 'contornar_falta_de_genero' não terá efeito!");
@@ -51,53 +59,57 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 	}
 
 
-	public void preencherSexoPessoa(TipoPessoa pessoa, String sexoPJe, String nomeConsulta) throws SQLException {
-		
-		// Se o sexo veio preenchido corretamente no cadastro do PJe, grava na pessoa.
-		if (!StringUtils.isBlank(sexoPJe) && !"D".equals(sexoPJe)) {
-			pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(sexoPJe));
-			return;
-		} 
-		
-		// Se não for uma pessoa física, não adianta tentar localizar o sexo na outra instância
-		if (!TipoQualificacaoPessoa.FISICA.equals(pessoa.getTipoPessoa())) {
-			pessoa.setSexo(ModalidadeGeneroPessoa.D);
-			return;
-		} 
-		
-		// Se o gênero da pessoa não estiver no banco de dados, tenta localizar na outra instância, 
-		// contando que todas as informações necessárias estejam disponíveis (nome e documento)
-		String documentoPrincipal = pessoa.getNumeroDocumentoPrincipal();
-		if (!StringUtils.isBlank(documentoPrincipal) && nsConsultaGeneroOutraInstancia != null) {
+	public void preencherSexoPessoa(TipoPessoa pessoa, String sexoPJe, String nomeConsulta, BaseEmAnaliseEnum baseEmAnaliseEnum) throws SQLException {
+		if (baseEmAnaliseEnum.isBasePJe()) {
+			// Se o sexo veio preenchido corretamente no cadastro do PJe, grava na pessoa.
+			if (!StringUtils.isBlank(sexoPJe) && !"D".equals(sexoPJe)) {
+				pessoa.setSexo(ModalidadeGeneroPessoa.valueOf(sexoPJe));
+				return;
+			} 
 			
-			// Verifica se a informação do gênero ainda não está no cache
-			String chaveCache = documentoPrincipal + "|" + nomeConsulta;
-			if (!cacheGenerosOutraInstancia.containsKey(chaveCache)) {
+			// Se não for uma pessoa física, não adianta tentar localizar o sexo na outra instância
+			if (!TipoQualificacaoPessoa.FISICA.equals(pessoa.getTipoPessoa())) {
+				pessoa.setSexo(ModalidadeGeneroPessoa.D);
+				return;
+			} 
+			
+			// Se o gênero da pessoa não estiver no banco de dados, tenta localizar na outra instância, 
+			// contando que todas as informações necessárias estejam disponíveis (nome e documento)
+			String documentoPrincipal = pessoa.getNumeroDocumentoPrincipal();
+			if (!StringUtils.isBlank(documentoPrincipal) && nsConsultaGeneroOutraInstancia != null) {
 				
-				// Gênero não está em cache, faz pesquisa na outra instância
-				synchronized (nsConsultaGeneroOutraInstancia) {
-				nsConsultaGeneroOutraInstancia.setString("nome_consulta", nomeConsulta);
-				nsConsultaGeneroOutraInstancia.setString("documento", documentoPrincipal);
-				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consuta de genero em outra instancia");
-				try (ResultSet rs = nsConsultaGeneroOutraInstancia.executeQuery()) { // TODO: Otimizar acessos repetidos
-					if (rs.next()) {
-						ModalidadeGeneroPessoa sexo = ModalidadeGeneroPessoa.valueOf(rs.getString("in_sexo"));
-						cacheGenerosOutraInstancia.put(chaveCache, sexo);
-						// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " foi identificado na outra instância (" + grau + "G): " + sexo);
-					} else {
-						cacheGenerosOutraInstancia.put(chaveCache, ModalidadeGeneroPessoa.D);
-						// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " não existe em nenhuma instância");
+				// Verifica se a informação do gênero ainda não está no cache
+				String chaveCache = documentoPrincipal + "|" + nomeConsulta;
+				if (!cacheGenerosOutraInstancia.containsKey(chaveCache)) {
+					
+					// Gênero não está em cache, faz pesquisa na outra instância
+					synchronized (nsConsultaGeneroOutraInstancia) {
+					nsConsultaGeneroOutraInstancia.setString("nome_consulta", nomeConsulta);
+					nsConsultaGeneroOutraInstancia.setString("documento", documentoPrincipal);
+					BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consuta de genero em outra instancia");
+					try (ResultSet rs = nsConsultaGeneroOutraInstancia.executeQuery()) { // TODO: Otimizar acessos repetidos
+						if (rs.next()) {
+							ModalidadeGeneroPessoa sexo = ModalidadeGeneroPessoa.valueOf(rs.getString("in_sexo"));
+							cacheGenerosOutraInstancia.put(chaveCache, sexo);
+							// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " foi identificado na outra instância (" + grau + "G): " + sexo);
+						} else {
+							cacheGenerosOutraInstancia.put(chaveCache, ModalidadeGeneroPessoa.D);
+							// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " não existe em nenhuma instância");
+						}
+					} finally {
+						BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 					}
-				} finally {
-					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
+					}
 				}
-				}
+				pessoa.setSexo(cacheGenerosOutraInstancia.get(chaveCache));
+				
+			} else {
+				
+				// Se realmente não foi possível consultar o sexo na outra instância, grava como DESCONHECIDO.
+				pessoa.setSexo(ModalidadeGeneroPessoa.D);
 			}
-			pessoa.setSexo(cacheGenerosOutraInstancia.get(chaveCache));
-			
 		} else {
-			
-			// Se realmente não foi possível consultar o sexo na outra instância, grava como DESCONHECIDO.
+			//A informação do sexo não consta no sistema judicial legado e será sempre tratado como desconhecido
 			pessoa.setSexo(ModalidadeGeneroPessoa.D);
 		}
 		

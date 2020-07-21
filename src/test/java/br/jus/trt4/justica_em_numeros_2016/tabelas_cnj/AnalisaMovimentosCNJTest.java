@@ -18,16 +18,20 @@ import br.jus.trt4.justica_em_numeros_2016.dto.ClasseJudicialDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 
 	Connection conexaoBasePrincipal;
 	ProcessoDto processo;
+	BaseEmAnaliseEnum baseEmAnalise = BaseEmAnaliseEnum.PJE;
 	
 	@Before
 	public void before() throws Exception {
-		conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
+		conexaoBasePrincipal = Auxiliar.getConexao(1, BaseEmAnaliseEnum.PJE);
 		processo = new ProcessoDto();
+		processo.setNumeroInstancia(1);
+		
 		ClasseJudicialDto classeJudicial = new ClasseJudicialDto();
 		classeJudicial.setCodigo(985);
 		processo.setClasseJudicial(classeJudicial);
@@ -35,8 +39,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 	
 	@Test
 	public void analisaMovimentoNacional() throws Exception {
-		
-		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(1, conexaoBasePrincipal);
+		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(baseEmAnalise, conexaoBasePrincipal);
 		
 		// Movimento que existe em tabela nacional:
 		// 26 - Distribuído por sorteio
@@ -46,7 +49,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 		movimentoDto.setTextoEvento("Distribuído por sorteio");
 		
 		TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
-		a.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto);
+		a.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto, baseEmAnalise);
 		assertNotNull(movimento.getMovimentoNacional());
 		assertEquals(26, movimento.getMovimentoNacional().getCodigoNacional());
 		assertNull(movimento.getMovimentoLocal());
@@ -54,7 +57,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 
 	@Test
 	public void analisaMovimentoLocal() throws Exception {
-		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(1, conexaoBasePrincipal);
+		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(baseEmAnalise, conexaoBasePrincipal);
 	
 		// Movimento que NÃO existe em tabela nacional:
 		// 50086 - Encerrada a conclusão
@@ -64,7 +67,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 		movimentoDto.setTextoEvento("Encerrada a conclusão");
 		
 		TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
-		a.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto);
+		a.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto, baseEmAnalise);
 		assertNull(movimento.getMovimentoNacional());
 		assertNotNull(movimento.getMovimentoLocal());
 
@@ -83,7 +86,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 	 */
 	@Test
 	public void analisaMovimentoLocalSemDescricao() throws Exception {
-		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(1, conexaoBasePrincipal);
+		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(baseEmAnalise, conexaoBasePrincipal);
 	
 		MovimentoDto movimentoDto = new MovimentoDto();
 		movimentoDto.setCodMovimentoCNJ(-5);
@@ -91,7 +94,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 		movimentoDto.setTextoEvento("Desmembrado o feito");
 		
 		TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
-		a.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto);
+		a.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto, baseEmAnalise);
 		assertNull(movimento.getMovimentoNacional());
 		assertNotNull(movimento.getMovimentoLocal());
 
@@ -108,8 +111,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 	 */
 	@Test
 	public void analisaMovimentoRemessaComDeParaETipoTabelado() throws Exception {
-		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(1, conexaoBasePrincipal);
-		processo.setNumeroInstancia(1);
+		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(baseEmAnalise, conexaoBasePrincipal);
 	
 		MovimentoDto movimentoDto = new MovimentoDto();
 		movimentoDto.setCodMovimentoCNJ(123);
@@ -131,7 +133,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 		movimentoDto.getComplementos().add(complemento2);
 		
 		TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
-		a.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto);
+		a.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto, baseEmAnalise);
 		
 		// Confere se corrigiu o complemento conforme regras do de-para
 		List<ComplementoDto> complementos = movimentoDto.getComplementos();

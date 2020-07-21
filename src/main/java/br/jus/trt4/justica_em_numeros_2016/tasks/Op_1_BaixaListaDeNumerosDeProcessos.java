@@ -22,6 +22,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 /**
  * Monta uma lista de processos, conforme o parâmetro "tipo_carga_xml" do arquivo "config.properties",
@@ -34,8 +35,13 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(Op_1_BaixaListaDeNumerosDeProcessos.class);
 	private int grau;
+	private boolean deveProcessarProcessosPje;
+	private boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje;
+	private boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe;
+	
 	private final File arquivoSaida;
 	private Connection conexaoBasePrincipal;
+	private Connection conexaoBasePrincipalLegado;
 	private Connection conexaoBaseStagingEGestao;
 	private static final Pattern pCargaProcesso = Pattern.compile("^PROCESSO (\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4})$");
 	private static final Pattern pCargaMensal = Pattern.compile("^MENSAL (\\d+)-(\\d+)$");
@@ -81,7 +87,10 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	
 	public Op_1_BaixaListaDeNumerosDeProcessos(int grau) {
 		this.grau = grau;
-		this.arquivoSaida = Auxiliar.getArquivoListaProcessos(grau);
+		this.deveProcessarProcessosPje = Auxiliar.deveProcessarProcessosPje();
+		this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje();
+		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe();
+		this.arquivoSaida = Auxiliar.getArquivoListaProcessosPje(grau);
 	}
 
 	
@@ -93,32 +102,37 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		// pra escolher os processos que serão analisados.
 		String tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
 		LOGGER.info("Executando consulta " + tipoCarga + "...");
-		ResultSet rsConsultaProcessos;
-		if ("TESTES".equals(tipoCarga)) {
-			
-			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um lote qualquer de processos
-			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_testes.sql");
-			rsConsultaProcessos = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
-			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
-			
-		} else if (tipoCarga.startsWith("PROCESSO ")) {
-			
-			// Se usuário preencheu um número de processo no parâmetro "tipo_carga_xml", carrega
-			// somente os dados dele
-			Matcher m = pCargaProcesso.matcher(tipoCarga);
-			if (!m.find()) {
-				throw new RuntimeException("Parâmetro 'tipo_carga_xml' não especifica corretamente o processo que precisa ser baixado! Verifique o arquivo 'config.properties'");
-			}
-			String numeroProcesso = m.group(1);
-			
-			// Carrega o SQL do arquivo
-			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_um_processo.sql");
-			PreparedStatement ps = getConexaoBasePrincipalPJe().prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-			ps.setString(1, numeroProcesso);
-			rsConsultaProcessos = ps.executeQuery();
-			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + numeroProcesso + "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
-			
-		} else if ("COMPLETA".equals(tipoCarga)) {
+		ResultSet rsConsultaProcessosPje = null;
+		ResultSet rsConsultaProcessosMigradosLegado = null;
+		ResultSet rsConsultaProcessosNaoMigradosLegado = null;
+		// TODO: Como a integração com os dados do sistema judicial legado será realizada apenas para o tipo de carga COMPLETA, 
+		// os demais tipos de carga serão removidos até que seja informado o procedimento de integração com o sistema judicial legado de cada uma delas 
+//		if ("TESTES".equals(tipoCarga)) {
+//			
+//			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um lote qualquer de processos
+//			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_testes.sql");
+//			rsConsultaProcessos = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
+//			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
+//			
+//		} else if (tipoCarga.startsWith("PROCESSO ")) {
+//			
+//			// Se usuário preencheu um número de processo no parâmetro "tipo_carga_xml", carrega
+//			// somente os dados dele
+//			Matcher m = pCargaProcesso.matcher(tipoCarga);
+//			if (!m.find()) {
+//				throw new RuntimeException("Parâmetro 'tipo_carga_xml' não especifica corretamente o processo que precisa ser baixado! Verifique o arquivo 'config.properties'");
+//			}
+//			String numeroProcesso = m.group(1);
+//			
+//			// Carrega o SQL do arquivo
+//			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_um_processo.sql");
+//			PreparedStatement ps = getConexaoBasePrincipalPJe().prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+//			ps.setString(1, numeroProcesso);
+//			rsConsultaProcessos = ps.executeQuery();
+//			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + numeroProcesso + "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
+//			
+//		} else 
+		if ("COMPLETA".equals(tipoCarga)) {
 			
 			// Se usuário selecionou carga "COMPLETA" no parâmetro "tipo_carga_xml", 
 			// gera os XMLs de todos os processos que obedecerem às regras descritas no site do CNJ
@@ -139,54 +153,87 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 						e) RPvs e Precatórios Quitados/Cancelados
 				Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 			*/
-			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_completa_egestao_" + grau + "g.sql");
-			getConexaoBaseStagingEGestao().createStatement().execute("SET search_path TO pje_eg");
-			Statement statement = getConexaoBaseStagingEGestao().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-			statement.setFetchSize(100);
-			rsConsultaProcessos = statement.executeQuery(sql);
-			
-		} else if ("TODOS_COM_MOVIMENTACOES".equals(tipoCarga)) {
-			
-			// Se usuário selecionou carga "TODOS_COM_MOVIMENTACOES" no parâmetro "tipo_carga_xml", 
-			// gera os XMLs de todos os processos que tiveram qualquer movimentação processual na 
-			// tabela tb_processo_evento. 
-			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_todos_com_movimentacoes.sql");
-			Statement statement = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-			statement.setFetchSize(100);
-			rsConsultaProcessos = statement.executeQuery(sql);
-			
-		} else if (tipoCarga.startsWith("MENSAL ")) {
-			
-			// Se usuário selecionou carga "MENSAL" no parâmetro "tipo_carga_xml", utiliza as
-			// regras definidas pelo CNJ:
-			// Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
-			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
-			Matcher m = pCargaMensal.matcher(tipoCarga);
-			if (!m.find()) {
-				throw new RuntimeException("Parâmetro 'tipo_carga_xml' não especifica corretamente o ano e o mês que precisam ser baixados! Verifique o arquivo 'config.properties'");
+			if (this.deveProcessarProcessosPje) {
+				String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/pje/carga_completa_egestao_" + grau + "g.sql");
+				getConexaoBaseStagingEGestao().createStatement().execute("SET search_path TO pje_eg");
+				Statement statement = getConexaoBaseStagingEGestao().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+				statement.setFetchSize(100);
+				rsConsultaProcessosPje = statement.executeQuery(sql);		
+			}
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+				String sqlMigradosLegado = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/legado/carga_completa_migrados.sql");
+				Statement statementMigradosLegado = getConexaoBasePrincipalLegado().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+				statementMigradosLegado.setFetchSize(100);
+				rsConsultaProcessosMigradosLegado = statementMigradosLegado.executeQuery(sqlMigradosLegado);
+			}
+			if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+				String sqlNaoMigradosLegado = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/legado/carga_completa_nao_migrados.sql");
+				Statement statementNaoMigradosLegado = getConexaoBasePrincipalLegado().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+				statementNaoMigradosLegado.setFetchSize(100);
+				rsConsultaProcessosNaoMigradosLegado = statementNaoMigradosLegado.executeQuery(sqlNaoMigradosLegado);					
 			}
 			
-			// Identifica o início e o término do mês selecionado
-			int ano = Integer.parseInt(m.group(1));
-			int mes = Integer.parseInt(m.group(2));
-			int maiorDiaNoMes = new GregorianCalendar(ano, (mes-1), 1).getActualMaximum(Calendar.DAY_OF_MONTH);
-			String dataInicial = ano + "-" + mes + "-1 00:00:00.000";
-			String dataFinal = ano + "-" + mes + "-" + maiorDiaNoMes + " 23:59:59.999";
-			LOGGER.info("* Considerando movimentações entre '" + dataInicial + "' e '" + dataFinal + "'");
 			
-			// Carrega o SQL do arquivo
-			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_mensal.sql");
-			PreparedStatement statement = getConexaoBasePrincipalPJe().prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-			statement.setString(1, dataInicial);
-			statement.setString(2, dataFinal);
-			statement.setFetchSize(100);
-			rsConsultaProcessos = statement.executeQuery();
-			
-		} else {
+		} 
+//		else if ("TODOS_COM_MOVIMENTACOES".equals(tipoCarga)) {
+//			
+//			// Se usuário selecionou carga "TODOS_COM_MOVIMENTACOES" no parâmetro "tipo_carga_xml", 
+//			// gera os XMLs de todos os processos que tiveram qualquer movimentação processual na 
+//			// tabela tb_processo_evento. 
+//			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_todos_com_movimentacoes.sql");
+//			Statement statement = getConexaoBasePrincipalPJe().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+//			statement.setFetchSize(100);
+//			rsConsultaProcessos = statement.executeQuery(sql);
+//			
+//		} else if (tipoCarga.startsWith("MENSAL ")) {
+//			
+//			// Se usuário selecionou carga "MENSAL" no parâmetro "tipo_carga_xml", utiliza as
+//			// regras definidas pelo CNJ:
+//			// Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma atualização no mês
+//			// de agosto de 2016, com todos os dados e movimentos dos respectivos processos, de forma a evitar perda de
+//			Matcher m = pCargaMensal.matcher(tipoCarga);
+//			if (!m.find()) {
+//				throw new RuntimeException("Parâmetro 'tipo_carga_xml' não especifica corretamente o ano e o mês que precisam ser baixados! Verifique o arquivo 'config.properties'");
+//			}
+//			
+//			// Identifica o início e o término do mês selecionado
+//			int ano = Integer.parseInt(m.group(1));
+//			int mes = Integer.parseInt(m.group(2));
+//			int maiorDiaNoMes = new GregorianCalendar(ano, (mes-1), 1).getActualMaximum(Calendar.DAY_OF_MONTH);
+//			String dataInicial = ano + "-" + mes + "-1 00:00:00.000";
+//			String dataFinal = ano + "-" + mes + "-" + maiorDiaNoMes + " 23:59:59.999";
+//			LOGGER.info("* Considerando movimentações entre '" + dataInicial + "' e '" + dataFinal + "'");
+//			
+//			// Carrega o SQL do arquivo
+//			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/carga_mensal.sql");
+//			PreparedStatement statement = getConexaoBasePrincipalPJe().prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+//			statement.setString(1, dataInicial);
+//			statement.setString(2, dataFinal);
+//			statement.setFetchSize(100);
+//			rsConsultaProcessos = statement.executeQuery();
+//			
+//		} 
+		else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + tipoCarga);
 		}
-
+		
+		if (rsConsultaProcessosPje != null) {		
+			// Itera sobre os processos encontrados no PJE
+			gravarListaProcessos(rsConsultaProcessosPje, Auxiliar.getArquivoListaProcessosPje(this.grau));
+		}
+		if (rsConsultaProcessosMigradosLegado != null) {
+			// Itera sobre os processos encontrados no Sistema Judicial Legado e que já foram migrados
+			gravarListaProcessos(rsConsultaProcessosMigradosLegado, Auxiliar.getArquivoListaProcessosSistemaLegadoMigradosParaOPJe(grau));
+		}
+		if (rsConsultaProcessosNaoMigradosLegado != null) {
+			// Itera sobre os processos encontrados no Sistema Judicial Legado e que NÃO foram migrados
+			gravarListaProcessos(rsConsultaProcessosNaoMigradosLegado, Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(grau));
+		}
+	}
+	
+	public static void gravarListaProcessos(ResultSet rsConsultaProcessos, File arquivoSaida) throws IOException, SQLException {
 		// Itera sobre os processos encontrados
+		Set<String> listaProcessos = new TreeSet<>();
 		try {
 			int qtdProcessos = 0;
 			long tempo = System.currentTimeMillis();
@@ -213,12 +260,19 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	
 	public Connection getConexaoBasePrincipalPJe() throws SQLException {
 		if (conexaoBasePrincipal == null) {
-			conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
+			conexaoBasePrincipal = Auxiliar.getConexao(this.grau, BaseEmAnaliseEnum.PJE);
 			conexaoBasePrincipal.setAutoCommit(false);
 		}
 		return conexaoBasePrincipal;
 	}
 	
+	public Connection getConexaoBasePrincipalLegado() throws SQLException {
+		if (conexaoBasePrincipalLegado == null) {
+			conexaoBasePrincipalLegado = Auxiliar.getConexao(this.grau, BaseEmAnaliseEnum.LEGADO);
+			conexaoBasePrincipalLegado.setAutoCommit(false);
+		}
+		return conexaoBasePrincipalLegado;
+	}
 	
 	public Connection getConexaoBaseStagingEGestao() throws SQLException {
 		if (conexaoBaseStagingEGestao == null) {
@@ -248,7 +302,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 	
 	/**
-	 * Fecha conexão com o PJe
+	 * Fecha conexão com o PJe  e com o sistema judicial legado
 	 */
 	@Override
 	public void close() {
@@ -258,5 +312,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		
 		Auxiliar.fechar(conexaoBasePrincipal);
 		conexaoBasePrincipal = null;
+		
+		Auxiliar.fechar(conexaoBasePrincipalLegado);
+		conexaoBasePrincipalLegado = null;
 	}
 }

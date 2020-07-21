@@ -20,6 +20,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 /**
  * Classe responsável por ler os arquivos de serventia do CNJ (conforme parâmetro arquivo_serventias_cnj)
@@ -36,53 +37,56 @@ public class AnalisaServentiasCNJ {
 	private File arquivoServentias;
 	private static Set<String> orgaosJulgadoresSemServentiasCadastradas = new TreeSet<>();
 	
-	public AnalisaServentiasCNJ() throws IOException {
-		
-		// Arquivo de onde os dados das serventias serão lidos, conforme configuração.
-		arquivoServentias = getArquivoServentias();
-		if (!arquivoServentias.exists()) {
-			throw new IOException("O arquivo '" + arquivoServentias + "' não existe! Verifique o arquivo de configuração.");
-		}
-		
-		// Abre o arquivo e lê, linha por linha
-		Scanner scanner = new Scanner(arquivoServentias, "UTF-8");
-		try {
-			int linha = 0;
-			while (scanner.hasNextLine()) {
-				linha++;
-				String line = scanner.nextLine();
-				if (line.isEmpty() || line.startsWith("#")) {
-					continue;
-				}
-				
-				// Quebra cada linha em três partes: o nome do OJ/OJC no PJe, o código da serventia no CNJ e o nome da serventia no CNJ
-				String[] partes = line.split(";");
-				if (partes.length != 3) {
-					throw new IOException("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': a linha deve conter 3 campos, separados por ponto e vírgula: o nome do OJ/OJC no PJe, o código da serventia no CNJ e o nome da serventia no CNJ.");
-				}
-				String orgaoJulgadorPJe = partes[0];
-				int codigoServentiaCNJ;
-				try {
-					codigoServentiaCNJ = Integer.parseInt(partes[1]);
-				} catch (NumberFormatException ex) {
-					throw new IOException("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': o código da serventia deve ser um valor numérico inteiro.");
-				}
-				String nomeServentiaCNJ = partes[2];
-				
-				if (!StringUtils.isBlank(orgaoJulgadorPJe)) {
-					
-					// Verifica se não há OJs/OJCs declarados em duplicidade
-					if (serventiasCNJ.containsKey(orgaoJulgadorPJe)) {
-						LOGGER.warn("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': o órgão julgador '" + orgaoJulgadorPJe + "' está definido mais de uma vez.");
+	public AnalisaServentiasCNJ(BaseEmAnaliseEnum baseEmAnaliseEnum) throws IOException {
+		//Como para o sistema judicial legado as informações já estarão dentro do padrão esperado,
+		//pois serão corrigidas no pentaho, o procedimento abaixo só será aplicado ao pje.
+		if (baseEmAnaliseEnum.isBasePJe()) {
+			// Arquivo de onde os dados das serventias serão lidos, conforme configuração.
+			arquivoServentias = getArquivoServentias();
+			if (!arquivoServentias.exists()) {
+				throw new IOException("O arquivo '" + arquivoServentias + "' não existe! Verifique o arquivo de configuração.");
+			}
+			
+			// Abre o arquivo e lê, linha por linha
+			Scanner scanner = new Scanner(arquivoServentias, "UTF-8");
+			try {
+				int linha = 0;
+				while (scanner.hasNextLine()) {
+					linha++;
+					String line = scanner.nextLine();
+					if (line.isEmpty() || line.startsWith("#")) {
+						continue;
 					}
 					
-					// Adiciona o OJ/OJC na lista de serventias conhecidas
-					ServentiaCNJ serventia = new ServentiaCNJ(codigoServentiaCNJ, nomeServentiaCNJ);
-					serventiasCNJ.put(orgaoJulgadorPJe, serventia);
+					// Quebra cada linha em três partes: o nome do OJ/OJC no PJe, o código da serventia no CNJ e o nome da serventia no CNJ
+					String[] partes = line.split(";");
+					if (partes.length != 3) {
+						throw new IOException("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': a linha deve conter 3 campos, separados por ponto e vírgula: o nome do OJ/OJC no PJe, o código da serventia no CNJ e o nome da serventia no CNJ.");
+					}
+					String orgaoJulgadorPJe = partes[0];
+					int codigoServentiaCNJ;
+					try {
+						codigoServentiaCNJ = Integer.parseInt(partes[1]);
+					} catch (NumberFormatException ex) {
+						throw new IOException("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': o código da serventia deve ser um valor numérico inteiro.");
+					}
+					String nomeServentiaCNJ = partes[2];
+					
+					if (!StringUtils.isBlank(orgaoJulgadorPJe)) {
+						
+						// Verifica se não há OJs/OJCs declarados em duplicidade
+						if (serventiasCNJ.containsKey(orgaoJulgadorPJe)) {
+							LOGGER.warn("Inconsistência na linha " + linha + " do arquivo '" + arquivoServentias + "': o órgão julgador '" + orgaoJulgadorPJe + "' está definido mais de uma vez.");
+						}
+						
+						// Adiciona o OJ/OJC na lista de serventias conhecidas
+						ServentiaCNJ serventia = new ServentiaCNJ(codigoServentiaCNJ, nomeServentiaCNJ);
+						serventiasCNJ.put(orgaoJulgadorPJe, serventia);
+					}
 				}
+			} finally {
+				scanner.close();
 			}
-		} finally {
-			scanner.close();
 		}
 	}
 
@@ -90,19 +94,25 @@ public class AnalisaServentiasCNJ {
 		return new File("src/main/resources/serventias_cnj/" + Auxiliar.getParametroConfiguracao(Parametro.arquivo_serventias_cnj, true));
 	}
 
-	public ServentiaCNJ getServentiaByOJ(String nomePJe, boolean obrigatorio) throws DadosInvalidosException {
-		if (serventiasCNJ.containsKey(nomePJe)) {
-			return serventiasCNJ.get(nomePJe);
-		} else {
-			
-			//LOGGER.warn("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe. Para evitar interrupção da rotina, será utilizada uma serventia temporária.");
-			//return new ServentiaCNJ("CODIGO_INEXISTENTE", "SERVENTIA INEXISTENTE");
-			orgaosJulgadoresSemServentiasCadastradas.add(nomePJe);
-			if (obrigatorio) {
-				throw new DadosInvalidosException("Inconsistência no arquivo '" + arquivoServentias + "'", "Não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe.");
+	public ServentiaCNJ getServentiaByOJ(String descricaoOrgao, int codigoOrgao, BaseEmAnaliseEnum baseEmAnaliseEnum, boolean obrigatorio) throws DadosInvalidosException {
+		if (baseEmAnaliseEnum.isBasePJe()) {
+			if (serventiasCNJ.containsKey(descricaoOrgao)) {
+				return serventiasCNJ.get(descricaoOrgao);
 			} else {
-				return null;
+				
+				//LOGGER.warn("Inconsistência no arquivo '" + arquivoServentias + "': não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + nomePJe + "', do PJe. Para evitar interrupção da rotina, será utilizada uma serventia temporária.");
+				//return new ServentiaCNJ("CODIGO_INEXISTENTE", "SERVENTIA INEXISTENTE");
+				orgaosJulgadoresSemServentiasCadastradas.add(descricaoOrgao);
+				if (obrigatorio) {
+					throw new DadosInvalidosException("Inconsistência no arquivo '" + arquivoServentias + "'", "Não há nenhuma linha definindo o código e o nome da serventia para o OJ/OJC '" + descricaoOrgao + "', do PJe.");
+				} else {
+					return null;
+				}
 			}
+		} else {
+			//No sistema judicial legado, as informações de código e descrição já estarão com os
+			//valores corretos na base intermediária
+			return new ServentiaCNJ(codigoOrgao, descricaoOrgao);
 		}
 	}
 	
@@ -119,15 +129,15 @@ public class AnalisaServentiasCNJ {
 		return false;
 	}
 	
-	public boolean diagnosticarServentiasInexistentes() throws SQLException, DadosInvalidosException {
+	public boolean diagnosticarServentiasPjeInexistentes() throws SQLException, DadosInvalidosException {
 		LOGGER.info("Iniciando diagnóstico de serventias inexistentes...");
 		
 		if (Auxiliar.deveProcessarSegundoGrau()) {
-			diagnosticarServentiasInexistentes(2);
+			diagnosticarServentiasPjeInexistentes(2);
 		}
 		
 		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			diagnosticarServentiasInexistentes(1);
+			diagnosticarServentiasPjeInexistentes(1);
 		}
 		
 		LOGGER.info("Finalizado diagnóstico de serventias inexistentes.");
@@ -135,9 +145,9 @@ public class AnalisaServentiasCNJ {
 		return AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
 	}
 
-	private void diagnosticarServentiasInexistentes(int grau) throws SQLException, DadosInvalidosException {
+	private void diagnosticarServentiasPjeInexistentes(int grau) throws SQLException, DadosInvalidosException {
 		
-		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
+		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessosPje(grau));
 		if (!listaProcessos.isEmpty()) {
 			
 			// Monta um SQL plano com todos os números de processo
@@ -150,7 +160,7 @@ public class AnalisaServentiasCNJ {
 				sqlNumerosProcessos.append("'" + listaProcessos.get(i) + "'");
 			}
 			
-			try (Connection conexao = Auxiliar.getConexaoPJe(grau)) {
+			try (Connection conexao = Auxiliar.getConexao(grau, BaseEmAnaliseEnum.PJE)) {
 				
 				// Monta SQL para consultar os nomes dos OJs de todos os processos da lista, nessa instância
 				// Sugestao TRT6, por causa de falha no PostgreSQL na conversão do caractere "º" para ASCII:
@@ -164,7 +174,7 @@ public class AnalisaServentiasCNJ {
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
 				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de serventias");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sql.toString())) {
-					analisarExistenciaServentias(rs);
+					analisarExistenciaServentiasPje(rs);
 				} finally {
 					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 				}
@@ -185,7 +195,7 @@ public class AnalisaServentiasCNJ {
 				LOGGER.info("Consultando historicos de deslocamento...");
 				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de historicos de deslocamento");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sqlHistorico.toString())) {
-					analisarExistenciaServentias(rs);
+					analisarExistenciaServentiasPje(rs);
 				} finally {
 					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 				}
@@ -194,10 +204,10 @@ public class AnalisaServentiasCNJ {
 		}
 	}
 	
-	private void analisarExistenciaServentias(ResultSet rs) throws SQLException {
+	private void analisarExistenciaServentiasPje(ResultSet rs) throws SQLException {
 		while (rs.next()) {
 			try {
-				getServentiaByOJ(rs.getString("ds_orgao_julgador"), false);
+				getServentiaByOJ(rs.getString("ds_orgao_julgador"), 0, BaseEmAnaliseEnum.PJE, false);
 			} catch (DadosInvalidosException e) {
 				// Não vai acontecer, por causa do parametro "false"
 			}
@@ -205,7 +215,7 @@ public class AnalisaServentiasCNJ {
 	}
 
 	public static void main(String[] args) throws Exception {
-		AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ();
-		analisaServentiasCNJ.diagnosticarServentiasInexistentes();
+		AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ(BaseEmAnaliseEnum.PJE);
+		analisaServentiasCNJ.diagnosticarServentiasPjeInexistentes();
 	}
 }

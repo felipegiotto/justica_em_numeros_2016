@@ -1,0 +1,6 @@
+--SELECT
+--    processo as nr_processo
+--FROM
+--    dados_basicos_tmp
+--WHERE ROWNUM <= 100
+--AND migrado = 'S'

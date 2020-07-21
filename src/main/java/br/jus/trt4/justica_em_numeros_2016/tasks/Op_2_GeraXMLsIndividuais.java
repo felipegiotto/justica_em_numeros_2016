@@ -79,6 +79,7 @@ import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ParteProcessualDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.PoloDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaAssuntosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaClassesProcessuaisCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaMovimentosCNJ;
@@ -100,7 +101,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLsIndividuais.class);
 	private static ProgressoInterfaceGrafica progresso;
 	private int grau;
+	private BaseEmAnaliseEnum baseEmAnalise;
+	private boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe;
 	private Connection conexaoBasePrincipal;
+	private Connection conexaoBaseLegadoMigrados;
 	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPartes;
 	private NamedParameterStatement nsDocumentos;
@@ -111,6 +115,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private NamedParameterStatement nsIncidentes;
 	private NamedParameterStatement nsSentencasAcordaos;
 	private NamedParameterStatement nsHistoricoDeslocamentoOJ;
+	private NamedParameterStatement nsConsultaProcessosLegadosMigrados;
+	private NamedParameterStatement nsMovimentosLegadosMigrados;
+	private NamedParameterStatement nsComplementosLegadosMigrados;
+	private NamedParameterStatement nsSentencasAcordaosLegadosMigrados;
 	private int codigoMunicipioIBGETRT;
 	private static AnalisaServentiasCNJ processaServentiasCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
@@ -120,10 +128,15 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private IdentificaDocumentosPessoa identificaDocumentosPessoa;
 	private List<String> listaProcessos;
 	private String statusString;
+	private Map<String, String> mapaProcessosLegadoMigrados;
 	
 	// Objetos que armazenam os dados do PJe para poder trazer dados de processos em lote,
 	// resultando em menos consultas ao banco de dados.
 	private final Map<String, ProcessoDto> cacheProcessosDtos = new HashMap<>();
+	
+	// Objetos que armazenam os dados que foram migrados do Sistema Judicial Legado para o Pje, para poder trazer dados de processos em lote,
+		// resultando em menos consultas ao banco de dados.
+		private final Map<String, ProcessoDto> cacheProcessosLegadosMigradosDtos = new HashMap<>();
 
 	private class OperacaoGeracaoXML {
 		String numeroProcesso;
@@ -136,42 +149,83 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 */
 	@SuppressWarnings("deprecation")
 	public static void main(String[] args) throws Exception {
-
 		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Outros");
 		progresso = new ProgressoInterfaceGrafica("(2/6) Geração de XMLs individuais");
+		
+		boolean deveProcessarProcessosPje = Auxiliar.deveProcessarProcessosPje();
+		boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje();
 		try {
 			Auxiliar.prepararPastaDeSaida();
+			
+			Op_2_GeraXMLsIndividuais baixaDados1g = null;
+			Op_2_GeraXMLsIndividuais baixaDados2g = null;
+			Op_2_GeraXMLsIndividuais baixaDadosLegado1g = null;
+			Op_2_GeraXMLsIndividuais baixaDadosLegado2g = null;
 
-			// Verifica se há alguma serventia inexistente
-			AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ();
-			if (analisaServentiasCNJ.diagnosticarServentiasInexistentes()) {
-				Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
+			if (deveProcessarProcessosPje) {
+				// Verifica se há alguma serventia inexistente. A análise de serventias só será realizada para o PJe,
+				// pois as informações do Sistema Judicial Legado já estão corretas.
+				AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ((BaseEmAnaliseEnum.PJE));
+				if (analisaServentiasCNJ.diagnosticarServentiasPjeInexistentes()) {
+					Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
+				}
+				
+				baixaDados1g = Auxiliar.deveProcessarPrimeiroGrau() ? new Op_2_GeraXMLsIndividuais(1, BaseEmAnaliseEnum.PJE) : null;
+				baixaDados2g = Auxiliar.deveProcessarSegundoGrau()  ? new Op_2_GeraXMLsIndividuais(2, BaseEmAnaliseEnum.PJE) : null;	
 			}
 			
-			Op_2_GeraXMLsIndividuais baixaDados1g = Auxiliar.deveProcessarPrimeiroGrau() ? new Op_2_GeraXMLsIndividuais(1) : null;
-			Op_2_GeraXMLsIndividuais baixaDados2g = Auxiliar.deveProcessarSegundoGrau()  ? new Op_2_GeraXMLsIndividuais(2) : null;
+			if (deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+				baixaDadosLegado1g = Auxiliar.deveProcessarPrimeiroGrau() ? new Op_2_GeraXMLsIndividuais(1, BaseEmAnaliseEnum.LEGADO) : null;
+				baixaDadosLegado2g = Auxiliar.deveProcessarSegundoGrau()  ? new Op_2_GeraXMLsIndividuais(2, BaseEmAnaliseEnum.LEGADO) : null;				
+			}
+			
 			try {
 
 				// Conta quantos processos serão baixados, para mostrar barra de progresso
 				int qtdProcessos = 0;
-				if (baixaDados1g != null) {
-					qtdProcessos += baixaDados1g.carregarListaDeProcessos().size();
+				if (deveProcessarProcessosPje) {
+					if (baixaDados1g != null) {
+						qtdProcessos += baixaDados1g.carregarListaDeProcessos().size();
+					}
+					if (baixaDados2g != null) {
+						qtdProcessos += baixaDados2g.carregarListaDeProcessos().size();
+					}
 				}
-				if (baixaDados2g != null) {
-					qtdProcessos += baixaDados2g.carregarListaDeProcessos().size();
+				
+				if (deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+					if (baixaDadosLegado1g != null) {
+						qtdProcessos += baixaDadosLegado1g.carregarListaDeProcessos().size();
+					}
+					if (baixaDadosLegado2g != null) {
+						qtdProcessos += baixaDadosLegado2g.carregarListaDeProcessos().size();
+					}
 				}
+				
 				progresso.setMax(qtdProcessos);
 
 				// Gera XMLs para cada processo
-				if (baixaDados1g != null) {
-					baixaDados1g.gerarXMLs();
+				if (deveProcessarProcessosPje) {
+					if (baixaDados1g != null) {
+						baixaDados1g.gerarXMLs();
+					}
+					if (baixaDados2g != null) {
+						baixaDados2g.gerarXMLs();
+					}
 				}
-				if (baixaDados2g != null) {
-					baixaDados2g.gerarXMLs();
+				
+				if (deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+					if (baixaDadosLegado1g != null) {
+						baixaDadosLegado1g.gerarXMLs();
+					}
+					if (baixaDadosLegado2g != null) {
+						baixaDadosLegado2g.gerarXMLs();
+					}
 				}
 			} finally {
 				IOUtils.closeQuietly(baixaDados1g);
 				IOUtils.closeQuietly(baixaDados2g);
+				IOUtils.closeQuietly(baixaDadosLegado1g);
+				IOUtils.closeQuietly(baixaDadosLegado2g);
 			}
 
 			AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
@@ -185,10 +239,31 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 		LOGGER.info("Análise de desempenho:\n" + BenchmarkVariasOperacoes.globalInstance());
 	}
+	
+	private File getArquivoListaProcessos(int grau, BaseEmAnaliseEnum baseEmAnalise) {
+		return baseEmAnalise.isBasePJe() ? Auxiliar.getArquivoListaProcessosPje(grau) : Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(grau);
+	}
 
 	private List<String> carregarListaDeProcessos() throws DadosInvalidosException {
-		listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
+		listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(this.getArquivoListaProcessos(this.grau, this.baseEmAnalise));
 		return listaProcessos;
+	}
+	
+	/**
+	 * Recupera a lista de processos que foram migrados do sistema judicial legado para o pje.
+	 * 
+	 * @return
+	 * @throws DadosInvalidosException
+	 */
+	private void carregarListaDeProcessosSistemaLegadoMigrados() throws DadosInvalidosException {
+		this.mapaProcessosLegadoMigrados = new HashMap<String, String>();
+
+		List<String> processos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessosSistemaLegadoMigradosParaOPJe(this.grau));
+
+		for (String processo : processos) {
+			this.mapaProcessosLegadoMigrados.put(processo, processo);
+		}
+
 	}
 
 	private void gerarXMLs() throws Exception {
@@ -201,8 +276,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	}
 
 
-	public Op_2_GeraXMLsIndividuais(int grau) {
+	public Op_2_GeraXMLsIndividuais(int grau, BaseEmAnaliseEnum baseEmAnalise) {
 		this.grau = grau;
+		this.baseEmAnalise = baseEmAnalise;
+		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = baseEmAnalise.isBasePJe() 
+																   ? Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe()
+																   : false;
 	}
 
 	private void gerarXML() throws SQLException, JAXBException, DadosInvalidosException, IOException, InterruptedException {
@@ -221,10 +300,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 		// Pasta onde serão gerados os arquivos XML
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
-		pastaRaiz = new File(pastaRaiz, "PJe");
+		pastaRaiz = new File(pastaRaiz, (this.baseEmAnalise.isBasePJe() ? "PJe" : "Legado"));
 
 		// Carrega a lista de processos que precisará ser analisada
-		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessos(grau));
+		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(this.getArquivoListaProcessos(this.grau, this.baseEmAnalise));
 		
 		// Monta uma lista de "operações" (cada operação é um processo a ser baixado)
 		List<OperacaoGeracaoXML> operacoes = new ArrayList<>();
@@ -303,7 +382,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				try {
 					processoJudicial = analisarProcessoJudicialCompleto(operacao.numeroProcesso);
 				} catch (Exception ex) {
-					String mensagem = "Erro gerando XML do processo " + operacao.numeroProcesso + " (" + grau + "): " + ex.getLocalizedMessage();
+					String mensagem = "Erro gerando XML do processo " + operacao.numeroProcesso + " (Base: " + this.baseEmAnalise.getDescricao() + " - Grau: "+ this.grau + "): " + ex.getLocalizedMessage();
 					LOGGER.warn(mensagem, ex);
 				}
 	
@@ -359,7 +438,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			threadPool.shutdown();
 			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 		}
-		LOGGER.info("Arquivos XML do " + grau + "o Grau gerados!");
+		LOGGER.info("Arquivos XML da base " + this.baseEmAnalise.getDescricao() + " - " + grau + "o Grau gerados!");
 		this.statusString = null;
 	}
 
@@ -416,6 +495,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		LOGGER.info("Baixando cache de dados para " + numerosProcessos.size() + " processo(s)...");
 		Array arrayNumerosProcessos = conexaoBasePrincipal.createArrayOf("varchar", numerosProcessos.toArray());
 		this.cacheProcessosDtos.clear();
+		this.cacheProcessosLegadosMigradosDtos.clear();
 		
 		// Carrega dados principais dos processos
 		LOGGER.trace("* nsConsultaProcessos...");
@@ -547,17 +627,87 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				cacheProcessosDtos.get(nrProcesso).getSentencasAcordaos().add(documentoDto);
 			}
 		}
-
-		// Baixa dados de deslocamentos de OJ, que auxiliarão na identificação dos movimentos processuais
-		LOGGER.trace("* nsHistoricoDeslocamentoOJ...");
-		nsHistoricoDeslocamentoOJ.setArray("numeros_processos", arrayNumerosProcessos);
-		try (ResultSet rsHistoricoDeslocamentoOJ = nsHistoricoDeslocamentoOJ.executeQuery()) {
-			while (rsHistoricoDeslocamentoOJ.next()) {
-				String nrProcesso = rsHistoricoDeslocamentoOJ.getString("nr_processo");
-				HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto(rsHistoricoDeslocamentoOJ);
-				cacheProcessosDtos.get(nrProcesso).getHistoricosDeslocamentoOJ().add(historico);
+		// Baixa dados de deslocamentos de OJ, que auxiliarão na identificação do OJ dos movimentos processuais
+		if (this.baseEmAnalise.isBasePJe()) {
+			//FIXME: no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
+			//Em alguns Regionais pode ser diferente.
+			LOGGER.trace("* nsHistoricoDeslocamentoOJ...");
+			nsHistoricoDeslocamentoOJ.setArray("numeros_processos", arrayNumerosProcessos);
+			try (ResultSet rsHistoricoDeslocamentoOJ = nsHistoricoDeslocamentoOJ.executeQuery()) {
+				while (rsHistoricoDeslocamentoOJ.next()) {
+					String nrProcesso = rsHistoricoDeslocamentoOJ.getString("nr_processo");
+					HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto(rsHistoricoDeslocamentoOJ);
+					cacheProcessosDtos.get(nrProcesso).getHistoricosDeslocamentoOJ().add(historico);
+				}
 			}
 		}
+		
+		//Carregando dados de processos do sistema judicial legado que foram migrados para o PJe
+		if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+			List<String> numerosProcessosLegadosMigrados = new ArrayList<String>();
+			
+			for (String numeroProcesso : numerosProcessos) {
+				if (this.mapaProcessosLegadoMigrados.containsKey(numeroProcesso)) {
+					numerosProcessosLegadosMigrados.add(numeroProcesso);
+				}
+			}
+
+			if (!numerosProcessosLegadosMigrados.isEmpty()) {
+				Array arrayNumerosProcessosLegadosMigrados = conexaoBaseLegadoMigrados.createArrayOf("varchar", numerosProcessosLegadosMigrados.toArray());
+
+				// Carrega dados principais dos processos no sistema judicial legado
+				LOGGER.trace("* nsConsultaProcessosLegadosMigrados...");
+				nsConsultaProcessosLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessosLegadosMigrados);
+				try (ResultSet rsProcessos = nsConsultaProcessosLegadosMigrados.executeQuery()) {
+					while (rsProcessos.next()) {
+						String nrProcesso = rsProcessos.getString("nr_processo");
+						ProcessoDto processoDto = new ProcessoDto(rsProcessos, false);
+						processoDto.setNumeroInstancia(grau);
+						this.cacheProcessosLegadosMigradosDtos.put(nrProcesso, processoDto);
+						
+					}
+				}
+				
+				// Consulta todos os movimentos dos processos que foram migrados do sistema judicial legado para o pje
+				LOGGER.trace("* nsMovimentosLegadosMigrados...");
+				Map<Integer, MovimentoDto> movimentosPorIdProcessoEventoLegado = new HashMap<>();
+				nsMovimentosLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessosLegadosMigrados);
+				try (ResultSet rsMovimentos = nsMovimentosLegadosMigrados.executeQuery()) {
+					while (rsMovimentos.next()) {
+						String nrProcesso = rsMovimentos.getString("nr_processo");
+						MovimentoDto movimento = new MovimentoDto(rsMovimentos);
+						cacheProcessosLegadosMigradosDtos.get(nrProcesso).getMovimentos().add(movimento);
+						movimentosPorIdProcessoEventoLegado.put(movimento.getIdProcessoEvento(), movimento);
+					}
+				}
+				
+				// Consulta os complementos desses movimentos processuais.
+				// OBS: os complementos só existem no MovimentoNacional
+				LOGGER.trace("* nsComplementosLegadosMigrados...");
+				Array arrayIdProcessoEventoLegado = conexaoBaseLegadoMigrados.createArrayOf("int", movimentosPorIdProcessoEventoLegado.keySet().toArray());
+				nsComplementosLegadosMigrados.setArray("id_movimento_processo", arrayIdProcessoEventoLegado);
+				try (ResultSet rsComplementos = nsComplementosLegadosMigrados.executeQuery()) {
+					while (rsComplementos.next()) {
+						int idMovimentoProcesso = rsComplementos.getInt("id_movimento_processo");
+						ComplementoDto complemento = new ComplementoDto(rsComplementos);
+						movimentosPorIdProcessoEventoLegado.get(idMovimentoProcesso).getComplementos().add(complemento);
+					}
+				}
+				
+				// Baixa dados de sentenças e acórdãos dos processos, que auxiliarão na identificação do magistrado responsável
+				LOGGER.trace("* nsSentencasAcordaosLegadosMigrados...");
+				nsSentencasAcordaosLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessosLegadosMigrados);
+				try (ResultSet rsSentencasAcordaos = nsSentencasAcordaosLegadosMigrados.executeQuery()) {
+					while (rsSentencasAcordaos.next()) {
+						String nrProcesso = rsSentencasAcordaos.getString("nr_processo");
+						DocumentoDto documentoDto = new DocumentoDto(rsSentencasAcordaos);
+						cacheProcessosLegadosMigradosDtos.get(nrProcesso).getSentencasAcordaos().add(documentoDto);
+					}
+				}
+			}
+		}
+		
+		
 		} finally {
 			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
@@ -573,12 +723,23 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * @throws DadosInvalidosException 
 	 * @throws IOException
 	 */
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, DadosInvalidosException {
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(String numeroProcesso) throws SQLException, DadosInvalidosException, IOException {
 
 		if (cacheProcessosDtos.containsKey(numeroProcesso)) {
-			return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso));
+			if (this.baseEmAnalise.isBasePJe()) {
+				ProcessoDto processoLegado = null;
+				if (cacheProcessosLegadosMigradosDtos.containsKey(numeroProcesso)) {
+					//contém as informações do processo no sistema judicial legado,
+					//necessárias para realização do merge de movimentos e complementos
+					processoLegado = cacheProcessosLegadosMigradosDtos.get(numeroProcesso);
+				}
+				return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso), processoLegado);
+			} else {
+				return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso), null);				
+			}
+			
 		} else {
-			LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado no cache da base " + grau + "G! O processo pode não existir OU faltou carregar em cache os dados desse processo (com o método 'prepararCacheDadosProcessos')");
+			LOGGER.warn("O processo " + numeroProcesso + " não foi encontrado no cache da base " + this.baseEmAnalise.getDescricao() + " "+ grau + "G! O processo pode não existir OU faltou carregar em cache os dados desse processo (com o método 'prepararCacheDadosProcessos')");
 			return null;
 		}
 	}
@@ -588,13 +749,15 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * Método criado com base no script recebido do TRT14
 	 * para preencher os dados de um processo judicial dentro das classes que gerarão o XML.
 	 * 
+	 * @param processoLegadoMigrado contém as informações do processo no sistema judicial legado,
+	 * necessárias para realização do merge de movimentos e complementos
 	 * @param processoJudicial
 	 * @param rsProcesso
 	 * @throws SQLException 
 	 * @throws DadosInvalidosException 
 	 * @throws IOException 
 	 */
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ProcessoDto processo) throws SQLException, DadosInvalidosException {
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ProcessoDto processo, ProcessoDto processoLegadoMigrado) throws SQLException, DadosInvalidosException, IOException {
 
 		// Objeto que será retornado
 		TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
@@ -604,7 +767,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		processoJudicial.setDadosBasicos(cabecalho);
 
 		// Movimentos processuais e complementos
-		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(processo, cabecalho.getOrgaoJulgador()));
+		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(processo, processoLegadoMigrado, cabecalho.getOrgaoJulgador()));
 
 		return processoJudicial;
 	}
@@ -622,12 +785,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		cabecalhoProcesso.setNumero(processo.getNumeroProcessoSemSinais());
 		cabecalhoProcesso.setSiglaTribunal(Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, true));
 		cabecalhoProcesso.setGrau("G" + grau);
-		cabecalhoProcesso.setDscSistema(1); // 1 = PJe
+		cabecalhoProcesso.setDscSistema(this.baseEmAnalise.isBasePJe() ? 1 : 8);// 1 = PJE; 8 = Outros
 		
 		// Informar se o processo tramita em sistema eletrônico ou em papel. São valores possíveis
 		// 1: Sistema Eletrônico
 		// 2: Sistema Físico
-		cabecalhoProcesso.setProcEl(1);
+		cabecalhoProcesso.setProcEl(this.baseEmAnalise.isBasePJe() ? 1 : 2);
 		
 		// Grava a classe processual, conferindo se ela está na tabela nacional do CNJ
 		analisaClassesProcessuaisCNJ.preencherClasseProcessualVerificandoTPU(cabecalhoProcesso, processo.getClasseJudicial(), numeroCompletoProcesso);
@@ -651,7 +814,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(processo));
 
 		// Preenche dados do órgão julgador do processo
-		cabecalhoProcesso.setOrgaoJulgador(analisarOrgaoJulgadorProcesso(processo));
+		cabecalhoProcesso.setOrgaoJulgador(analisarOrgaoJulgadorProcesso(processo, this.baseEmAnalise));
 
 		// Preenche dados de processos incidentais / principais
 		analisarRelacaoIncidental(cabecalhoProcesso.getRelacaoIncidental(), processo);
@@ -843,7 +1006,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				identificaDocumentosPessoa.preencherDocumentosPessoa(pessoa, parteProcessual.getDocumentos());
 
 				// Identifica o gênero (sexo) da pessoa (pode ser necessário consultar na outra instância)
-				identificaGeneroPessoa.preencherSexoPessoa(pessoa, parteProcessual.getSexoPessoa(), parteProcessual.getNomeConsultaParte());
+				identificaGeneroPessoa.preencherSexoPessoa(pessoa, parteProcessual.getSexoPessoa(), parteProcessual.getNomeConsultaParte(), this.baseEmAnalise);
 
 				// Identifica os endereços da parte
 				for (EnderecoDto enderecoDto : parteProcessual.getEnderecos()) {
@@ -981,7 +1144,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 			// Analisa o assunto, que pode ou não estar nas tabelas processuais unificadas do CNJ.
 			int codigo = assuntoDto.getCodigo();
-			TipoAssuntoProcessual assunto = analisaAssuntosCNJ.getAssunto(codigo);
+			TipoAssuntoProcessual assunto = analisaAssuntosCNJ.getAssunto(codigo, this.baseEmAnalise);
 			if (assunto != null) {
 				assuntos.add(assunto);
 				encontrouAlgumAssunto = true;
@@ -1027,14 +1190,15 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	}
 
 
-	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ProcessoDto processo) throws SQLException, DadosInvalidosException {
-		return analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), processo.getOrgaoJulgador().getNomeNormalizado(), processo.getOrgaoJulgador().getIdMunicipioIBGE(), processo.getNumeroInstancia());
+	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ProcessoDto processo, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DadosInvalidosException {
+		return analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), processo.getOrgaoJulgador().getNomeNormalizado(), processo.getOrgaoJulgador().getCodigo(), processo.getOrgaoJulgador().getIdMunicipioIBGE(), processo.getNumeroInstancia(), baseEmAnalise);
 	}
 	
 	/**
 	 * Retorna um órgão julgador com os dados das serventias do CNJ.
 	 * 
 	 * @param nomeOrgaoJulgadorProcesso : nome do órgão julgador conforme campo "ds_orgao_julgador" da tabela "tb_orgao_julgador".
+	 * @param codigoOrgaoJulgador: codigo do órgão julgador que é retornado apenas pelo sistema judicial legado.
 	 * @param idMunicipioIBGEOrgaoJulgador : código IBGE do município do órgão julgador. Se estiver gerando dados do segundo grau, 
 	 * 		esse parâmetro será ignorado e, em vez dele, será sempre preenchido o conteúdo do parâmetro "codigo_municipio_ibge_trt".
 	 * @param instanciaProcesso : instância originária do processo, conforme campo "nr_instancia" da tabela "tb_processo_trf"
@@ -1042,7 +1206,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * @throws SQLException
 	 * @throws DadosInvalidosException
 	 */
-	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ClasseJudicialDto classe, String nomeOrgaoJulgadorProcesso, int idMunicipioIBGE, int instanciaProcesso) throws SQLException, DadosInvalidosException {
+	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ClasseJudicialDto classe, String nomeOrgaoJulgadorProcesso, int codigoOrgaoJulgador, int idMunicipioIBGE, int instanciaProcesso, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DadosInvalidosException {
 		/*
 		 * Órgãos Julgadores
 				Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
@@ -1060,7 +1224,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		// raise notice '<orgaoJulgador codigoOrgao="%" nomeOrgao="%" instancia="%" codigoMunicipioIBGE="%"/>' -- codigoMunicipioIBGE="1100205" -- <=== 2º grau!!!
 		//   , proc.ds_sigla, proc.ds_orgao_julgador, proc.tp_instancia, proc.id_municipio_ibge_atual;
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
-		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, true);
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, codigoOrgaoJulgador, baseEmAnalise, true);
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
 		orgaoJulgador.setCodigoOrgao(serventiaCNJ.getCodigo());
 		orgaoJulgador.setNomeOrgao(serventiaCNJ.getNome());
@@ -1083,8 +1247,23 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		return orgaoJulgador;
 	}
 
+	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(ProcessoDto processo, ProcessoDto processoLegadoMigrado, TipoOrgaoJulgador orgaoJulgadorProcessoCabecalho) throws SQLException, DadosInvalidosException, IOException {
 
-	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(ProcessoDto processo, TipoOrgaoJulgador orgaoJulgadorProcesso) throws SQLException, DadosInvalidosException {
+		List<TipoMovimentoProcessual> movimentos = new ArrayList<>();
+		if (this.baseEmAnalise.isBasePJe()) {
+			movimentos.addAll(this.getMovimentosProcesso(processo, orgaoJulgadorProcessoCabecalho, this.baseEmAnalise));
+			if (processoLegadoMigrado != null) {
+				movimentos.addAll(this.getMovimentosProcesso(processoLegadoMigrado, analisarOrgaoJulgadorProcesso(processoLegadoMigrado, BaseEmAnaliseEnum.LEGADO), BaseEmAnaliseEnum.LEGADO));				
+			}
+		} else {
+			movimentos.addAll(this.getMovimentosProcesso(processo, orgaoJulgadorProcessoCabecalho, this.baseEmAnalise));
+		}
+
+
+		return movimentos;
+	}
+
+	private List<TipoMovimentoProcessual> getMovimentosProcesso(ProcessoDto processo, TipoOrgaoJulgador orgaoJulgadorProcesso, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DadosInvalidosException {
 
 		List<TipoMovimentoProcessual> movimentos = new ArrayList<>();
 		
@@ -1107,7 +1286,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// tipoResponsavelMovimento: Identificação do responsável pelo movimento: Servidor=0; Magistrado=1;
 			movimento.setTipoResponsavelMovimento(movimentoDto.isUsuarioMagistrado() ? 1 : 0);
 			
-			analisaMovimentosCNJ.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto);
+			analisaMovimentosCNJ.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto, baseEmAnalise);
 			movimentos.add(movimento);
 			LocalDateTime dataMovimento = movimentoDto.getDataAtualizacao();
 
@@ -1179,18 +1358,22 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 			// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
 			// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
-			for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
-				LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
-				LocalDateTime dataRetorno = historico.getDataRetorno();
-				if (dataDeslocamento.isAfter(dataMovimento)) {
-					TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), historico.getIdMunicipioOrigem(), processo.getNumeroInstancia());
-					movimento.setOrgaoJulgador(orgaoJulgador);
-					break;
-					
-				} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
-					TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), historico.getIdMunicipioDestino(), processo.getNumeroInstancia());
-					movimento.setOrgaoJulgador(orgaoJulgador);
-					break;
+			//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
+			//Em alguns Regionais pode ser diferente.
+			if (baseEmAnalise.isBasePJe()) {
+				for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
+					LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
+					LocalDateTime dataRetorno = historico.getDataRetorno();
+					if (dataDeslocamento.isAfter(dataMovimento)) {
+						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), processo.getNumeroInstancia(), baseEmAnalise);
+						movimento.setOrgaoJulgador(orgaoJulgador);
+						break;
+
+					} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
+						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), 0, historico.getIdMunicipioDestino(), processo.getNumeroInstancia(), baseEmAnalise);
+						movimento.setOrgaoJulgador(orgaoJulgador);
+						break;
+					}
 				}
 			}
 			if (movimento.getOrgaoJulgador() == null) {
@@ -1204,73 +1387,103 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	public void prepararConexao() throws SQLException, IOException, DadosInvalidosException, InterruptedException {
 
-		LOGGER.info("Preparando informações para gerar XMLs do " + grau + "o Grau...");
+		LOGGER.info("Preparando informações para gerar XMLs da base " + this.baseEmAnalise.getDescricao() + " - " + grau + "o Grau...");
 		this.statusString = "Preparando dados";
 
 		// Objeto que fará o de/para dos OJ e OJC do PJe para os do CNJ
 		if (processaServentiasCNJ == null) {
-			processaServentiasCNJ = new AnalisaServentiasCNJ();
+			processaServentiasCNJ = new AnalisaServentiasCNJ(this.baseEmAnalise);
 		}
 
-		// Abre conexão com o banco de dados do PJe
-		conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau);
+		// Abre conexão com o banco de dados do PJe ou Legado
+		conexaoBasePrincipal = Auxiliar.getConexao(this.grau, this.baseEmAnalise);
 		conexaoBasePrincipal.setAutoCommit(false);
 
 		// Objeto que auxiliará na identificação do sexo das pessoas na OUTRA INSTANCIA, quando 
 		// essa informação estiver ausente na instância atual.
 		int outraInstancia = grau == 1 ? 2 : 1;
-		identificaGeneroPessoa = new IdentificaGeneroPessoa(outraInstancia);
+		identificaGeneroPessoa = new IdentificaGeneroPessoa(outraInstancia, this.baseEmAnalise);
 
 		// Objeto que auxiliará na identificação dos documentos de identificação das pessoas
-		identificaDocumentosPessoa = new IdentificaDocumentosPessoa(conexaoBasePrincipal);
+		identificaDocumentosPessoa = new IdentificaDocumentosPessoa(conexaoBasePrincipal, this.baseEmAnalise);
+
+		String pastaIntermediaria = Auxiliar.getPastaResources(this.baseEmAnalise);
 
 		// SQL que fará a consulta de um processo
-		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/01_consulta_processo.sql");
+		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/01_consulta_processo.sql");
 		nsConsultaProcessos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaProcessos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 
 		// SQL que fará a consulta das partes
-		String sqlConsultaPartes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/03_consulta_partes.sql");
+		String sqlConsultaPartes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/03_consulta_partes.sql");
 		nsPartes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaPartes);
 
 		// SQL que fará a consulta dos endereços da parte
-		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_documentos_pessoa.sql");
+		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/04_consulta_documentos_pessoa.sql");
 		nsDocumentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaDocumentos);
 		
 		// SQL que fará a consulta dos endereços da parte
-		String sqlConsultaEnderecos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_enderecos_pessoa.sql");
+		String sqlConsultaEnderecos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/04_consulta_enderecos_pessoa.sql");
 		nsEnderecos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaEnderecos);
 
 		// SQL que fará a consulta dos assuntos do processo
-		String sqlConsultaAssuntos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/05_consulta_assuntos.sql");
+		String sqlConsultaAssuntos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/05_consulta_assuntos.sql");
 		nsAssuntos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaAssuntos);
 
 		// SQL que fará a consulta dos movimentos processuais
-		String sqlConsultaMovimentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/06_consulta_movimentos.sql");
+		String sqlConsultaMovimentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/06_consulta_movimentos.sql");
 		nsMovimentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaMovimentos);
 
 		// Le o SQL que fará a consulta dos complementos dos movimentos processuais
-		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/07_consulta_complementos.sql");
+		String sqlConsultaComplementos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/07_consulta_complementos.sql");
 		nsComplementos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaComplementos);
 
 		// Le o SQL que fará a consulta dos processos incidentais
-		String sqlConsultaIncidentes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/08_consulta_incidentes.sql");
+		String sqlConsultaIncidentes = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/08_consulta_incidentes.sql");
 		nsIncidentes = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaIncidentes);
 		
 		// Le o SQL que fará a consulta das sentenças e acórdãos
-		String sqlConsultaSentencasAcordaos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/09_consulta_sentencas_acordaos.sql");
+		String sqlConsultaSentencasAcordaos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/09_consulta_sentencas_acordaos.sql");
 		nsSentencasAcordaos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaSentencasAcordaos);
 		
 		// Le o SQL que fará a consulta do histórico de deslocamento
-		String sqlConsultaHistoricoDeslocamentoOJ = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/10_consulta_deslocamento_oj.sql");
-		nsHistoricoDeslocamentoOJ = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaHistoricoDeslocamentoOJ);
+		if (this.baseEmAnalise.isBasePJe()) {
+			//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
+			//Em alguns Regionais pode ser diferente.
+			String sqlConsultaHistoricoDeslocamentoOJ = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/10_consulta_deslocamento_oj.sql");
+			nsHistoricoDeslocamentoOJ = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaHistoricoDeslocamentoOJ);			
+		}
+		
+		//Se a base em análise é a do pje, será preciso recuperar, para processos que foram migrados do sistema judicial legado,
+		// os respectivos movimentos e complementos
+		if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+			this.carregarListaDeProcessosSistemaLegadoMigrados();
+			conexaoBaseLegadoMigrados = Auxiliar.getConexao(this.grau, BaseEmAnaliseEnum.LEGADO);
+			conexaoBaseLegadoMigrados.setAutoCommit(false);
+
+			String sqlConsultaProcessosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/legado/01_consulta_processo.sql");
+			nsConsultaProcessosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaProcessosLegadoMigrados, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+
+			// SQL que fará a consulta dos movimentos processuais
+			String sqlConsultaMovimentosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/legado/06_consulta_movimentos.sql");
+			nsMovimentosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaMovimentosLegadoMigrados);
+
+			// Le o SQL que fará a consulta dos complementos dos movimentos processuais
+			String sqlConsultaComplementosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/legado/07_consulta_complementos.sql");
+			nsComplementosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaComplementosLegadoMigrados);
+
+			// Le o SQL que fará a consulta das sentenças e acórdãos
+			String sqlConsultaSentencasAcordaosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/legado/09_consulta_sentencas_acordaos.sql");
+			nsSentencasAcordaosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaSentencasAcordaosLegadoMigrados);
+
+		}
 
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
 		codigoMunicipioIBGETRT = Auxiliar.getParametroInteiroConfiguracao(Parametro.codigo_municipio_ibge_trt);
 
 		// Objeto que identificará os assuntos e movimentos processuais das tabelas nacionais do CNJ
-		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal, true);
-		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(grau, conexaoBasePrincipal);
-		analisaClassesProcessuaisCNJ = new AnalisaClassesProcessuaisCNJ(grau);
+		analisaAssuntosCNJ = new AnalisaAssuntosCNJ(grau, conexaoBasePrincipal,  true, baseEmAnalise);
+		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(baseEmAnalise, conexaoBasePrincipal);
+		analisaClassesProcessuaisCNJ = new AnalisaClassesProcessuaisCNJ();
 		
 		this.statusString = null;
 	}
@@ -1306,10 +1519,27 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsIncidentes = null;
 		Auxiliar.fechar(nsSentencasAcordaos);
 		nsSentencasAcordaos = null;
-		Auxiliar.fechar(nsHistoricoDeslocamentoOJ);
-		nsHistoricoDeslocamentoOJ = null;
+		if (this.baseEmAnalise.isBasePJe()) {
+			//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
+			//Em alguns Regionais pode ser diferente.
+			Auxiliar.fechar(nsHistoricoDeslocamentoOJ);
+			nsHistoricoDeslocamentoOJ = null;			
+		}
 
 		Auxiliar.fechar(conexaoBasePrincipal);
 		conexaoBasePrincipal = null;
+		
+		if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+			Auxiliar.fechar(nsConsultaProcessosLegadosMigrados);
+			nsConsultaProcessosLegadosMigrados = null;
+			Auxiliar.fechar(nsMovimentosLegadosMigrados);
+			nsMovimentosLegadosMigrados = null;
+			Auxiliar.fechar(nsComplementosLegadosMigrados);
+			nsComplementosLegadosMigrados = null;
+			Auxiliar.fechar(nsSentencasAcordaosLegadosMigrados);
+			nsSentencasAcordaosLegadosMigrados = null;
+			Auxiliar.fechar(conexaoBaseLegadoMigrados);
+			conexaoBaseLegadoMigrados = null;
+		}
 	}
 }

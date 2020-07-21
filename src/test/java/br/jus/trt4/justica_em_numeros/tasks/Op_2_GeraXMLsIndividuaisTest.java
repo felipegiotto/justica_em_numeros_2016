@@ -33,6 +33,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
 
 /**
@@ -55,7 +56,7 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 	 */
 	@Test
 	public void testGerarProcessosEmLote() throws Exception {
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(2);
+		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(2, BaseEmAnaliseEnum.PJE);
 		try {
 			baixaDados.prepararConexao();
 			List<String> numeros = new ArrayList<>();
@@ -727,7 +728,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws SQLException, IOException, DadosInvalidosException, InterruptedException {
 		
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau);
+		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau, BaseEmAnaliseEnum.PJE);
 		try {
 			baixaDados.prepararConexao();
 			List<String> numeros = new ArrayList<>();

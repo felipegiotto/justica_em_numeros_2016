@@ -20,6 +20,7 @@ SELECT
   pt.dt_autuacao,
   
   /*** orgaoJulgador ***/
+  0 cd_orgao_julgador, -- essa informação não será utilizada no pje, mas deve estar na query
   upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, 
   upper(to_ascii(ojc.ds_orgao_julgador_colegiado)) as ds_orgao_julgador_colegiado,
   -- Sugestao TRT6, por causa de falha no PostgreSQL na conversão do caractere "º" para ASCII:

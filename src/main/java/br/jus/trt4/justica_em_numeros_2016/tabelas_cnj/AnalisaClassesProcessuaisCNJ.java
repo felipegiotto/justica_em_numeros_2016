@@ -17,7 +17,7 @@ public class AnalisaClassesProcessuaisCNJ {
 	private static final Logger LOGGER = LogManager.getLogger(AnalisaClassesProcessuaisCNJ.class);
 	private List<Integer> classesProcessuaisCNJ;
 
-	public AnalisaClassesProcessuaisCNJ(int grau) throws IOException {
+	public AnalisaClassesProcessuaisCNJ() throws IOException {
 		
 		File arquivoClasses = new File("src/main/resources/tabelas_cnj/classes_cnj.csv");
 		LOGGER.info("Carregando lista de classes CNJ do arquivo " + arquivoClasses + "...");
