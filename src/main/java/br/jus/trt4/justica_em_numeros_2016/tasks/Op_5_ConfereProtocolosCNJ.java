@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.JAXBException;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -36,7 +34,8 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 /**
  * Chama os webservices do CNJ, validando cada um dos protocolos recebidos previamente do CNJ na fase 4: {@link Op_4_ValidaEnviaArquivosCNJ}.
  * 
- * TODO: Conferência pode ser assim: armazena a faixa de dias que teve envio, armazena o último protocolo recebido do CNJ.
+ * TODO: Consulta de protocolos do CNJ não está funcionando, então é melhor mudar a regra da seguinte forma:
+ * armazenar a faixa de dias que teve envio, armazenar o último protocolo recebido do CNJ.
  * Vai consultando quando que esse ÚLTIMO protocolo é analisado no CNJ. Nesse momento, presume-se que todos os demais também estão 
  * processados. Então, faz uma busca paginada, considerando a faixa de dias e buscando somente os ERROS (tem vários tipos de erro).
  * Os outros, presume-se que estão OK.
@@ -107,7 +106,7 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * 
 	 * @throws Exception
 	 */
-	public Op_5_ConfereProtocolosCNJ() throws Exception {
+	public Op_5_ConfereProtocolosCNJ() {
 		httpClient = HttpUtil.criarNovoHTTPClientComAutenticacaoCNJ();
 	}
 	
@@ -115,11 +114,8 @@ public class Op_5_ConfereProtocolosCNJ {
 	/**
 	 * Carrega os arquivos XML das instâncias selecionadas (1G e/ou 2G) e envia ao CNJ.
 	 * 
-	 * @throws JAXBException 
-	 * @throws InterruptedException 
-	 * @throws IOException 
 	 */
-	private void localizarProtocolosConsultarNoCNJ() throws JAXBException, InterruptedException, IOException {
+	public void localizarProtocolosConsultarNoCNJ() {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
@@ -135,8 +131,10 @@ public class Op_5_ConfereProtocolosCNJ {
 		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosParaConsultar, "Protocolos que ainda precisam ser conferidos");
 		
 		// Atualiza o progresso na interface
-		progresso.setMax(totalArquivos);
-		progresso.setProgress(totalArquivos - arquivosParaConsultar.size());
+		if (progresso != null) {
+			progresso.setMax(totalArquivos);
+			progresso.setProgress(totalArquivos - arquivosParaConsultar.size());
+		}
 		
 		// Inicia o envio
 		consultarProtocolosNoCNJ(arquivosParaConsultar);
@@ -269,13 +267,15 @@ public class Op_5_ConfereProtocolosCNJ {
 				AcumuladorExceptions.instance().adicionarException(origemOperacao, mensagem, ex, true);
 				
 			} finally {
-				progresso.incrementProgress();
+				if (progresso != null) {
+					progresso.incrementProgress();
+				}
 			}
 		}
 		
 		LOGGER.info("Quantidade de protocolos baixados nesta iteração: " + qtdArquivosBaixados);
 		if (qtdArquivosAindaPendentes > 0) {
-			LOGGER.info("Ainda há protocolos aguardando processamento no CNJ. Quantidade=: " + qtdArquivosAindaPendentes);
+			LOGGER.info("Ainda há protocolos aguardando processamento no CNJ. Quantidade: " + qtdArquivosAindaPendentes);
 		}
 	}
 	
@@ -298,7 +298,7 @@ public class Op_5_ConfereProtocolosCNJ {
 		}
 	}
 	
-	private void gravarTotalProtocolosRecusados() throws IOException {
+	public void gravarTotalProtocolosRecusados() throws IOException {
 		List<ArquivoComInstancia> arquivosProtocolos = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(Auxiliar.SUFIXO_PROTOCOLO_ERRO);
 		if (!arquivosProtocolos.isEmpty()) {
 			File listaRecusados = new File(Auxiliar.prepararPastaDeSaida(), "lista_protocolos_recusados_cnj.txt");

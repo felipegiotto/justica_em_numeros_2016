@@ -348,7 +348,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 
 		// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
-		final int tamanhoLote = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos, 1);
+		final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos, 1), 1);
 		final AtomicInteger counter = new AtomicInteger();
 		final Collection<List<OperacaoGeracaoXML>> lotesOperacoes = operacoes.stream()
 		    .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote))

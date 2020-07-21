@@ -200,12 +200,17 @@ public class AnalisaMovimentosCNJ {
 			if (evento != null) {
 				if (movimentoExisteNasTabelasNacionais(evento.getId())) {
 					return evento.getId();
-				} else {
-					// FIXME: AQUI pode ocorrer NullPointerException se o getIdEventoSuperior for NULL
+					
+				} else if (evento.getIdEventoSuperior() != null) {
 					idEvento = evento.getIdEventoSuperior();
+					
+				} else {
+					LOGGER.warn("Evento com id_evento = " + idEvento + " não possui evento superior na hierarquia.");
+					return 0;
 				}
+				
 			} else {
-				LOGGER.warn("Não localizei assunto com id_evento = " + idEvento);
+				LOGGER.warn("Não localizei evento com id_evento = " + idEvento);
 				return 0;
 			}
 			

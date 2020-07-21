@@ -117,8 +117,10 @@ public class HttpServerRequestHandler implements Runnable {
 					}
 					
 					// Status das operações
+					html = html.replaceAll("STATUS_BAIXAR_LISTA", operacao.isExecutandoOperacao1BaixandoLista() ? "Baixando lista de processos..." : "");
 					html = html.replaceAll("STATUS_GERACAO", operacao.isExecutandoOperacao2Geracao() ? "Gerando arquivos XML..." : "");
 					html = html.replaceAll("STATUS_ENVIO", operacao.isExecutandoOperacao4Envio() ? "Enviando dados ao CNJ..." : "");
+					html = html.replaceAll("STATUS_CONFERENCIA", operacao.isExecutandoOperacao5Conferencia() ? "Conferindo protocolos no CNJ..." : "");
 					
 					// Erros encontrados
 					if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {

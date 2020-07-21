@@ -11,6 +11,7 @@ SELECT
   
 FROM tb_hist_desloca_oj hist
 INNER JOIN tb_processo proc ON (proc.id_processo = hist.id_processo_trf)
+INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf)
 INNER JOIN tb_orgao_julgador oj_origem ON (oj_origem.id_orgao_julgador = hist.id_oj_origem)
 INNER JOIN tb_orgao_julgador oj_destino ON (oj_destino.id_orgao_julgador = hist.id_oj_destino)
 
@@ -22,4 +23,8 @@ LEFT  JOIN tb_municipio_ibge ib_destino ON (ib_destino.id_municipio = jm_destino
 WHERE proc.nr_processo = ANY(:numeros_processos)
   AND hist.dt_deslocamento IS NOT NULL
   AND hist.dt_retorno IS NOT NULL
+  
+  -- Reforça a condição da data de autuação, pois um bug no PJe fez com que houvesse mais que um processo com mesma numeração (um com data de autuação e outro sem)
+  AND ptrf.dt_autuacao IS NOT NULL
+
 ORDER BY hist.dt_deslocamento

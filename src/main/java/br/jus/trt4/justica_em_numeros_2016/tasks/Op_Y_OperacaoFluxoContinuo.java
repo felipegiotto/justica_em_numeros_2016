@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ControleAbortarOperacao;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpServerStatus;
@@ -21,7 +22,6 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
  *
  * TODO: Conferir erro no "Conferindo protocolos no CNJ"
  * TODO: Tratar travamentos da VPN (tentar forçar fechar conexão ao banco)
- * TODO: Marcar arquivos que não foram gerados na fase 2 por erro no validador, avisar dos problemas ocorridos e permitir gerá-los novamente.
  * TODO: Encerrar operação quando todos arquivos forem processados
  * TODO: Tratar também carga de dados de sistemas legados
  *
@@ -33,8 +33,10 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	
 	private Collection<ProcessoFluxo> processosFluxos = new ConcurrentLinkedDeque<>();
 	private HttpServerStatus serverStatus;
+	private boolean executandoOperacao1BaixandoLista;
 	private boolean executandoOperacao2Geracao;
 	private boolean executandoOperacao4Envio;
+	private boolean executandoOperacao5Conferencia;
 	
 	private void iniciar() throws IOException, SQLException {
 		
@@ -91,7 +93,12 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 
 		try (Op_1_BaixaListaDeNumerosDeProcessos baixaListaProcessos = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
 			if (!baixaListaProcessos.getArquivoSaida().exists()) {
-				baixaListaProcessos.baixarListaProcessos();
+				try {
+					executandoOperacao1BaixandoLista = true;
+					baixaListaProcessos.baixarListaProcessos();
+				} finally {
+					executandoOperacao1BaixandoLista = false;
+				}
 			}
 		}
 		
@@ -166,17 +173,38 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		}).start();
 
 		// Confere protocolos no CNJ enquanto houver protocolos pendentes de conferência
+		new Thread(() -> {
+			Auxiliar.prepararThreadLog();
+			
+			// Espera todos os arquivos serem marcados como ENVIADOS
+			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.ENVIADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
+			}
+			
+			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.CONCLUIDO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+				try {
+					this.executandoOperacao5Conferencia = true;
+					Op_5_ConfereProtocolosCNJ operacao = new Op_5_ConfereProtocolosCNJ();
+					operacao.localizarProtocolosConsultarNoCNJ();
+					operacao.gravarTotalProtocolosRecusados();
+					
+					AcumuladorExceptions.instance().removerException("Conferência de protocolos no CNJ");
+				} catch (Exception e) {
+					AcumuladorExceptions.instance().adicionarException("Conferência de protocolos no CNJ", e.getLocalizedMessage(), e, true);
+					
+				} finally {
+					this.executandoOperacao5Conferencia = false;
+				}
+				
+				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
+			}
+			
+		}).start();
+		
 		// TODO: Retornar esse código quando o serviço estiver funcionando adequadamente (hoje só dá timeout)
 		new Thread(() -> {
 			Auxiliar.prepararThreadLog();
 
-			// TODO: Reimplementar lógica para consultar protocolos quando a rotina estiver funcionando
-			// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (ENVIADO)
-//			try {
-//				Op_5_ConfereProtocolosCNJ.consultarProtocolosCNJ(false);
-//			} catch (Exception e) {
-//			}
-			
 			// Quando não houver mais nada a fazer, encerra a operação.
 			while (!isTodosProcessosComStatus(ProcessoSituacaoEnum.CONCLUIDO)) {
 				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(5);
@@ -212,8 +240,16 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		return executandoOperacao4Envio;
 	}
 	
+	public boolean isExecutandoOperacao1BaixandoLista() {
+		return executandoOperacao1BaixandoLista;
+	}
+	
+	public boolean isExecutandoOperacao5Conferencia() {
+		return executandoOperacao5Conferencia;
+	}
+	
 	public boolean isExecutandoAlgumaOperacao() {
-		return isExecutandoOperacao2Geracao() || isExecutandoOperacao4Envio();
+		return isExecutandoOperacao1BaixandoLista() || isExecutandoOperacao2Geracao() || isExecutandoOperacao4Envio() || isExecutandoOperacao5Conferencia();
 	}
 	
 	public static void main(String[] args) throws Exception {
