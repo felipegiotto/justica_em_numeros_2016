@@ -14,6 +14,7 @@ public class ProcessoFluxo {
 
 	private int grau;
 	private File arquivoXML;
+	private File arquivoXMLErro;
 	private File arquivoXMLProtocolo;
 	private File arquivoXMLAceito;
 	private File arquivoXMLNegado;
@@ -26,6 +27,7 @@ public class ProcessoFluxo {
 		this.arquivoXMLProtocolo = Auxiliar.gerarNomeArquivoProtocoloProcessoEnviado(arquivoXML);
 		this.arquivoXMLAceito = Auxiliar.gerarNomeArquivoProcessoSucesso(arquivoXMLProtocolo);
 		this.arquivoXMLNegado = Auxiliar.gerarNomeArquivoProcessoNegado(arquivoXMLProtocolo);
+		this.arquivoXMLErro = Auxiliar.gerarNomeArquivoProcessoErro(arquivoXML);
 		identificarSituacao();
 	}
 
@@ -41,7 +43,7 @@ public class ProcessoFluxo {
 			this.situacao = ProcessoSituacaoEnum.CONCLUIDO;
 			return;
 		}
-		if (this.arquivoXMLNegado.exists()) {
+		if (this.arquivoXMLNegado.exists() || this.arquivoXMLErro.exists()) {
 			this.situacao = ProcessoSituacaoEnum.ERRO;
 			return;
 		}
@@ -67,5 +69,9 @@ public class ProcessoFluxo {
 
 	public ProcessoSituacaoEnum getSituacao() {
 		return situacao;
+	}
+	
+	public File getArquivoXML() {
+		return arquivoXML;
 	}
 }

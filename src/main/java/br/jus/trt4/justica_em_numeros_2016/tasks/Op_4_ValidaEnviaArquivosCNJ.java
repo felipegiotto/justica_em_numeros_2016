@@ -29,10 +29,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ArquivoComInstancia;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ControleAbortarOperacao;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProdutorConsumidorMultiThread;
@@ -79,23 +79,13 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				
 				Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
 				
-				// O serviço de teste de conexão não funciona mais na API nova, por enquanto
-				// operacao.testarConexaoComCNJ(continuarEmCasoDeErro);
-				
-				// O serviço de consulta de totais de arquivos não funciona mais na API nova, por enquanto.
-				// operacao.consultarTotaisDeProcessosNoCNJ(); // Antes do envio
-				
 				operacao.localizarEnviarXMLsAoCNJ();
 				
-				// O serviço de consulta de totais de arquivos não funciona mais na API nova, por enquanto.
-				// operacao.consultarTotaisDeProcessosNoCNJ(); // Depois do envio
-				
-				DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+				AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
 				
 				// Verifica se deve executar novamente em caso de erros
 				if (continuarEmCasoDeErro) {
-					if (DadosInvalidosException.getQtdErros() > 0) {
-						DadosInvalidosException.zerarQtdErros();
+					if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
 						progresso.setInformacoes("Aguardando para reiniciar...");
 						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 2min... Se desejar, aborte este script.");
 						Thread.sleep(2 * 60_000);
@@ -163,7 +153,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * @throws InterruptedException 
 	 * @throws IOException 
 	 */
-	public void localizarEnviarXMLsAoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException, IOException {
+	public void localizarEnviarXMLsAoCNJ() throws JAXBException, InterruptedException, IOException {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
@@ -253,46 +243,45 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("file", xml.getArquivo()).build();
 				post.setEntity(entity);
 				
+				String origem = "Envio do arquivo " + xml.getArquivo().getAbsolutePath();
 				try {
+					// Indica que o envio do arquivo está iniciando
+					File arquivoTentativaEnvio = xml.getArquivoControleTentativaEnvio();
+					arquivoTentativaEnvio.createNewFile();
+					
+					// Executa o POST
+					long tempo = System.currentTimeMillis();
+					HttpResponse response = httpClient.execute(post);
 					try {
 						
-						// Indica que o envio do arquivo está iniciando
-						File arquivoTentativaEnvio = xml.getArquivoControleTentativaEnvio();
-						arquivoTentativaEnvio.createNewFile();
-						
-						// Executa o POST
-						long tempo = System.currentTimeMillis();
-						HttpResponse response = httpClient.execute(post);
-						try {
-							
-							// Estatísticas de tempo dos últimos 1000 arquivos
-							tempo = System.currentTimeMillis() - tempo;
-							synchronized (temposEnvioCNJ) {
-								temposEnvioCNJ.add(tempo);
-								if (temposEnvioCNJ.size() > 1000) {
-									temposEnvioCNJ.remove(0);
-								}
+						// Estatísticas de tempo dos últimos 1000 arquivos
+						tempo = System.currentTimeMillis() - tempo;
+						synchronized (temposEnvioCNJ) {
+							temposEnvioCNJ.add(tempo);
+							if (temposEnvioCNJ.size() > 1000) {
+								temposEnvioCNJ.remove(0);
 							}
-							
-							HttpEntity result = response.getEntity();
-							String body = EntityUtils.toString(result, Charset.forName("UTF-8"));
-							
-							int statusCode = response.getStatusLine().getStatusCode();
-							LOGGER.trace("* Arquivo: '" + xml + "', tempo=" + tempo + "ms, statusCode=" + statusCode + ", body=" + resumirBodyRequisicao(body, result.getContentType()));
-							conferirRespostaSucesso(statusCode, body);
-							marcarArquivoComoEnviado(xml.getArquivo(), body);
-							LOGGER.info("* Arquivo enviado com sucesso: " + xml);
-							qtdEnviadaComSucesso.incrementAndGet();
-							
-							arquivoTentativaEnvio.delete();
-						} finally {
-							EntityUtils.consumeQuietly(response.getEntity());
 						}
-					} catch (IOException ex) {
-						throw new DadosInvalidosException(ex.getLocalizedMessage(), xml.getArquivo().toString());
+						
+						HttpEntity result = response.getEntity();
+						String body = EntityUtils.toString(result, Charset.forName("UTF-8"));
+						
+						int statusCode = response.getStatusLine().getStatusCode();
+						LOGGER.trace("* Arquivo: '" + xml + "', tempo=" + tempo + "ms, statusCode=" + statusCode + ", body=" + resumirBodyRequisicao(body, result.getContentType()));
+						conferirRespostaSucesso(statusCode, body);
+						marcarArquivoComoEnviado(xml.getArquivo(), body);
+						LOGGER.info("* Arquivo enviado com sucesso: " + xml);
+						qtdEnviadaComSucesso.incrementAndGet();
+						
+						arquivoTentativaEnvio.delete();
+					} finally {
+						EntityUtils.consumeQuietly(response.getEntity());
 					}
-				} catch (DadosInvalidosException ex) {
-					LOGGER.error("* Erro ao enviar arquivo '" + xml + "': " + ex.getLocalizedMessage());
+					
+					AcumuladorExceptions.instance().removerException(origem);
+				} catch (Exception ex) {
+					AcumuladorExceptions.instance().adicionarException(origem, ex.getLocalizedMessage(), ex, true);
+					
 				} finally {
 					if (progresso != null) {
 						progresso.incrementProgress();

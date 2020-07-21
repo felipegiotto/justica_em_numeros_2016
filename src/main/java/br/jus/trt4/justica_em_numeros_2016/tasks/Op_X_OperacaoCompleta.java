@@ -10,8 +10,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 
 /**
@@ -170,7 +170,7 @@ public class Op_X_OperacaoCompleta {
 			LOGGER.info("Operação " + descricaoOperacao + " concluída!");
 
 			// Se algum problema foi identificado, aborta.
-			if (DadosInvalidosException.getQtdErros() > 0) {
+			if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
 				throw new Exception("Operação " + descricaoOperacao + " abortada!");
 			}
 

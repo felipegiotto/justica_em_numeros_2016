@@ -141,14 +141,11 @@ public class Auxiliar {
 	 * @throws SQLException
 	 */
 	private static Connection getConexaoDasConfiguracoes(Parametro parametro) throws SQLException {
-		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Abrindo conexão com banco de dados");
 		try {
 			Class.forName("org.postgresql.Driver");
 			return DriverManager.getConnection(getParametroConfiguracao(parametro, true));
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
-		} finally {
-			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
 	}
 
@@ -593,15 +590,12 @@ public class Auxiliar {
 	 * Lê na entrada padrão um comando do usuário e retorna em uma String
 	 */
 	public static String readStdin() {
-		BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Aguardando resposta do usuario");
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 		try {
 			String valorDigitado = in.readLine();
 			return valorDigitado;
 		} catch (IOException ex) {
 			throw new RuntimeException(ex);
-		} finally {
-			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 		}
 	}
 	
@@ -641,7 +635,7 @@ public class Auxiliar {
 	    }
 	}
 	
-	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) throws DadosInvalidosException {
+	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) {
 		if (!arquivoEntrada.exists()) {
 			LOGGER.warn("Arquivo de lista de processos não existe, nenhum processo será analisado nessa instância: " + arquivoEntrada);
 			return new ArrayList<String>();
@@ -679,6 +673,15 @@ public class Auxiliar {
 	}
 	
 	/**
+	 * Informa onde deve ser gravado o arquivo que indica a ocorrência de erro na geração de um XML
+	 * 
+	 * @return
+	 */
+	public static File gerarNomeArquivoProcessoErro(File arquivoXMLProcesso) {
+		return new File(arquivoXMLProcesso.getAbsolutePath() + SUFIXO_PROTOCOLO_ERRO);
+	}
+	
+	/**
 	 * Informa onde deve ser gravado o arquivo que indica que o processo foi ACEITO com sucesso no CNJ
 	 * 
 	 * @return
@@ -707,9 +710,7 @@ public class Auxiliar {
 		// Aguarda um tempo ou até usuário digite alguma coisa na STDIN
 		int segundos = 60 * minutos;
 		for (int i=0; i<segundos; i++) {
-			BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Aguardando resposta do usuario");
 			Thread.sleep(1000);
-			BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 			if (System.in.available() > 0) {
 				Auxiliar.readStdin();
 				break;

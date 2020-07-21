@@ -89,6 +89,7 @@ public class LoggingOutputStream extends OutputStream {
   protected Level priority;
 
 
+  @SuppressWarnings("unused")
   private LoggingOutputStream() {
     // illegal
   }

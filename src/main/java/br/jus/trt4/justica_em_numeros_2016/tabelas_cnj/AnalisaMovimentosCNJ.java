@@ -26,8 +26,7 @@ import br.jus.trt3.depara.vo.ComplementoCNJ;
 import br.jus.trt3.depara.vo.MovimentoCNJ;
 import br.jus.trt3.depara.vo.MovimentoJT;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DataJudException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.EventoDto;
@@ -73,7 +72,6 @@ public class AnalisaMovimentosCNJ {
 			
 			// PreparedStatements que localizarão movimentos no banco de dados do PJe
 			this.eventosPorId = new HashMap<>();
-			BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de eventos");
 			try (PreparedStatement psEventos = conexaoPJe.prepareStatement("SELECT * FROM tb_evento")) {
 				try (ResultSet rsEventos = psEventos.executeQuery()) {
 					while (rsEventos.next()) {
@@ -81,8 +79,6 @@ public class AnalisaMovimentosCNJ {
 						this.eventosPorId.put(evento.getId(), evento);
 					}
 				}
-			} finally {
-				BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 			}
 			
 			// Ferramenta DE-PARA de movimentos e complementos, criada pelo TRT3.
@@ -107,9 +103,10 @@ public class AnalisaMovimentosCNJ {
 	 * @param numeroInstancia 
 	 * 
 	 * @throws SQLException 
+	 * @throws DataJudException 
 	 * @throws DadosInvalidosException 
 	 */
-	public void preencheDadosMovimentoCNJ(ProcessoDto processo, TipoMovimentoProcessual movimento, MovimentoDto movimentoDto, BaseEmAnaliseEnum baseEmAnaliseEnum) throws SQLException, DadosInvalidosException {
+	public void preencheDadosMovimentoCNJ(ProcessoDto processo, TipoMovimentoProcessual movimento, MovimentoDto movimentoDto, BaseEmAnaliseEnum baseEmAnaliseEnum) throws SQLException, DataJudException {
 		
 		int codigoMovimento = movimentoDto.getCodMovimentoCNJ();
 		String descricao = movimentoDto.getTextoMovimento();
@@ -149,7 +146,7 @@ public class AnalisaMovimentosCNJ {
 						}
 					}
 				} catch (DeParaJTCNJException e) {
-					throw new DadosInvalidosException("Erro ao aplicar DE-PARA de movimentos e complementos do TRT3", processo.getNumeroProcesso());
+					throw new DataJudException("Erro ao aplicar DE-PARA de movimentos e complementos do TRT3", e);
 				}
 			}
 			
@@ -204,6 +201,7 @@ public class AnalisaMovimentosCNJ {
 				if (movimentoExisteNasTabelasNacionais(evento.getId())) {
 					return evento.getId();
 				} else {
+					// FIXME: AQUI pode ocorrer NullPointerException se o getIdEventoSuperior for NULL
 					idEvento = evento.getIdEventoSuperior();
 				}
 			} else {

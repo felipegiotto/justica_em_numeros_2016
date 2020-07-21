@@ -1,11 +1,9 @@
 import java.io.File;
 
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import br.jus.cnj.replicacao_nacional.Processos;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 
 public class TestarIntegridadeXML {
 

@@ -86,8 +86,4 @@ public class HttpServerStatus implements AutoCloseable {
 		}
 		throw new IOException("Não há portas disponíveis para exibir interface de status web");
 	}
-	
-	public static void main(String[] args) throws Exception {
-		new HttpServerStatus(null);
-	}
 }

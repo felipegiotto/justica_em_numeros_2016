@@ -16,9 +16,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.BenchmarkVariasOperacoes;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
@@ -123,11 +122,16 @@ public class AnalisaServentiasCNJ {
 	}
 	
 	public static boolean mostrarWarningSeAlgumaServentiaNaoFoiEncontrada() {
+		
+		String agrupadorErro = "Órgãos julgadores sem serventia cadastrada no arquivo " + getArquivoServentias();
+		AcumuladorExceptions.instance().removerExceptionsDoAgrupador(agrupadorErro);
 		if (!orgaosJulgadoresSemServentiasCadastradas.isEmpty()) {
+			
 			LOGGER.warn("");
 			LOGGER.warn("Há pelo menos um órgão julgador que não possui serventia cadastrada no arquivo " + getArquivoServentias().getName() + " (veja instruções na chave 'arquivo_serventias_cnj' do arquivo de configurações e cadastre as linhas abaixo):");
 			for (String oj: orgaosJulgadoresSemServentiasCadastradas) {
 				LOGGER.warn("* " + oj + ";<CODIGO SERVENTIA CNJ>;<NOME SERVENTIA CNJ>");
+				AcumuladorExceptions.instance().adicionarException(oj, agrupadorErro);
 			}
 			return true;
 		}
@@ -135,7 +139,7 @@ public class AnalisaServentiasCNJ {
 		return false;
 	}
 	
-	public boolean diagnosticarServentiasPjeInexistentes() throws SQLException, DadosInvalidosException {
+	public boolean diagnosticarServentiasPjeInexistentes() throws SQLException {
 		LOGGER.info("Iniciando diagnóstico de serventias inexistentes...");
 		
 		if (Auxiliar.deveProcessarSegundoGrau()) {
@@ -151,7 +155,7 @@ public class AnalisaServentiasCNJ {
 		return AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
 	}
 
-	private void diagnosticarServentiasPjeInexistentes(int grau) throws SQLException, DadosInvalidosException {
+	private void diagnosticarServentiasPjeInexistentes(int grau) throws SQLException {
 		
 		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessosPje(grau));
 		if (!listaProcessos.isEmpty()) {
@@ -178,11 +182,8 @@ public class AnalisaServentiasCNJ {
 						"INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf) " +
 						"INNER JOIN tb_orgao_julgador oj USING (id_orgao_julgador) " +
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
-				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de serventias");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sql.toString())) {
 					analisarExistenciaServentiasPje(rs);
-				} finally {
-					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 				}
 				
 				// Monta SQL para consultar os nomes de todos os outros OJs que o processo já passou, com base na tabela "tb_hist_desloca_oj".
@@ -199,13 +200,9 @@ public class AnalisaServentiasCNJ {
 						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_destino) " + 
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
 				LOGGER.info("Consultando historicos de deslocamento...");
-				BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consulta de historicos de deslocamento");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sqlHistorico.toString())) {
 					analisarExistenciaServentiasPje(rs);
-				} finally {
-					BenchmarkVariasOperacoes.globalInstance().fimOperacao();
 				}
-				
 			}
 		}
 	}

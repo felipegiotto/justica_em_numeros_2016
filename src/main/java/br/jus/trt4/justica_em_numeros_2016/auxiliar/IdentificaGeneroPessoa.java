@@ -82,23 +82,22 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 				String chaveCache = documentoPrincipal + "|" + nomeConsulta;
 				if (!cacheGenerosOutraInstancia.containsKey(chaveCache)) {
 					
-					// Gênero não está em cache, faz pesquisa na outra instância
+					// Sincroniza chamadas ao gerar XMLs em várias threads, pois pode ocorrer problema de concorrência.
 					synchronized (nsConsultaGeneroOutraInstancia) {
-					nsConsultaGeneroOutraInstancia.setString("nome_consulta", nomeConsulta);
-					nsConsultaGeneroOutraInstancia.setString("documento", documentoPrincipal);
-					BenchmarkVariasOperacoes.globalInstance().inicioOperacao("Consuta de genero em outra instancia");
-					try (ResultSet rs = nsConsultaGeneroOutraInstancia.executeQuery()) { // TODO: Otimizar acessos repetidos
-						if (rs.next()) {
-							ModalidadeGeneroPessoa sexo = ModalidadeGeneroPessoa.valueOf(rs.getString("in_sexo"));
-							cacheGenerosOutraInstancia.put(chaveCache, sexo);
-							// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " foi identificado na outra instância (" + grau + "G): " + sexo);
-						} else {
-							cacheGenerosOutraInstancia.put(chaveCache, ModalidadeGeneroPessoa.D);
-							// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " não existe em nenhuma instância");
+						
+						// Gênero não está em cache, faz pesquisa na outra instância
+						nsConsultaGeneroOutraInstancia.setString("nome_consulta", nomeConsulta);
+						nsConsultaGeneroOutraInstancia.setString("documento", documentoPrincipal);
+						try (ResultSet rs = nsConsultaGeneroOutraInstancia.executeQuery()) { // TODO: Otimizar acessos repetidos
+							if (rs.next()) {
+								ModalidadeGeneroPessoa sexo = ModalidadeGeneroPessoa.valueOf(rs.getString("in_sexo"));
+								cacheGenerosOutraInstancia.put(chaveCache, sexo);
+								// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " foi identificado na outra instância (" + grau + "G): " + sexo);
+							} else {
+								cacheGenerosOutraInstancia.put(chaveCache, ModalidadeGeneroPessoa.D);
+								// LOGGER.debug("Sexo da pessoa " + pessoa.getNome() + " não existe em nenhuma instância");
+							}
 						}
-					} finally {
-						BenchmarkVariasOperacoes.globalInstance().fimOperacao();
-					}
 					}
 				}
 				pessoa.setSexo(cacheGenerosOutraInstancia.get(chaveCache));

@@ -13,6 +13,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
 
@@ -62,6 +63,7 @@ public class HttpServerRequestHandler implements Runnable {
 					}
 					
 					// Cabeçalho
+					html = html.replaceAll("META_REFRESH", "5; url=/");
 					html = html.replaceAll("NOME_TRIBUNAL", Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, false));
 					html = html.replaceAll("ANO_MES", Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, false));
 					
@@ -118,6 +120,12 @@ public class HttpServerRequestHandler implements Runnable {
 					html = html.replaceAll("STATUS_GERACAO", operacao.isExecutandoOperacao2Geracao() ? "Gerando arquivos XML..." : "");
 					html = html.replaceAll("STATUS_ENVIO", operacao.isExecutandoOperacao4Envio() ? "Enviando dados ao CNJ..." : "");
 					
+					// Erros encontrados
+					if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
+						html = html.replace("ERROS_REPORTADOS", StringUtils.join(AcumuladorExceptions.instance().recuperarLinhasExceptionsAcumuladas(), "\n"));
+					} else {
+						html = html.replace("ERROS_REPORTADOS", "Nenhum problema identificado até o momento...");
+					}
 					
 					out.print(html);
 				} else {

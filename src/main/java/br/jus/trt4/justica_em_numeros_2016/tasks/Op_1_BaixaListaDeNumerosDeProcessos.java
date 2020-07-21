@@ -18,8 +18,8 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
@@ -68,7 +68,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			}
 			progresso.incrementProgress();
 			
-			DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+			AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
 			LOGGER.info("Fim!");
 		} finally {
 			progresso.close();

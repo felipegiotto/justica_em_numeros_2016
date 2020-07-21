@@ -2,7 +2,7 @@
 <html>
 
 <head>
-	<meta http-equiv="refresh" content="5; url=/" />
+	<meta http-equiv="refresh" content="META_REFRESH" />
 	<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans" />
 	<style>
 	body {
@@ -51,6 +51,12 @@
 	
 	.mensagem-interromper {
 		color: red;
+	}
+	
+	.erros {
+		border: 1px gray solid;
+		padding: 15px;
+		margin-top: 40px;
 	}
 	</style>
 </head>
@@ -111,6 +117,8 @@
 	
 	<p><a href="?parar" onClick="return confirm('A operação será interrompida DEPOIS que as requisições pendentes de resposta terminarem. Continuar?')">Interromper operação</a></p>
 	<p class="mensagem-interromper">MENSAGEM_INTERROMPER</p>
+	
+	<pre class="erros">ERROS_REPORTADOS</pre>
 </body>
 
 </html>

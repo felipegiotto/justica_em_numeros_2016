@@ -47,7 +47,7 @@ public class ArquivoComInstancia {
 		return grau;
 	}
 	
-	public static List<ArquivoComInstancia> localizarArquivosInstanciasHabilitadas(String sufixo) throws DadosInvalidosException {
+	public static List<ArquivoComInstancia> localizarArquivosInstanciasHabilitadas(String sufixo) {
 		
 		sufixo = sufixo.toUpperCase();
 		
@@ -89,14 +89,14 @@ public class ArquivoComInstancia {
 	 * @param grau
 	 * @throws DadosInvalidosException 
 	 */
-	private static void localizarArquivos(int grau, String sufixo, List<ArquivoComInstancia> arquivosParaEnviar) throws DadosInvalidosException {
+	private static void localizarArquivos(int grau, String sufixo, List<ArquivoComInstancia> arquivosParaEnviar) {
 		
 		// Lê arquivos da lista de XMLs individuais
 		File pastaXMLsParaEnvio = Auxiliar.getPastaXMLsIndividuais(grau);
 		localizarArquivosRecursivamente(pastaXMLsParaEnvio, grau, sufixo, arquivosParaEnviar);
 	}
 
-	private static void localizarArquivosRecursivamente(File pasta, int grau, String sufixo, List<ArquivoComInstancia> arquivosParaEnviar) throws DadosInvalidosException {
+	private static void localizarArquivosRecursivamente(File pasta, int grau, String sufixo, List<ArquivoComInstancia> arquivosParaEnviar) {
 		
 		LOGGER.trace("Localizando arquivos na pasta '" + pasta.getAbsolutePath() + "'...");
 		if (!pasta.isDirectory()) {

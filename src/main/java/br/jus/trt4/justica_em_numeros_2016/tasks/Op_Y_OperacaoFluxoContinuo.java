@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ControleAbortarOperacao;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpServerStatus;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoFluxo;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoSituacaoEnum;
@@ -20,10 +19,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
  * Novo protótipo de operação completa que trabalha como uma linha de produção, gerando os arquivos XML, enviando-os ao CNJ
  * e validando o processamentos dos protocolos, de forma paralela.
  *
- * TODO: Tratar exceções pois a DadosInvalidosException acumula as exceções ocorridas em uma operação, mostra nos logs e limpa esse cache.
  * TODO: Conferir erro no "Conferindo protocolos no CNJ"
- * TODO: Criar botão para interromper operação "gracefully"
- * TODO: Mostrar status de cada operação na interface HTML
  * TODO: Tratar travamentos da VPN (tentar forçar fechar conexão ao banco)
  * TODO: Marcar arquivos que não foram gerados na fase 2 por erro no validador, avisar dos problemas ocorridos e permitir gerá-los novamente.
  * TODO: Encerrar operação quando todos arquivos forem processados
@@ -40,7 +36,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	private boolean executandoOperacao2Geracao;
 	private boolean executandoOperacao4Envio;
 	
-	private void iniciar() throws IOException, SQLException, DadosInvalidosException {
+	private void iniciar() throws IOException, SQLException {
 		
 		// Servidor web, para controlar o progresso da execução
 		iniciarServidorWeb();
@@ -91,7 +87,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	 * @throws IOException 
 	 * @throws DadosInvalidosException 
 	 */
-	private void op1BaixarListaProcesssoSeNecessario(int grau) throws IOException, SQLException, DadosInvalidosException {
+	private void op1BaixarListaProcesssoSeNecessario(int grau) throws IOException, SQLException {
 
 		try (Op_1_BaixaListaDeNumerosDeProcessos baixaListaProcessos = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
 			if (!baixaListaProcessos.getArquivoSaida().exists()) {
@@ -131,19 +127,19 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		new Thread(() -> {
 			Auxiliar.prepararThreadLog();
 			
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.XML_GERADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+			while (isAlgumProcessoSemXML() && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				
 				// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (FILA)
 				try {
 					this.executandoOperacao2Geracao = true;
-					Op_2_GeraXMLsIndividuais.main(null);
+					Op_2_GeraXMLsIndividuais.executarOperacaoGeracaoXML(false);
 				} catch (Exception e) {
 					ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(10);
 				} finally {
 					this.executandoOperacao2Geracao = false;
 				}
 				
-				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(60);
+				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
 			}
 			
 		}).start();
@@ -164,7 +160,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 					this.executandoOperacao4Envio = false;
 				}
 				
-				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(60);
+				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
 			}
 			
 		}).start();
@@ -182,7 +178,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 //			}
 			
 			// Quando não houver mais nada a fazer, encerra a operação.
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.ENVIADO)) {
+			while (!isTodosProcessosComStatus(ProcessoSituacaoEnum.CONCLUIDO)) {
 				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(5);
 			}
 			ControleAbortarOperacao.instance().setAbortar(true);
@@ -190,6 +186,15 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		}).start();
 	}
 
+	private boolean isAlgumProcessoSemXML() {
+		return processosFluxos.stream().anyMatch(p -> !p.getArquivoXML().exists());
+	}
+	
+	private boolean isTodosProcessosComStatus(ProcessoSituacaoEnum status) {
+		int ordem = status.getOrdem();
+		return processosFluxos.stream().allMatch(p -> p.getSituacao().getOrdem() == ordem);
+	}
+	
 	private boolean isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum status) {
 		int ordem = status.getOrdem();
 		return processosFluxos.stream().anyMatch(p -> p.getSituacao().getOrdem() < ordem);

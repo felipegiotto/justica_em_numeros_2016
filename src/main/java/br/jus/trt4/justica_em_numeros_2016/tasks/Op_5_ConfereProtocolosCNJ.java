@@ -23,12 +23,12 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ArquivoComInstancia;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DadosInvalidosException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DataJudException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
@@ -73,21 +73,15 @@ public class Op_5_ConfereProtocolosCNJ {
 				
 				Op_5_ConfereProtocolosCNJ operacao = new Op_5_ConfereProtocolosCNJ();
 				
-				
-				try {
-					operacao.localizarProtocolosConsultarNoCNJ();
-				} catch (DadosInvalidosException ex) {
-					LOGGER.error(ex.getLocalizedMessage(), ex);
-				}
+				operacao.localizarProtocolosConsultarNoCNJ();
 				
 				operacao.gravarTotalProtocolosRecusados();
 				
-				DadosInvalidosException.mostrarWarningSeHouveAlgumErro();
+				AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
 				
 				// Verifica se deve executar novamente em caso de erros
 				if (continuarEmCasoDeErro) {
-					if (DadosInvalidosException.getQtdErros() > 0) {
-						DadosInvalidosException.zerarQtdErros();
+					if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
 						progresso.setInformacoes("Aguardando para reiniciar...");
 						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 10min... Se desejar, aborte este script.");
 						Thread.sleep(10 * 60_000);
@@ -121,12 +115,11 @@ public class Op_5_ConfereProtocolosCNJ {
 	/**
 	 * Carrega os arquivos XML das instâncias selecionadas (1G e/ou 2G) e envia ao CNJ.
 	 * 
-	 * @throws DadosInvalidosException 
 	 * @throws JAXBException 
 	 * @throws InterruptedException 
 	 * @throws IOException 
 	 */
-	private void localizarProtocolosConsultarNoCNJ() throws DadosInvalidosException, JAXBException, InterruptedException, IOException {
+	private void localizarProtocolosConsultarNoCNJ() throws JAXBException, InterruptedException, IOException {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
@@ -163,7 +156,7 @@ public class Op_5_ConfereProtocolosCNJ {
 		return arquivosPendentes;
 	}
 
-	private void consultarProtocolosNoCNJ(List<ArquivoComInstancia> arquivosParaConsultar) throws DadosInvalidosException {
+	private void consultarProtocolosNoCNJ(List<ArquivoComInstancia> arquivosParaConsultar) {
 
 		// Campo "status" da URL de consulta de protocolos:
 		// 1 = Aguardando processamento
@@ -194,6 +187,7 @@ public class Op_5_ConfereProtocolosCNJ {
 		
 		// Consulta todos os protocolos no CNJ
 		JsonArray protocolos;
+		String origemOperacaoConsulta = "Consulta de todos os protocolos no CNJ";
 		try {
 			
 			// Executa o GET
@@ -219,8 +213,11 @@ public class Op_5_ConfereProtocolosCNJ {
 			} finally {
 				EntityUtils.consumeQuietly(response.getEntity());
 			}
-		} catch (IOException | JsonParseException ex) {
-			throw new DadosInvalidosException(ex.getLocalizedMessage(), "Conferência de protocolos no CNJ");
+			
+			AcumuladorExceptions.instance().removerException(origemOperacaoConsulta);
+		} catch (Exception ex) {
+			AcumuladorExceptions.instance().adicionarException(origemOperacaoConsulta, ex.getLocalizedMessage(), ex, true);
+			return;
 		}
 		
 		
@@ -239,38 +236,38 @@ public class Op_5_ConfereProtocolosCNJ {
 		int qtdArquivosAindaPendentes = 0;
 		for (int i = 0; i < qtdArquivos; i++) {
 			ArquivoComInstancia xml = arquivosParaConsultar.get(i);
+			String origemOperacao = xml.getArquivo().getAbsolutePath();
 			try {
-				try {
-					
-					String numeroProtocolo = FileUtils.readFileToString(xml.getArquivo(), StandardCharsets.UTF_8);
-					JsonObject objetoProtocolo = protocolosAgrupados.get(numeroProtocolo);
-					if (objetoProtocolo == null) {
-						throw new DadosInvalidosException("CNJ não informou resultado do protocolo", numeroProtocolo);
-					}
-					
-					// Marca o arquivo como SUCESSO ou ERRO
-					int qtdProcessosSucesso = objetoProtocolo.get("qtdProcessosSucesso").getAsInt();
-					int qtdProcessosErro = objetoProtocolo.get("qtdProcessosErro").getAsInt();
-					
-					if (qtdProcessosSucesso > 0) {
-						marcarArquivoComoProcessado(xml.getArquivo(), objetoProtocolo.toString(), true);
-						qtdArquivosBaixados++;
-						LOGGER.debug("Protocolo baixado com SUCESSO: " + numeroProtocolo + ", arquivo '" + xml.getArquivo() + "'");
-						
-					} else if (qtdProcessosErro > 0) {
-						marcarArquivoComoProcessado(xml.getArquivo(), objetoProtocolo.toString(), false);
-						qtdArquivosBaixados++;
-						LOGGER.warn("Protocolo baixado com ERRO: " + numeroProtocolo + ", arquivo '" + xml.getArquivo() + "'");
-						
-					} else {
-						qtdArquivosAindaPendentes++;
-					}
-					
-				} catch (IOException ex) {
-					throw new DadosInvalidosException(ex.getLocalizedMessage(), xml.getArquivo().toString());
+				
+				String numeroProtocolo = FileUtils.readFileToString(xml.getArquivo(), StandardCharsets.UTF_8);
+				JsonObject objetoProtocolo = protocolosAgrupados.get(numeroProtocolo);
+				if (objetoProtocolo == null) {
+					throw new DataJudException("CNJ não informou resultado do protocolo");
 				}
-			} catch (DadosInvalidosException ex) {
-				LOGGER.error("* Erro ao conferir protocolo do arquivo '" + xml + "': " + ex.getLocalizedMessage());
+				
+				// Marca o arquivo como SUCESSO ou ERRO
+				int qtdProcessosSucesso = objetoProtocolo.get("qtdProcessosSucesso").getAsInt();
+				int qtdProcessosErro = objetoProtocolo.get("qtdProcessosErro").getAsInt();
+				
+				if (qtdProcessosSucesso > 0) {
+					marcarArquivoComoProcessado(xml.getArquivo(), objetoProtocolo.toString(), true);
+					qtdArquivosBaixados++;
+					LOGGER.debug("Protocolo baixado com SUCESSO: " + numeroProtocolo + ", arquivo '" + xml.getArquivo() + "'");
+					
+				} else if (qtdProcessosErro > 0) {
+					marcarArquivoComoProcessado(xml.getArquivo(), objetoProtocolo.toString(), false);
+					qtdArquivosBaixados++;
+					LOGGER.warn("Protocolo baixado com ERRO: " + numeroProtocolo + ", arquivo '" + xml.getArquivo() + "'");
+					
+				} else {
+					qtdArquivosAindaPendentes++;
+				}
+				
+				AcumuladorExceptions.instance().removerException(origemOperacao);
+			} catch (Exception ex) {
+				String mensagem = "Erro ao conferir protocolo do arquivo: " + ex.getLocalizedMessage();
+				AcumuladorExceptions.instance().adicionarException(origemOperacao, mensagem, ex, true);
+				
 			} finally {
 				progresso.incrementProgress();
 			}
@@ -278,7 +275,7 @@ public class Op_5_ConfereProtocolosCNJ {
 		
 		LOGGER.info("Quantidade de protocolos baixados nesta iteração: " + qtdArquivosBaixados);
 		if (qtdArquivosAindaPendentes > 0) {
-			throw new DadosInvalidosException("Conferência de protocolos no CNJ", "Quantidade de protocolos aguardando processamento no CNJ: " + qtdArquivosAindaPendentes);
+			LOGGER.info("Ainda há protocolos aguardando processamento no CNJ. Quantidade=: " + qtdArquivosAindaPendentes);
 		}
 	}
 	
@@ -301,7 +298,7 @@ public class Op_5_ConfereProtocolosCNJ {
 		}
 	}
 	
-	private void gravarTotalProtocolosRecusados() throws DadosInvalidosException, IOException {
+	private void gravarTotalProtocolosRecusados() throws IOException {
 		List<ArquivoComInstancia> arquivosProtocolos = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(Auxiliar.SUFIXO_PROTOCOLO_ERRO);
 		if (!arquivosProtocolos.isEmpty()) {
 			File listaRecusados = new File(Auxiliar.prepararPastaDeSaida(), "lista_protocolos_recusados_cnj.txt");
