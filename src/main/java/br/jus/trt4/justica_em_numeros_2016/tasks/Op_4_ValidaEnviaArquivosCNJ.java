@@ -137,9 +137,14 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 */
 	private void conferirRespostaSucesso(int statusCode, String body) throws IOException {
 		
+		// 20/07/2020: {"status":"ERRO","protocolo":"...","mensagem":"Arquivo duplicado"}
+		if (statusCode == 409 && body.contains("Arquivo duplicado")) {
+			LOGGER.info("Arquivo duplicado (já está no CNJ), será marcado como enviado");
+			return;
+		}
+		
 		// 200: SUCCESS
 		// 201: CREATED
-		// 409: Arquivo duplicado (presume-se que já está no CNJ, então).
 		if (statusCode != 200 && statusCode != 201 && statusCode != 409) {
 			throw new IOException("Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)");
 		}

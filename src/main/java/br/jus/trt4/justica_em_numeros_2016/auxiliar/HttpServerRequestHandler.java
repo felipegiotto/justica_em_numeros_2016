@@ -108,7 +108,7 @@ public class HttpServerRequestHandler implements Runnable {
 						if (operacao.isExecutandoAlgumaOperacao()) {
 							html = html.replaceAll("MENSAGEM_INTERROMPER", "Interrompendo! Aguarde término das operações pendentes. CNJ pode demorar para responder ou abortar por timeout.");
 						} else {
-							html = html.replaceAll("MENSAGEM_INTERROMPER", "Operação interrompida! Finalize o gerador.");
+							html = html.replaceAll("MENSAGEM_INTERROMPER", "Operação finalizada! Encerre esse processo.");
 						}
 					} else {
 						html = html.replaceAll("MENSAGEM_INTERROMPER", "");

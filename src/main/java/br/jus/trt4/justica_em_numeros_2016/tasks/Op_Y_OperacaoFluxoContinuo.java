@@ -26,6 +26,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
  * TODO: Mostrar status de cada operação na interface HTML
  * TODO: Tratar travamentos da VPN (tentar forçar fechar conexão ao banco)
  * TODO: Marcar arquivos que não foram gerados na fase 2 por erro no validador, avisar dos problemas ocorridos e permitir gerá-los novamente.
+ * TODO: Encerrar operação quando todos arquivos forem processados
  *
  * @author felipe.giotto@trt4.jus.br
  */
@@ -136,12 +137,12 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 					this.executandoOperacao2Geracao = true;
 					Op_2_GeraXMLsIndividuais.main(null);
 				} catch (Exception e) {
-					ControleAbortarOperacao.instance().aguardarSomenteSeOperacaoContinua(10_000);
+					ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(10);
 				} finally {
 					this.executandoOperacao2Geracao = false;
 				}
 				
-				ControleAbortarOperacao.instance().aguardarSomenteSeOperacaoContinua(60_000);
+				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(60);
 			}
 			
 		}).start();
@@ -162,27 +163,29 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 					this.executandoOperacao4Envio = false;
 				}
 				
-				ControleAbortarOperacao.instance().aguardarSomenteSeOperacaoContinua(60_000);
+				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(60);
 			}
 			
 		}).start();
 
 		// Confere protocolos no CNJ enquanto houver protocolos pendentes de conferência
 		// TODO: Retornar esse código quando o serviço estiver funcionando adequadamente (hoje só dá timeout)
-//		new Thread(() -> {
-//			Auxiliar.prepararThreadLog();
-//			
-//			// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (ENVIADO)
-//			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.CONCLUIDO)) {
-//				try {
-//					Op_5_ConfereProtocolosCNJ.consultarProtocolosCNJ(false);
-//				} catch (Exception e) {
-//				}
-//				
-//				Auxiliar.safeSleep(60_000);
+		new Thread(() -> {
+			Auxiliar.prepararThreadLog();
+
+			// TODO: Reimplementar lógica para consultar protocolos quando a rotina estiver funcionando
+			// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (ENVIADO)
+//			try {
+//				Op_5_ConfereProtocolosCNJ.consultarProtocolosCNJ(false);
+//			} catch (Exception e) {
 //			}
-//			
-//		}).start();
+			
+			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.ENVIADO)) {
+				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(5);
+			}
+			ControleAbortarOperacao.instance().setAbortar(true);
+			
+		}).start();
 	}
 
 	private boolean isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum status) {
