@@ -1,6 +1,6 @@
-========== Sobre o projeto ==========
+# Sobre o projeto
 
-Ferramenta para extrair, do PJe, os XMLs para o Selo Justiça em Números 2016 do CNJ.
+Ferramenta para extrair, do PJe, os XMLs para o sistema DataJud do CNJ.
 
 Esse sistema executa diversos passos incrementais para extrair os dados e deixar em um formato
 compatível com o solicitado pelo CNJ. Cada um desses passos é representado por uma classe
@@ -17,28 +17,28 @@ Autor: felipe.giotto@trt4.jus.br
 
 
 
-========== Instruções básicas / Preparação do ambiente ==========
+# Instruções básicas / Preparação do ambiente
 
 IMPORTANTE: Confira sempre a saída do Console depois de cada passo executado, 
             prestando atenção especialmente nas linhas com "WARN" ou "ERROR". 
             Pode ser necessária alguma intervenção!
 
-IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_numeros_2016.tasks")
+IMPORTANTE: Cada uma das tarefas (classes do pacote `br.jus.trt4.justica_em_numeros_2016.tasks`)
             possui uma explicação sobre o seu funcionamento. Recomendo a leitura de todos
             antes da execução das tarefas, para entender o funcionamento da ferramenta.
             
-1. Crie um arquivo "config.properties", na raiz do projeto, a partir do arquivo 
-   "config.properties_modelo", preenchendo os dados corretos.
+1. Crie um arquivo `config.properties`, na raiz do projeto, a partir do arquivo 
+   `config_modelo.properties`, preenchendo os dados corretos.
 
 2. Importe este projeto no Eclipse. É necessário ter as seguintes ferramentas instaladas:
-   * Eclipse
-   * Java 1.8 ou superior
-   * Apache Maven (pode ser necessária configuração de proxy para baixar dependências)
+  * Eclipse
+  * Java 1.8 ou superior
+  * Apache Maven (pode ser necessária configuração de proxy para baixar dependências)
 
 3. Será preciso baixar manualmente a ferramenta "de-para" de movimentos e complementos, desenvolvida
    pelo TRT3. O repositório desta ferramenta está disponível em https://gitlab.trt15.jus.br/estatistica_cnj_jt/depara-jt-cnj ,
    mas deve ser solicitado o acesso no GitLab. Depois de baixar o código-fonte, acessar a
-   pasta raiz do projeto "depara-jt-cnj" em um terminal e digitar: "mvn clean package install".
+   pasta raiz do projeto "depara-jt-cnj" em um terminal e digitar: `mvn clean package install`.
    Pode ser preciso, também, atualizar o "pom.xml" deste projeto para referenciar novas versões do "depara-jt-cnj".
 
 4. Leia as instruções do arquivo "CHECKLIST_RESUMO.txt", que conterá todos os
@@ -46,44 +46,36 @@ IMPORTANTE: Cada uma das tarefas (classes do pacote "br.jus.trt4.justica_em_nume
    
 
 
-========== Desenvolvimento - Perguntas frequentes ==========
+# Desenvolvimento - Perguntas frequentes
 
 Se for necessário atualizar a estrutura de classes baseada em nova versão do arquivo XSD do CNJ:
-1. Excluir os dados do package "br.jus.cnj.modeloDeTransferenciaDeDados"
-2. No Eclipse, selecionar "File", "New", "Other", "JAXB Classes from Schema", selecionar o novo arquivo XSD, definir package de destino "br.jus.cnj.modeloDeTransferenciaDeDados", confirmar.
+1. Excluir os dados do package `br.jus.cnj.modeloDeTransferenciaDeDados`
+2. No Eclipse, selecionar "File", "New", "Other", "JAXB Classes from Schema", selecionar o novo arquivo XSD, definir package de destino `br.jus.cnj.modeloDeTransferenciaDeDados`, confirmar.
 
 
 
 O envio de dados ao CNJ via serviços REST depende da geração de uma keystore que contenha os certificados
-de homologação e de produção do CNJ. Esta keystore fica gravada no arquivo src/main/resources/certificados_rest_cnj/keystore/cnj.keystore
-e contém os certificados gravados na pasta src/main/resources/certificados_rest_cnj/certificados.
+de homologação e de produção do CNJ. Esta keystore fica gravada no arquivo `src/main/resources/certificados_rest_cnj/keystore/cnj.keystore`
+e contém os certificados gravados na pasta `src/main/resources/certificados_rest_cnj/certificados`.
 Se os certificados não estiverem corretos, ocorrerá um erro no envio:
-     PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target.
+
+```
+PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target.
+```
+
 Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os passos abaixo:
-1. Gravar os novos certificados na pasta "src/main/resources/certificados_rest_cnj/certificados"
-2. Em um terminal Linux, abrir a pasta "src/main/resources/certificados_rest_cnj"
-3. Executar o script "_importar_certificados_para_keystore.sh"
+1. Gravar os novos certificados na pasta `src/main/resources/certificados_rest_cnj/certificados`
+2. Em um terminal Linux, abrir a pasta `src/main/resources/certificados_rest_cnj`
+3. Executar o script `_importar_certificados_para_keystore.sh`
 
 
 
-========== Características técnicas / Funcionamento avançado ==========
+# Características técnicas / Funcionamento avançado
 
-* Cada operação gerará um log de operações, por padrão na pasta "output/<TIPO_CARGA_XML>/log" (isso pode ser
+* Cada operação gerará um log de operações, por padrão na pasta `output/<TIPO_CARGA_XML>/log` (isso pode ser
   alterado no arquivo de configurações). O log mais recente sempre se chamará "log_completo.log".
   Cada vez que uma nova operação for executada, o arquivo anterior será renomeado para utilizando a
   data/hora atual e um novo "log_completo.log" será criado.
-
-
-* Essa ferramenta também permite a unificação de arquivos XML de processos de sistemas legados.
-  Obviamente, esses arquivos devem ser gerados utilizando alguma outra ferramenta. 
-  Para tanto, grave os arquivos XML dos sistemas legados na pasta 
-  "output\<TIPO_CARGA_XML>\GX\xmls_individuais\NOME_SISTEMA" (onde X representa a instância - "1" ou "2" - e 
-  NOME_SISTEMA pode ser qualquer identificador) antes de executar a classe "Op_3_UnificaArquivosXML".
-
-
-* Se a estrutura do arquivo XSD do CNJ for alterado, gravar o novo arquivo XSD na pasta 
-  "src/main/resources" e executar o método "main" da classe "Op_0_ParseArquivoXSD".
-  Provavelmente será necessário alterar a lógica das rotinas que leem e gravam arquivos XML.
 
 
 * A ferramenta permite a extração dos dados do PJe para a carga COMPLETA e para a carga MENSAL, conforme
@@ -110,7 +102,7 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
 * Processo/Sigilo e Movimento/Sigilo: O arquivo XSD do CNJ orienta a utilização de diferentes níveis 
   de sigilo (de 0 a 5), para o processo e para os movimentos. Como o PJe não possui essa distinção, 
   serão utilizados somente os valores "0" (sem sigilo) ou "5" (sigilo absoluto).
-  Esse mesmo padrão é utilizado no PJe-JT, na classe "IntercomunicacaoMNI222Service".
+  Esse mesmo padrão é utilizado no PJe-JT, na classe `IntercomunicacaoMNI222Service`.
 
 
 * Processo/Documentos: Os documentos do processo NÃO DEVEM SER enviados nos arquivos XML, pois isso
@@ -125,11 +117,11 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
   verificará se as mesmas pertencem às TPUs "globais" do CNJ, sem levar em consideração somente as
   tabelas da Justiça do Trabalho. Isso foi esclarecido no e-mail "Selo Justiça em Números - Dúvida 
   sobre TPUs". 
-  Pergunta: Devo usar somente as tabelas da JT (baixadas do site do CNJ, no botão "Gerar Excel", 
-            ao lado de "Justiça do Trabalho") ou devo usar as tabelas "completas" do CNJ?
-  Resposta: A tabela completa.
+  * Pergunta: Devo usar somente as tabelas da JT (baixadas do site do CNJ, no botão "Gerar Excel", 
+              ao lado de "Justiça do Trabalho") ou devo usar as tabelas "completas" do CNJ?
+  * Resposta: A tabela completa.
   
-  * DE-PARA de assuntos: Como o PJe possui assuntos da JT que não possuem correspondentes na tabela
+* DE-PARA de assuntos: Como o PJe possui assuntos da JT que não possuem correspondentes na tabela
     nacional do CNJ, é possível fazer com que determinados assuntos sejam convertidos para outros
     assuntos antes do envio ao CNJ. Desta forma, é possível, nas configurações, habilitar o
     parâmetro "assuntos_de_para"
@@ -142,7 +134,7 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
 * Parte/Sexo: O PJe possui uma falha na remessa de processos entre instâncias, que faz com que grande parte das
   pessoas sejam remetidas sem informação de gênero/sexo (masculino / feminino). Por isso, o cadastro
   das pessoas, no 2o Grau, muitas vezes não possui essa informação.
-  É possível, nas configurações, habilitar o parâmetro "contornar_falta_de_genero" para fazer com
+  É possível, nas configurações, habilitar o parâmetro `contornar_falta_de_genero` para fazer com
   que a ferramenta tente consultar as informações do gênero na outra instância.
 
 
@@ -160,83 +152,74 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
 * Parte/Documentos: somente estão sendo inseridos nos arquivos XML os documentos que possuem correspondência
   nos tipos do CNJ, conforme arquivo "tipos_de_documentos.properties". Os documentos do PJe que não possuírem
   correspondência serão ignorados, ex: "RGE".
-  OBS: está sendo gerado um warning nos logs ao encontrar um documento que não possua correspondência nas
+  * OBS: está sendo gerado um warning nos logs ao encontrar um documento que não possua correspondência nas
        tabelas do CNJ
-  OBS: alguns documentos podem existir somente no PJe e não existirem no CNJ, por exemplo, PFP  (Programa 
+  * OBS: alguns documentos podem existir somente no PJe e não existirem no CNJ, por exemplo, PFP  (Programa 
        de Formação de Patrimônio). Esses tipos podem ser inseridos no arquivo "properties" sem nenhum
        correspondende do "lado" do CNJ, para que sejam descartados na hora de enviar o arquivo XML.
 
 
 * Assuntos: Quando o processo não tiver assunto cadastrado no PJe, ficará sem assunto no arquivo XML.
-  OBS: Se nenhum dos assuntos do processo estiver marcado como principal no PJe, a ferramenta marcará
+  * OBS: Se nenhum dos assuntos do processo estiver marcado como principal no PJe, a ferramenta marcará
        o primeiro assunto como principal no arquivo XML (orientação de Jeferson, via
        e-mail, em 28 de julho de 2016 12:43, no e-mail "Processos sem assunto")
-  OBS: É possível definir um assunto "padrão", a ser inserido nos processos que não tiverem nenhum
-       assunto cadastrado. Ver documentação dos parâmetros "assunto_padrao_1G" e "assunto_padrao_2G".
-  OBS: Está sendo gerado um warning nos logs quando processo não tiver assunto.
+  * OBS: É possível definir um assunto "padrão", a ser inserido nos processos que não tiverem nenhum
+       assunto cadastrado. Ver documentação dos parâmetros `assunto_padrao_1G` e `assunto_padrao_2G`.
+  * OBS: Está sendo gerado um warning nos logs quando processo não tiver assunto.
   
   
 * Assuntos CNJ: O arquivo XSD do CNJ explicita que os assuntos devem ser preenchidos de forma diferente
-  se fizerem ou não parte das tabelas nacionais. Por isso, o arquivo "assuntos_cnj.csv", 
-  na pasta "src/main/resources/tabelas_cnj", contém listas com todos os assuntos do CNJ.
+  se fizerem ou não parte das tabelas nacionais. Por isso, o arquivo `assuntos_cnj.csv`, 
+  na pasta `src/main/resources/tabelas_cnj`, contém listas com todos os assuntos do CNJ.
   Lista extraída de https://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
-  OBS: Foram filtradas somente os assuntos a partir do terceiro nível da planilha, conforme trecho (abaixo) do e-mail com assunto
+  * OBS: Foram filtradas somente os assuntos a partir do terceiro nível da planilha, conforme trecho (abaixo) do e-mail com assunto
        "Fwd: Envio dos dados xml - informações do CNJ - Prêmio CNJ de Qualidade - Portaria CNJ nº 88/2019 artigo 8º inciso II":
-       b.5) campos tipoAssuntoProcessual.codigoNacional e/ou tipoAssuntoLocal. codigoPaiNacional a partir do terceiro nível ou no último nível das TPUs;
+       b.5) campos `tipoAssuntoProcessual.codigoNacional` e/ou `tipoAssuntoLocal.codigoPaiNacional` a partir do terceiro nível ou no último nível das TPUs;
 
 
 * Movimentos CNJ: A mesma regra dos assuntos (que devem fazer parte da lista do CNJ) também se aplica
   aos movimentos processuais. Por isso, a lista dos movimentos processuais do CNJ foi gravada no arquivo 
-  "movimentos_cnj.csv". na pasta "src/main/resources/tabelas_cnj", depois de 
-  ser extraída da ferramenta "replicacao-client".
+  `movimentos_cnj.csv`. na pasta `src/main/resources/tabelas_cnj`, depois de 
+  ser extraída da ferramenta "replicacao-client", do CNJ.
   
+  * Serão aplicadas regras especiais aos movimentos e seus complementos, utilizando a ferramenta "depara-jt-cnj".
+    Essa ferramenta mapeia os dados do PJe para os dados que o CNJ espera receber.
   
-* Movimentos/Complementos: Alguns complementos de movimentos possuem código, outros não. A página do CNJ
-  "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25"
-  exibe um exemplo de complemento com código e sem código: Ex.: no movimento 123, seria
-      18:motivo_da_remessa:38:em grau de recurso
-      7:destino:1ª Vara Cível
-      
-* Movimentos/Complementos: Não estão sendo validados os códigos e tipos de complementos do PJe: todos
-  os complementos estão sendo preenchidos da mesma forma, como texto.
 
-
-
-========== Dúvidas / Esclarecimentos / Pendências ==========
+# Dúvidas / Esclarecimentos / Pendências
 
 
 * Quanto ao período de extração dos dados:
-  Pergunta enviada ao CNJ: 
+  * Pergunta enviada ao CNJ: 
     Há uma divergência, na página do CNJ, a respeito do período dos dados que precisam ser extraídos:
     * A página "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes" 
       descreve que devem ser extraídos dados de processos baixados a partir de 01/01/2016.
     * A página "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25" 
       descreve que devem ser extraídos dados de processos baixados a partir de 01/01/2015.
-  Resposta de davi.borges@cnj.jus.br em 26/07/2016: A partir de 01/01/2015
+  * Resposta de davi.borges@cnj.jus.br em 26/07/2016: A partir de 01/01/2015
 
 
 * Quanto à forma de seleção dos processos a serem exportados
-  Pergunta enviada ao CNJ: 
-    A orientação do CNJ, para a carga "completa" de processos, é esta:
-      Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de 
-      julho de 2016, bem como daqueles que foram baixados de 1° de janeiro de  2015 até 31 de julho de 2016. 
+  * Pergunta enviada ao CNJ: 
+    A orientação do CNJ, para a carga "completa" de processos, é esta: "Para a carga completa devem ser encaminhados a 
+    totalidade dos processos em tramitação em 31 de julho de 2016, bem como daqueles que foram baixados de 1° de janeiro de  2015 até 31 de julho de 2016". 
     Gostaríamos de esclarecer exatamente o conceito de processos "em tramitação" e processos "baixados". 
     Em ambos os casos, o PJe gera movimentos processuais. Por isso, não seria suficiente localizar 
     todos os processos que possuem algum movimento processual no período?
-  Resposta de davi.borges@cnj.jus.br em 26/07/2016: Os conceitos são equivalentes.
+  * Resposta de davi.borges@cnj.jus.br em 26/07/2016: Os conceitos são equivalentes.
 
 
 * Quanto ao Órgão Julgador do processo:
-  Pergunta enviada ao CNJ:
+  * Pergunta enviada ao CNJ:
     O arquivo XSD define somente um campo "orgaoJulgador" para cada processo. Ocorre que, no PJe, 
     existe tanto o conceito de "Órgão Julgador" (normalmente um gabinete) quanto "Órgão Julgador 
     Colegiado" (turmas ou seções especializadas). Estamos mandando, portanto, somente a informação 
     do gabinete. Nosso entendimento está correto?
-  Resposta de davi.borges@cnj.jus.br em 26/07/2016: Sim.
+  * Resposta de davi.borges@cnj.jus.br em 26/07/2016: Sim.
 
 
 * Quanto à estrutura do arquivo XML:
-  Pergunta enviada ao CNJ:
+  * Pergunta enviada ao CNJ:
     Há uma divergência, na página do CNJ, a respeito da estrutura dos arquivos XML que deve ser seguida:
     * As páginas "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes" 
       e "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25" 
@@ -248,7 +231,7 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
       contém, ainda, um link "Modelo Nacional de Interoperabilidade (Compactado)", que aponta para o 
       arquivo "intercomunicacao-2.2.2.zip". Dentro desse arquivo, há uma JAR "cnj-interop-2.2.2.jar", 
       que possui ainda uma terceira estrutura de classes para gerar os arquivos XML.
-  Resposta de leandro.andrade@cnj.jus.br em 26/07/2016: 
+  * Resposta de leandro.andrade@cnj.jus.br em 26/07/2016: 
     Seguir o modelo replicação-nacional.xsd. Esse encapsula o intercomunicação-2.2.2.xsd.
     O arquivo está disponível em "https://www.cnj.jus.br/owncloud/....." (ver "Instruções básicas", neste arquivo README)
 
@@ -256,6 +239,7 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
 * Processos sem assunto cadastrado (ou sem assunto principal) poderão gerar erros no envio dos dados
   ao CNJ. Por isso, é possível executar a consulta abaixo, para identificar processos que estejam
   sem assunto ou sem assunto principal:
+```
         WITH processos AS (
            SELECT 
               proc.nr_processo, 
@@ -278,65 +262,57 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
         FROM processos
         WHERE existe_assunto = false OR existe_assunto_principal = false
         ORDER BY nr_processo
-
+```
   
 * Quanto ao formato das partes dos tipos "Ministério Público do Trabalho" e "Órgão Público"
-  Dúvida enviada ao CNJ em "3 de julho de 2017 15:36", com assunto "Dúvidas sobre envio de dados para Justiça em Números"
+  * Dúvida enviada ao CNJ em "3 de julho de 2017 15:36", com assunto "Dúvidas sobre envio de dados para Justiça em Números"
       Estou gerando os dados para o Selo Justiça em Números aqui no TRT4. Ocorre que o MNI 2.2, utilizado como referência, 
       permite somente o envio de dados de pessoas dos tipos "Física", "Jurídica", "Autoridade" e "Órgão de Representação".
       No PJe, os tipos são parecidos, mas ligeiramente diferentes: "Física", "Jurídica", "Autoridade", "MPT" e "Órgão Público". 
       Quanto aos três primeiros, vejo que eles tem correspondência direta, mas fiquei na dúvida sobre como tratar os outros dois! 
       Preciso, para cada pessoa do "lado" do PJe, encontrar um correspondente do "lado" do MNI.
       Vocês saberiam me informar qual o tipo correto, no padrão MNI, para enviar partes dos tipos "MPT" e "Órgão Público"?
-  Resposta do CNJ (estatistica@cnj.jus.br), em "28 de julho de 2017 18:10"
+  * Resposta do CNJ (estatistica@cnj.jus.br), em "28 de julho de 2017 18:10"
       Sugerimos enquadrar tanto o MPT como os órgãos públicos sem personalidade jurídica própria como “Órgãos de Representação”.
 
 
 * Quanto ao campo "tipoRelacaoIncidental":
-  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+  * Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
       Em qual dos processos (principal ou incidental) que eu devo preencher essa informação? 
       O processo principal que deve conter uma lista com os seus incidentais ou o processo incidental que deve referenciar o seu principal? 
       Outra coisa: esse campo normalmente indica uma associação entre um processo principal e um incidental. 
       Então, qual o valor deve ser preenchido (PP ou PI)?
-  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+  * Resposta do CNJ (rosfran.borges@cnj.jus.br):
       O tipoRelacaoIncidental serve para qualquer caso, seja para informar a existência de incidentais num processo principal, 
       seja pra informar um processo principal, num incidental. Desse modo o atributo tipoRelacao informa o que o processo
       informado é em relação ao processo atual;
 
 
 * Quanto ao campo "siglaTribunal":
-  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+  * Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
       Esse é o mesmo valor utilizado para autenticar na API (no nosso caso, TRT4)?
-  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+  * Resposta do CNJ (rosfran.borges@cnj.jus.br):
       Sim, siglaTribunal é o mesmo usado para logar;
 
 
 * Quanto ao campo "magistradoProlator":
-  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+  * Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
       Como devo identificar o Magistrado (nome, CPF ou outro campo)?
       A descrição fala sobre quem prolatou a sentença. Esse dado deve ser preenchido somente para os movimentos de prolação 
       de sentença ou para todos os movimentos processuais?
-  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+  * Resposta do CNJ (rosfran.borges@cnj.jus.br):
       Conforme indicado na própria documentação, magistradoProlator é um CPF;
       (Deve ser preenchido) só pra quem prolatou a sentença/acórdão;
 
 
 * Quanto ao campo "descricaoComplemento":
-  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
+  * Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
       Devo preencher a descrição do complemento (ex: "motivo_da_remessa") ou efetivamente o conteúdo do complemento (ex: "em grau de recurso").
-  Resposta do CNJ (rosfran.borges@cnj.jus.br):
+  * Resposta do CNJ (rosfran.borges@cnj.jus.br):
       Atributo descricaoComplemento seria motivo_da_remessa, não o valor de livre preenchimento;
 
 
-* Quanto ao serviço de testes que não está mais respondendo:
-  Dúvida enviada ao CNJ em "26 de mar. de 2020 15:29", com assunto "Fwd: Enc: Justiça em Números: Serviço Fora do Ar"
-      Na versão anterior do serviço, eu consultava uma URL para obter o total de processos na base. 
-      Só que, utilizando a nova URL, esse serviço não retorna nada (https://wwwh.cnj.jus.br/modelo-de-transferencia-de-dados/v1/processos/total/G1).
-  Resposta do CNJ (rosfran.borges@cnj.jus.br):
-      Não existe mais os endpoints de totais. Talvez nós liberemos alguns endpoints pra isso em outro momento.
-
-
-========== Referências ==========
+# Referências
 
 Essa ferramenta foi desenvolvida a partir de diversas fontes, ex:
 * Script recebidos do TRT14 (Felypp De Assis Oliveira), gravados na pasta "documentacao/referencias/trt14"

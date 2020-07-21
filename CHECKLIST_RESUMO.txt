@@ -1,7 +1,7 @@
 Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, depois inspire-se nos passos abaixo para extrair os arquivos:
 
 
-1. Revise TODAS as configurações descritas no arquivo "config.properties".  
+1. Revise TODAS as configurações descritas no arquivo "config.properties".
 
 
 2. Verifique se existe uma pasta com o tipo da carga (conforme configuração "tipo_carga_xml", ex: "MENSAL 2017-02") dentro 
@@ -11,7 +11,7 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
 
 
 OBS: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa que engloba a execução das classes "Op_1..." a "Op_5...", 
-     descritas abaixo. Use-a com cautela!   
+     descritas abaixo. Use-a com cautela!
 
 
 3. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
