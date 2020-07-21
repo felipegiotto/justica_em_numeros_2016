@@ -1,0 +1,6 @@
+--SELECT
+ --   processo as nr_processo
+--FROM
+--    dados_basicos_tmp
+--WHERE processo = ?
+--AND migrado = 'N'

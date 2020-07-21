@@ -15,6 +15,7 @@ import org.junit.Test;
 import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoDocumentoIdentificacao;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 public class IdentificaDocumentosPessoaTest extends AbstractTestCase {
 
@@ -153,8 +154,9 @@ public class IdentificaDocumentosPessoaTest extends AbstractTestCase {
 	}
 	
 	private TipoPessoa carregaDocumentosPessoa(int grau, String nomePessoa, int idPessoa) throws SQLException, IOException {
-		try (Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(grau)) {
-			try (IdentificaDocumentosPessoa doc = new IdentificaDocumentosPessoa(conexaoBasePrincipal)) {
+		BaseEmAnaliseEnum baseEmAnalise = BaseEmAnaliseEnum.PJE;
+		try (Connection conexaoBasePrincipal = Auxiliar.getConexao(grau, baseEmAnalise)) {
+			try (IdentificaDocumentosPessoa doc = new IdentificaDocumentosPessoa(conexaoBasePrincipal, baseEmAnalise)) {
 				TipoPessoa pessoa = new TipoPessoa();
 				pessoa.setNome(nomePessoa);
 				doc.preencherDocumentosPessoa(pessoa, idPessoa);

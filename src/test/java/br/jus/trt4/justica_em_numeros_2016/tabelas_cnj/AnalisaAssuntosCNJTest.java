@@ -11,17 +11,19 @@ import org.junit.Test;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 
 	@Test
 	public void analisaAssuntoNacional() throws Exception {
-		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
-		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
+		BaseEmAnaliseEnum baseEmAnalise = BaseEmAnaliseEnum.PJE;
+		Connection conexaoBasePrincipal = Auxiliar.getConexao(1, baseEmAnalise);
+		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false, baseEmAnalise)) {
 		
 			// Assunto que existe em tabela nacional:
 			// 2540 - Vale Transporte
-			TipoAssuntoProcessual assunto = a.getAssunto(2540);
+			TipoAssuntoProcessual assunto = a.getAssunto(2540, baseEmAnalise);
 			assertNotNull(assunto);
 			
 			// Testa os campos do assunto nacional
@@ -38,9 +40,10 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 	 */
 	@Test
 	public void analisaNomeCompletoAssuntoLocal() throws Exception {
-		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
-		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
-			TipoAssuntoProcessual assunto = a.getAssunto(10568);
+		BaseEmAnaliseEnum baseEmAnalise = BaseEmAnaliseEnum.PJE;
+		Connection conexaoBasePrincipal = Auxiliar.getConexao(1, baseEmAnalise);
+		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false, baseEmAnalise)) {
+			TipoAssuntoProcessual assunto = a.getAssunto(10568, baseEmAnalise);
 			
 			// Testa os campos do assunto local
 			assertEquals(10568, assunto.getAssuntoLocal().getCodigoAssunto());
@@ -50,12 +53,13 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 	
 	@Test
 	public void analisaAssuntoLocal() throws Exception {
-		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
-		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
+		BaseEmAnaliseEnum baseEmAnalise = BaseEmAnaliseEnum.PJE;
+		Connection conexaoBasePrincipal = Auxiliar.getConexao(1, baseEmAnalise);
+		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false, baseEmAnalise)) {
 		
 			// Assunto que NÃO existe em tabela nacional:
 			// 55492 - Honorários na Justiça do Trabalho
-			TipoAssuntoProcessual assunto = a.getAssunto(55492);
+			TipoAssuntoProcessual assunto = a.getAssunto(55492, baseEmAnalise);
 			assertNotNull(assunto);
 			
 			// Testa os campos do assunto nacional
@@ -75,8 +79,9 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 	
 	@Test
 	public void analisaAssuntoLocalMapeadoPorTabelaDePara() throws Exception {
-		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
-		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
+		BaseEmAnaliseEnum baseEmAnalise = BaseEmAnaliseEnum.PJE;
+		Connection conexaoBasePrincipal = Auxiliar.getConexao(1, baseEmAnalise);
+		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false, baseEmAnalise)) {
 		
 			// Mapeia manualmente um assunto local, para executar o teste
 			// 55492 (Honorários da Justiça do Trabalho), mapeado para 10655 (Honorários Advocatícios)
@@ -84,7 +89,7 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 			
 			// Assunto que NÃO existe em tabela nacional, mas que foi mapeado por tabela DE-PARA
 			// 55492 (Honorários na Justiça do Trabalho)
-			TipoAssuntoProcessual assunto = a.getAssunto(55492);
+			TipoAssuntoProcessual assunto = a.getAssunto(55492, baseEmAnalise);
 			assertNotNull(assunto);
 			
 			// Testa os campos do assunto nacional

@@ -35,6 +35,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+
 /**
  * Classe que contém métodos auxiliares utilizados nesse projeto.
  * @author fgiotto
@@ -54,13 +56,54 @@ public class Auxiliar {
 	public static final String SUFIXO_PROTOCOLO = ".protocolo";
 	public static final String SUFIXO_PROTOCOLO_SUCESSO = ".sucesso";
 	public static final String SUFIXO_PROTOCOLO_ERRO = ".erro";
+	public static final String SISTEMA_JUDICIAL_APENAS_LEGADO = "APENAS_LEGADO";
+	public static final String SISTEMA_JUDICIAL_APENAS_PJE = "APENAS_PJE";
+	public static final String SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO = "APENAS_PJE_COM_MIGRADOS_LEGADO";
+	public static final String SISTEMA_JUDICIAL_TODOS = "TODOS";
+	
+	/**
+	 * Recupera a pasta em que se encontram os arquivos sql dos diretórios 'op_1_baixa_lista_processos '
+	 * e 'op_2_gera_xmls' de acordo com o grau pesquisado e a base em análise. 
+	 * 
+	 * @param grau
+	 * @param baseEmAnaliseEnum
+	 * @return
+	 */
+	public static String getPastaResources(BaseEmAnaliseEnum baseEmAnaliseEnum) {
+		return baseEmAnaliseEnum.isBasePJe() ? "pje" : "legado";
+	}
+
+	/**
+	 * Cria uma conexão com o banco de dados do Pje ou do sistema legado, conforme a instância selecionada (1 ou 2)
+	 * e a indicacao da base em análise, lendo os dados dos parâmetros do arquivo "config.properties"
+	 * @throws SQLException
+	 */
+	public static Connection getConexao(int grau, BaseEmAnaliseEnum baseEmAnalise) throws SQLException {
+		return baseEmAnalise.isBasePJe() ? Auxiliar.getConexaoPJe(grau) : Auxiliar.getConexaoSistemaLegado(grau);
+	}
+
+	/**
+	 * Cria uma conexão com o banco de dados de outro sistema judicial legado, conforme a instância selecionada (1 ou 2),
+	 * lendo os dados dos parâmetros do arquivo "config.properties"
+	 * @throws SQLException
+	 */
+	private static Connection getConexaoSistemaLegado(int grau) throws SQLException {
+		LOGGER.info("Abrindo conexão com Sistema Legado " + grau + "G");
+		if (grau == 1) {
+			return getConexaoDasConfiguracoes(Parametro.url_legado_1g);
+		} else if (grau == 2) {
+			return getConexaoDasConfiguracoes(Parametro.url_legado_2g);
+		} else {
+			throw new SQLException("Grau inválido: " + grau);
+		}
+	}
 	
 	/**
 	 * Cria uma conexão com o banco de dados do PJe, conforme a instância selecionada (1 ou 2),
 	 * lendo os dados dos parâmetros "url_jdbc_1g" ou "url_jdbc_2g"
 	 * @throws SQLException
 	 */
-	public static Connection getConexaoPJe(int grau) throws SQLException {
+	private static Connection getConexaoPJe(int grau) throws SQLException {
 		LOGGER.info("Abrindo conexão com o PJe " + grau + "G");
 		if (grau == 1) {
 			return getConexaoDasConfiguracoes(Parametro.url_jdbc_1g);
@@ -422,8 +465,24 @@ public class Auxiliar {
 	 * Retorna o arquivo onde deve ser gravada e lida a lista de processos de uma determinada
 	 * instância do PJe.
 	 */
-	public static File getArquivoListaProcessos(int grau) {
+	public static File getArquivoListaProcessosPje(int grau) {
 		return new File(prepararPastaDeSaida(), "G" + grau + "/PJe_lista_processos.txt");
+	}
+	
+	/**
+	 * Retorna o arquivo onde deve ser gravada e lida a lista de processos migrados para o PJE de uma determinada
+	 * instância do sistema legado.
+	 */
+	public static File getArquivoListaProcessosSistemaLegadoMigradosParaOPJe(int grau) {
+		return new File(prepararPastaDeSaida(), "G" + grau + "/Legado_lista_processos_migrados.txt");
+	}
+
+	/**
+	 * Retorna o arquivo onde deve ser gravada e lida a lista de processos não migrados para o PJE de uma determinada
+	 * instância do sistema legado.
+	 */
+	public static File getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(int grau) {
+		return new File(prepararPastaDeSaida(), "G" + grau + "/Legado_lista_processos_nao_migrados.txt");
 	}
 	
 	
@@ -629,6 +688,43 @@ public class Auxiliar {
 	
 	public static boolean deveProcessarPrimeiroGrau() {
 		return getParametroBooleanConfiguracao(Parametro.gerar_xml_1G);
+	}
+	
+	public static boolean deveProcessarProcessosPje() {
+		boolean retorno = false;
+		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
+
+		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE)
+				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO)
+				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
+			retorno = true;
+		}
+
+		return retorno;
+	}
+
+	public static boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje() {
+		boolean retorno = false;
+		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
+
+		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_LEGADO)
+				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
+			retorno = true;
+		}
+
+		return retorno;
+	}
+
+	public static boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe() {
+		boolean retorno = false;
+		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
+
+		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO)
+				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
+			retorno = true;
+		}
+
+		return retorno;
 	}
 	
 	public static File getArquivoconfiguracoes() {

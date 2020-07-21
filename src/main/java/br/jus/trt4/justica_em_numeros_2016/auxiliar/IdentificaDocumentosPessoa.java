@@ -18,6 +18,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeDocumentoIdentificador;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoDocumentoIdentificacao;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoPessoaDto;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 /**
  * Classe responsável por localizar todos os documentos de uma pessoa e gravar, nos objetos do MNI,
@@ -32,15 +33,21 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 	private NamedParameterStatement nsDocumentos;
 	private Connection conexaoBasePrincipal;
 	
-	public IdentificaDocumentosPessoa(Connection conexaoBasePrincipal) throws IOException, SQLException {
+	public IdentificaDocumentosPessoa(Connection conexaoBasePrincipal, BaseEmAnaliseEnum baseEmAnalise) throws IOException, SQLException {
 		
 		// Objeto que fará o de/para dos tipos de documentos do PJe para os do CNJ
+		//FIXME: Aqui no TRT6 essa lista pode ser utilizada tanto para o PJe quanto para o sistema legado. 
+		//Talvez seja preciso ajustar essa lista em outros Regionais. 
 		if (tiposDocumentosPJeCNJ == null) {
 			tiposDocumentosPJeCNJ = Auxiliar.carregarPropertiesDoArquivo(new File("src/main/resources/tipos_de_documentos.properties"));
 		}
 		
+		String caminhoArquivo = "src/main/resources/sql/op_2_gera_xmls/" 
+				+ Auxiliar.getPastaResources(baseEmAnalise) 
+				+ "/04_consulta_documentos_pessoa.sql";
+		
 		// SQL que fará a consulta dos documentos da pessoa
-		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/04_consulta_documentos_pessoa.sql");
+		String sqlConsultaDocumentos = Auxiliar.lerConteudoDeArquivo(caminhoArquivo);
 		nsDocumentos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaDocumentos);
 		this.conexaoBasePrincipal = conexaoBasePrincipal;
 	}
