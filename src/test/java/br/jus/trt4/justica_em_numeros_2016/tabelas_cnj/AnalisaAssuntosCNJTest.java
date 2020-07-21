@@ -8,6 +8,7 @@ import java.sql.Connection;
 
 import org.junit.Test;
 
+import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoLocal;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
@@ -34,17 +35,18 @@ public class AnalisaAssuntosCNJTest extends AbstractTestCase {
 	 * Testa se o assunto está sendo exibido com seu nome completo (com toda a hierarquia)
 	 *
 	 * Se, eventualmente, esse assunto local for inserido nas tabelas nacionais, será preciso buscar outro assunto local e alterar esse teste.
-	 * @throws Exception
 	 */
 	@Test
 	public void analisaNomeCompletoAssuntoLocal() throws Exception {
 		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
 		try (AnalisaAssuntosCNJ a = new AnalisaAssuntosCNJ(1, conexaoBasePrincipal, false)) {
-			TipoAssuntoProcessual assunto = a.getAssunto(10568);
+			TipoAssuntoProcessual assunto = a.getAssunto(10861);
 			
 			// Testa os campos do assunto local
-			assertEquals(10568, assunto.getAssuntoLocal().getCodigoAssunto());
-			assertEquals("DIREITO DO TRABALHO (864) / Prescrição", assunto.getAssuntoLocal().getDescricao());
+			TipoAssuntoLocal assuntoLocal = assunto.getAssuntoLocal();
+			assertNotNull(assuntoLocal);
+			assertEquals(10861, assuntoLocal.getCodigoAssunto());
+			assertEquals("DIREITO PROCESSUAL CIVIL E DO TRABALHO (8826) / Liquidação / Cumprimento / Execução (9148) / Prisão Civil (10573) / Alienação Fiduciária", assunto.getAssuntoLocal().getDescricao());
 		}
 	}
 	

@@ -45,6 +45,7 @@ public class ProcessoDto {
 		this.classeJudicial = new ClasseJudicialDto();
 		this.classeJudicial.setCodigo(rsProcesso.getInt("cd_classe_judicial"));
 		this.classeJudicial.setDescricao(rsProcesso.getString("ds_classe_judicial"));
+		this.classeJudicial.setRecursal("S".equals(rsProcesso.getString("in_recursal")));
 		
 		if (somenteProcessoEClasse) {
 			return;
@@ -103,6 +104,10 @@ public class ProcessoDto {
 	
 	public ClasseJudicialDto getClasseJudicial() {
 		return classeJudicial;
+	}
+	
+	public void setClasseJudicial(ClasseJudicialDto classeJudicial) {
+		this.classeJudicial = classeJudicial;
 	}
 	
 	public OrgaoJulgadorDto getOrgaoJulgador() {

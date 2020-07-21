@@ -13,6 +13,7 @@ SELECT
   /* classeProcessual */
   cj.cd_classe_judicial,
   cj.ds_classe_judicial,
+  cj.in_recursal,
   /* codigoLocalidade */
   ib.id_municipio_ibge,
   /* dataAjuizamento */

@@ -778,22 +778,15 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	/**
 	 * Processo sem assunto deve receber um assunto principal baseado nas configurações (campos "assunto_padrao_1G" e "assunto_padrao_2G")
 	 *
+	 * Se o assunto padrão for alterado OU SE o assunto padrão for mapeado para outro, ajustar esse teste.
 	 * @throws Exception  
 	 */
 	@Test
 	public void testAssuntoPadrao() throws Exception {
 		 
-		// UPDATE: O assunto padrão está definido como "1654", mas pelas tabelas de-para de assuntos, esse assunto é mapeado para "9596"
 		TipoProcessoJudicial processoJudicial3 = retornaDadosProcesso(1, "0021172-82.2013.5.04.0332");
 		assertEquals(1, processoJudicial3.getDadosBasicos().getAssunto().size());
-		assertTrue(existeAssuntoNacionalComCodigo(9596, processoJudicial3.getDadosBasicos().getAssunto()));
-		// Antigo:
-		// TipoAssuntoLocal assuntoLocal3 = getAssuntoLocalComCodigo(1654, processoJudicial3.getDadosBasicos().getAssunto());
-		// assertEquals(1654, assuntoLocal3.getCodigoAssunto());
-		// assertEquals(864, assuntoLocal3.getCodigoPaiNacional());
-		// assertEquals("DIREITO DO TRABALHO (864) / Contrato Individual de Trabalho", assuntoLocal3.getDescricao());
-		// assertTrue(processoJudicial3.getDadosBasicos().getAssunto().get(0).isPrincipal());
-
+		assertTrue(existeAssuntoNacionalComCodigo(10652, processoJudicial3.getDadosBasicos().getAssunto()));
 	}
 	
 	@Test

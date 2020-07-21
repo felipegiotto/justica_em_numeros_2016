@@ -7,23 +7,36 @@ import static org.junit.Assert.assertNull;
 import java.sql.Connection;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoLocal;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoMovimentoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.dto.ClasseJudicialDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
 
 public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 
+	Connection conexaoBasePrincipal;
+	ProcessoDto processo;
+	
+	@Before
+	public void before() throws Exception {
+		conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
+		processo = new ProcessoDto();
+		ClasseJudicialDto classeJudicial = new ClasseJudicialDto();
+		classeJudicial.setCodigo(985);
+		processo.setClasseJudicial(classeJudicial);
+	}
+	
 	@Test
 	public void analisaMovimentoNacional() throws Exception {
-		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
+		
 		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(1, conexaoBasePrincipal);
-		ProcessoDto processo = new ProcessoDto();
 		
 		// Movimento que existe em tabela nacional:
 		// 26 - Distribuído por sorteio
@@ -41,9 +54,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 
 	@Test
 	public void analisaMovimentoLocal() throws Exception {
-		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
 		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(1, conexaoBasePrincipal);
-		ProcessoDto processo = new ProcessoDto();
 	
 		// Movimento que NÃO existe em tabela nacional:
 		// 50086 - Encerrada a conclusão
@@ -72,9 +83,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 	 */
 	@Test
 	public void analisaMovimentoLocalSemDescricao() throws Exception {
-		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
 		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(1, conexaoBasePrincipal);
-		ProcessoDto processo = new ProcessoDto();
 	
 		MovimentoDto movimentoDto = new MovimentoDto();
 		movimentoDto.setCodMovimentoCNJ(-5);
@@ -99,9 +108,7 @@ public class AnalisaMovimentosCNJTest extends AbstractTestCase {
 	 */
 	@Test
 	public void analisaMovimentoRemessaComDeParaETipoTabelado() throws Exception {
-		Connection conexaoBasePrincipal = Auxiliar.getConexaoPJe(1);
 		AnalisaMovimentosCNJ a = new AnalisaMovimentosCNJ(1, conexaoBasePrincipal);
-		ProcessoDto processo = new ProcessoDto();
 		processo.setNumeroInstancia(1);
 	
 		MovimentoDto movimentoDto = new MovimentoDto();

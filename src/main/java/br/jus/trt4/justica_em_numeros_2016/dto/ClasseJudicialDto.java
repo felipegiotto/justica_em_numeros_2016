@@ -4,6 +4,7 @@ public class ClasseJudicialDto {
 	
 	private int codigo;
 	private String descricao;
+	private boolean recursal;
 	
 	public int getCodigo() {
 		return codigo;
@@ -19,5 +20,13 @@ public class ClasseJudicialDto {
 	
 	public void setDescricao(String descricao) {
 		this.descricao = descricao;
+	}
+	
+	public boolean isRecursal() {
+		return recursal;
+	}
+	
+	public void setRecursal(boolean recursal) {
+		this.recursal = recursal;
 	}
 }
