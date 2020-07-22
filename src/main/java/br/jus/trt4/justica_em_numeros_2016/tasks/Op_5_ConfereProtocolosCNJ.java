@@ -185,7 +185,7 @@ public class Op_5_ConfereProtocolosCNJ {
 		
 		// Consulta todos os protocolos no CNJ
 		JsonArray protocolos;
-		String origemOperacaoConsulta = "Consulta de todos os protocolos no CNJ";
+		String agrupadorErrosConsulta = "Consulta de todos os protocolos no CNJ";
 		try {
 			
 			// Executa o GET
@@ -212,9 +212,9 @@ public class Op_5_ConfereProtocolosCNJ {
 				EntityUtils.consumeQuietly(response.getEntity());
 			}
 			
-			AcumuladorExceptions.instance().removerException(origemOperacaoConsulta);
+			AcumuladorExceptions.instance().removerExceptionsDoAgrupador(agrupadorErrosConsulta);
 		} catch (Exception ex) {
-			AcumuladorExceptions.instance().adicionarException(origemOperacaoConsulta, ex.getLocalizedMessage(), ex, true);
+			AcumuladorExceptions.instance().adicionarException(ex.getLocalizedMessage(), agrupadorErrosConsulta, ex, true);
 			return;
 		}
 		

@@ -92,6 +92,8 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
  * 
  * TODO: Tratar bug no PJe que faz com que haja mais de um processo com mesmo número. Sugestão: usar os IDs nas consultas SQL de partes, documentos, endereços, assuntos, movimentos, etc.
  *
+ * TODO: Criar parâmetro para que somente movimentos existentes no "depara-jt-cnj" sejam inseridos no XML. Movimentos não reconhecidos pelo "depara-jt-cnj" ficariam, então, de fora.
+ *
  * Fonte: http://www.mkyong.com/java/jaxb-hello-world-example/
  * 
  * @author felipe.giotto@trt4.jus.br
