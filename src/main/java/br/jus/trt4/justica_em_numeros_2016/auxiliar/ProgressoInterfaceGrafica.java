@@ -29,6 +29,8 @@ import org.apache.logging.log4j.Logger;
  * 
  * Cada operação deve instanciar um objeto desta classe, informar o progresso da operação e, ao final, chamar o método "close".
  * 
+ * @deprecated TODO: remover esse controle com AWT, futuramente, e centralizar o controle do progresso a partir da classe "Op_Y_OperacaoFluxoContinuo"
+ * 
  * @author felipe.giotto@trt4.jus.br
  */
 public class ProgressoInterfaceGrafica {

@@ -12,6 +12,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ControleAbortarOperacao;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpServerStatus;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoFluxo;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoSituacaoEnum;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
@@ -53,6 +54,10 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		
 		iniciarAtualizacaoStatusBackground();
 		iniciarOperacoesGeracaoEnvioValidacaoEmBackground();
+		
+		if (!"APENAS_PJE".equals(Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, false))) {
+			AcumuladorExceptions.instance().adicionarException("Essa operação ainda não trabalha corretamente com extração de dados dos sistemas legados. Recomenda-se utilizá-la, por enquanto, somente com o parâmetro 'sistema_judicial=APENAS_PJE'", "Op_Y_OperacaoFluxoContinuo");
+		}
 		
 		// TODO: Implementar condição de saída
 	}

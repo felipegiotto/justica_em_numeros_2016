@@ -138,6 +138,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	// resultando em menos consultas ao banco de dados.
 	private final Map<String, ProcessoDto> cacheProcessosLegadosMigradosDtos = new HashMap<>();
 
+	/**
+	 * @deprecated TODO: migrar, futuramente, para nova estrutura de controle "ProcessoFluxo" e centralizar o controle a partir da classe "Op_Y_OperacaoFluxoContinuo"
+	 *
+	 */
+	@Deprecated
 	private class OperacaoGeracaoXML {
 		String numeroProcesso;
 		File arquivoXML;
@@ -956,15 +961,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 					}
 				}
 
-				// Script TRT4:
-				// -- pessoa
-				//   IF parte.nr_documento IS NOT NULL THEN
-				//     raise notice '<pessoa nome="%" tipoPessoa="%" sexo="%" numeroDocumentoPrincipal="%">'
-				//     , parte.ds_nome, parte.in_tipo_pessoa, parte.tp_sexo, parte.nr_documento;
-				//   ELSE 
-				//     raise notice '<pessoa nome="%" tipoPessoa="%" sexo="%">'
-				//     , parte.ds_nome, parte.in_tipo_pessoa, parte.tp_sexo;
-				//   END IF;
+				// Pessoa
 				TipoPessoa pessoa = new TipoPessoa();
 				parte.setPessoa(pessoa);
 				pessoa.setNome(nomeParte);
@@ -1151,14 +1148,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 		}
 
-		// Script TRT14:
-		// -- se não tiver assunto? 
-		// IF fl_assunto = 0 THEN 
-		//   -- do something...
-		//   raise notice '<assunto>'; 
-		//   raise notice '<codigoNacional>2546</codigoNacional>'; -- Verbas Rescisórias
-		//   raise notice '</assunto>';
-		// END IF;
 		if (!encontrouAlgumAssunto) {
 
 			// Se não há nenhum assunto no processo, verifica se deve ser utilizando um assunto
@@ -1256,9 +1245,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 		for (MovimentoDto movimentoDto : processo.getMovimentos()) {
 			
-			// Script TRT14:
-			// raise notice '<movimento dataHora="%" nivelSigilo="%">', mov.dta_ocorrencia, mov.in_visibilidade_externa;
-			// raise notice '<movimentoNacional codigoNacional="%">', mov.cd_movimento_cnj;
+			// Movimento processual
 			TipoMovimentoProcessual movimento = new TipoMovimentoProcessual();
 			movimento.setDataHora(Auxiliar.formataDataMovimento(movimentoDto.getDataAtualizacao()));
 			movimento.setNivelSigilo(movimentoDto.isVisibilidadeExterna() ? 0 : 5);

@@ -6,6 +6,7 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ValidaEnviaArquivosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_5_ConfereProtocolosCNJ;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_6_BackupConfiguracoes;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_X_OperacaoCompleta;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
 
 public class MainClass {
 
@@ -18,6 +19,7 @@ public class MainClass {
 		System.out.println("5: ConfereProtocolosCNJ");
 		System.out.println("6: BackupConfiguracoes");
 		System.out.println("X: OperacaoCompleta");
+		System.out.println("Y: Nova operação completa (protótipo Op_Y_OperacaoFluxoContinuo)");
 		switch (Auxiliar.readStdin().toUpperCase()) {
 		case "1": 
 			Op_1_BaixaListaDeNumerosDeProcessos.main(null);
@@ -36,6 +38,9 @@ public class MainClass {
 			break;
 		case "X": 
 			Op_X_OperacaoCompleta.main(null);
+			break;
+		case "Y": 
+			Op_Y_OperacaoFluxoContinuo.main(null);
 			break;
 		}
 	}

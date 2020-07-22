@@ -16,6 +16,8 @@ import org.apache.logging.log4j.Logger;
 /**
  * Classe que representa um arquivo para envio ou validação no CNJ
  * 
+ * @deprecated TODO: migrar, futuramente, para nova estrutura de controle "ProcessoFluxo" e centralizar o controle a partir da classe "Op_Y_OperacaoFluxoContinuo"
+ *
  * @author felipe.giotto@trt4.jus.br
  */
 public class ArquivoComInstancia {
