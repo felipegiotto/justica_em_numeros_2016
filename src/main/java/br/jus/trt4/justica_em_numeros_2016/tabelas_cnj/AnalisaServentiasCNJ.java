@@ -109,9 +109,11 @@ public class AnalisaServentiasCNJ {
 		if (baseEmAnaliseEnum.isBasePJe()) {
 			if (serventiasCNJ.containsKey(descricaoOrgaoJudicial)) {
 				return serventiasCNJ.get(descricaoOrgaoJudicial);
-			} else {
 				
-				orgaosJulgadoresSemServentiasCadastradas.add(descricaoOrgaoJudicial);
+			} else {
+				if (orgaosJulgadoresSemServentiasCadastradas.add(descricaoOrgaoJudicial)) {
+					LOGGER.warn("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias() + ": " + descricaoOrgaoJudicial + ";<CODIGO SERVENTIA CNJ>;<NOME SERVENTIA CNJ>");
+				}
 				return null;
 			}
 		} else {
