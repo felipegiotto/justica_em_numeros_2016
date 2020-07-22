@@ -162,6 +162,9 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 				assunto.setAssuntoLocal(assuntoLocal);
 				assuntoLocal.setCodigoAssunto(codigoAssunto);
 				
+				// FIXME: Resolver possível problema de acesso concorrente a esse PreparedStatement na geração de XMLs em várias threads
+				synchronized(psConsultaAssuntoPorCodigo) {
+				
 				// Pesquisa recursivamente os "pais" desse assunto, até encontrar um que exista nas
 				// tabelas nacionais do CNJ.
 				psConsultaAssuntoPorCodigo.setString(1, Integer.toString(codigoAssunto));
@@ -187,6 +190,10 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 						
 						// Itera, recursivamente, localizando assuntos "pai" na tabela
 						while (idProximoAssunto > 0 && tentativasRecursivas < 50) {
+							
+							// FIXME: Resolver possível problema de acesso concorrente a esse PreparedStatement na geração de XMLs em várias threads
+							synchronized(psConsultaAssuntoPorID) {
+							
 							psConsultaAssuntoPorID.setInt(1, idProximoAssunto);
 							try (ResultSet rsAssunto = psConsultaAssuntoPorID.executeQuery()) { // TODO: Otimizar acessos repetidos
 								
@@ -213,6 +220,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 									descricaoAssuntoLocal = rsAssunto.getString("ds_assunto_trf") + " (" + codigo + ") / " + descricaoAssuntoLocal;
 								}
 							}
+							}
 							tentativasRecursivas++;
 						}
 						
@@ -227,6 +235,7 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 					} else {
 						throw new RuntimeException("Não foi encontrado assunto com código " + codigoAssunto + " na base do PJe!");
 					}
+				}
 				}
 			}
 		} else {
