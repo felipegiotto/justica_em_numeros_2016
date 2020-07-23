@@ -8,10 +8,13 @@ SELECT
 FROM tb_processo proc
 INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf)
 INNER JOIN tb_processo proc_referencia ON (proc_referencia.id_processo = ptrf.id_proc_referencia)
+INNER JOIN tb_processo_trf proc_referencia_trf ON (proc_referencia.id_processo = proc_referencia_trf.id_processo_trf)
 LEFT JOIN tb_classe_judicial classe ON (classe.id_classe_judicial = ptrf.id_classe_judicial)
 WHERE proc_referencia.nr_processo = ANY(:numeros_processos)
   AND proc.nr_processo IS NOT NULL -- Busca somente processos já protocolados
   
   -- Reforça a condição da data de autuação, pois um bug no PJe fez com que houvesse mais que um processo com mesma numeração (um com data de autuação e outro sem)
   AND ptrf.dt_autuacao IS NOT NULL
+  AND proc_referencia_trf.dt_autuacao IS NOT NULL
+  
 ORDER BY ptrf.id_processo_trf
