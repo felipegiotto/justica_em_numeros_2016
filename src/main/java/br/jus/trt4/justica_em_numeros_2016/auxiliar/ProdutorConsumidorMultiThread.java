@@ -23,6 +23,8 @@ import org.apache.logging.log4j.Logger;
  * IMPORTANTE: depois de produzir todos os itens, chamar o método "aguardarTermino()", que garantirá
  * a execução até o final.
  * 
+ * @deprecated utilizar classe nativa: ExecutorService threadPool = Executors.newFixedThreadPool(numeroThreads);
+ * 
  * @param <T>: tipo de objeto que será produzido e consumido.
  * 
  * @author fgiotto

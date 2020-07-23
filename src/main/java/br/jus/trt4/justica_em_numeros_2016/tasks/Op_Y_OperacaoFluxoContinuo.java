@@ -119,7 +119,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		new Thread(() -> {
 			Auxiliar.prepararThreadLog();
 			
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.CONCLUIDO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+			while (isAlgumProcessoComStatusAnterior(ProcessoSituacaoEnum.CONCLUIDO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				for (ProcessoFluxo processoFluxo : processosFluxos) {
 					processoFluxo.identificarSituacao();
 				}
@@ -161,15 +161,18 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 			Auxiliar.prepararThreadLog();
 			
 			// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (XML_GERADO)
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.ENVIADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
-				try {
-					this.executandoOperacao4Envio = true;
-					Op_4_ValidaEnviaArquivosCNJ operacao4Envia = new Op_4_ValidaEnviaArquivosCNJ();
-					operacao4Envia.localizarEnviarXMLsAoCNJ();
-				} catch (Exception e) {
-					LOGGER.error("Erro enviando dados ao CNJ: " + e.getLocalizedMessage(), e);
-				} finally {
-					this.executandoOperacao4Envio = false;
+			while (isAlgumProcessoComStatusAnterior(ProcessoSituacaoEnum.ENVIADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+				
+				if (isAlgumProcessoComStatus(ProcessoSituacaoEnum.XML_GERADO)) {
+					try {
+						this.executandoOperacao4Envio = true;
+						Op_4_ValidaEnviaArquivosCNJ operacao4Envia = new Op_4_ValidaEnviaArquivosCNJ();
+						operacao4Envia.localizarEnviarXMLsAoCNJ();
+					} catch (Exception e) {
+						LOGGER.error("Erro enviando dados ao CNJ: " + e.getLocalizedMessage(), e);
+					} finally {
+						this.executandoOperacao4Envio = false;
+					}
 				}
 				
 				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
@@ -182,11 +185,11 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 			Auxiliar.prepararThreadLog();
 			
 			// Espera todos os arquivos serem marcados como ENVIADOS
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.ENVIADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+			while (isAlgumProcessoComStatusAnterior(ProcessoSituacaoEnum.ENVIADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
 			}
 			
-			while (isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum.CONCLUIDO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+			while (isAlgumProcessoComStatusAnterior(ProcessoSituacaoEnum.CONCLUIDO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				try {
 					this.executandoOperacao5Conferencia = true;
 					Op_5_ConfereProtocolosCNJ operacao = new Op_5_ConfereProtocolosCNJ();
@@ -228,7 +231,12 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		return processosFluxos.stream().allMatch(p -> p.getSituacao().getOrdem() == ordem);
 	}
 	
-	private boolean isAlgumProcessoComOrdemAnterior(ProcessoSituacaoEnum status) {
+	private boolean isAlgumProcessoComStatus(ProcessoSituacaoEnum status) {
+		int ordem = status.getOrdem();
+		return processosFluxos.stream().anyMatch(p -> p.getSituacao().getOrdem() == ordem);
+	}
+	
+	private boolean isAlgumProcessoComStatusAnterior(ProcessoSituacaoEnum status) {
 		int ordem = status.getOrdem();
 		return processosFluxos.stream().anyMatch(p -> p.getSituacao().getOrdem() < ordem);
 	}

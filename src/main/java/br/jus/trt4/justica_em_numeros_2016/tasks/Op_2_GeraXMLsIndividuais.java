@@ -1348,6 +1348,15 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 					for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
 						LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
 						LocalDateTime dataRetorno = historico.getDataRetorno();
+						
+						// TODO: Criar um parâmetro para definir o que fazer com movimentos gerados em órgãos julgadores que não possuem serventia, ex: "movimentos_sem_serventia_cnj",
+						//       para evitar a ocorrência do erro "Falta mapear serventia no arquivo..." em "analisarOrgaoJulgadorProcesso"
+						/*
+						 * (1) DESCARTAR_PROCESSO (comportamento atual do sistema): não gera o XML desse processo
+						 * (2) DESCARTAR_MOVIMENTO: gera o XML do processo, mas sem o movimento cujo OJ não possui serventia
+						 * (3) SEM_SERVENTIA: envia o movimento de qualquer forma, mas sem informar serventia
+						 * (4) SERVENTIA_OJ_PRINCIPAL: envia o movimento com o código da serventia do órgão julgador atual do processo.
+						 */
 						if (dataDeslocamento.isAfter(dataMovimento)) {
 							TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), baseEmAnalise);
 							movimento.setOrgaoJulgador(orgaoJulgador);

@@ -8,6 +8,11 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_6_BackupConfiguracoes;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_X_OperacaoCompleta;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
 
+/**
+ * Classe disparada ao se executar diretamente o jar da aplicação.
+ *
+ * @author felipe.giotto@trt4.jus.br
+ */
 public class MainClass {
 
 	public static void main(String[] args) throws Exception {

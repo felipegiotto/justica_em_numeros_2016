@@ -28,6 +28,10 @@ import org.apache.logging.log4j.Logger;
  * 
  * }
  * </pre>
+ * 
+ * @deprecated com o código do DataJud mais estável e com praticamente todas as rotinas rodando em modo multi-thread
+ * (então não é mais relevante somar o tempo gasto pelas operações), essa classe perdeu sua utilidade.
+ * 
  * @author felipe.giotto@trt4.jus.br
  */
 public class BenchmarkVariasOperacoes {
