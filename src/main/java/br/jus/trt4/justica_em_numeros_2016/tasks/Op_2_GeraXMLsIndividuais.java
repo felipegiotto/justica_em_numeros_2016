@@ -1263,98 +1263,108 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			movimento.setTipoResponsavelMovimento(movimentoDto.isUsuarioMagistrado() ? 1 : 0);
 			
 			analisaMovimentosCNJ.preencheDadosMovimentoCNJ(processo, movimento, movimentoDto, baseEmAnalise);
-			movimentos.add(movimento);
+			
 			LocalDateTime dataMovimento = movimentoDto.getDataAtualizacao();
 
 			// Consulta os complementos desse movimento processual.
 			// OBS: os complementos só existem no MovimentoNacional
 			TipoMovimentoNacional movimentoNacional = movimento.getMovimentoNacional();
-			if (movimentoNacional != null) {
-				for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
-					
-					/*
-					Se o complemento for do tipo TABELADO, inserir somente o seu código tabelado (não precisa do valor). Ex:
-					
-					<movimento dataHora="20150206110014" identificadorMovimento="4">
-					  <movimentoNacional codigoNacional="123">
-					    <complemento>18:motivo_da_remessa:38</complemento>
-					  </movimentoNacional>
-					  <complementoNacional codComplemento="18" descricaoComplemento="motivo_da_remessa" codComplementoTabelado="38"/>
-					</movimento>
-					
-					Fonte: https://www.cnj.jus.br/wp-content/uploads/2020/07/documento_XML_exemplo_DataJud_06042020.pdf
-					 */
-					Integer codComplementoTabelado = (complementoDto.isComplementoTipoTabelado() && complementoDto.getCodigoComplemento() != null) ? Integer.parseInt(complementoDto.getCodigoComplemento()) : null;
-					
-					StringBuilder sb = new StringBuilder();
-					sb.append(complementoDto.getCodigoTipoComplemento());
-					sb.append(":");
-					sb.append(complementoDto.getNome());
-					String codigoComplemento = complementoDto.getCodigoComplemento();
-					if (!StringUtils.isBlank(codigoComplemento)) {
-						sb.append(":");
-						sb.append(codigoComplemento);
-					}
-					if (codComplementoTabelado == null) {
-						sb.append(":");
-						sb.append(complementoDto.getValor());
-					}
-					movimentoNacional.getComplemento().add(sb.toString());
-					
-					TipoComplementoNacional complemento = new TipoComplementoNacional();
-					movimento.getComplementoNacional().add(complemento);
-					complemento.setCodComplemento(complementoDto.getCodigoTipoComplemento());
-					complemento.setDescricaoComplemento(complementoDto.getNome());
-					
-					if (codComplementoTabelado != null) {
-						complemento.setCodComplementoTabelado(codComplementoTabelado);
-					}
-				}
-			}
 			
-			// Se for um movimento de JULGAMENTO de um MAGISTRADO, precisa identificar o CPF do prolator
-			if (movimentoDto.isMovimentoMagistradoJulgamento()) {
-				
-				// Analisa a lista de sentenças e acórdãos do processo, para tentar encontrar qual o 
-				// magistrado responsável pelo movimento de julgamento
-				DocumentoDto documentoRelacionado = processo.getSentencasAcordaos().stream()
+			//Se o parâmetro descartar_movimentos_ausentes_de_para_cnj tiver o valor SIM, apenas movimentos mapeados no DE-PARA do CNJ serão mantidos
+			boolean descartarMovimentosAusentesDeParaCNJ = Auxiliar.getParametroBooleanConfiguracao(Parametro.descartar_movimentos_ausentes_de_para_cnj, false);
+			if (!descartarMovimentosAusentesDeParaCNJ 
+					|| (descartarMovimentosAusentesDeParaCNJ && movimentoNacional != null)) {
+				movimentos.add(movimento);
+			} 
+
+			if (movimentos.contains(movimento)) {
+				if (movimentoNacional != null) {
+					for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
 						
-					// Procura uma sentença ou acórdão ANTERIOR ao movimento para saber qual o magistrado prolator.
-					.filter(d -> d.getDataJuntada().isBefore(dataMovimento))
-					
-					// Volta no máximo uma semana, para evitar pegar um documento muito antigo
-					.filter(d -> d.getDataJuntada().isAfter(dataMovimento.minusDays(7)))
-					.findFirst().orElse(null);
-				
-				// Se encontrou, preenche CPF do magistrado prolator.
-				if (documentoRelacionado != null) {
-					movimento.getMagistradoProlator().add(documentoRelacionado.getCpfUsuarioAssinou());
-				}
-			}
-
-			// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
-			// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
-			//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
-			//Em alguns Regionais pode ser diferente.
-			if (baseEmAnalise.isBasePJe()) {
-				for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
-					LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
-					LocalDateTime dataRetorno = historico.getDataRetorno();
-					if (dataDeslocamento.isAfter(dataMovimento)) {
-						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), baseEmAnalise);
-						movimento.setOrgaoJulgador(orgaoJulgador);
-						break;
-
-					} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
-						TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), 0, historico.getIdMunicipioDestino(), baseEmAnalise);
-						movimento.setOrgaoJulgador(orgaoJulgador);
-						break;
+						/*
+						Se o complemento for do tipo TABELADO, inserir somente o seu código tabelado (não precisa do valor). Ex:
+						
+						<movimento dataHora="20150206110014" identificadorMovimento="4">
+						  <movimentoNacional codigoNacional="123">
+						    <complemento>18:motivo_da_remessa:38</complemento>
+						  </movimentoNacional>
+						  <complementoNacional codComplemento="18" descricaoComplemento="motivo_da_remessa" codComplementoTabelado="38"/>
+						</movimento>
+						
+						Fonte: https://www.cnj.jus.br/wp-content/uploads/2020/07/documento_XML_exemplo_DataJud_06042020.pdf
+						 */
+						Integer codComplementoTabelado = (complementoDto.isComplementoTipoTabelado() && complementoDto.getCodigoComplemento() != null) ? Integer.parseInt(complementoDto.getCodigoComplemento()) : null;
+						
+						StringBuilder sb = new StringBuilder();
+						sb.append(complementoDto.getCodigoTipoComplemento());
+						sb.append(":");
+						sb.append(complementoDto.getNome());
+						String codigoComplemento = complementoDto.getCodigoComplemento();
+						if (!StringUtils.isBlank(codigoComplemento)) {
+							sb.append(":");
+							sb.append(codigoComplemento);
+						}
+						if (codComplementoTabelado == null) {
+							sb.append(":");
+							sb.append(complementoDto.getValor());
+						}
+						movimentoNacional.getComplemento().add(sb.toString());
+						
+						TipoComplementoNacional complemento = new TipoComplementoNacional();
+						movimento.getComplementoNacional().add(complemento);
+						complemento.setCodComplemento(complementoDto.getCodigoTipoComplemento());
+						complemento.setDescricaoComplemento(complementoDto.getNome());
+						
+						if (codComplementoTabelado != null) {
+							complemento.setCodComplementoTabelado(codComplementoTabelado);
+						}
 					}
 				}
+				
+				// Se for um movimento de JULGAMENTO de um MAGISTRADO, precisa identificar o CPF do prolator
+				if (movimentoDto.isMovimentoMagistradoJulgamento()) {
+					
+					// Analisa a lista de sentenças e acórdãos do processo, para tentar encontrar qual o 
+					// magistrado responsável pelo movimento de julgamento
+					DocumentoDto documentoRelacionado = processo.getSentencasAcordaos().stream()
+							
+						// Procura uma sentença ou acórdão ANTERIOR ao movimento para saber qual o magistrado prolator.
+						.filter(d -> d.getDataJuntada().isBefore(dataMovimento))
+						
+						// Volta no máximo uma semana, para evitar pegar um documento muito antigo
+						.filter(d -> d.getDataJuntada().isAfter(dataMovimento.minusDays(7)))
+						.findFirst().orElse(null);
+					
+					// Se encontrou, preenche CPF do magistrado prolator.
+					if (documentoRelacionado != null) {
+						movimento.getMagistradoProlator().add(documentoRelacionado.getCpfUsuarioAssinou());
+					}
+				}
+	
+				// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
+				// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
+				//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
+				//Em alguns Regionais pode ser diferente.
+				if (baseEmAnalise.isBasePJe()) {
+					for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
+						LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
+						LocalDateTime dataRetorno = historico.getDataRetorno();
+						if (dataDeslocamento.isAfter(dataMovimento)) {
+							TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), baseEmAnalise);
+							movimento.setOrgaoJulgador(orgaoJulgador);
+							break;
+	
+						} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
+							TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), 0, historico.getIdMunicipioDestino(), baseEmAnalise);
+							movimento.setOrgaoJulgador(orgaoJulgador);
+							break;
+						}
+					}
+				}
+				if (movimento.getOrgaoJulgador() == null) {
+					movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
+				}
 			}
-			if (movimento.getOrgaoJulgador() == null) {
-				movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
-			}			
 		}
 
 		return movimentos;
