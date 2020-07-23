@@ -315,6 +315,11 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
 # Referências
 
 Essa ferramenta foi desenvolvida a partir de diversas fontes, ex:
+* Página do CNJ com últimas orientações sobre o envio ao DataJud: https://www.cnj.jus.br/pesquisas-judiciarias/premio-cnj-de-qualidade/orientacoes-para-envio-via-servico-rest/
+* Painel de qualificação dos dados enviados (mesmo usuário do envio de XMLs, senha informada pela área de estratégia): https://painel-qualificacao.cnj.jus.br/
+* Painel de comparação (mesmo usuário do envio de XMLs, senha informada pela área de estratégia): https://painel-comparacao.prd.cnj.cloud/painel-comparativo 
+
+Outras referências:
 * Script recebidos do TRT14 (Felypp De Assis Oliveira), gravados na pasta "documentacao/referencias/trt14"
 * Página do CNJ:
   * http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
@@ -326,4 +331,3 @@ Essa ferramenta foi desenvolvida a partir de diversas fontes, ex:
 * E-mail "Justiça em Números - XML 2015" (Felipe Cesar Stanzani Fonseca)
 * http://cnj.jus.br/noticias/judiciario/789-acoes-e-programas/programas-de-a-a-z/eficiencia-modernizacao-e-transparencia/justica-em-numeros/selo-justica-em-numeros
 * E-mail "Fwd: Enc: Justiça em Números: Serviço Fora do Ar" (Carlos Fontoura)
-  * https://www.cnj.jus.br/pesquisas-judiciarias/premio-cnj-de-qualidade/orientacoes-para-envio-via-servico-rest/ 
