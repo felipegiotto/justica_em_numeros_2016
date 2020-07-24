@@ -379,6 +379,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				
 					Auxiliar.prepararThreadLog();
 					// Calcula e mostra tempo restante
+					// TODO: Sugerir calcular o ETA a partir do tempo de lote, já que fica difícil calcular individualmente, de forma precisa, em multi-thread. 
 					int xmlsRestantes = operacoes.size() - i;
 					long tempoRestante = 0;
 					long mediaPorProcesso = 0;
