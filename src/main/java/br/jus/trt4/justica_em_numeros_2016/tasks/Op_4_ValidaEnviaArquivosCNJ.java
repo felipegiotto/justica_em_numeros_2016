@@ -49,7 +49,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	private CloseableHttpClient httpClient;
 	private final List<Long> temposEnvioCNJ = new ArrayList<>();
 	private long ultimaExibicaoProgresso;
-	private final int numeroThreads;
+	private int numeroThreads;
 	private final AtomicLong qtdEnviadaComSucesso = new AtomicLong(0);
 	private static ProgressoInterfaceGrafica progresso;
 	
@@ -212,6 +212,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 
 	private void enviarXMLsAoCNJ(List<ArquivoComInstancia> arquivosParaEnviar) throws JAXBException, InterruptedException {
 
+		//Para evitar a exceção "Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingFileAppender 
+		//for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
+		numeroThreads = numeroThreads > arquivosParaEnviar.size() ? arquivosParaEnviar.size() : numeroThreads;
+		
 		// Objeto que fará o envio dos arquivos em várias threads
 		LOGGER.info("Iniciando o envio de " + arquivosParaEnviar.size() + " arquivos utilizando " + numeroThreads + " thread(s)");
 		ProdutorConsumidorMultiThread<ArquivoComInstancia> enviarMultiThread = new ProdutorConsumidorMultiThread<ArquivoComInstancia>(numeroThreads, numeroThreads, Thread.NORM_PRIORITY) {
