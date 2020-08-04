@@ -490,6 +490,15 @@ public class Auxiliar {
 	public static File getPastaXMLsIndividuais(int grau) {
 		return new File(prepararPastaDeSaida(), "G" + grau + "/xmls_individuais");
 	}
+        
+        /**
+         * Retorna a pasta onde serão ligos os arquivos XML do legado
+         * @param grau
+         * @return 
+         */
+        public static File getPastaXMLsLegado(int grau) {
+            return new File(Auxiliar.getPastaXMLsIndividuais(grau), "Legado");
+        }
 
 
 	/**

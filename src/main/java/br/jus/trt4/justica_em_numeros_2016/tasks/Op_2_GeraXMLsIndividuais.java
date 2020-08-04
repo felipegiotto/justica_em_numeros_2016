@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -407,6 +408,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						// Executa a consulta desse processo no banco de dados do PJe
 						TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(operacao.numeroProcesso);
 			
+						if (Auxiliar.getParametroBooleanConfiguracao(Parametro.mesclar_movimentos_xml_legado_migrado, false)) {
+						    mesclarMovimentosLegadoMigrado(operacao, processoJudicial);   
+						}
+                                                
 						// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
 						// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
 						// processo serão unificados, junto com os XMLs dos outros sistemas legados.
@@ -452,6 +457,44 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		LOGGER.info("Arquivos XML da base " + this.baseEmAnalise.getDescricao() + " - " + grau + "o Grau gerados!");
 		this.statusString = null;
 	}
+
+	/**
+	 * Se o parâmetro mesclar_movimentos_xml_legado_migrado estiver com o valor SIM, ativa a mesclagem de movimentos do XML do sistema legado.
+	 * É esperado que os XMLs com os dados do sistema legado tenham sido gerados conforme a definição XSD vigente e estejam no caminho conhecido.
+	 * Durante a geração dos XMLs dos dados do PJe, os movimentos do legado serão lidos e inseridos no início da lista de movimentos para manter
+	 * a ordem cronológica, já que os dados do legado são anteriores aos do PJe.
+	 * A seguir, o arquivo XML do legado é renomeado recebendo o sufixo .migrado.
+	 * 
+	 * Os demais arquivos XML no caminho do legado, que não forem tiverem correspondência com processos do PJe, permanecerão inalterados e poderão
+	 * ser enviados como estão para validação e encaminhados para o CNJ.
+	 * 
+	 * @param operacao
+	 * @param processoJudicial
+	 * @throws JAXBException
+	 */
+    private void mesclarMovimentosLegadoMigrado(OperacaoGeracaoXML operacao, TipoProcessoJudicial processoJudicial)
+            throws JAXBException {
+        File pastaXMLsLegado = Auxiliar.getPastaXMLsLegado(grau);
+        File arquivoXMLLegado = new File(pastaXMLsLegado, operacao.arquivoXML.getName());
+        if (arquivoXMLLegado.exists()) {
+            LOGGER.debug("[" + operacao.numeroProcesso + "] Encontrado dados do sistema legado. O processo foi migrado para o PJe");
+            JAXBContext jaxbContext = JAXBContext.newInstance(Processos.class);  
+            
+            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();  
+            Processos processosLegado = (Processos) jaxbUnmarshaller.unmarshal(arquivoXMLLegado);
+            List<TipoMovimentoProcessual> movimentosLegado = processosLegado.getProcesso().get(0).getMovimento();
+            if (!movimentosLegado.isEmpty()) {
+                LOGGER.debug("[" + operacao.numeroProcesso + "] Encontrado " + movimentosLegado.size() + " movimento(s) no XML do sistema legado para o processo");
+                processoJudicial.getMovimento().addAll(0, movimentosLegado);
+                boolean renameTo = arquivoXMLLegado.renameTo(new File(arquivoXMLLegado.getAbsoluteFile() + ".migrado"));
+                if (renameTo) {
+                    LOGGER.debug("[" + operacao.numeroProcesso + "] O arquivo XML do sistema legado foi marcado como migrado");                                    
+                } else {
+                    LOGGER.debug("[" + operacao.numeroProcesso + "] O arquivo XML do sistema legado não foi marcado como migrado");
+                }
+            }
+        }
+    }
 
 	/**
 	 * Valida um arquivo no "Programa validador de arquivos XML", conforme parâmetro "url_validador_cnj" das configurações
