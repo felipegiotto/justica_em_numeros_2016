@@ -497,7 +497,7 @@ public class Auxiliar {
          * @return 
          */
         public static File getPastaXMLsLegado(int grau) {
-            return new File(Auxiliar.getPastaXMLsIndividuais(grau), "legado");
+            return new File(Auxiliar.getPastaXMLsIndividuais(grau), "Legado");
         }
 
 
