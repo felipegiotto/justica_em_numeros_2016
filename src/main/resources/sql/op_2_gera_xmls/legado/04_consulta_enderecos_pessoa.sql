@@ -1,14 +1,16 @@
 SELECT
-	'' nm_logradouro,
-	'' nr_endereco,
-	'' ds_complemento,
-	'' as nm_bairro,
-	'' ds_municipio,
-	'' cd_estado,
-	'' nr_cep,
-	'' id_municipio_ibge,
-	'' id_processo_parte
+	p.nm_logradouro,
+	null as nr_endereco,
+	p.ds_complemento,
+	p.nm_bairro,
+	p.ds_municipio,
+	p.cd_estado,
+	p.nr_cep,
+	null as id_municipio_ibge,
+	pp.id_processo_parte
 FROM 
-	dual
+	legado_1grau.pessoa p, legado_1grau.processo_parte pp
 WHERE
-	0 < ANY(:id_processo_parte)
+	1=1
+	and p.cd_pessoa = pp.cd_pessoa
+	pp.id_processo_parte < ANY(:id_processo_parte)

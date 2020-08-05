@@ -1,10 +1,9 @@
 SELECT
-	SUBSTR(nrcnj,0,7) || '-' || SUBSTR(nrcnj,8,2) || '.' || SUBSTR(nrcnj,10,4)
-|| '.' || SUBSTR(nrcnj,14,1) || '.' || SUBSTR(nrcnj,15,2) || '.' || SUBSTR(nrcnj,17,4) as nr_processo,
-	'N' as in_assunto_principal,
-    a.codigonacional as cd_assunto_trf
+	p.nr_processo as nr_processo,
+	pa.in_assunto_principal as in_assunto_principal,
+    pa.cd_assunto_nacional as cd_assunto_trf
 FROM 
-	assunto_tmp a
+	legado_1grau.processo_assunto pa, legado_1grau.processo p
 WHERE
-	SUBSTR(nrcnj,0,7) || '-' || SUBSTR(nrcnj,8,2) || '.' || SUBSTR(nrcnj,10,4)
-|| '.' || SUBSTR(nrcnj,14,1) || '.' || SUBSTR(nrcnj,15,2) || '.' || SUBSTR(nrcnj,17,4) = ANY(:numeros_processos)
+	pa.cd_processo = p.cd_processo 
+	p.nr_processo = ANY(:numeros_processos)
