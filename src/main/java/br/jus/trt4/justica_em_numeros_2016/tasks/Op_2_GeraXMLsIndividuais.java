@@ -104,6 +104,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLsIndividuais.class);
 	private static ProgressoInterfaceGrafica progresso;
 	private int grau;
+	private String paramMovimentosSemServentiaCnj;
 	private BaseEmAnaliseEnum baseEmAnalise;
 	private boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe;
 	private Connection conexaoBasePrincipal;
@@ -140,7 +141,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	// Objetos que armazenam os dados que foram migrados do Sistema Judicial Legado para o Pje, para poder trazer dados de processos em lote,
 	// resultando em menos consultas ao banco de dados.
 	private final Map<String, ProcessoDto> cacheProcessosLegadosMigradosDtos = new HashMap<>();
-
+	
+	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_PROCESSO = "DESCARTAR_PROCESSO";
+	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_MOVIMENTO = "DESCARTAR_MOVIMENTO";
+	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_SEM_SERVENTIA = "SEM_SERVENTIA";
+	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_SERVENTIA_OJ_PRINCIPAL = "SERVENTIA_OJ_PRINCIPAL";
+	
 	/**
 	 * @deprecated TODO: migrar, futuramente, para nova estrutura de controle "ProcessoFluxo" e centralizar o controle a partir da classe "Op_Y_OperacaoFluxoContinuo"
 	 *
@@ -293,6 +299,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	public Op_2_GeraXMLsIndividuais(int grau, BaseEmAnaliseEnum baseEmAnalise) {
 		this.grau = grau;
 		this.baseEmAnalise = baseEmAnalise;
+		this.paramMovimentosSemServentiaCnj = Auxiliar.getParametroConfiguracao(Parametro.movimentos_sem_serventia_cnj, true);
 		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = baseEmAnalise.isBasePJe() 
 																   ? Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe()
 																   : false;
@@ -852,7 +859,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 
 		// Consulta todos os polos do processo
-		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(processo.getIdProcesso(), numeroCompletoProcesso));
+		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(numeroCompletoProcesso));
 
 		// Consulta todos os assuntos desse processo
 		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(processo));
@@ -934,7 +941,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 	}
 
-	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DataJudException {
+	private List<TipoPoloProcessual> analisarPolosProcesso(String numeroProcesso) throws SQLException, DataJudException {
 
 		// Itera sobre os polos processuais
 		Collection<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).getPolosPorTipoParticipacao().values();
@@ -1219,7 +1226,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 
 	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ProcessoDto processo, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DataJudException {
-		return analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), processo.getOrgaoJulgador().getNomeNormalizado(), processo.getOrgaoJulgador().getCodigoServentiaJudiciariaLegado(), processo.getOrgaoJulgador().getIdMunicipioIBGE(), baseEmAnalise);
+		return analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), processo.getOrgaoJulgador().getNomeNormalizado(), processo.getOrgaoJulgador().getCodigoServentiaJudiciariaLegado(), processo.getOrgaoJulgador().getIdMunicipioIBGE(), baseEmAnalise, false);
 	}
 	
 	/**
@@ -1233,7 +1240,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * @throws SQLException
 	 * @throws DataJudException 
 	 */
-	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ClasseJudicialDto classe, String nomeOrgaoJulgadorProcesso, int codigoOrgaoJulgadorLegado, int idMunicipioIBGE, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DataJudException {
+	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ClasseJudicialDto classe, String nomeOrgaoJulgadorProcesso, int codigoOrgaoJulgadorLegado, int idMunicipioIBGE, BaseEmAnaliseEnum baseEmAnalise, boolean considerarParametroMovimentosSemServentiaCnj) throws SQLException, DataJudException {
 		/*
 		 * Órgãos Julgadores
 				Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
@@ -1249,7 +1256,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
 		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, codigoOrgaoJulgadorLegado, baseEmAnalise);
 		if (serventiaCNJ == null) {
-			throw new DataJudException("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias());
+			if (!considerarParametroMovimentosSemServentiaCnj || this.paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_PROCESSO)) {
+				throw new DataJudException("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias());				
+			} else {
+				return null;
+			}
 		}
 
 		TipoOrgaoJulgador orgaoJulgador = new TipoOrgaoJulgador();
@@ -1278,10 +1289,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 		List<TipoMovimentoProcessual> movimentos = new ArrayList<>();
 		if (this.baseEmAnalise.isBasePJe()) {
-			movimentos.addAll(this.getMovimentosProcesso(processo, orgaoJulgadorProcessoCabecalho, this.baseEmAnalise));
 			if (processoLegadoMigrado != null) {
 				movimentos.addAll(this.getMovimentosProcesso(processoLegadoMigrado, analisarOrgaoJulgadorProcesso(processoLegadoMigrado, BaseEmAnaliseEnum.LEGADO), BaseEmAnaliseEnum.LEGADO));				
 			}
+			movimentos.addAll(this.getMovimentosProcesso(processo, orgaoJulgadorProcessoCabecalho, this.baseEmAnalise));
 		} else {
 			movimentos.addAll(this.getMovimentosProcesso(processo, orgaoJulgadorProcessoCabecalho, this.baseEmAnalise));
 		}
@@ -1393,31 +1404,42 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
 				//Em alguns Regionais pode ser diferente.
 				if (baseEmAnalise.isBasePJe()) {
+					boolean orgaoJulgadorEncontradoEmServentiaNaoMapeada = false;
 					for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
 						LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
 						LocalDateTime dataRetorno = historico.getDataRetorno();
+						TipoOrgaoJulgador orgaoJulgador = null;
 						
-						// TODO: Criar um parâmetro para definir o que fazer com movimentos gerados em órgãos julgadores que não possuem serventia, ex: "movimentos_sem_serventia_cnj",
-						//       para evitar a ocorrência do erro "Falta mapear serventia no arquivo..." em "analisarOrgaoJulgadorProcesso"
-						/*
-						 * (1) DESCARTAR_PROCESSO (comportamento atual do sistema): não gera o XML desse processo
-						 * (2) DESCARTAR_MOVIMENTO: gera o XML do processo, mas sem o movimento cujo OJ não possui serventia
-						 * (3) SEM_SERVENTIA: envia o movimento de qualquer forma, mas sem informar serventia
-						 * (4) SERVENTIA_OJ_PRINCIPAL: envia o movimento com o código da serventia do órgão julgador atual do processo.
-						 */
 						if (dataDeslocamento.isAfter(dataMovimento)) {
-							TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), baseEmAnalise);
-							movimento.setOrgaoJulgador(orgaoJulgador);
-							break;
-	
+							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), baseEmAnalise, true);
+							orgaoJulgadorEncontradoEmServentiaNaoMapeada = true;
 						} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
-							TipoOrgaoJulgador orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), 0, historico.getIdMunicipioDestino(), baseEmAnalise);
-							movimento.setOrgaoJulgador(orgaoJulgador);
+							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), 0, historico.getIdMunicipioDestino(), baseEmAnalise, true);
+							orgaoJulgadorEncontradoEmServentiaNaoMapeada = true;
+						}
+						
+						if (orgaoJulgadorEncontradoEmServentiaNaoMapeada) {
+							if (orgaoJulgador != null) {
+								movimento.setOrgaoJulgador(orgaoJulgador);
+							} else {
+								if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_MOVIMENTO)) {
+									movimentos.remove(movimento);
+								} else if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_SEM_SERVENTIA)) {
+									movimento.setOrgaoJulgador(null);
+								} else if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_SERVENTIA_OJ_PRINCIPAL)) {
+									movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
+								}
+							}
 							break;
 						}
 					}
-				}
-				if (movimento.getOrgaoJulgador() == null) {
+					
+					//se o órgão julgador não foi encontrado no histórico de deslocamento, usar o código do órgão julgador atual
+					if (!orgaoJulgadorEncontradoEmServentiaNaoMapeada && movimento.getOrgaoJulgador() == null) {
+						movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
+					}
+					
+				} else {
 					movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
 				}
 			}

@@ -261,16 +261,11 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 	}
 	
 	public static File getArquivoAssuntosDePara() throws IOException {
-		String param = Auxiliar.getParametroConfiguracao(Parametro.assuntos_de_para, false);
-		if (param != null) {
-			File file = new File("src/main/resources/assuntos_de-para/" + param);
-			if (file.isFile() && file.canRead()) {
-				return file;
-			} else {
-				throw new IOException("Parâmetro 'assuntos_de_para' solicitou leitura do arquivo '" + file + "', mas ele não pode ser lido. ");
-			}
+		File file = new File("src/main/resources/assuntos_de-para/assuntos_de-para.properties");
+		if (file.isFile() && file.canRead()) {
+			return file;
 		} else {
-			return null;
+			throw new IOException("Parâmetro 'assuntos_de_para' solicitou leitura do arquivo '" + file + "', mas ele não pode ser lido. ");
 		}
 	}
 

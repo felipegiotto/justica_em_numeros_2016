@@ -1,7 +1,6 @@
 -- Trecho de SQL adaptado do script do TRT14: trt14_original__pje2grau_script.sql
 SELECT 
       p.nr_processo,
-      p.id_processo,
       pt.nr_sequencia,
       pt.nr_ano,
       pt.nr_origem_processo,
@@ -35,7 +34,6 @@ SELECT
  
   /* TRT4 */
   pt.vl_causa,
-  pt.id_proc_referencia,
   pref.nr_processo as nr_processo_ref,
   cjref.cd_classe_judicial as cd_classe_judicial_ref,
   cjref.ds_classe_judicial as ds_classe_judicial_ref

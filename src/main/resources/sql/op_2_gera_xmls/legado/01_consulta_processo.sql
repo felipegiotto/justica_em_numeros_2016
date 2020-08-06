@@ -1,25 +1,25 @@
 SELECT
-    processo as nr_processo,
-    '' id_processo,--provavelmente é para usar no pje
-    '' nr_sequencia,
-    '' nr_ano,
-    '' nr_origem_processo,
-    CASE WHEN nivelsigilo = 'S' THEN 1
-     ELSE 0 END as in_segredo_justica,
-    classeprocessual as cd_classe_judicial,
+    nr_processo as nr_processo,
+    cd_processo as id_processo,
+    CAST(substr(nr_processo, 1,7) AS INT) nr_sequencia,
+    CAST(substr(nr_processo, 12,4) AS INT) nr_ano,
+	CAST(substr(nr_processo, 22,4) AS INT) nr_origem_processo,
+    COALESCE (p.in_segredo_justica, '0') as in_segredo_justica,
+    cd_classe_judicial,
     '' ds_classe_judicial, -- essa informação não vai para o xml
-    codigomunicipioibge as id_municipio_ibge,
-    dataajuizamento as dt_autuacao, --YYYYMMDDHH24MMSS -- confirmar
-    codigoorgao as cd_orgao_julgador, -- código do órgão julgador já no formato do CNJ
-    NOMEORGAO AS ds_orgao_julgador, --nome do órgão já no formato do CNJ
+    p.in_recursal,
+    id_municipio_ibge,
+    dt_autuacao, 
+    cd_orgao_julgador, -- código do órgão julgador já no formato do CNJ
+    ds_orgao_julgador, --nome do órgão já no formato do CNJ
     '' ds_orgao_julgador_colegiado, -- atributo apenas para o 2 grau
-    1 nr_instancia,
+    grau nr_instancia,
     null vl_causa, -- esse campo não é devidamente preenchido no SIAJ
-    null id_proc_referencia, -- esse campo não vai para o xml, apenas para consulta interna no pje
-    chprocdep as nr_processo_ref,
-    '' cd_classe_judicial_ref,
-    '' ds_classe_judicial_ref   
+	CAST(nr_processo_ref AS BIGINT) as id_proc_referencia,
+    nr_processo_ref,
+    cd_classe_judicial_ref,
+    ds_classe_judicial_ref   
 FROM
-    dados_basicos_tmp
-where 
-processo = ANY(:numeros_processos)
+    legado_1grau.processo p
+where  
+	p.nr_processo = ANY(:numeros_processos)

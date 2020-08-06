@@ -123,8 +123,7 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
   
 * DE-PARA de assuntos: Como o PJe possui assuntos da JT que não possuem correspondentes na tabela
     nacional do CNJ, é possível fazer com que determinados assuntos sejam convertidos para outros
-    assuntos antes do envio ao CNJ. Desta forma, é possível, nas configurações, habilitar o
-    parâmetro "assuntos_de_para"
+    assuntos antes do envio ao CNJ. Isso  é possível, a partir do arquivo `src/main/resources/assuntos_de-para/assuntos_de-para.properties`.
 
 
 * Parte: não estão sendo tratados os casos de representação ou substituição processual em ações 

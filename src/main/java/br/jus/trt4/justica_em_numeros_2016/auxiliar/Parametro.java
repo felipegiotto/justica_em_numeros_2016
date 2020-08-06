@@ -16,7 +16,6 @@ public enum Parametro {
 	url_webservice_cnj,
 	assunto_padrao_1G,
 	assunto_padrao_2G,
-	assuntos_de_para,
 	arquivo_serventias_cnj,
 	pasta_saida_padrao,
 	tamanho_lote_geracao_processos,
@@ -39,6 +38,7 @@ public enum Parametro {
 	url_legado_2g,
 	sistema_judicial,
 	descartar_movimentos_ausentes_de_para_cnj,
-	mesclar_movimentos_xml_legado_migrado
+	mesclar_movimentos_xml_legado_migrado,
+	movimentos_sem_serventia_cnj
 	;
 }

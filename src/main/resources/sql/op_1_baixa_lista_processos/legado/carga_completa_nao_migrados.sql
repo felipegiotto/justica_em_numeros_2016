@@ -1,5 +1,5 @@
 SELECT
-   processo as nr_processo
+    nr_processo
 FROM
-    dados_basicos_tmp
-WHERE migrado = 'N'
+    legado_1grau.processo
+WHERE migrado = false

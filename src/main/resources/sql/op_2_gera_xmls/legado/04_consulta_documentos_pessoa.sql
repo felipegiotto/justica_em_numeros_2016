@@ -1,19 +1,11 @@
 SELECT
-    id_pessoa,
-    CASE
-        WHEN numerodocumentoprincipalf IS NOT NULL THEN numerodocumentoprincipalf
-        WHEN numerodocumentoprincipalj IS NOT NULL THEN numerodocumentoprincipalj
-        ELSE NULL
-    END as nr_documento,
-    '' ds_emissor,
-    CASE
-        WHEN numerodocumentoprincipalf IS NOT NULL THEN 'CPF'
-        WHEN numerodocumentoprincipalj IS NOT NULL THEN 'CPJ'
-        ELSE NULL
-    END as cd_tp_documento_identificacao,
-    nome as ds_nome_pessoa,
+    p.id_pessoa,
+    p.nr_documento,	
+    'Não informado' ds_emissor,    
+	p.cd_tp_documento_identificacao,
+    p.ds_nome,
     'S' in_principal
 FROM
-    partes_tmp
-where id_pessoa = ANY(:ids_pessoas)  AND 
-(numerodocumentoprincipalf is not null or numerodocumentoprincipalj is not null)
+    legado_1grau.pessoa p
+where 
+	p.id_pessoa = ANY(:ids_pessoas) 	

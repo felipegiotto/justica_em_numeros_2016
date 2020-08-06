@@ -18,7 +18,6 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 public class ProcessoDto {
 
 	private String numeroProcesso;
-	private int idProcesso;
 	private int numeroInstancia;
 	private boolean segredoJustica;
 	private LocalDateTime dataAutuacao;
@@ -40,7 +39,6 @@ public class ProcessoDto {
 	
 	public ProcessoDto(ResultSet rsProcesso, boolean somenteProcessoEClasse) throws SQLException {
 		this.numeroProcesso = rsProcesso.getString("nr_processo");
-		this.idProcesso = rsProcesso.getInt("id_processo");
 		
 		this.classeJudicial = new ClasseJudicialDto();
 		this.classeJudicial.setCodigo(rsProcesso.getInt("cd_classe_judicial"));
@@ -61,9 +59,8 @@ public class ProcessoDto {
 		this.orgaoJulgador.setIdMunicipioIBGE(rsProcesso.getInt("id_municipio_ibge"), rsProcesso.getString("ds_orgao_julgador"));
 		this.orgaoJulgador.setCodigoServentiaJudiciariaLegado(rsProcesso.getInt("cd_orgao_julgador"));
 		
-		if (rsProcesso.getString("id_proc_referencia") != null) {
+		if (rsProcesso.getString("nr_processo_ref") != null) {
 			this.processoReferencia = new ProcessoDto();
-			this.processoReferencia.idProcesso = Auxiliar.getCampoIntOrNull(rsProcesso, "id_proc_referencia");
 			this.processoReferencia.numeroProcesso = rsProcesso.getString("nr_processo_ref");
 			this.processoReferencia.classeJudicial = new ClasseJudicialDto();
 			this.processoReferencia.classeJudicial.setCodigo(rsProcesso.getInt("cd_classe_judicial_ref"));
@@ -77,10 +74,6 @@ public class ProcessoDto {
 	
 	public String getNumeroProcessoSemSinais() {
 		return numeroProcesso.replaceAll("[^0-9]", "");
-	}
-	
-	public int getIdProcesso() {
-		return idProcesso;
 	}
 	
 	public int getNumeroInstancia() {
