@@ -859,7 +859,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 
 		// Consulta todos os polos do processo
-		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(processo.getIdProcesso(), numeroCompletoProcesso));
+		cabecalhoProcesso.getPolo().addAll(analisarPolosProcesso(numeroCompletoProcesso));
 
 		// Consulta todos os assuntos desse processo
 		cabecalhoProcesso.getAssunto().addAll(analisarAssuntosProcesso(processo));
@@ -941,7 +941,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 	}
 
-	private List<TipoPoloProcessual> analisarPolosProcesso(int idProcesso, String numeroProcesso) throws SQLException, DataJudException {
+	private List<TipoPoloProcessual> analisarPolosProcesso(String numeroProcesso) throws SQLException, DataJudException {
 
 		// Itera sobre os polos processuais
 		Collection<PoloDto> polosDtos = cacheProcessosDtos.get(numeroProcesso).getPolosPorTipoParticipacao().values();
