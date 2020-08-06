@@ -7,6 +7,7 @@ SELECT
     COALESCE (p.in_segredo_justica, '0') as in_segredo_justica,
     cd_classe_judicial,
     '' ds_classe_judicial, -- essa informação não vai para o xml
+    p.in_recursal,
     id_municipio_ibge,
     dt_autuacao, 
     cd_orgao_julgador, -- código do órgão julgador já no formato do CNJ
