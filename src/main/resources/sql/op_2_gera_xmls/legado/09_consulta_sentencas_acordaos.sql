@@ -1,5 +1,5 @@
 SELECT 
-	p.dtautuacao as dt_juntada, 
+	p.dt_autuacao as dt_juntada, 
 	p.ds_login as ds_login, 
 	p.nr_processo as nr_processo 
 FROM 
