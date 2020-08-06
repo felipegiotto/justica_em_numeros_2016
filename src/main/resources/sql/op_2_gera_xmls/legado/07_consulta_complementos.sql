@@ -11,7 +11,7 @@ from legado_1grau.processo_movimento_complemento pmc,
 where
 	1=1
 	and pmc.cd_processo_movimento = pm.cd_processo_movimento
-	and pm.cd_movimento_processo = ANY(:id_movimento_processo)
+	and pm.cd_processo_movimento = ANY(:id_movimento_processo)
 	and pm.cd_processo = p.cd_processo
 	
 	
