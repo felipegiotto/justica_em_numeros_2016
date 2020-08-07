@@ -20,6 +20,6 @@ where
 	1=1
 	and p.cd_processo = pp.cd_processo
 	and pp.cd_pessoa = pe.cd_pessoa
-	p.nr_processo = ANY(:numeros_processos)
+	and p.nr_processo = ANY(:numeros_processos)
 	
 	

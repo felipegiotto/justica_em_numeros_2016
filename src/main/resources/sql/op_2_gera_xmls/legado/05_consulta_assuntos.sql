@@ -6,4 +6,4 @@ FROM
 	legado_1grau.processo_assunto pa, legado_1grau.processo p
 WHERE
 	pa.cd_processo = p.cd_processo 
-	p.nr_processo = ANY(:numeros_processos)
+	and p.nr_processo = ANY(:numeros_processos)

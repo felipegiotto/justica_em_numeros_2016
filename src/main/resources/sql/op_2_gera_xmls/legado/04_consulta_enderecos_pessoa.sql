@@ -13,4 +13,4 @@ FROM
 WHERE
 	1=1
 	and p.cd_pessoa = pp.cd_pessoa 
-	pp.id_processo_parte < ANY(:id_processo_parte)
+	and pp.id_processo_parte = ANY(:id_processo_parte)

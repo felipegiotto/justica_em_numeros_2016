@@ -19,4 +19,4 @@ SELECT
 FROM
     legado_1grau.processo p 
 where  nr_processo_ref is not null
-	p.nr_processo = ANY(:numeros_processos)
+	and p.nr_processo = ANY(:numeros_processos)
