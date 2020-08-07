@@ -18,5 +18,4 @@ SELECT
     null as ds_classe_judicial_ref   
 FROM
     legado_1grau.processo p 
-where  nr_processo_ref is not null
-	and p.nr_processo = ANY(:numeros_processos)
+where  p.nr_processo = ANY(:numeros_processos)
