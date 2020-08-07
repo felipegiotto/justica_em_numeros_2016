@@ -1,7 +1,7 @@
 SELECT 
 	null as dt_juntada, 
 	null as ds_login, 
-	null as nr_processo 
+	p.nr_processo as nr_processo 
 FROM 
 	legado_1grau.processo p
 WHERE 
