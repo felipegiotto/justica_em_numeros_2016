@@ -10,7 +10,7 @@ public class DocumentoDto {
 	private String cpfUsuarioAssinou;
 	
 	public DocumentoDto(ResultSet rs) throws SQLException {
-		this.dataJuntada = rs.getTimestamp("dt_juntada").toLocalDateTime();
+		this.dataJuntada = rs.getTimestamp("dt_juntada") != null ? rs.getTimestamp("dt_juntada").toLocalDateTime() : null;
 		this.cpfUsuarioAssinou = rs.getString("ds_login");
 	}
 
