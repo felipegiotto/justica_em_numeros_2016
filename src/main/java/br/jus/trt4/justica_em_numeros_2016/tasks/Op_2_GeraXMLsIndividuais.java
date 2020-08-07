@@ -375,10 +375,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				lotesOperacoes.size() : 
 				Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
 		
-		//Para evitar a exceção "Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingFileAppender 
-		//for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
-//		numeroThreads = numeroThreads > lotesOperacoes.size() ? lotesOperacoes.size() : numeroThreads; 
-		
 		statusString = "Gerando XMLs do " + grau + "o Grau";
 		LOGGER.info(statusString + "...");
 		AtomicInteger posicaoAtual = new AtomicInteger();

@@ -520,6 +520,8 @@ public class Op_5_ConfereProtocolosCNJ {
 			} else if(Auxiliar.deveProcessarSegundoGrau() && listaProcessosRecusadosG2.exists()) {
 				listaProcessosRecusadosG2.delete();
 			}
+			
+			//TODO Verificar se o último protocolo enviado já foi processado
 		} else {
 			LOGGER.info("Reiniciando o processo da página " + parametroPaginaAtual + "...");
 		}
