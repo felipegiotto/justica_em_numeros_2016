@@ -3,7 +3,7 @@ SELECT
     p.nr_documento,	
     'Não informado' ds_emissor,    
 	p.cd_tp_documento_identificacao,
-    p.ds_nome,
+    p.ds_nome AS ds_nome_pessoa,
     'S' in_principal
 FROM
     legado_1grau.pessoa p

@@ -1,7 +1,7 @@
 SELECT
 	p.nr_processo as nr_processo,
-	pa.in_assunto_principal as in_assunto_principal,
-    pa.cd_assunto_nacional as cd_assunto_trf
+	COALESCE( pa.in_assunto_principal, 'N') as in_assunto_principal,
+    CAST(pa.cd_assunto_nacional AS INT) as cd_assunto_trf
 FROM 
 	legado_1grau.processo_assunto pa, legado_1grau.processo p
 WHERE
