@@ -17,5 +17,5 @@ SELECT
     CAST(cd_classe_judicial_ref AS INT) AS cd_classe_judicial_ref,
     null as ds_classe_judicial_ref   
 FROM
-    legado_1grau.processo p 
-where  p.nr_processo = ANY(:numeros_processos)
+    stage_legado_1grau.processo p 
+where p.nr_processo = ANY(:numeros_processos)

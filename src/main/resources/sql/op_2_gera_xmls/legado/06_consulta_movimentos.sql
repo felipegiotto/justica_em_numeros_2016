@@ -12,7 +12,7 @@ where mm.cod_movimento = pm.cd_movimento_cnj) as ds_movimento,
 	0 as is_magistrado_julgamento,
     pm.dt_atualizacao
     from
-        legado_1grau.processo p, legado_1grau.processo_movimento pm
+        stage_legado_1grau.processo p, stage_legado_1grau.processo_movimento pm
     where
 		1=1
 		and p.cd_processo = pm.cd_processo

@@ -9,7 +9,7 @@ SELECT
 	CAST(NULL AS INT ) AS id_municipio_ibge,
 	pp.id_processo_parte
 FROM 
-	legado_1grau.pessoa p, legado_1grau.processo_parte pp
+	stage_legado_1grau.pessoa p, stage_legado_1grau.processo_parte pp
 WHERE
 	1=1
 	and p.cd_pessoa = pp.cd_pessoa 

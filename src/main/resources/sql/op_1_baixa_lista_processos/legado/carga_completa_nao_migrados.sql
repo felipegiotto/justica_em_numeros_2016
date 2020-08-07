@@ -1,5 +1,5 @@
 SELECT
     nr_processo
 FROM
-    legado_1grau.processo
+    stage_legado_1grau.processo
 WHERE migrado = false

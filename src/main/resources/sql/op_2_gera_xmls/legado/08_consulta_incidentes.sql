@@ -5,6 +5,6 @@ SELECT
 	p.in_recursal,
     null as ds_classe_processual -- essa informação não vai para o xml
 FROM 
-    legado_1grau.processo p
+    stage_legado_1grau.processo p
 WHERE 
      p.nr_processo = ANY(:numeros_processos)
