@@ -39,6 +39,7 @@ public enum Parametro {
 	sistema_judicial,
 	descartar_movimentos_ausentes_de_para_cnj,
 	mesclar_movimentos_xml_legado_migrado,
-	movimentos_sem_serventia_cnj
+	movimentos_sem_serventia_cnj,
+	tipo_validacao_protocolo_cnj
 	;
 }

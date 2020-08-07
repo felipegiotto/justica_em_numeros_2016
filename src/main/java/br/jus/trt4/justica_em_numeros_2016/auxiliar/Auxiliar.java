@@ -60,6 +60,8 @@ public class Auxiliar {
 	public static final String SISTEMA_JUDICIAL_APENAS_PJE = "APENAS_PJE";
 	public static final String SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO = "APENAS_PJE_COM_MIGRADOS_LEGADO";
 	public static final String SISTEMA_JUDICIAL_TODOS = "TODOS";
+	public static final String VALIDACAO_CNJ_TODOS = "TODOS";
+	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO = "APENAS_COM_ERRO";
 	
 	/**
 	 * Recupera a pasta em que se encontram os arquivos sql dos diretórios 'op_1_baixa_lista_processos '
@@ -482,6 +484,26 @@ public class Auxiliar {
 		return new File(prepararPastaDeSaida(), "G" + grau + "/Legado_lista_processos_nao_migrados.txt");
 	}
 	
+	/**
+	 * Retorna o arquivo onde deve ser gravada e lida a última página consultada do serviço 
+	 * que busca os protocolos com erro do CNJ
+	 * 
+	 * @return Arquivo com a última página consultada do serviço que busca os protocolos com erro do CNJ
+	 */
+	public static File getArquivoUltimaPaginaConsultaCNJ() {
+		return new File(prepararPastaDeSaida(), "/CNJ_ultima_pagina_consulta_protocolos_erro.txt");
+	}
+	
+	/**
+	 * Retorna o arquivo onde deve ser gravada e lida a lista de processos que tiveram o protocolo processado com erro no CNJ 
+	 * de uma determinada instância.
+	 * 
+	 * @return Arquivo com a última página consultada do serviço que busca os protocolos com erro do CNJ
+	 */
+	public static File getArquivoListaProcessosErroProtocolo(int grau) {
+		return new File(prepararPastaDeSaida(), "G" + grau + "/Lista_processos_erro_protocolo.txt");
+	}
+	
 	
 	/**
 	 * Retorna a pasta raiz onde serão gravados e lidos os arquivos XML de uma determinada
@@ -769,6 +791,19 @@ public class Auxiliar {
 				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
 			retorno = true;
 		}
+
+		return retorno;
+	}
+	
+	public static boolean deveValidarProtocolosComErro() {
+		
+		boolean retorno = false;
+		
+		String tipoValidacao = Auxiliar.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj, false);
+
+		if (tipoValidacao != null && tipoValidacao.equals(Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO)) {
+			retorno = true;
+		} 
 
 		return retorno;
 	}

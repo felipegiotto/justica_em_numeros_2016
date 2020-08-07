@@ -157,7 +157,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
-		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml");
+		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml", true);
 		
 		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosXML, "Total de arquivos XML encontrados");
 		int totalArquivos = arquivosXML.size();
@@ -211,7 +211,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	}
 
 	private void enviarXMLsAoCNJ(List<ArquivoComInstancia> arquivosParaEnviar) throws JAXBException, InterruptedException {
-
 		//Para evitar a exceção "Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingFileAppender 
 		//for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
 		numeroThreads = numeroThreads > arquivosParaEnviar.size() ? arquivosParaEnviar.size() : numeroThreads;
