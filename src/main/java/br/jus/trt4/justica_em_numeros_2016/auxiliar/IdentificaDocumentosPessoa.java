@@ -71,11 +71,21 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 		nsDocumentos.setArray("ids_pessoas", arrayIdPessoa);
 		try (ResultSet rsDocumentos = nsDocumentos.executeQuery()) {
 			while (rsDocumentos.next()) {
-				documentos.add(new DocumentoPessoaDto(rsDocumentos));
+				this.adicionarDocumentoEmLista(documentos, rsDocumentos, pessoa.getNome());
 			}
 		}
 		
 		preencherDocumentosPessoa(pessoa, documentos);
+	}
+	
+	public void adicionarDocumentoEmLista(List<DocumentoPessoaDto> documentos, ResultSet rsDocumentos, String nomePessoa) throws SQLException {
+		if (rsDocumentos.getString("cd_tp_documento_identificacao") != null
+				&& rsDocumentos.getString("nr_documento") != null
+				&& rsDocumentos.getString("ds_emissor") != null) {
+			documentos.add(new DocumentoPessoaDto(rsDocumentos));					
+		} else {
+			LOGGER.warn("Documento da pessoa " + nomePessoa + " não possui número e nem tipo. Esse documento não constará no XML.");
+		}
 	}
 
 	/**

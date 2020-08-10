@@ -1,7 +1,6 @@
 SELECT 
 	proc_referencia.nr_processo as nr_processo_referencia,
 	proc.nr_processo,
-	proc.id_processo,
 	classe.cd_classe_judicial,
 	classe.in_recursal,
 	classe.ds_classe_judicial
