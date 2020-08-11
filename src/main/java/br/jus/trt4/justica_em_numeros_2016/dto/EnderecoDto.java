@@ -16,7 +16,7 @@ public class EnderecoDto {
 	private String complemento;
 	private String bairro;
 	private String municipio;
-	private int idMunicipioIBGE;
+	private Integer idMunicipioIBGE;
 	
 	public EnderecoDto(ResultSet rsEnderecos) throws SQLException {
 		this.cep = rsEnderecos.getString("nr_cep");
@@ -52,7 +52,7 @@ public class EnderecoDto {
 		return municipio;
 	}
 	
-	public int getIdMunicipioIBGE() {
+	public Integer getIdMunicipioIBGE() {
 		return idMunicipioIBGE;
 	}
 }
