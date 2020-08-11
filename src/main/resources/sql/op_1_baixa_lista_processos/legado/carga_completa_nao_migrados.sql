@@ -3,3 +3,4 @@ SELECT
 FROM
     stage_legado_1grau.processo
 WHERE migrado = false
+and proc_localizado_siaj = 'S'
