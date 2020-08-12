@@ -18,9 +18,10 @@ public class ComplementoDto {
 	
 	public ComplementoDto(ResultSet rsComplementos) throws SQLException {
 		this.codigoTipoComplemento = rsComplementos.getInt("cd_tipo_complemento");
-		this.nome = rsComplementos.getString("ds_nome");
-		this.codigoComplemento = rsComplementos.getString("cd_complemento");
-		this.valor = rsComplementos.getString("ds_valor_complemento");
+		this.nome = rsComplementos.getString("ds_nome") != null ? rsComplementos.getString("ds_nome").trim() : null;
+		this.codigoComplemento = rsComplementos.getString("cd_complemento") != null ? rsComplementos.getString("cd_complemento").trim() : null;
+		this.valor = rsComplementos.getString("ds_valor_complemento") != null ? rsComplementos.getString("ds_valor_complemento").trim() : null;
+
 	}
 	
 	public ComplementoDto() {
