@@ -477,7 +477,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
             throws JAXBException {
         File pastaXMLsLegado = Auxiliar.getPastaXMLsLegado(grau);
         List<File> listaXMLLegado = listarXMLLegadoParaProcesso(pastaXMLsLegado, operacao.numeroProcesso, ".xml");
-        if (listaXMLLegado.size() > 0) {
+        if (listaXMLLegado.isEmpty()) {
             LOGGER.debug("[" + operacao.numeroProcesso + "] Encontrado dados do sistema legado. O processo foi migrado para o PJe. Total de arquivos: " + listaXMLLegado.size());
             List<TipoMovimentoProcessual> movimentosLegado = new ArrayList<>();
             JAXBContext jaxbContext = JAXBContext.newInstance(Processos.class);
@@ -507,6 +507,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
     }
 
 	private List<File> listarXMLLegadoParaProcesso(File pastaXMLsLegado, String numeroProcesso, String extensao) {
+	    if (!pastaXMLsLegado.exists()) {
+	        return new ArrayList<>();
+	    }
 	    FileFilter filtro = new WildcardFileFilter(numeroProcesso + "*" + extensao);
 	    return Arrays.asList(pastaXMLsLegado.listFiles(filtro));
     }
