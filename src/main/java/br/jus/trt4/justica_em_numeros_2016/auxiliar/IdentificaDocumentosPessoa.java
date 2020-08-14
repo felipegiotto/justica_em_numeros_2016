@@ -84,7 +84,7 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 				&& rsDocumentos.getString("ds_emissor") != null) {
 			documentos.add(new DocumentoPessoaDto(rsDocumentos));					
 		} else {
-			LOGGER.warn("Documento da pessoa " + nomePessoa + " não possui número e nem tipo. Esse documento não constará no XML.");
+			LOGGER.warn("Documento da pessoa " + nomePessoa + " não possui uma das seguintes informações: número, tipo ou emissor. Esse documento não constará no XML.");
 		}
 	}
 
