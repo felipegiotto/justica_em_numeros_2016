@@ -3,10 +3,13 @@ SELECT
     CAST(substr(nr_processo, 1,7) AS INT) nr_sequencia,
     CAST(substr(nr_processo, 12,4) AS INT) nr_ano,
 	CAST(substr(nr_processo, 22,4) AS INT) nr_origem_processo,
-    COALESCE (p.in_segredo_justica, '0') as in_segredo_justica,
+	CASE
+		WHEN p.in_segredo_justica = '1' THEN 'S'
+		ELSE 'N' 
+	END as in_segredo_justica,
     cd_classe_judicial,
     null ds_classe_judicial, -- essa informação não vai para o xml
-	p.in_recursal,
+	COALESCE (p.in_recursal, 'N') as in_recursal,
     CAST(id_municipio_ibge AS INT) AS id_municipio_ibge, --  cast
     dt_autuacao, 
     cd_orgao_julgador, -- código do órgão julgador já no formato do CNJ
