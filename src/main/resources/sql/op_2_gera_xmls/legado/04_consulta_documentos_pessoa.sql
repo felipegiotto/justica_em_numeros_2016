@@ -1,7 +1,7 @@
 select
     p.id_pessoa 								as id_pessoa,
     p.nr_documento 								as nr_documento,	
-    cast('não informado' as character varying) 	as ds_emissor,    
+    cast('' as character varying) 	as ds_emissor,    
 	(
 		case 
 			when p.nr_documento is not null then p.cd_tp_documento_identificacao
