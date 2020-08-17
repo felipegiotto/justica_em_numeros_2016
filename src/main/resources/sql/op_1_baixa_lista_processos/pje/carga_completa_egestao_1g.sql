@@ -10,7 +10,7 @@ from (
 where 1=1 --REGRAS DE NEGOCIO:
     and (
         mx.fase <> 'ARQ' --não está arquivado no dia referência
-        or id_processo in (-- ou foi arquivado entre 2015 e 30/06/2020.
+        or id_processo in (-- ou foi arquivado entre 2015 e 31/07/2020.
             select hf.id_processo
             from tb_processos_hist_fases hf
             where hf.cd_fase in ('ARQ')

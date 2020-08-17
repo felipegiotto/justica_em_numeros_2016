@@ -3,6 +3,8 @@ package br.jus.trt4.justica_em_numeros_2016.dto;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+
 /**
  * DTO que armazena informações de um endereço de parte processual, a partir da consulta do arquivo "04_consulta_enderecos_pessoa.sql".
  *
@@ -16,7 +18,7 @@ public class EnderecoDto {
 	private String complemento;
 	private String bairro;
 	private String municipio;
-	private int idMunicipioIBGE;
+	private Integer idMunicipioIBGE;
 	
 	public EnderecoDto(ResultSet rsEnderecos) throws SQLException {
 		this.cep = rsEnderecos.getString("nr_cep");
@@ -25,7 +27,7 @@ public class EnderecoDto {
 		this.complemento = rsEnderecos.getString("ds_complemento");
 		this.bairro = rsEnderecos.getString("nm_bairro");
 		this.municipio = rsEnderecos.getString("ds_municipio");
-		this.idMunicipioIBGE = rsEnderecos.getInt("id_municipio_ibge");
+		this.idMunicipioIBGE = Auxiliar.getCampoIntOrNull(rsEnderecos, "id_municipio_ibge");
 	}
 	
 	public String getCep() {
@@ -52,7 +54,7 @@ public class EnderecoDto {
 		return municipio;
 	}
 	
-	public int getIdMunicipioIBGE() {
+	public Integer getIdMunicipioIBGE() {
 		return idMunicipioIBGE;
 	}
 }

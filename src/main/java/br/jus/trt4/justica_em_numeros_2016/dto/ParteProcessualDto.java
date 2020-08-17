@@ -33,7 +33,7 @@ public class ParteProcessualDto {
 	private List<DocumentoPessoaDto> documentos = new ArrayList<>();
 	
 	public ParteProcessualDto(ResultSet rsPartes) throws SQLException {
-		this.nomeParte = rsPartes.getString("ds_nome").trim();
+		this.nomeParte = rsPartes.getString("ds_nome") != null ? rsPartes.getString("ds_nome").trim() : null;
 		this.nomeConsultaParte = rsPartes.getString("ds_nome_consulta");
 		this.idProcessoParte = rsPartes.getInt("id_processo_parte");
 		this.idPessoa = rsPartes.getInt("id_pessoa");
