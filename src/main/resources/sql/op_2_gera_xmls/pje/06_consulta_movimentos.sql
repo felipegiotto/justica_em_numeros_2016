@@ -11,7 +11,8 @@ SELECT
     
     /*** movimentoNacional ***/
     /* codigoNacional */
-    pe.id_evento AS cd_movimento_cnj,
+    --O campo id_evento da tabela tb_processo_evento não contém o código correto para alguns movimentos da JT
+    CAST(COALESCE(ep.cd_evento, '0') AS INTEGER) AS cd_movimento_cnj,
     
     /* TRT4 */
     pe.ds_texto_final_interno,
