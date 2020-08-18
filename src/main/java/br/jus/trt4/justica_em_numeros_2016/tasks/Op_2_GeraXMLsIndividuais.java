@@ -1361,10 +1361,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							sb.append(":");
 							sb.append(codigoComplemento);
 						}
-						//if (codComplementoTabelado == null) {
+						if (codComplementoTabelado == null) {
 							sb.append(":");
 							sb.append(complementoDto.getValor());
-						//}
+						}
 						movimentoNacional.getComplemento().add(sb.toString());
 						
 						TipoComplementoNacional complemento = new TipoComplementoNacional();
