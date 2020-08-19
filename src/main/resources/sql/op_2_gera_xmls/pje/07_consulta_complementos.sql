@@ -2,9 +2,8 @@ WITH versao AS (SELECT MAX(installed_on) AS data_max_versao_223
 					FROM pje_adm.tb_schema_version tsv
 	                WHERE "version" LIKE '%2.2.3%')
 SELECT
-	cs.id_movimento_processo,	
-	tc.tp_tipo_complemento,
-	tc.cd_tipo_complemento, 
+	cs.id_movimento_processo,
+	tc.cd_tipo_complemento,
     tc.ds_nome,
 	CASE WHEN (tc.cd_tipo_complemento = '16') AND (pe.dt_atualizacao <  versao.data_max_versao_223) 
 		 		--tipo de audiência. Até a versão 2.2.2 o PJe preenchia erroneamente o código do complemento com o id_tipo_audiencia da tb_tipo_audiencia
