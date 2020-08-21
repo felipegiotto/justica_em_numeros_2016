@@ -1,6 +1,6 @@
 select
 	p.nr_processo 							as nr_processo,
-	coalesce( pa.in_assunto_principal, 'n') as in_assunto_principal,
+	coalesce( pa.in_assunto_principal, 'N') as in_assunto_principal,
     cast(pa.cd_assunto_nacional as int) 	as cd_assunto_trf
 from 
 	stage_legado_1grau.processo_assunto pa, stage_legado_1grau.processo p

@@ -4,12 +4,12 @@ select
     cast(substr(nr_processo, 12,4) as int) 					as nr_ano,
 	cast(substr(nr_processo, 22,4) as int) 					as nr_origem_processo,
 	case
-		when p.in_segredo_justica = '1' then 's'
-		else 'n' 
+		when p.in_segredo_justica = '1' then 'S'
+		else 'N' 
 	end 													as in_segredo_justica,
     cd_classe_judicial,
     cast(null as character varying(100)) 					as ds_classe_judicial, -- essa informação não vai para o xml
-	coalesce (p.in_recursal, 'n') 							as in_recursal,
+	coalesce (p.in_recursal, 'N') 							as in_recursal,
     cast(id_municipio_ibge as character varying(7))			as id_municipio_ibge,
     dt_autuacao 											as dt_autuacao, 
     cd_orgao_julgador 										as cd_orgao_julgador, -- código do órgão julgador já no formato do cnj

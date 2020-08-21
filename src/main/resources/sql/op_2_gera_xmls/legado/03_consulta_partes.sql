@@ -15,7 +15,7 @@ select
 		end 
 	)										as ds_nome_consulta,
     pe.in_tipo_pessoa   					as in_tipo_pessoa,
-    cast('d' as character(1))				as in_sexo, -- não possuímos tal informação
+    cast('D' as character(1))				as in_sexo, -- não possuímos tal informação
     (
 		select max(pp2.id_processo_parte) 
 		from stage_legado_1grau.processo_parte pp2 
