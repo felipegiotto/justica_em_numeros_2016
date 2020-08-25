@@ -1,11 +1,30 @@
 # Lista extraída do site do CNJ
-# Data: 10/07/2020
+# Data: 14/08/2020
 # Referências recebidas pelo e-mail "Fwd: Envio dos dados xml - informações do CNJ - Prêmio CNJ de Qualidade - Portaria CNJ nº 88/2019 artigo 8º inciso II":
 #      b.5) campos tipoAssuntoProcessual.codigoNacional e/ou tipoAssuntoLocal. codigoPaiNacional a partir do terceiro nível ou no último nível das TPUs;
 # Instruções:
 # 1. Baixei a estrutura e a base no formato PostgreSQL da página https://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
 # 2. Importei em uma base local (foram necessárias várias modificações nos scripts originais) e importei os dados da tabela "sgt_consulta.itens" (somente ela é necessária para a importação dessa tabela)
-# 3. Executei o SQL abaixo, que filtra os níveis "a partir do terceiro nível". Fiz um UNION para cada nível (a partir do terceiro, até que o nível 8 não retornou nenhum registro):
+# 3. Executei o SQL abaixo, que filtra os níveis "a partir do terceiro nível" e os niveis 1 e 2 que são folha. Fiz um UNION para cada nível (a partir do terceiro, até que o nível 8 não retornou nenhum registro):
+#         SELECT n1.*
+#         FROM sgt_consulta.itens n1
+#         WHERE n1.tipo_item = 'A' 
+#           AND n1.cod_item_pai IS NULL
+#           AND NOT EXISTS (SELECT n2.* FROM sgt_consulta.itens n2  where n1.cod_item = n2.cod_item_pai AND n2.tipo_item = 'A' AND n2.situacao = 'A')
+#           AND n1.situacao = 'A'
+#         
+#         UNION
+#
+#         SELECT n2.*
+#         FROM sgt_consulta.itens n1
+#         INNER JOIN sgt_consulta.itens n2 ON (n1.cod_item = n2.cod_item_pai AND n2.tipo_item = 'A' AND n2.situacao = 'A')
+#         WHERE n1.tipo_item = 'A' 
+#           AND n1.cod_item_pai IS NULL
+#           AND NOT EXISTS (SELECT n3.* FROM sgt_consulta.itens n3  where n2.cod_item = n3.cod_item_pai AND n3.tipo_item = 'A' AND n3.situacao = 'A')
+#           AND n1.situacao = 'A'
+#         
+#         UNION
+#
 #         SELECT n3.*
 #         FROM sgt_consulta.itens n1
 #         INNER JOIN sgt_consulta.itens n2 ON (n1.cod_item = n2.cod_item_pai AND n2.tipo_item = 'A' AND n2.situacao = 'A')
@@ -390,6 +409,8 @@
 4264
 4271
 4272
+4310
+4355
 4370
 4371
 4435
@@ -492,6 +513,7 @@
 5299
 5301
 5356
+5555
 5556
 5557
 5558
@@ -508,9 +530,12 @@
 5573
 5575
 5577
+5585
 5589
 5591
 5592
+5595
+5603
 5609
 5612
 5622
@@ -555,6 +580,7 @@
 5855
 5856
 5862
+5865
 5866
 5867
 5869
@@ -694,6 +720,7 @@
 6027
 6028
 6029
+6030
 6032
 6033
 6034
@@ -750,6 +777,7 @@
 6085
 6086
 6087
+6088
 6090
 6091
 6092
@@ -851,8 +879,16 @@
 6199
 6200
 6201
+6202
 6206
 6207
+6212
+6213
+6215
+6216
+6217
+6218
+6219
 6226
 6238
 6239
@@ -952,9 +988,13 @@
 7912
 7925
 7926
+7928
+7929
 7935
+7937
 7940
 7941
+7945
 7949
 7952
 8805
@@ -983,6 +1023,7 @@
 8868
 8873
 8874
+8875
 8884
 8888
 8919
@@ -1039,6 +1080,7 @@
 9556
 9558
 9559
+9565
 9575
 9580
 9581
@@ -1985,6 +2027,7 @@
 10628
 10630
 10631
+10632
 10633
 10634
 10636
@@ -2090,6 +2133,8 @@
 10755
 10756
 10757
+10760
+10762
 10764
 10765
 10766
@@ -2207,6 +2252,7 @@
 10888
 10889
 10890
+10891
 10893
 10894
 10897
@@ -2216,6 +2262,7 @@
 10901
 10902
 10903
+10904
 10905
 10907
 10908
@@ -2247,6 +2294,10 @@
 10946
 10947
 10948
+10949
+10950
+10951
+10952
 10955
 10956
 10957
@@ -2273,6 +2324,7 @@
 11007
 11047
 11048
+11054
 11055
 11056
 11057
@@ -2286,6 +2338,9 @@
 11065
 11066
 11067
+11069
+11070
+11071
 11081
 11082
 11083
@@ -2588,6 +2643,7 @@
 11410
 11412
 11413
+11414
 11416
 11417
 11418
@@ -2837,6 +2893,7 @@
 11721
 11722
 11723
+11724
 11726
 11727
 11728
@@ -2885,6 +2942,8 @@
 11774
 11775
 11776
+11777
+11778
 11779
 11780
 11782
@@ -2899,6 +2958,9 @@
 11807
 11808
 11809
+11810
+11811
+11812
 11814
 11815
 11816
@@ -2916,6 +2978,7 @@
 11828
 11829
 11830
+11831
 11832
 11833
 11834
@@ -2925,6 +2988,7 @@
 11838
 11839
 11840
+11841
 11842
 11843
 11844
@@ -2937,9 +3001,16 @@
 11860
 11861
 11862
+11863
+11864
+11865
+11866
 11867
+11868
 11870
 11871
+11872
+11873
 11895
 11896
 11897
@@ -3015,6 +3086,7 @@
 11971
 11972
 11973
+11974
 11977
 11978
 11979
@@ -3029,6 +3101,7 @@
 11989
 11990
 11991
+11992
 11996
 11997
 11998
@@ -3077,6 +3150,7 @@
 12056
 12062
 12063
+12064
 12069
 12090
 12091
@@ -3085,6 +3159,7 @@
 12155
 12156
 12157
+12159
 12160
 12161
 12162
@@ -3114,6 +3189,7 @@
 12339
 12340
 12341
+12342
 12343
 12344
 12345
@@ -3176,6 +3252,10 @@
 12461
 12462
 12463
+12468
+12469
+12470
+12471
 12483
 12484
 12485
@@ -3212,6 +3292,8 @@
 12517
 12518
 12519
+12520
+12521
 12542
 12543
 12544
@@ -3250,11 +3332,15 @@
 12595
 12596
 12597
+12598
+12599
 12600
 12601
 12602
 12604
 12605
+12612
+12620
 12634
 12635
 12636
@@ -3266,8 +3352,18 @@
 12642
 12643
 12644
+12645
 12725
 12726
 12730
 12731
 12732
+12754
+12756
+12757
+12758
+12770
+12771
+12772
+12773
+12774
