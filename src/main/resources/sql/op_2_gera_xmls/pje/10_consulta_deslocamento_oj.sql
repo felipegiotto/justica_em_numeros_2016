@@ -1,8 +1,8 @@
 SELECT
   proc.nr_processo,
-  hist.id_oj_origem, 
+  hist.id_oj_origem, -- informação utilizada apenas pelo legado, representa o código do órgão julgador de origem
   upper(to_ascii(oj_origem.ds_orgao_julgador)) as ds_oj_origem, 
-  hist.id_oj_destino,
+  hist.id_oj_destino, -- informação utilizada apenas pelo legado, representa o código do órgão julgador de destino
   upper(to_ascii(oj_destino.ds_orgao_julgador)) as ds_oj_destino, 
   hist.dt_deslocamento, 
   hist.dt_retorno,
