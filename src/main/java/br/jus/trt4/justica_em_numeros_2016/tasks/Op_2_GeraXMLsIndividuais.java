@@ -105,6 +105,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private static ProgressoInterfaceGrafica progresso;
 	private int grau;
 	private String paramMovimentosSemServentiaCnj;
+	private boolean paramPossuiDeslocamentoOJLegado1G;
+	private boolean paramPossuiDeslocamentoOJLegado2G;
 	private BaseEmAnaliseEnum baseEmAnalise;
 	private boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe;
 	private Connection conexaoBasePrincipal;
@@ -300,6 +302,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		this.grau = grau;
 		this.baseEmAnalise = baseEmAnalise;
 		this.paramMovimentosSemServentiaCnj = Auxiliar.getParametroConfiguracao(Parametro.movimentos_sem_serventia_cnj, true);
+		this.paramPossuiDeslocamentoOJLegado1G = Auxiliar.getParametroBooleanConfiguracao(Parametro.possui_deslocamento_oj_legado_1g);
+		this.paramPossuiDeslocamentoOJLegado2G = Auxiliar.getParametroBooleanConfiguracao(Parametro.possui_deslocamento_oj_legado_2g);
 		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = baseEmAnalise.isBasePJe() 
 																   ? Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe()
 																   : false;
@@ -1236,8 +1240,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * 
 	 * @param nomeOrgaoJulgadorProcesso : nome do órgão julgador conforme campo "ds_orgao_julgador" da tabela "tb_orgao_julgador".
 	 * @param codigoOrgaoJulgadorLegado: codigo do órgão julgador que é retornado apenas pelo sistema judicial legado (para composição da serventia)
-	 * @param idMunicipioIBGEOrgaoJulgador : código IBGE do município do órgão julgador. Se estiver gerando dados do segundo grau, 
+	 * @param idMunicipioIBGE : código IBGE do município do órgão julgador. Se estiver gerando dados do segundo grau, 
 	 * 		esse parâmetro será ignorado e, em vez dele, será sempre preenchido o conteúdo do parâmetro "codigo_municipio_ibge_trt".
+	 * @param baseEmAnalise : PJe ou Legado 
+	 * @param considerarParametroMovimentosSemServentiaCnj : indica se parâmetro 'movimentos_sem_serventia_cnj' será utilizado na recuperação
+	 *      do órgão julgador. O valor deve ser 'true' na busca das serventias dos movimentos e 'false' na busca da serventia do processo.  
 	 * @return
 	 * @throws SQLException
 	 * @throws DataJudException 
@@ -1403,9 +1410,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 				// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
 				// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
-				//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
-				//Em alguns Regionais pode ser diferente.
-				if (baseEmAnalise.isBasePJe()) {
+				if (baseEmAnalise.isBasePJe() 
+						|| (this.grau == 1 && this.paramPossuiDeslocamentoOJLegado1G)
+						|| (this.grau == 2 && this.paramPossuiDeslocamentoOJLegado2G)) {
 					boolean orgaoJulgadorEncontradoEmServentiaNaoMapeada = false;
 					for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
 						LocalDateTime dataDeslocamento = historico.getDataDeslocamento();

@@ -1,0 +1,1 @@
+--Deve ser implementada quando o parâmetro 'possui_deslocamento_oj_legado_2g' tiver o valor SIM
