@@ -1,3 +1,4 @@
+--Deve ser implementada quando o parâmetro 'possui_deslocamento_oj_legado_2g' tiver o valor SIM
 SELECT
   p.nr_processo as nr_processo,
   pd.id_oj_origem, -- representa o código do órgão julgador de origem
