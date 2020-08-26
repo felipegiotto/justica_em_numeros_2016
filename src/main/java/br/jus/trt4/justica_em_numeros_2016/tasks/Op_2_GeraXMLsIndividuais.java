@@ -1468,9 +1468,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		identificaGeneroPessoa = new IdentificaGeneroPessoa(outraInstancia, this.baseEmAnalise);
 
 		// Objeto que auxiliará na identificação dos documentos de identificação das pessoas
-		identificaDocumentosPessoa = new IdentificaDocumentosPessoa(conexaoBasePrincipal, this.baseEmAnalise);
+		identificaDocumentosPessoa = new IdentificaDocumentosPessoa(conexaoBasePrincipal, this.baseEmAnalise, this.grau);
 
-		String pastaIntermediaria = Auxiliar.getPastaResources(this.baseEmAnalise);
+		String pastaIntermediaria = Auxiliar.getPastaResources(this.baseEmAnalise, this.grau);
 
 		// SQL que fará a consulta de um processo
 		String sqlConsultaProcessos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/01_consulta_processo.sql");
@@ -1522,20 +1522,21 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			this.carregarListaDeProcessosSistemaLegadoMigrados();
 			conexaoBaseLegadoMigrados = Auxiliar.getConexao(this.grau, BaseEmAnaliseEnum.LEGADO);
 			conexaoBaseLegadoMigrados.setAutoCommit(false);
-
-			String sqlConsultaProcessosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/legado/01_consulta_processo.sql");
+			String pastaIntermediariaLegado = Auxiliar.getPastaResources(BaseEmAnaliseEnum.LEGADO, this.grau);
+			
+			String sqlConsultaProcessosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegado + "/01_consulta_processo.sql");
 			nsConsultaProcessosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaProcessosLegadoMigrados, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 
 			// SQL que fará a consulta dos movimentos processuais
-			String sqlConsultaMovimentosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/legado/06_consulta_movimentos.sql");
+			String sqlConsultaMovimentosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegado + "/06_consulta_movimentos.sql");
 			nsMovimentosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaMovimentosLegadoMigrados);
 
 			// Le o SQL que fará a consulta dos complementos dos movimentos processuais
-			String sqlConsultaComplementosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/legado/07_consulta_complementos.sql");
+			String sqlConsultaComplementosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegado + "/07_consulta_complementos.sql");
 			nsComplementosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaComplementosLegadoMigrados);
 
 			// Le o SQL que fará a consulta das sentenças e acórdãos
-			String sqlConsultaSentencasAcordaosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/legado/09_consulta_sentencas_acordaos.sql");
+			String sqlConsultaSentencasAcordaosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegado + "/09_consulta_sentencas_acordaos.sql");
 			nsSentencasAcordaosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaSentencasAcordaosLegadoMigrados);
 		}
 
