@@ -1040,6 +1040,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 					pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
 				} else if ("O".equals(tipoPessoaPJe)) {
 					pessoa.setTipoPessoa(TipoQualificacaoPessoa.ORGAOREPRESENTACAO);
+				} else if ("N".equals(tipoPessoaPJe)) {
+					//FIXME Tipo inválido adicionado na classe do XSD para contornar o problema de termos registros com tipoPessoa não identificável em nossas bases legadas.
+					pessoa.setTipoPessoa(TipoQualificacaoPessoa.INVALIDO);
 				} else {
 					throw new DataJudException("Tipo de pessoa desconhecido: " + tipoPessoaPJe + "(" + nomeParte + ")");
 				}

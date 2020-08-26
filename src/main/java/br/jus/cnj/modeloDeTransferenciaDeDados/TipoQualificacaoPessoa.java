@@ -41,7 +41,10 @@ public enum TipoQualificacaoPessoa {
     @XmlEnumValue("autoridade")
     AUTORIDADE("autoridade"),
     @XmlEnumValue("orgaorepresentacao")
-    ORGAOREPRESENTACAO("orgaorepresentacao");
+    ORGAOREPRESENTACAO("orgaorepresentacao"),
+    //FIXME: valor adicionado para contornar tipos de pessoa inválidos nas bases do legado.
+    @XmlEnumValue("invalido")
+    INVALIDO("invalido");
     private final String value;
 
     TipoQualificacaoPessoa(String v) {
