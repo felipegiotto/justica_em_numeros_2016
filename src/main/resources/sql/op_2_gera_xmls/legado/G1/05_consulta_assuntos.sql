@@ -7,3 +7,4 @@ from
 where
 	pa.cd_processo = p.cd_processo 
 	and p.nr_processo = any(:numeros_processos)
+order by cd_assunto_trf

@@ -8,3 +8,4 @@ FROM
     stage_legado_2grau.processo p
 WHERE 
       substr(nr_processo_ref,1,7) || '-' || substr(nr_processo_ref,8,2) || '.' || substr(nr_processo_ref,10,4) || '.5.06.' || substr(nr_processo_ref, 17,4)  = ANY(:numeros_processos)
+ORDER BY p.cd_processo

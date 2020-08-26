@@ -43,3 +43,4 @@ where
 	and p.cd_processo = pp.cd_processo
 	and pp.cd_pessoa = pe.cd_pessoa
 	and p.nr_processo = any(:numeros_processos)
+ORDER BY pp.in_participacao
