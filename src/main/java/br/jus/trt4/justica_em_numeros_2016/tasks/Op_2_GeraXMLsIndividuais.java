@@ -1432,10 +1432,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						TipoOrgaoJulgador orgaoJulgador = null;
 						
 						if (dataDeslocamento.isAfter(dataMovimento)) {
-							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), 0, historico.getIdMunicipioOrigem(), baseEmAnalise, true);
+							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), historico.getIdOrgaoJulgadorOrigem(), historico.getIdMunicipioOrigem(), baseEmAnalise, true);
 							orgaoJulgadorEncontradoEmServentiaNaoMapeada = true;
 						} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
-							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), 0, historico.getIdMunicipioDestino(), baseEmAnalise, true);
+							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), historico.getIdOrgaoJulgadorDestino(), historico.getIdMunicipioDestino(), baseEmAnalise, true);
 							orgaoJulgadorEncontradoEmServentiaNaoMapeada = true;
 						}
 						
