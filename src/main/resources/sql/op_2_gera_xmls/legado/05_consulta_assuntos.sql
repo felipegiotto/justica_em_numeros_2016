@@ -1,9 +1,9 @@
-SELECT
-	p.nr_processo as nr_processo,
-	pa.in_assunto_principal as in_assunto_principal,
-    pa.cd_assunto_nacional as cd_assunto_trf
-FROM 
-	legado_1grau.processo_assunto pa, legado_1grau.processo p
-WHERE
+select
+	p.nr_processo 							as nr_processo,
+	coalesce( pa.in_assunto_principal, 'N') as in_assunto_principal,
+    cast(pa.cd_assunto_nacional as int) 	as cd_assunto_trf
+from 
+	stage_legado_1grau.processo_assunto pa, stage_legado_1grau.processo p
+where
 	pa.cd_processo = p.cd_processo 
-	p.nr_processo = ANY(:numeros_processos)
+	and p.nr_processo = any(:numeros_processos)

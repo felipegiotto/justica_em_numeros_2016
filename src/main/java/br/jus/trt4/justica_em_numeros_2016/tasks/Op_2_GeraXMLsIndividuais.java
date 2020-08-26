@@ -657,12 +657,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			while (rsDocumentos.next()) {
 				int idPessoa = rsDocumentos.getInt("id_pessoa");
 				for (ParteProcessualDto parte : partesPorIdPessoa.get(idPessoa)) {
-					DocumentoPessoaDto documentoDto = new DocumentoPessoaDto(rsDocumentos);
-					parte.getDocumentos().add(documentoDto);
+					this.identificaDocumentosPessoa.adicionarDocumentoEmLista(parte.getDocumentos(), rsDocumentos, parte.getNomeParte());
 				}
 			}
 		}
-		
+
 		// Verifica se esse processo possui incidentes
 		LOGGER.trace("* nsIncidentes...");
 		nsIncidentes.setArray("numeros_processos", arrayNumerosProcessos);

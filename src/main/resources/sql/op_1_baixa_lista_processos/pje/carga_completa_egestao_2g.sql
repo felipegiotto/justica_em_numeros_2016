@@ -10,7 +10,7 @@ from (
 where 1=1 --REGRAS DE NEGOCIO:
     and (
         mx.status not in ('B','ARQ') --não está arquivado ou baixado no dia referência
-        or id_processo in (-- ou foi arquivado entre 2015 e 30/06/2020.
+        or id_processo in (-- ou foi arquivado entre 2015 e 31/07/2020.
             select 
                 phe.id_processo
             from tb_processos_hist_estado phe

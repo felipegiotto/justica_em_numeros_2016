@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -137,7 +139,9 @@ public class AnalisaMovimentosCNJ {
 						complementoDto.setCodigoTipoComplemento(Integer.parseInt(complementoCNJ.getCodigoTipo()));
 						complementoDto.setNome(complementoCNJ.getDescricaoTipo());
 						complementoDto.setCodigoComplemento(complementoCNJ.getCodigoValor());
-						complementoDto.setValor(complementoCNJ.getDescricaoValor());
+						complementoDto.setValor(this.isComplementoDataMovimento1061(movimentoCNJ, complementoCNJ) 
+												? DateTimeFormatter.ofPattern("dd/MM/yyyy").format(movimentoDto.getDataAtualizacao()) 
+												: complementoCNJ.getDescricaoValor());
 						complementoDto.setComplementoTipoTabelado(TipoTipoComplemento.TABELADO.equals(complementoCNJ.getTipoTipoComplemento()));
 						movimentoDto.getComplementos().add(complementoDto);
 					}
@@ -191,6 +195,10 @@ public class AnalisaMovimentosCNJ {
 			movimentoNacional.setCodigoNacional(codigoMovimento);
 			movimento.setMovimentoNacional(movimentoNacional);
 		}
+	}
+	
+	private boolean isComplementoDataMovimento1061 (MovimentoCNJ movimentoCNJ, ComplementoCNJ complementoCNJ) {
+		return movimentoCNJ.getCodigoMovimento().equals("1061") && complementoCNJ.getDescricaoTipo().equals("data");
 	}
 
 	
