@@ -125,6 +125,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private NamedParameterStatement nsMovimentosLegadosMigrados;
 	private NamedParameterStatement nsComplementosLegadosMigrados;
 	private NamedParameterStatement nsSentencasAcordaosLegadosMigrados;
+	private NamedParameterStatement nsHistoricoDeslocamentoOJLegadosMigrados;
 	private int codigoMunicipioIBGETRT;
 	private static AnalisaServentiasCNJ processaServentiasCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
@@ -688,9 +689,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 		}
 		// Baixa dados de deslocamentos de OJ, que auxiliarão na identificação do OJ dos movimentos processuais
-		if (this.baseEmAnalise.isBasePJe()) {
-			//FIXME: no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
-			//Em alguns Regionais pode ser diferente.
+		if (this.possuiHistoricoDeslocamentoOJ(this.baseEmAnalise, this.grau)) {
 			LOGGER.trace("* nsHistoricoDeslocamentoOJ...");
 			nsHistoricoDeslocamentoOJ.setArray("numeros_processos", arrayNumerosProcessos);
 			try (ResultSet rsHistoricoDeslocamentoOJ = nsHistoricoDeslocamentoOJ.executeQuery()) {
@@ -764,6 +763,21 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						cacheProcessosLegadosMigradosDtos.get(nrProcesso).getSentencasAcordaos().add(documentoDto);
 					}
 				}
+				
+				// Baixa dados de deslocamentos de OJ, que auxiliarão na identificação do OJ dos movimentos processuais
+				if (this.possuiHistoricoDeslocamentoOJ(BaseEmAnaliseEnum.LEGADO, this.grau)) {
+					LOGGER.trace("* nsHistoricoDeslocamentoOJLegadosMigrados...");
+					nsHistoricoDeslocamentoOJLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessos);
+					try (ResultSet rsHistoricoDeslocamentoOJ = nsHistoricoDeslocamentoOJLegadosMigrados.executeQuery()) {
+						while (rsHistoricoDeslocamentoOJ.next()) {
+							String nrProcesso = rsHistoricoDeslocamentoOJ.getString("nr_processo");
+							HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto(rsHistoricoDeslocamentoOJ);
+							cacheProcessosLegadosMigradosDtos.get(nrProcesso).getHistoricosDeslocamentoOJ().add(historico);
+						}
+					}
+				}
+				
+				
 			}
 		}
 	}
@@ -1410,9 +1424,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 				// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
 				// Se não há nenhum deslocamento de OJ no período, considera o mesmo OJ do processo.
-				if (baseEmAnalise.isBasePJe() 
-						|| (this.grau == 1 && this.paramPossuiDeslocamentoOJLegado1G)
-						|| (this.grau == 2 && this.paramPossuiDeslocamentoOJLegado2G)) {
+				if (this.possuiHistoricoDeslocamentoOJ(baseEmAnalise, this.grau)) {
 					boolean orgaoJulgadorEncontradoEmServentiaNaoMapeada = false;
 					for (HistoricoDeslocamentoOJDto historico : processo.getHistoricosDeslocamentoOJ()) {
 						LocalDateTime dataDeslocamento = historico.getDataDeslocamento();
@@ -1455,6 +1467,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 
 		return movimentos;
+	}
+	
+	private boolean possuiHistoricoDeslocamentoOJ(BaseEmAnaliseEnum baseEmAnalise, int grau) {
+		return baseEmAnalise.isBasePJe() 
+				|| (grau == 1 && this.paramPossuiDeslocamentoOJLegado1G)
+				|| (grau == 2 && this.paramPossuiDeslocamentoOJLegado2G);
 	}
 
 
@@ -1519,9 +1537,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsSentencasAcordaos = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaSentencasAcordaos);
 		
 		// Le o SQL que fará a consulta do histórico de deslocamento
-		if (this.baseEmAnalise.isBasePJe()) {
-			//FIXME:  no sistema judicial legado do TRT6 esse histórico não existe. O órgão julgador do movimento é o órgão julgador do processo.
-			//Em alguns Regionais pode ser diferente.
+		if (this.possuiHistoricoDeslocamentoOJ(this.baseEmAnalise, this.grau)) {
 			String sqlConsultaHistoricoDeslocamentoOJ = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediaria + "/10_consulta_deslocamento_oj.sql");
 			nsHistoricoDeslocamentoOJ = new NamedParameterStatement(conexaoBasePrincipal, sqlConsultaHistoricoDeslocamentoOJ);			
 		}
@@ -1529,25 +1545,33 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		//Se a base em análise é a do pje, será preciso recuperar, para processos que foram migrados do sistema judicial legado,
 		// os respectivos movimentos e complementos
 		if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+			BaseEmAnaliseEnum baseLegada = BaseEmAnaliseEnum.LEGADO;
 			this.carregarListaDeProcessosSistemaLegadoMigrados();
-			conexaoBaseLegadoMigrados = Auxiliar.getConexao(this.grau, BaseEmAnaliseEnum.LEGADO);
+			conexaoBaseLegadoMigrados = Auxiliar.getConexao(this.grau, baseLegada);
 			conexaoBaseLegadoMigrados.setAutoCommit(false);
-			String pastaIntermediariaLegado = Auxiliar.getPastaResources(BaseEmAnaliseEnum.LEGADO, this.grau);
+			String pastaIntermediariaLegadoMigrados = Auxiliar.getPastaResources(baseLegada, this.grau);
 			
-			String sqlConsultaProcessosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegado + "/01_consulta_processo.sql");
+			String sqlConsultaProcessosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/01_consulta_processo.sql");
 			nsConsultaProcessosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaProcessosLegadoMigrados, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 
 			// SQL que fará a consulta dos movimentos processuais
-			String sqlConsultaMovimentosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegado + "/06_consulta_movimentos.sql");
+			String sqlConsultaMovimentosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/06_consulta_movimentos.sql");
 			nsMovimentosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaMovimentosLegadoMigrados);
 
 			// Le o SQL que fará a consulta dos complementos dos movimentos processuais
-			String sqlConsultaComplementosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegado + "/07_consulta_complementos.sql");
+			String sqlConsultaComplementosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/07_consulta_complementos.sql");
 			nsComplementosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaComplementosLegadoMigrados);
 
 			// Le o SQL que fará a consulta das sentenças e acórdãos
-			String sqlConsultaSentencasAcordaosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegado + "/09_consulta_sentencas_acordaos.sql");
+			String sqlConsultaSentencasAcordaosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/09_consulta_sentencas_acordaos.sql");
 			nsSentencasAcordaosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaSentencasAcordaosLegadoMigrados);
+			
+			// Le o SQL que fará a consulta do histórico de deslocamento
+			if (this.possuiHistoricoDeslocamentoOJ(baseLegada, this.grau)) {
+				String sqlConsultaHistoricoDeslocamentoOJLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/10_consulta_deslocamento_oj.sql");
+				nsHistoricoDeslocamentoOJLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaHistoricoDeslocamentoOJLegadoMigrados);			
+			}
+			
 		}
 
 		// O código IBGE do município onde fica o TRT vem do arquivo de configuração, já que será diferente para cada regional
@@ -1611,6 +1635,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		nsComplementosLegadosMigrados = null;
 		Auxiliar.fechar(nsSentencasAcordaosLegadosMigrados);
 		nsSentencasAcordaosLegadosMigrados = null;
+		Auxiliar.fechar(nsHistoricoDeslocamentoOJLegadosMigrados);
+		nsHistoricoDeslocamentoOJLegadosMigrados = null;	
 		
 		Auxiliar.fechar(conexaoBasePrincipal);
 		conexaoBasePrincipal = null;
