@@ -119,7 +119,10 @@ public class AnalisaServentiasCNJ {
 		} else {
 			//No sistema judicial legado, as informações de código e descrição já estarão com os
 			//valores corretos na base intermediária
-			return new ServentiaCNJ(codigoOrgaoJudicialLegado, descricaoOrgaoJudicial);
+			if (descricaoOrgaoJudicial != null) {
+				return new ServentiaCNJ(codigoOrgaoJudicialLegado, descricaoOrgaoJudicial);
+			}
+			return null;
 		}
 	}
 	

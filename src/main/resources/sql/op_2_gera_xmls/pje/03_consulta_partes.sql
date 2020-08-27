@@ -33,4 +33,4 @@ WHERE 1=1
   -- Reforça a condição da data de autuação, pois um bug no PJe fez com que houvesse mais que um processo com mesma numeração (um com data de autuação e outro sem)
   and ptrf.dt_autuacao IS NOT NULL
   
-ORDER BY pp.in_participacao;
+ORDER BY pp.in_participacao

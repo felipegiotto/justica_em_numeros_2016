@@ -33,7 +33,7 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 	private NamedParameterStatement nsDocumentos;
 	private Connection conexaoBasePrincipal;
 	
-	public IdentificaDocumentosPessoa(Connection conexaoBasePrincipal, BaseEmAnaliseEnum baseEmAnalise) throws IOException, SQLException {
+	public IdentificaDocumentosPessoa(Connection conexaoBasePrincipal, BaseEmAnaliseEnum baseEmAnalise, int grau) throws IOException, SQLException {
 		
 		// Objeto que fará o de/para dos tipos de documentos do PJe para os do CNJ
 		//FIXME: Aqui no TRT6 essa lista pode ser utilizada tanto para o PJe quanto para o sistema legado. 
@@ -43,7 +43,7 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 		}
 		
 		String caminhoArquivo = "src/main/resources/sql/op_2_gera_xmls/" 
-				+ Auxiliar.getPastaResources(baseEmAnalise) 
+				+ Auxiliar.getPastaResources(baseEmAnalise, grau) 
 				+ "/04_consulta_documentos_pessoa.sql";
 		
 		// SQL que fará a consulta dos documentos da pessoa

@@ -47,7 +47,7 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 				conexaoBasePrincipalOutraInstancia = Auxiliar.getConexao(grau, baseEmAnalise);
 				
 				String caminhoArquivo = "src/main/resources/sql/op_2_gera_xmls/" 
-						+ Auxiliar.getPastaResources(baseEmAnalise) 
+						+ Auxiliar.getPastaResources(baseEmAnalise, grau) 
 						+ "/consulta_genero_outra_instancia.sql";
 		
 				String sqlConsultaGeneroOutraInstancia = Auxiliar.lerConteudoDeArquivo(caminhoArquivo);

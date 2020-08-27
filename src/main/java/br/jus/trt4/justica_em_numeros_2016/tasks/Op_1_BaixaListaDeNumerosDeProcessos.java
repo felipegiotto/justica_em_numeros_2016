@@ -158,21 +158,23 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 						e) RPvs e Precatórios Quitados/Cancelados
 				Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25
 			*/
+			String pastaIntermediariaPje = Auxiliar.getPastaResources(BaseEmAnaliseEnum.PJE, this.grau);
+			String pastaIntermediariaLegado = Auxiliar.getPastaResources(BaseEmAnaliseEnum.LEGADO, this.grau);
 			if (this.deveProcessarProcessosPje) {
-				String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/pje/carga_completa_egestao_" + grau + "g.sql");
+				String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/" + pastaIntermediariaPje + "/carga_completa_egestao_" + this.grau + "g.sql");
 				getConexaoBaseStagingEGestao().createStatement().execute("SET search_path TO pje_eg");
 				Statement statement = getConexaoBaseStagingEGestao().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 				statement.setFetchSize(100);
 				rsConsultaProcessosPje = statement.executeQuery(sql);
 			}
 			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-				String sqlMigradosLegado = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/legado/carga_completa_migrados.sql");
+				String sqlMigradosLegado = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/" + pastaIntermediariaLegado + "/carga_completa_migrados.sql");
 				Statement statementMigradosLegado = getConexaoBasePrincipalLegado().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 				statementMigradosLegado.setFetchSize(100);
 				rsConsultaProcessosMigradosLegado = statementMigradosLegado.executeQuery(sqlMigradosLegado);
 			}
 			if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
-				String sqlNaoMigradosLegado = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/legado/carga_completa_nao_migrados.sql");
+				String sqlNaoMigradosLegado = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/" + pastaIntermediariaLegado + "/carga_completa_nao_migrados.sql");
 				Statement statementNaoMigradosLegado = getConexaoBasePrincipalLegado().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 				statementNaoMigradosLegado.setFetchSize(100);
 				rsConsultaProcessosNaoMigradosLegado = statementNaoMigradosLegado.executeQuery(sqlNaoMigradosLegado);

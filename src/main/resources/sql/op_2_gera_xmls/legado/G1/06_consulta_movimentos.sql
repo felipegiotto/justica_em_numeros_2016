@@ -25,4 +25,4 @@ where
 	1=1
 	and p.cd_processo = pm.cd_processo
 	and p.nr_processo = ANY(:numeros_processos)
-		
+order by pm.dt_atualizacao asc		

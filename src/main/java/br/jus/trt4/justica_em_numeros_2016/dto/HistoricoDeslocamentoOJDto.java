@@ -10,6 +10,8 @@ public class HistoricoDeslocamentoOJDto {
 	private LocalDateTime dataRetorno;
 	private String nomeOrgaoJulgadorOrigem;
 	private String nomeOrgaoJulgadorDestino;
+	private int idOrgaoJulgadorOrigem;
+	private int idOrgaoJulgadorDestino;
 	private int idMunicipioOrigem;
 	private int idMunicipioDestino;
 	
@@ -18,6 +20,8 @@ public class HistoricoDeslocamentoOJDto {
 		this.dataRetorno = rs.getTimestamp("dt_retorno").toLocalDateTime();
 		this.nomeOrgaoJulgadorOrigem = rs.getString("ds_oj_origem");
 		this.nomeOrgaoJulgadorDestino = rs.getString("ds_oj_destino");
+		this.idOrgaoJulgadorOrigem = rs.getInt("id_oj_origem");
+		this.idOrgaoJulgadorDestino = rs.getInt("id_oj_destino");
 		this.idMunicipioOrigem = rs.getInt("id_municipio_origem");
 		this.idMunicipioDestino = rs.getInt("id_municipio_destino");
 	}
@@ -69,4 +73,22 @@ public class HistoricoDeslocamentoOJDto {
 	public void setIdMunicipioDestino(int idMunicipioDestino) {
 		this.idMunicipioDestino = idMunicipioDestino;
 	}
+
+	public int getIdOrgaoJulgadorOrigem() {
+		return idOrgaoJulgadorOrigem;
+	}
+
+	public void setIdOrgaoJulgadorOrigem(int idOrgaoJulgadorOrigem) {
+		this.idOrgaoJulgadorOrigem = idOrgaoJulgadorOrigem;
+	}
+
+	public int getIdOrgaoJulgadorDestino() {
+		return idOrgaoJulgadorDestino;
+	}
+
+	public void setIdOrgaoJulgadorDestino(int idOrgaoJulgadorDestino) {
+		this.idOrgaoJulgadorDestino = idOrgaoJulgadorDestino;
+	}
+	
+	
 }
