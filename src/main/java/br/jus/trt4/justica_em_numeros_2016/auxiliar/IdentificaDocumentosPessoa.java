@@ -36,8 +36,6 @@ public class IdentificaDocumentosPessoa implements AutoCloseable {
 	public IdentificaDocumentosPessoa(Connection conexaoBasePrincipal, BaseEmAnaliseEnum baseEmAnalise, int grau) throws IOException, SQLException {
 		
 		// Objeto que fará o de/para dos tipos de documentos do PJe para os do CNJ
-		//FIXME: Aqui no TRT6 essa lista pode ser utilizada tanto para o PJe quanto para o sistema legado. 
-		//Talvez seja preciso ajustar essa lista em outros Regionais. 
 		if (tiposDocumentosPJeCNJ == null) {
 			tiposDocumentosPJeCNJ = Auxiliar.carregarPropertiesDoArquivo(new File("src/main/resources/tipos_de_documentos.properties"));
 		}

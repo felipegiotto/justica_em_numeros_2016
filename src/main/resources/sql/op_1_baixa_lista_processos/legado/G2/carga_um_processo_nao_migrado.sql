@@ -1,7 +1,7 @@
 select 
 	nr_processo
 from 
-	stage_legado_1grau.processo 
+	stage_legado_2grau.processo 
 where 
 	1=1
 	and nr_processo = ?
