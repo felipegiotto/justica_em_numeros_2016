@@ -189,8 +189,7 @@ public class AnalisaMovimentosCNJ {
 				}
 			}
 		} else {
-			//FIXME: Apenas movimentos nacionais do sistema judicial legado serão enviados pelo TRT6. Se algum Regional for enviar movimentos locais para o 
-			//sistema legado, implementar aqui.
+			//FIXME: Apenas movimentos nacionais do sistema judicial legado serão enviados. Cada Regional poderá dar um tratamento diferente.
 			TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
 			movimentoNacional.setCodigoNacional(codigoMovimento);
 			movimento.setMovimentoNacional(movimentoNacional);

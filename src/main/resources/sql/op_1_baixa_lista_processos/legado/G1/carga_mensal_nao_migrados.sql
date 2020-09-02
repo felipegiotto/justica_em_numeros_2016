@@ -4,7 +4,6 @@ from
 	stage_legado_1grau.processo 
 where 
 	1=1
-	and nr_processo = ?
 	and proc_localizado_siaj 	= 'S'
 	and proc_escopo_legado 		= 'S'
 	and proc_hibrido			= 'N'
