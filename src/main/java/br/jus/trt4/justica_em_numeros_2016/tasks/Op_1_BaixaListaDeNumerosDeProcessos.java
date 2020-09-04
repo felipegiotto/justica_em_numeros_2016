@@ -39,7 +39,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	private boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje;
 	private boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe;
 	
-	private final File arquivoSaida;
 	private Connection conexaoBasePrincipal;
 	private Connection conexaoBasePrincipalLegado;
 	private Connection conexaoBaseStagingEGestao;
@@ -90,7 +89,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		this.deveProcessarProcessosPje = Auxiliar.deveProcessarProcessosPje();
 		this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje();
 		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe();
-		this.arquivoSaida = Auxiliar.getArquivoListaProcessosPje(grau);
 	}
 
 	
@@ -309,10 +307,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			conexaoBaseStagingEGestao.setAutoCommit(false);
 		}
 		return conexaoBaseStagingEGestao;
-	}
-	
-	public File getArquivoSaida() {
-		return arquivoSaida;
 	}
 	
 	public static void gravarListaProcessosEmArquivo(Set<String> listaProcessos, File arquivoSaida) throws IOException {

@@ -1,5 +1,6 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -24,7 +25,6 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
  * TODO: Conferir erro no "Conferindo protocolos no CNJ"
  * TODO: Tratar travamentos da VPN (tentar forçar fechar conexão ao banco)
  * TODO: Encerrar operação quando todos arquivos forem processados
- * TODO: Tratar também carga de dados de sistemas legados
  *
  * @author felipe.giotto@trt4.jus.br
  */
@@ -44,7 +44,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		// Servidor web, para controlar o progresso da execução
 		iniciarServidorWeb();
 		
-		// Baixa lista de processos do PJe
+		// Baixa lista de processos do PJe ou no Legado
 		if (Auxiliar.deveProcessarPrimeiroGrau()) {
 			op1BaixarListaProcesssoSeNecessario(1);
 		}
@@ -54,10 +54,6 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		
 		iniciarAtualizacaoStatusBackground();
 		iniciarOperacoesGeracaoEnvioValidacaoEmBackground();
-		
-		if (!"APENAS_PJE".equals(Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, false))) {
-			AcumuladorExceptions.instance().adicionarException("Essa operação ainda não trabalha corretamente com extração de dados dos sistemas legados. Recomenda-se utilizá-la, por enquanto, somente com o parâmetro 'sistema_judicial=APENAS_PJE'", "Op_Y_OperacaoFluxoContinuo");
-		}
 		
 		// TODO: Implementar condição de saída
 	}
@@ -87,17 +83,20 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	}
 
 	/**
-	 * Baixa, somente uma vez, a lista de processos que devem ser processados no PJe.
+	 * Baixa, somente uma vez, a lista de processos que devem ser processados no PJe ou no Legado.
 	 *
-	 * @param baixaDados
+	 * @param grau
 	 * @throws SQLException 
 	 * @throws IOException 
-	 * @throws DadosInvalidosException 
 	 */
 	private void op1BaixarListaProcesssoSeNecessario(int grau) throws IOException, SQLException {
 
+		File arquivoProcessosPje = Auxiliar.getArquivoListaProcessosPje(grau);
+		File arquivoProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(grau);
+		
 		try (Op_1_BaixaListaDeNumerosDeProcessos baixaListaProcessos = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
-			if (!baixaListaProcessos.getArquivoSaida().exists()) {
+			if (!arquivoProcessosPje.exists()
+					&& !arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
 				try {
 					executandoOperacao1BaixandoLista = true;
 					baixaListaProcessos.baixarListaProcessos();
@@ -107,8 +106,16 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 			}
 		}
 		
-		for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessosPje(grau))) {
-			processosFluxos.add(new ProcessoFluxo(grau, numeroProcesso));
+		if (arquivoProcessosPje.exists()) {
+			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosPje)) {
+				processosFluxos.add(new ProcessoFluxo(grau, numeroProcesso));
+			}			
+		}
+		
+		if (arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
+			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosSistemaLegadoNaoMigradosParaOPje)) {
+				processosFluxos.add(new ProcessoFluxo(grau, numeroProcesso));
+			}
 		}
 	}
 	
