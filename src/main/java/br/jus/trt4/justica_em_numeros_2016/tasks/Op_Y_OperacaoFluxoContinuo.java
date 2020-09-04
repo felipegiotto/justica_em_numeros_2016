@@ -93,10 +93,12 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 
 		File arquivoProcessosPje = Auxiliar.getArquivoListaProcessosPje(grau);
 		File arquivoProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(grau);
+		File arquivoProcessosSistemaLegadoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoMigradosParaOPJe(grau);
 		
 		try (Op_1_BaixaListaDeNumerosDeProcessos baixaListaProcessos = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
-			if (!arquivoProcessosPje.exists()
-					&& !arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
+			if ((Auxiliar.deveProcessarProcessosPje() && !arquivoProcessosPje.exists())
+					|| (Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje() && !arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists())
+					|| (Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe() && !arquivoProcessosSistemaLegadoMigradosParaOPje.exists())) {
 				try {
 					executandoOperacao1BaixandoLista = true;
 					baixaListaProcessos.baixarListaProcessos();
