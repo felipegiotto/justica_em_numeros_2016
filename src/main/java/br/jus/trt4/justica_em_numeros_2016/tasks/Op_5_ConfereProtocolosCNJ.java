@@ -80,6 +80,10 @@ public class Op_5_ConfereProtocolosCNJ {
 	private static final String NOME_PARAMETRO_DATA_FIM = "dataFim";
 	private static final String NOME_PARAMETRO_STATUS = "status";
 	private static final String NOME_PARAMETRO_PAGINA = "page";
+	
+	//Padrão de como a última página consultada no CNJ de um status é armazenada no arquivo.
+	//Composto pelo número do status (que é preenchido dinamicamente), espaço e o número da página (dígito com 1 a 3 números).
+	private static final String PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA = "^(%s )(\\d{1,3})$";
 		
 	public static void main(String[] args) throws Exception {
 
@@ -519,6 +523,8 @@ public class Op_5_ConfereProtocolosCNJ {
 		
 		parametroDataInicio = parametrosData.get(0);
 		parametroDataFim = parametrosData.get(1);
+		
+		LOGGER.info(String.format("Data de início: %s. Data fim: %s.", parametroDataInicio, parametroDataFim));
 
 		LOGGER.info("Carregando os protocolos dos arquivos.");
 		
@@ -556,6 +562,8 @@ public class Op_5_ConfereProtocolosCNJ {
 				LOGGER.warn("Um total de " + totalProcessosRecusados + " processos foram RECUSADOS no CNJ. A lista completa foi gravada "
 						+ "no arquivo " + Auxiliar.getArquivoListaProcessosErroProtocolo(2).getAbsoluteFile() + ".");
 			}
+		} else {
+			LOGGER.warn("Nenhum protocolo com o status \"Processado com Erro\" (6) ou \"Erro no Arquivo\" (7) foi encontrado.");
 		}
 	}
 	
@@ -617,14 +625,11 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * @param setTodosProcessosRecusadosG1 Lista com os processos recusados do 1° Grau
 	 * @param setTodosProcessosRecusadosG2 Lista com os processos recusados do 2° Grau
 	 */
-	@SuppressWarnings("unchecked")
 	private void executarConsultasProtocolosComErroCNJ(URIBuilder builder,
 			Map<String, String> mapProtocolosComProcessos, Set<String> setTodosProcessosRecusadosG1, 
 			Set<String> setTodosProcessosRecusadosG2) {
 
 		String agrupadorErrosConsultaProtocolosErroCNJ = "Consulta de protocolos com erro no CNJ";
-		
-		int totalProcessosRecusados = 0;
 		
 		String statusErro = consultarValorParametroBuilder(builder, NOME_PARAMETRO_STATUS);
 		
@@ -645,22 +650,25 @@ public class Op_5_ConfereProtocolosCNJ {
 				arquivoProcessosRecusadosG2.delete();
 			}
 			
-			//TODO Verificar se ainda existe algum protocolo com o status em processamento
-		} else {
+		}
+		
+		if(parametroPaginaAtual > 0) {
 			LOGGER.info("Reiniciando o processo da página " + parametroPaginaAtual + "...");
 		}
 
+		//TODO Avaliar se vale à pena verificar e alertar se ainda existe algum protocolo com o status em processamento
+		
+		//Como o serviço do CNJ não está implementado corretamente, decidiu-se por verificar se a consulta a uma página 
+		//retornou algum resultado para para de consultar em vez de pegar o total de registros e dividir pelo tamanho da página.
+		//Sempre será efetuada uma consulta a mais, porém esse método fica mais livre de alterações e falhas como a alteração do tamanho
+		//da página ou a correção do serviço.
+		boolean consultaCNJRetornouResultado = false;
 		
 		do {
 			URI uri = atualizarParametroURIBuilder(builder, NOME_PARAMETRO_PAGINA, Integer.toString(parametroPaginaAtual));
 			
-			if (parametroPaginaAtual == 0) {
-				LOGGER.info("Consultando a página " + parametroPaginaAtual + " da lista de protocolos no CNJ: "
-						+ uri.toString());
-			} else {
-				LOGGER.info("Consultando a página " + parametroPaginaAtual + "/" + (int) Math.ceil(totalProcessosRecusados/TAMANHO_PAGINA_CONSULTA_PROTOCOLO_CNJ) + " da lista de protocolos no CNJ: "
-						+ uri.toString());
-			}
+			LOGGER.info(String.format("Consultando a página %s com status %s da lista de protocolos no CNJ. URL: %s.", 
+					parametroPaginaAtual, statusErro, uri.toString()));
 
 			String body = "";
 			try {
@@ -673,11 +681,13 @@ public class Op_5_ConfereProtocolosCNJ {
 
 			LOGGER.info("* Analisando a resposta JSON...");
 			
-			List<Object> protocolosRespostaJson = carregaProtocolosRespostaJson(body);
+			List<List<String>> protocolosRespostaJson = carregaProtocolosRespostaJson(body);
 			
-			totalProcessosRecusados = (int) protocolosRespostaJson.get(0);
-			List<String> listaProtocolosRecusadosG1 = (List<String>) protocolosRespostaJson.get(1); 
-			List<String> listaProtocolosRecusadosG2 = (List<String>) protocolosRespostaJson.get(2);
+			List<String> listaProtocolosRecusadosG1 = protocolosRespostaJson.get(0); 
+			List<String> listaProtocolosRecusadosG2 = protocolosRespostaJson.get(1);
+			
+			//Verifica se a consulta ao CNJ retornou algum resultado.
+			consultaCNJRetornouResultado = !listaProtocolosRecusadosG1.isEmpty() || !listaProtocolosRecusadosG2.isEmpty();
 			
 			List<Set<String>> listaProcessosRespostaJson = carregaListaProcessos(mapProtocolosComProcessos, listaProtocolosRecusadosG1, listaProtocolosRecusadosG2);
 			
@@ -722,8 +732,10 @@ public class Op_5_ConfereProtocolosCNJ {
 			setTodosProcessosRecusadosG2.addAll(setProcessosRecusadosRespostaG2);
 			
 			gravarUltimaPaginaConsultada(statusErro, Integer.toString(parametroPaginaAtual));
+			
+			parametroPaginaAtual++;
 
-		}  while (((double) totalProcessosRecusados / TAMANHO_PAGINA_CONSULTA_PROTOCOLO_CNJ) > ++parametroPaginaAtual);
+		}  while (consultaCNJRetornouResultado);
 	}
 
 	/**
@@ -754,16 +766,14 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * @return Lista com 3 objetos: 1) número total de processos recusados; 2) Lista de protocolos recusados do 1° Grau; 
 	 * 	3) Lista de protocolos recusados do 2° Grau;
 	 */
-	private List<Object> carregaProtocolosRespostaJson(String body) {
+	private List<List<String>> carregaProtocolosRespostaJson(String body) {
 	
-		List<Object> resposta = new ArrayList<Object>();
+		List<List<String>> resposta = new ArrayList<List<String>>();
 		
 		List<String> listaProtocolosRecusadosG1 = new ArrayList<String>(); 
 		List<String> listaProtocolosRecusadosG2 = new ArrayList<String>();
 		
 		JsonObject rootObject = JsonParser.parseString(body).getAsJsonObject();
-		
-		int totalProcessosRecusados = rootObject.get("totalRegistros").getAsInt();
 		
 		JsonArray processos = rootObject.get("resultado").getAsJsonArray();
 		
@@ -784,7 +794,6 @@ public class Op_5_ConfereProtocolosCNJ {
 			}
 		}
 		
-		resposta.add(totalProcessosRecusados);
 		resposta.add(listaProtocolosRecusadosG1);
 		resposta.add(listaProtocolosRecusadosG2);
 		
@@ -986,15 +995,15 @@ public class Op_5_ConfereProtocolosCNJ {
 		
 		if (arquivoPaginaAtual.exists() && arquivoPaginaAtual.length() != 0) {
 			try {
-				Pattern padraoERArquivo = Pattern.compile(String.format("^(%s)( \\d{2})$", status));
+				Pattern padraoER = Pattern.compile(String.format(PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA, status));
 				
 				List<String> conteudoArquivo = new ArrayList<>(Files.readAllLines(arquivoPaginaAtual.toPath(), StandardCharsets.UTF_8));
 
 				for (int i = 0; i < conteudoArquivo.size(); i++) {
-					Matcher matcher = padraoERArquivo.matcher(conteudoArquivo.get(i));
+					Matcher matcher = padraoER.matcher(conteudoArquivo.get(i));
 					
 					if(matcher.find()) {
-						return Integer.valueOf(matcher.group(1));
+						return Integer.valueOf(matcher.group(2));
 					}				    
 				}
 			} catch (IOException e) {
@@ -1011,16 +1020,14 @@ public class Op_5_ConfereProtocolosCNJ {
 		
 		File arquivoPaginaAtual = Auxiliar.getArquivoUltimaPaginaConsultaCNJ();
 		
-		int numUltimaPaginaConsultada = -1;
-		
 		if (arquivoPaginaAtual.exists() && arquivoPaginaAtual.length() != 0) {
 			try {
-				Pattern padraoERArquivo = Pattern.compile(String.format("^(%s)( \\d{2})$", status));
+				Pattern padraoER = Pattern.compile(String.format(PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA, status));
 				
 				List<String> conteudoArquivo = new ArrayList<>(Files.readAllLines(arquivoPaginaAtual.toPath(), StandardCharsets.UTF_8));
 
 				for (int i = 0; i < conteudoArquivo.size(); i++) {
-					Matcher matcher = padraoERArquivo.matcher(conteudoArquivo.get(i));
+					Matcher matcher = padraoER.matcher(conteudoArquivo.get(i));
 					
 					if(matcher.find()) {
 						//Encontrou uma linha com o formato, então apenas atualiza.
@@ -1030,7 +1037,7 @@ public class Op_5_ConfereProtocolosCNJ {
 					}				    
 				}
 				//Não encontrou uma linha com o formato
-				FileUtils.write(arquivoPaginaAtual, String.format("%s %s", status, pagina), StandardCharsets.UTF_8);			
+				FileUtils.write(arquivoPaginaAtual, String.format("%s %s", status, pagina), StandardCharsets.UTF_8, true);			
 				
 			} catch (IOException e) {
 				LOGGER.warn("* Não foi possível ler o arquivo " + arquivoPaginaAtual.toString());
