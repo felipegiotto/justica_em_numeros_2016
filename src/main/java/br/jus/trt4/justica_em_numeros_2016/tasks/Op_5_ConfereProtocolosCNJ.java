@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -524,26 +525,26 @@ public class Op_5_ConfereProtocolosCNJ {
 		//Carregando a tupla protocolo/processo num Map pois a consulta média é bem mais rápida do que em uma lista.
 		Map<String, String> mapProtocolosComProcessos = carregarListaProcessosPorProtocolo(arquivosProtocolos);
 		
-		Set<String> setProcessosRecusadosG1 = new HashSet<String>();
-		Set<String> setProcessosRecusadosG2 = new HashSet<String>();
+		Set<String> setTodosProcessosRecusadosG1 = new HashSet<String>();
+		Set<String> setTodosProcessosRecusadosG2 = new HashSet<String>();
 		
 		//Constrói a URL com o status "Processado com erro"
 		URIBuilder builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, STATUS_CNJ_PROCESSADO_COM_ERRO);
 	
-		executarConsultasProtocolosComErroCNJ(builder, mapProtocolosComProcessos, setProcessosRecusadosG1, setProcessosRecusadosG2);
+		executarConsultasProtocolosComErroCNJ(builder, mapProtocolosComProcessos, setTodosProcessosRecusadosG1, setTodosProcessosRecusadosG2);
 		
 		//Constrói a URL com o status "Erro no arquivo"
 		builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, STATUS_CNJ_ERRO_ARQUIVO);
 		
-		executarConsultasProtocolosComErroCNJ(builder, mapProtocolosComProcessos, setProcessosRecusadosG1, setProcessosRecusadosG2);
+		executarConsultasProtocolosComErroCNJ(builder, mapProtocolosComProcessos, setTodosProcessosRecusadosG1, setTodosProcessosRecusadosG2);
 		
-		if(setProcessosRecusadosG1.size() > 0 || setProcessosRecusadosG2.size() > 0) {
+		if(setTodosProcessosRecusadosG1.size() > 0 || setTodosProcessosRecusadosG2.size() > 0) {
 			if(Auxiliar.deveProcessarPrimeiroGrau()) {
 				
-				totalProcessosRecusados += setProcessosRecusadosG1.size();
+				totalProcessosRecusados += setTodosProcessosRecusadosG1.size();
 				
 				if(Auxiliar.deveProcessarSegundoGrau()) {
-					totalProcessosRecusados += setProcessosRecusadosG2.size();
+					totalProcessosRecusados += setTodosProcessosRecusadosG2.size();
 					LOGGER.warn("Um total de " + totalProcessosRecusados + " processos foram RECUSADOS no CNJ. A lista completa foi gravada "
 							+ "nos arquivos " + Auxiliar.getArquivoListaProcessosErroProtocolo(1).getAbsoluteFile() + " e " + Auxiliar.getArquivoListaProcessosErroProtocolo(2).getAbsoluteFile() + ".");
 				} else {
@@ -551,7 +552,7 @@ public class Op_5_ConfereProtocolosCNJ {
 							+ "no arquivo " + Auxiliar.getArquivoListaProcessosErroProtocolo(1).getAbsoluteFile() + ".");
 				}
 			} else if(Auxiliar.deveProcessarSegundoGrau()) {
-				totalProcessosRecusados += setProcessosRecusadosG2.size();
+				totalProcessosRecusados += setTodosProcessosRecusadosG2.size();
 				LOGGER.warn("Um total de " + totalProcessosRecusados + " processos foram RECUSADOS no CNJ. A lista completa foi gravada "
 						+ "no arquivo " + Auxiliar.getArquivoListaProcessosErroProtocolo(2).getAbsoluteFile() + ".");
 			}
@@ -613,13 +614,13 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * 
 	 * @param builder URIBuilder com a URI a ser consultada
 	 * @param mapProtocolosComProcessos Map com a tupla Protocolo/Processo para conseguir o número do processo a partir do protocolo retornado pelo serviço do CNJ.
-	 * @param setProcessosRecusadosG1 Lista com os processos recusados do 1° Grau
-	 * @param setProcessosRecusadosG2 Lista com os processos recusados do 2° Grau
+	 * @param setTodosProcessosRecusadosG1 Lista com os processos recusados do 1° Grau
+	 * @param setTodosProcessosRecusadosG2 Lista com os processos recusados do 2° Grau
 	 */
 	@SuppressWarnings("unchecked")
 	private void executarConsultasProtocolosComErroCNJ(URIBuilder builder,
-			Map<String, String> mapProtocolosComProcessos, Set<String> setProcessosRecusadosG1, 
-			Set<String> setProcessosRecusadosG2) {
+			Map<String, String> mapProtocolosComProcessos, Set<String> setTodosProcessosRecusadosG1, 
+			Set<String> setTodosProcessosRecusadosG2) {
 
 		String agrupadorErrosConsultaProtocolosErroCNJ = "Consulta de protocolos com erro no CNJ";
 		
@@ -632,9 +633,11 @@ public class Op_5_ConfereProtocolosCNJ {
 		File arquivoProcessosRecusadosG1 = Auxiliar.getArquivoListaProcessosErroProtocolo(1);
 		File arquivoProcessosRecusadosG2 = Auxiliar.getArquivoListaProcessosErroProtocolo(2);
 		
-		if(parametroPaginaAtual == 0) {
-			//Consulta está começando da primeira página, então se existirem os arquivos com a lista de processos com erro, 
-			//eles serão removidos, pois serão lixo.
+		if(!Auxiliar.getArquivoUltimaPaginaConsultaCNJ().exists()) {
+			//Consulta está começando pela primeira vez, então se existirem os arquivos com a lista de processos com erro, 
+			//eles serão removidos, pois serão lixo. Não faz a comparação com o número da página, pois já pode ter acontecido
+			//a busca por processos com outro status com erro, e nesse caso o arquivo com processos pode estar preenchido
+			//com processos com outro status e esse arquivo não deve ser apagado nesse caso.
 			
 			if(Auxiliar.deveProcessarPrimeiroGrau() && arquivoProcessosRecusadosG1.exists()) {
 				arquivoProcessosRecusadosG1.delete();
@@ -642,7 +645,7 @@ public class Op_5_ConfereProtocolosCNJ {
 				arquivoProcessosRecusadosG2.delete();
 			}
 			
-			//TODO Verificar se o último protocolo enviado já foi processado
+			//TODO Verificar se ainda existe algum protocolo com o status em processamento
 		} else {
 			LOGGER.info("Reiniciando o processo da página " + parametroPaginaAtual + "...");
 		}
@@ -681,23 +684,26 @@ public class Op_5_ConfereProtocolosCNJ {
 			Set<String> setProcessosRecusadosRespostaG1 = listaProcessosRespostaJson.get(0);
 			Set<String> setProcessosRecusadosRespostaG2 = listaProcessosRespostaJson.get(1);
 			
-			//Remove os duplicados
-			for (String numProcesso : setProcessosRecusadosRespostaG1) {
-				if(setProcessosRecusadosG1.contains(numProcesso)) {
-					setProcessosRecusadosRespostaG1.remove(numProcesso);
+			//Remove os duplicados. É usado o iterator no lugar do foreach pois a exceção ConcurrentModificationException 
+			//será lançada ao tentar iterar sobre a lista após apagar um de seus elementos.
+			for (Iterator<String> i = setProcessosRecusadosRespostaG1.iterator(); i.hasNext();) {
+				String numProcesso = i.next();
+				if(setTodosProcessosRecusadosG1.contains(numProcesso)) {
+					i.remove();
 				}
 			}
 			
-			for (String numProcesso : setProcessosRecusadosRespostaG2) {
-				if(setProcessosRecusadosG2.contains(numProcesso)) {
-					setProcessosRecusadosRespostaG2.remove(numProcesso);
+			for (Iterator<String> i = setProcessosRecusadosRespostaG2.iterator(); i.hasNext();) {
+				String numProcesso = i.next();
+				if(setTodosProcessosRecusadosG2.contains(numProcesso)) {
+					i.remove();
 				}
 			}
 		
 			//Salva o número de processos nos arquivos			
 			if(Auxiliar.deveProcessarPrimeiroGrau()) {
 				try {
-					gravarListaProcessosRecusadosEmArquivo(setProcessosRecusadosG1, Auxiliar.getArquivoListaProcessosErroProtocolo(1));
+					gravarListaProcessosEmArquivo(setProcessosRecusadosRespostaG1, Auxiliar.getArquivoListaProcessosErroProtocolo(1), true);
 				} catch (IOException e) {
 					LOGGER.warn("Não foi possível escrever a lista de processos recusados no arquivo " + Auxiliar.getArquivoListaProcessosErroProtocolo(1).getPath());
 				}				
@@ -705,19 +711,19 @@ public class Op_5_ConfereProtocolosCNJ {
 
 			if(Auxiliar.deveProcessarSegundoGrau()) {
 				try {
-					gravarListaProcessosRecusadosEmArquivo(setProcessosRecusadosG2, Auxiliar.getArquivoListaProcessosErroProtocolo(2));
+					gravarListaProcessosEmArquivo(setProcessosRecusadosRespostaG2, Auxiliar.getArquivoListaProcessosErroProtocolo(2), true);
 				} catch (IOException e) {
 					LOGGER.warn("Não foi possível escrever a lista de processos recusados no arquivo " + Auxiliar.getArquivoListaProcessosErroProtocolo(2).getPath());
 				}
 			}
 			
 			//Adiciona os processos da resposta atual ao conjunto total de processos
-			setProcessosRecusadosG1.addAll(setProcessosRecusadosRespostaG1);
-			setProcessosRecusadosG2.addAll(setProcessosRecusadosRespostaG2);
+			setTodosProcessosRecusadosG1.addAll(setProcessosRecusadosRespostaG1);
+			setTodosProcessosRecusadosG2.addAll(setProcessosRecusadosRespostaG2);
 			
 			gravarUltimaPaginaConsultada(statusErro, Integer.toString(parametroPaginaAtual));
 
-		}  while (((double) totalProcessosRecusados / TAMANHO_PAGINA_CONSULTA_PROTOCOLO_CNJ) > parametroPaginaAtual++);
+		}  while (((double) totalProcessosRecusados / TAMANHO_PAGINA_CONSULTA_PROTOCOLO_CNJ) > ++parametroPaginaAtual);
 	}
 
 	/**
@@ -927,13 +933,17 @@ public class Op_5_ConfereProtocolosCNJ {
 
 		// Como o erro 504 acontece com alguma frequência mesmo quando o
 		// serviço está funcionando, faz a tentativa até 10 vezes
-		int tentativasTimeOut = 0;			
+		int tentativasTimeOut = 0;
+		
+		String body = ""; 
 
 		try {
 			do {
 				// Executa o GET
 				tempo = System.currentTimeMillis();
-				response = httpClient.execute(get);			
+				response = httpClient.execute(get);
+				HttpEntity result = response.getEntity();
+				body = EntityUtils.toString(result, Charset.forName("UTF-8"));
 				statusCode = response.getStatusLine().getStatusCode();
 				LOGGER.info("* Resposta em " + tempo + "ms (" + statusCode + ")");
 				if (statusCode == 504 && tentativasTimeOut < 10) {
@@ -958,9 +968,6 @@ public class Op_5_ConfereProtocolosCNJ {
 			throw new IOException(
 					"Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)");
 		} 
-		
-		HttpEntity result = response.getEntity();
-		String body  = EntityUtils.toString(result, Charset.forName("UTF-8"));
 		
 		return body;
 	}
@@ -1099,12 +1106,14 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * 
 	 * @param setProcessosRecusados Conjunto de processos recusados
 	 * @param arquivoSaida Arquivo a ser gravado
+	 * @param acrescentarFinalArquivo Indica se os processos devem ser acrescentados ao final do arquivo, ou se um novo arquivo será gerado
 	 * 
 	 * @throws IOException
 	 */
-	public void gravarListaProcessosRecusadosEmArquivo(Set<String> setProcessosRecusados, File arquivoSaida) throws IOException {
-		arquivoSaida.getParentFile().mkdirs();
-		FileWriter fw = new FileWriter(arquivoSaida);
+	public void gravarListaProcessosEmArquivo(Set<String> setProcessosRecusados, File arquivoSaida, boolean acrescentarFinalArquivo) throws IOException {
+		
+		arquivoSaida.getParentFile().mkdirs();			
+		FileWriter fw = new FileWriter(arquivoSaida, acrescentarFinalArquivo);
 		try {
 			for (String processo: setProcessosRecusados) {
 				fw.append(processo);
