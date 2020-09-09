@@ -61,7 +61,9 @@ public class Auxiliar {
 	public static final String SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO = "APENAS_PJE_COM_MIGRADOS_LEGADO";
 	public static final String SISTEMA_JUDICIAL_TODOS = "TODOS";
 	public static final String VALIDACAO_CNJ_TODOS = "TODOS";
-	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO = "APENAS_COM_ERRO";
+	public static final String VALIDACAO_CNJ_TODOS_COM_ERRO = "TODOS_COM_ERRO";
+	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO = "APENAS_COM_ERRO_PROCESSADO_COM_ERRO";
+	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO = "APENAS_COM_ERRO_NO_ARQUIVO";
 	
 	/**
 	 * Recupera a pasta em que se encontram os arquivos sql dos diretórios 'op_1_baixa_lista_processos '
@@ -801,7 +803,7 @@ public class Auxiliar {
 		
 		String tipoValidacao = Auxiliar.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj, false);
 
-		if (tipoValidacao != null && tipoValidacao.equals(Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO)) {
+		if (tipoValidacao != null && tipoValidacao.equals(Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO)) {
 			retorno = true;
 		} 
 

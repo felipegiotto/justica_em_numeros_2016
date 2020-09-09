@@ -113,10 +113,13 @@ public class Op_5_ConfereProtocolosCNJ {
 				
 				String tipo_validacao_protocolo_cnj = Auxiliar.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj, false);
 				
-				if (tipo_validacao_protocolo_cnj == null || Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO.equals(tipo_validacao_protocolo_cnj)) {
-					operacao.consultarProtocolosComErroNoCNJ();
+				if (tipo_validacao_protocolo_cnj == null
+						|| Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(tipo_validacao_protocolo_cnj)
+						|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO.equals(tipo_validacao_protocolo_cnj)
+						|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(tipo_validacao_protocolo_cnj)) {
+					operacao.consultarProtocolosComErroNoCNJ(tipo_validacao_protocolo_cnj);
 				} else if (Auxiliar.VALIDACAO_CNJ_TODOS.equals(tipo_validacao_protocolo_cnj)) {
-					throw new RuntimeException("Operação ainda não implementada corretamente.");
+					throw new RuntimeException("Tipo de validação TODOS ainda não implementado corretamente.");
 //					operacao.localizarProtocolosConsultarNoCNJ();
 //					operacao.gravarTotalProtocolosRecusados();					
 				} else {
@@ -496,19 +499,27 @@ public class Op_5_ConfereProtocolosCNJ {
 	
 	
 	/**
-	 * Consulta todos os protocolos com erro (status 6 e 7) no CNJ. Salva num arquivo a página atual da consulta para permitir o 
-	 * reinício a partir dela.
+	 * Consulta os protocolos com erro no CNJ de acordo com o tipo de validação preenchido no arquivo de configuração: 
+	 * TODOS_COM_ERRO (status 6 e 7), APENAS_COM_ERRO_PROCESSADO_COM_ERRO (status 6) e APENAS_COM_ERRO_NO_ARQUIVO (status 7).
+	 * Salva a lista de processos em arquivo e também a página atual da consulta para permitir o reinício a partir dessa página.
 	 * 
 	 * TODO: Reenviar automaticamente os protocolos com erro.
 	 * 
 	 */
-	private void consultarProtocolosComErroNoCNJ() {
+	private void consultarProtocolosComErroNoCNJ(String tipo_validacao_protocolo_cnj) {
 		
 		String parametroProcolo = "";		
 		String parametroDataInicio = "";
 		String parametroDataFim = "";
 		
 		int totalProcessosRecusados = 0;
+		
+		if(tipo_validacao_protocolo_cnj != null) {
+			LOGGER.info(String.format("Tipo de validação escolhido: %s.", tipo_validacao_protocolo_cnj));
+		} else {
+			//Validação padrão quando nenhum valor é preenchido
+			LOGGER.info("Tipo de validação escolhido: VALIDACAO_CNJ_TODOS_COM_ERRO.");
+		}
 		
 		LOGGER.info("Carregando os arquivos de protocolos.");
 		
@@ -534,15 +545,25 @@ public class Op_5_ConfereProtocolosCNJ {
 		Set<String> setTodosProcessosRecusadosG1 = new HashSet<String>();
 		Set<String> setTodosProcessosRecusadosG2 = new HashSet<String>();
 		
-		//Constrói a URL com o status "Processado com erro"
-		URIBuilder builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, STATUS_CNJ_PROCESSADO_COM_ERRO);
-	
-		executarConsultasProtocolosComErroCNJ(builder, mapProtocolosComProcessos, setTodosProcessosRecusadosG1, setTodosProcessosRecusadosG2);
+		URIBuilder builder;
 		
-		//Constrói a URL com o status "Erro no arquivo"
-		builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, STATUS_CNJ_ERRO_ARQUIVO);
+		if (tipo_validacao_protocolo_cnj == null
+				|| Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(tipo_validacao_protocolo_cnj)
+				|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO.equals(tipo_validacao_protocolo_cnj)) {
+			//Constrói a URL com o status "Processado com erro"
+			builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, STATUS_CNJ_PROCESSADO_COM_ERRO);
+
+			executarConsultasProtocolosComErroCNJ(builder, mapProtocolosComProcessos, setTodosProcessosRecusadosG1, setTodosProcessosRecusadosG2);
+		}
 		
-		executarConsultasProtocolosComErroCNJ(builder, mapProtocolosComProcessos, setTodosProcessosRecusadosG1, setTodosProcessosRecusadosG2);
+		if (tipo_validacao_protocolo_cnj == null
+				|| Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(tipo_validacao_protocolo_cnj)
+				|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(tipo_validacao_protocolo_cnj)) {		
+			//Constrói a URL com o status "Erro no arquivo"
+			builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, STATUS_CNJ_ERRO_ARQUIVO);
+
+			executarConsultasProtocolosComErroCNJ(builder, mapProtocolosComProcessos, setTodosProcessosRecusadosG1, setTodosProcessosRecusadosG2);		
+		}
 		
 		if(setTodosProcessosRecusadosG1.size() > 0 || setTodosProcessosRecusadosG2.size() > 0) {
 			if(Auxiliar.deveProcessarPrimeiroGrau()) {
