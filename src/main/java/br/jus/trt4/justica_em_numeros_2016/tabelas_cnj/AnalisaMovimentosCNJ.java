@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,12 +28,14 @@ import br.jus.trt3.depara.vo.MovimentoCNJ;
 import br.jus.trt3.depara.vo.MovimentoJT;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DataJudException;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.EventoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoTipoComplementoCNJ;
 
 /**
  * Classe que preencherá um objeto do tipo {@link TipoMovimentoProcessual}, conforme o dado no PJe:
@@ -56,6 +57,7 @@ public class AnalisaMovimentosCNJ {
 	private List<Integer> movimentosProcessuaisCNJ;
 	private Map<Integer, EventoDto> eventosPorId;
 	private GerenteDeParaJTCNJ gerenteDeParaJTCNJ;
+	private static Map<Integer, TipoTipoComplementoCNJ> tiposTipoComplementoCNJ = new HashMap<Integer, TipoTipoComplementoCNJ>();
 	
 	//A conexaoPJe só será utilizada quando baseEmAnaliseEnum.isBasePJe()
 	public AnalisaMovimentosCNJ(BaseEmAnaliseEnum baseEmAnaliseEnum, Connection conexaoPJe) throws IOException, SQLException {
@@ -193,6 +195,13 @@ public class AnalisaMovimentosCNJ {
 			TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
 			movimentoNacional.setCodigoNacional(codigoMovimento);
 			movimento.setMovimentoNacional(movimentoNacional);
+			
+			//Verifica se o complemento é do tipo tabelado ou não
+			for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
+				if(TipoTipoComplementoCNJ.TABELADO.equals(getTipoTipoComplementoCNJPorCodigo(complementoDto.getCodigoTipoComplemento()))) {
+					complementoDto.setComplementoTipoTabelado(true);
+				}
+			}
 		}
 	}
 	
@@ -231,9 +240,61 @@ public class AnalisaMovimentosCNJ {
 		LOGGER.warn("Excedido o limite de tentativas recursivas de identificar movimento pai!");
 		return 0;
 	}
-
 	
 	public boolean movimentoExisteNasTabelasNacionais(int codigoAssunto) {
 		return movimentosProcessuaisCNJ.contains(codigoAssunto);
+	}
+	
+	/**
+	 * Carrega o conjunto de códigos de tipo de complemento e o tipo de tipo de complemento associado (tabelado, identificador ou livre).
+	 * dos complementos do CNJ. Essa informação é carregada do esquema sgt_consulta (base intermediária). 
+	 * A informação no PJe está errada (pje.tb_tipo_complemento) e não há garantia de que toda a lista de complementos 
+	 * estará na ferramenta DE-PARA (classe EstruturasDeParaJTCNJ), além de ser trabalhoso pegar apenas qual é o tipo de um tipo de complemento. 
+	 */
+	private static void carregarTiposComplementoCNJ() {
+		
+		if(tiposTipoComplementoCNJ.isEmpty()) {
+		
+			Connection conexaoLegado = null;
+			NamedParameterStatement nsTipoComplemento = null;
+
+			String sqlConsultaTodosTiposComplementoCNJ = 
+					"SELECT c.seq_complemento AS seq_complemento, " +
+					"		tc.desc_tipo_complemento AS desc_tipo_complemento " + 
+					"FROM sgt_consulta.complemento c " + 
+					"	INNER JOIN tipo_complemento tc ON tc.seq_tipo_complemento = c.seq_tipo_complemento"; 
+
+			try {
+				conexaoLegado = Auxiliar.getConexao(1, BaseEmAnaliseEnum.LEGADO);
+
+				nsTipoComplemento = new NamedParameterStatement(conexaoLegado, sqlConsultaTodosTiposComplementoCNJ);
+
+				ResultSet rsTipoComplemento = nsTipoComplemento.executeQuery();
+				while (rsTipoComplemento.next()) {
+					TipoTipoComplementoCNJ tipoComplemento = TipoTipoComplementoCNJ.getTipoTipoComplemento(rsTipoComplemento.getString("desc_tipo_complemento"));
+					tiposTipoComplementoCNJ.put(Integer.valueOf(rsTipoComplemento.getInt("seq_complemento")), tipoComplemento);
+				}
+			} catch (SQLException | DataJudException e) {
+				LOGGER.warn("Não foi possível executar a consulta para carregar os tipos de complemento do CNJ.");
+			}
+
+			Auxiliar.fechar(nsTipoComplemento);
+			nsTipoComplemento = null;
+			Auxiliar.fechar(conexaoLegado);
+			conexaoLegado = null;
+		}
+		
+	}
+	
+	/**
+	 * Retorna o tipo do tipo de complemento (tabelado, identificador ou livre) dos complementos do CNJ.
+	 * @param codigo Código do tipo do complemento do CNJ
+	 * @return Enumeração {@link TipoTipoComplementoCNJ} referente ao código do tipo de complemento
+	 */
+	private TipoTipoComplementoCNJ getTipoTipoComplementoCNJPorCodigo(int codigo) {
+		
+		carregarTiposComplementoCNJ();
+			
+		return tiposTipoComplementoCNJ.get(codigo);		
 	}
 }
