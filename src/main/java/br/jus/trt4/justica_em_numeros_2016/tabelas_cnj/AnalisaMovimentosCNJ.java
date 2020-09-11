@@ -1,6 +1,7 @@
 package br.jus.trt4.justica_em_numeros_2016.tabelas_cnj;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Scanner;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -28,7 +30,6 @@ import br.jus.trt3.depara.vo.MovimentoCNJ;
 import br.jus.trt3.depara.vo.MovimentoJT;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DataJudException;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.EventoDto;
@@ -246,44 +247,74 @@ public class AnalisaMovimentosCNJ {
 	}
 	
 	/**
-	 * Carrega o conjunto de códigos de tipo de complemento e o tipo de tipo de complemento associado (tabelado, identificador ou livre).
-	 * dos complementos do CNJ. Essa informação é carregada do esquema sgt_consulta (base intermediária). 
-	 * A informação no PJe está errada (pje.tb_tipo_complemento) e não há garantia de que toda a lista de complementos 
-	 * estará na ferramenta DE-PARA (classe EstruturasDeParaJTCNJ), além de ser trabalhoso pegar apenas qual é o tipo de um tipo de complemento. 
+	 * Carrega o conjunto de códigos de tipo de complemento e o tipo de tipo de complemento associado (tabelado, identificador ou livre)
+	 * dos complementos do CNJ. A informação no PJe está errada (pje.tb_tipo_complemento) e não há garantia de que 
+	 * toda a lista de complementos estará na ferramenta DE-PARA (classe EstruturasDeParaJTCNJ), 
+	 * além de ser trabalhoso buscar apenas qual é o tipo de um tipo de complemento. 
 	 */
 	private static void carregarTiposComplementoCNJ() {
 		
 		if(tiposTipoComplementoCNJ.isEmpty()) {
-		
-			Connection conexaoLegado = null;
-			NamedParameterStatement nsTipoComplemento = null;
-
-			String sqlConsultaTodosTiposComplementoCNJ = 
-					"SELECT c.seq_complemento AS seq_complemento, " +
-					"		tc.desc_tipo_complemento AS desc_tipo_complemento " + 
-					"FROM sgt_consulta.complemento c " + 
-					"	INNER JOIN tipo_complemento tc ON tc.seq_tipo_complemento = c.seq_tipo_complemento"; 
-
-			try {
-				conexaoLegado = Auxiliar.getConexao(1, BaseEmAnaliseEnum.LEGADO);
-
-				nsTipoComplemento = new NamedParameterStatement(conexaoLegado, sqlConsultaTodosTiposComplementoCNJ);
-
-				ResultSet rsTipoComplemento = nsTipoComplemento.executeQuery();
-				while (rsTipoComplemento.next()) {
-					TipoTipoComplementoCNJ tipoComplemento = TipoTipoComplementoCNJ.getTipoTipoComplemento(rsTipoComplemento.getString("desc_tipo_complemento"));
-					tiposTipoComplementoCNJ.put(Integer.valueOf(rsTipoComplemento.getInt("seq_complemento")), tipoComplemento);
-				}
-			} catch (SQLException | DataJudException e) {
-				LOGGER.warn("Não foi possível executar a consulta para carregar os tipos de complemento do CNJ.");
+			File arquivoComplementos = new File("src/main/resources/tabelas_cnj/complementos_cnj.csv");
+			
+			if(!arquivoComplementos.exists()) {
+				LOGGER.error("Arquivo complementos_cnj.csv não existe! Não será possível definir se os complementos da base legada "
+						+ "são tabelados ou não.");
+				return;
 			}
+			
+			LOGGER.info("Carregando lista de complementos CNJ do arquivo " + arquivoComplementos + "...");
+			
+			// Lista de complementos do CNJ. Essa lista definirá se o complemento é tabelado ou não, 
+			// e também tem mais informações, como os outros tipos de complemento (Identificador e livre), descrição do
+			// complemento e o seu nome.
+			// Fonte: https://www.cnj.jus.br/sgt/gerenciar_complementos.php
+			
+			Scanner scanner = null;
+			
+			try {
+				scanner = new Scanner(arquivoComplementos, "UTF-8");
+				
+				int linha = 0;
+				while (scanner.hasNextLine()) {
+					linha++;
+					String line = scanner.nextLine();
+					if (line.isEmpty() || line.startsWith("#")) {
+						continue;
+					}
+					
+					// Quebra cada linha em quatro partes: o código do complemento, nome do complemento, tipo do complemento, descrição do complemento
+					String[] partes = line.split(";");
+					if (partes.length < 3) {
+						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': a linha deve conter pelo menos 3 campos, sendo o 4 opcional, separados por ponto e vírgula: o código do complemento, nome do complemento, tipo do complemento, descrição do complemento.");
+					}
+					
+					int codigoComplemento;
+					TipoTipoComplementoCNJ tipoTipoComplementoCNJ;
+					
+					//Se for necessário usar no futuro
+					//String nomeComplemento = partes[1];					
+					//String descricaoComplemento = partes[3];
 
-			Auxiliar.fechar(nsTipoComplemento);
-			nsTipoComplemento = null;
-			Auxiliar.fechar(conexaoLegado);
-			conexaoLegado = null;
+					try {
+						codigoComplemento = Integer.parseInt(partes[0]);
+						tipoTipoComplementoCNJ = TipoTipoComplementoCNJ.getTipoTipoComplemento(partes[2]);
+						tiposTipoComplementoCNJ.put(codigoComplemento, tipoTipoComplementoCNJ);
+					} catch (NumberFormatException ex) {
+						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': o código do complemento deve ser um valor numérico inteiro.");
+					} catch (DataJudException e) {
+						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': a descrição do tipo de complemento deve ser Tabelado, Identificador ou Livre.");
+					}
+				}
+			} catch (FileNotFoundException e) {
+				LOGGER.error("Arquivo complementos_cnj.csv não existe! Não será possível definir se os complementos da base legada "
+						+ "são tabelados ou não.");
+			} finally {
+				if (scanner != null) {
+					scanner.close();
+				}
+			}
 		}
-		
 	}
 	
 	/**
