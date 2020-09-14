@@ -93,6 +93,8 @@ public class AnalisaMovimentosCNJ {
 			} catch (DeParaJTCNJException e) {
 				throw new IOException("Erro iniciando DE-PARA de movimentos", e);
 			}
+		} else {
+			carregarTiposComplementoCNJ();
 		}
 	}
 	
@@ -199,9 +201,8 @@ public class AnalisaMovimentosCNJ {
 			
 			//Verifica se o complemento é do tipo tabelado ou não
 			for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
-				if(TipoTipoComplementoCNJ.TABELADO.equals(getTipoTipoComplementoCNJPorCodigo(complementoDto.getCodigoTipoComplemento()))) {
-					complementoDto.setComplementoTipoTabelado(true);
-				}
+				TipoTipoComplementoCNJ tipoTipoComplementoCNJ = getTipoTipoComplementoCNJPorCodigo(complementoDto.getCodigoTipoComplemento());
+				complementoDto.setComplementoTipoTabelado(tipoTipoComplementoCNJ != null && tipoTipoComplementoCNJ.isComplementoTabelado());
 			}
 		}
 	}
@@ -253,12 +254,11 @@ public class AnalisaMovimentosCNJ {
 	 * além de ser trabalhoso buscar apenas qual é o tipo de um tipo de complemento. 
 	 */
 	private static void carregarTiposComplementoCNJ() {
-		
 		if(tiposTipoComplementoCNJ.isEmpty()) {
-			File arquivoComplementos = new File("src/main/resources/tabelas_cnj/complementos_cnj.csv");
+			File arquivoComplementos = new File("src/main/resources/tabelas_cnj/tipo_de_complementos_cnj.csv");
 			
 			if(!arquivoComplementos.exists()) {
-				LOGGER.error("Arquivo complementos_cnj.csv não existe! Não será possível definir se os complementos da base legada "
+				LOGGER.error("Arquivo tipo_de_complementos_cnj.csv não existe! Não será possível definir se os complementos da base legada "
 						+ "são tabelados ou não.");
 				return;
 			}
@@ -303,11 +303,11 @@ public class AnalisaMovimentosCNJ {
 					} catch (NumberFormatException ex) {
 						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': o código do complemento deve ser um valor numérico inteiro.");
 					} catch (DataJudException e) {
-						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': a descrição do tipo de complemento deve ser Tabelado, Identificador ou Livre.");
+						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': a descrição do tipo de complemento deve ser T, I ou L.");
 					}
 				}
 			} catch (FileNotFoundException e) {
-				LOGGER.error("Arquivo complementos_cnj.csv não existe! Não será possível definir se os complementos da base legada "
+				LOGGER.error("Arquivo tipo_de_complementos_cnj.csv não existe! Não será possível definir se os complementos da base legada "
 						+ "são tabelados ou não.");
 			} finally {
 				if (scanner != null) {
@@ -323,9 +323,12 @@ public class AnalisaMovimentosCNJ {
 	 * @return Enumeração {@link TipoTipoComplementoCNJ} referente ao código do tipo de complemento
 	 */
 	private TipoTipoComplementoCNJ getTipoTipoComplementoCNJPorCodigo(int codigo) {
+		TipoTipoComplementoCNJ tipoTipoComplementoCNJ = tiposTipoComplementoCNJ.get(codigo);
 		
-		carregarTiposComplementoCNJ();
-			
-		return tiposTipoComplementoCNJ.get(codigo);		
+		if (tipoTipoComplementoCNJ == null) {
+			LOGGER.error("Não foi possível localizar o tipo do tipo de complemento do CNJ de código: " + codigo);
+		}
+		
+		return tipoTipoComplementoCNJ;		
 	}
 }

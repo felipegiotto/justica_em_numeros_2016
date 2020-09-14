@@ -1,0 +1,39 @@
+1;nome_da_parte;I;
+2;tipo_de_distribuicao_redistribuicao;T;
+3;tipo_de_conclusao;T;
+4;tipo_de_documento;T;Podem ser criados novos tipos de documento pelos Tribunais/Conselhos, para uso local.
+5;ato_publicado;I;
+6;resultado;T;
+7;destino;I;
+8;numero_do_processo;I;
+9;numero_de_volumes_e_apensos;L;
+10;tipo_da_decisao_anterior;I;
+11;situacao;T;
+12;data_hora;I;
+13;destinatario;I;Deve ser consignado o nome do destinatário dos autos, e não o órgão.
+14;data;I;
+15;situacao_da_audiencia;T;
+16;tipo_de_audiencia;T;
+17;motivo_da_redistribuicao;T;
+18;motivo_da_remessa;T;
+19;tipo_de_peticao;T;Podem ser criados novos tipos de petição pelos Tribunais/Conselhos, para uso local.
+20;nome_do_juizo;I;
+21;local;I;
+22;tribunal;T;Identifica o tribunal onde tramita(m) o(s) recurso(s) repetitivo(s) vinculados ao Tema ou Controvérsia.
+23;tipo_de_deliberacao;T;
+25;movimento_retificado;I;
+26;classe_anterior;I;
+27;classe_nova;I;
+28;tipo_tema_controversia;T;Corresponde à identificação de se é um tema ou controvérsia que justifica a suspensão do processo. 
+29;numero_tema_controversia_STF;I;Corresponde ao número do tema ou controvérsia, no âmbito do STF, que justifica a suspensão do processo onde foi lançado o movimento. Corresponde às tabelas de temas e controvérsias fornecidas pelo STF.
+30;numero_tema_controversia_tribunal_superior;I;Corresponde ao número do tema ou controvérsia, no âmbito do Tribunal (STJ, TSE ou TST), que justifica a suspensão do processo. Os valores correspondem às tabelas de temas e controvérsias fornecidas pelos referidos Tribunais, quando houver.
+31;destinatario_de _medida_protetiva;T;
+32;tipo_de_medida_protetiva;T;
+33;nome_do_incidente_repetitivo;L;
+34;motivos_de_registro;T;
+35;numero_tema_controversia_tribunal;I;Corresponde ao número do tema ou controvérsia, no âmbito do tribunal, que justifica a suspensão do processo onde foi lançado o movimento. Corresponde às tabelas de temas e controvérsias fornecidas pelo tribunal.
+36;dirigida_por;T;Indica a autoridade responsável por dirigir a audiência.
+37;Tipo_Movimentacao_Partido;I;
+38;Situacao_Candidato;I;
+39;Tipo_Procedimento_Restaurativo;T;
+40;nome_do_magistrado;I;Nome do magistrado a que se refere o movimento.

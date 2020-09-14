@@ -9,11 +9,11 @@ public enum TipoTipoComplementoCNJ {
     TABELADO;
     
     public static TipoTipoComplementoCNJ getTipoTipoComplemento(String strTipoTipoComplemento) throws DataJudException{
-        if("Livre".equals(strTipoTipoComplemento)) {
+        if("L".equals(strTipoTipoComplemento)) {
             return LIVRE;
-        } else if ("Identificador".equals(strTipoTipoComplemento)) {
+        } else if ("I".equals(strTipoTipoComplemento)) {
             return IDENTIFICADOR;
-        } else if ("Tabelado".equals(strTipoTipoComplemento)) {
+        } else if ("T".equals(strTipoTipoComplemento)) {
             return TABELADO;
         } else {
             throw new DataJudException("Tipo de complemento CNJ com tipo desconhecido.");
