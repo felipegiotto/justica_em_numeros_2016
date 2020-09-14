@@ -1,18 +1,19 @@
 package br.jus.trt4.justica_em_numeros_2016.tabelas_cnj;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Scanner;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +36,7 @@ import br.jus.trt4.justica_em_numeros_2016.dto.EventoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ProcessoDto;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoTipoComplementoCNJ;
 
 /**
  * Classe que preencherá um objeto do tipo {@link TipoMovimentoProcessual}, conforme o dado no PJe:
@@ -56,10 +58,12 @@ public class AnalisaMovimentosCNJ {
 	private List<Integer> movimentosProcessuaisCNJ;
 	private Map<Integer, EventoDto> eventosPorId;
 	private GerenteDeParaJTCNJ gerenteDeParaJTCNJ;
+	private static Map<Integer, TipoTipoComplementoCNJ> tiposTipoComplementoCNJ = new HashMap<Integer, TipoTipoComplementoCNJ>();
 	
 	//A conexaoPJe só será utilizada quando baseEmAnaliseEnum.isBasePJe()
 	public AnalisaMovimentosCNJ(BaseEmAnaliseEnum baseEmAnaliseEnum, Connection conexaoPJe) throws IOException, SQLException {
 		super();
+		carregarTiposComplementoCNJ();
 		if (baseEmAnaliseEnum.isBasePJe()) {
 			File arquivoMovimentos = new File("src/main/resources/tabelas_cnj/movimentos_cnj.csv");
 			LOGGER.info("Carregando lista de movimentos CNJ do arquivo " + arquivoMovimentos + "...");
@@ -193,6 +197,12 @@ public class AnalisaMovimentosCNJ {
 			TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
 			movimentoNacional.setCodigoNacional(codigoMovimento);
 			movimento.setMovimentoNacional(movimentoNacional);
+			
+			//Verifica se o complemento é do tipo tabelado ou não
+			for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
+				TipoTipoComplementoCNJ tipoTipoComplementoCNJ = getTipoTipoComplementoCNJPorCodigo(complementoDto.getCodigoTipoComplemento());
+				complementoDto.setComplementoTipoTabelado(tipoTipoComplementoCNJ != null && tipoTipoComplementoCNJ.isComplementoTabelado());
+			}
 		}
 	}
 	
@@ -231,9 +241,93 @@ public class AnalisaMovimentosCNJ {
 		LOGGER.warn("Excedido o limite de tentativas recursivas de identificar movimento pai!");
 		return 0;
 	}
-
 	
 	public boolean movimentoExisteNasTabelasNacionais(int codigoAssunto) {
 		return movimentosProcessuaisCNJ.contains(codigoAssunto);
+	}
+	
+	/**
+	 * Carrega o conjunto de códigos de tipo de complemento e o tipo de tipo de complemento associado (tabelado, identificador ou livre)
+	 * dos complementos do CNJ. A informação no PJe está errada (pje.tb_tipo_complemento) e não há garantia de que 
+	 * toda a lista de complementos estará na ferramenta DE-PARA (classe EstruturasDeParaJTCNJ), 
+	 * além de ser trabalhoso buscar apenas qual é o tipo de um tipo de complemento. 
+	 */
+	private static void carregarTiposComplementoCNJ() {
+		if(tiposTipoComplementoCNJ.isEmpty()) {
+			File arquivoComplementos = new File("src/main/resources/tabelas_cnj/tipos_de_complemento_cnj.csv");
+			
+			if(!arquivoComplementos.exists()) {
+				LOGGER.error("Arquivo tipos_de_complemento_cnj.csv não existe! Não será possível definir se os complementos da base legada "
+						+ "são tabelados ou não.");
+				return;
+			}
+			
+			LOGGER.info("Carregando lista de complementos CNJ do arquivo " + arquivoComplementos + "...");
+			
+			// Lista de complementos do CNJ. Essa lista definirá se o complemento é tabelado ou não, 
+			// e também tem mais informações, como os outros tipos de complemento (Identificador e livre), descrição do
+			// complemento e o seu nome.
+			// Fonte: https://www.cnj.jus.br/sgt/gerenciar_complementos.php
+			
+			Scanner scanner = null;
+			
+			try {
+				scanner = new Scanner(arquivoComplementos, "UTF-8");
+				
+				int linha = 0;
+				while (scanner.hasNextLine()) {
+					linha++;
+					String line = scanner.nextLine();
+					if (line.isEmpty() || line.startsWith("#")) {
+						continue;
+					}
+					
+					// Quebra cada linha em quatro partes: o código do complemento, nome do complemento, tipo do complemento, descrição do complemento
+					String[] partes = line.split(";");
+					if (partes.length < 3) {
+						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': a linha deve conter pelo menos 3 campos, sendo o 4 opcional, separados por ponto e vírgula: o código do complemento, nome do complemento, tipo do complemento, descrição do complemento.");
+					}
+					
+					int codigoComplemento;
+					TipoTipoComplementoCNJ tipoTipoComplementoCNJ;
+					
+					//Se for necessário usar no futuro
+					//String nomeComplemento = partes[1];					
+					//String descricaoComplemento = partes[3];
+
+					try {
+						codigoComplemento = Integer.parseInt(partes[0]);
+						tipoTipoComplementoCNJ = TipoTipoComplementoCNJ.getTipoTipoComplemento(partes[2]);
+						tiposTipoComplementoCNJ.put(codigoComplemento, tipoTipoComplementoCNJ);
+					} catch (NumberFormatException ex) {
+						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': o código do complemento deve ser um valor numérico inteiro.");
+					} catch (DataJudException e) {
+						LOGGER.error("Inconsistência na linha " + linha + " do arquivo '" + arquivoComplementos + "': a descrição do tipo de complemento deve ser T, I ou L.");
+					}
+				}
+			} catch (FileNotFoundException e) {
+				LOGGER.error("Arquivo tipos_de_complemento_cnj.csv não existe! Não será possível definir se os complementos da base legada "
+						+ "são tabelados ou não.");
+			} finally {
+				if (scanner != null) {
+					scanner.close();
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Retorna o tipo do tipo de complemento (tabelado, identificador ou livre) dos complementos do CNJ.
+	 * @param codigo Código do tipo do complemento do CNJ
+	 * @return Enumeração {@link TipoTipoComplementoCNJ} referente ao código do tipo de complemento
+	 */
+	private TipoTipoComplementoCNJ getTipoTipoComplementoCNJPorCodigo(int codigo) {
+		TipoTipoComplementoCNJ tipoTipoComplementoCNJ = tiposTipoComplementoCNJ.get(codigo);
+		
+		if (tipoTipoComplementoCNJ == null) {
+			LOGGER.error("Não foi possível localizar o tipo do tipo de complemento do CNJ de código: " + codigo);
+		}
+		
+		return tipoTipoComplementoCNJ;		
 	}
 }
