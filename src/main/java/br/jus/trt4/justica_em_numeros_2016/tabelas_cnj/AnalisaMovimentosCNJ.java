@@ -63,6 +63,7 @@ public class AnalisaMovimentosCNJ {
 	//A conexaoPJe só será utilizada quando baseEmAnaliseEnum.isBasePJe()
 	public AnalisaMovimentosCNJ(BaseEmAnaliseEnum baseEmAnaliseEnum, Connection conexaoPJe) throws IOException, SQLException {
 		super();
+		carregarTiposComplementoCNJ();
 		if (baseEmAnaliseEnum.isBasePJe()) {
 			File arquivoMovimentos = new File("src/main/resources/tabelas_cnj/movimentos_cnj.csv");
 			LOGGER.info("Carregando lista de movimentos CNJ do arquivo " + arquivoMovimentos + "...");
@@ -93,8 +94,6 @@ public class AnalisaMovimentosCNJ {
 			} catch (DeParaJTCNJException e) {
 				throw new IOException("Erro iniciando DE-PARA de movimentos", e);
 			}
-		} else {
-			carregarTiposComplementoCNJ();
 		}
 	}
 	
@@ -255,10 +254,10 @@ public class AnalisaMovimentosCNJ {
 	 */
 	private static void carregarTiposComplementoCNJ() {
 		if(tiposTipoComplementoCNJ.isEmpty()) {
-			File arquivoComplementos = new File("src/main/resources/tabelas_cnj/tipo_de_complementos_cnj.csv");
+			File arquivoComplementos = new File("src/main/resources/tabelas_cnj/tipos_de_complemento_cnj.csv");
 			
 			if(!arquivoComplementos.exists()) {
-				LOGGER.error("Arquivo tipo_de_complementos_cnj.csv não existe! Não será possível definir se os complementos da base legada "
+				LOGGER.error("Arquivo tipos_de_complemento_cnj.csv não existe! Não será possível definir se os complementos da base legada "
 						+ "são tabelados ou não.");
 				return;
 			}
@@ -307,7 +306,7 @@ public class AnalisaMovimentosCNJ {
 					}
 				}
 			} catch (FileNotFoundException e) {
-				LOGGER.error("Arquivo tipo_de_complementos_cnj.csv não existe! Não será possível definir se os complementos da base legada "
+				LOGGER.error("Arquivo tipos_de_complemento_cnj.csv não existe! Não será possível definir se os complementos da base legada "
 						+ "são tabelados ou não.");
 			} finally {
 				if (scanner != null) {
