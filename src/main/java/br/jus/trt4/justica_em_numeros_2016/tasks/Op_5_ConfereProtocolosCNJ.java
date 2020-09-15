@@ -528,6 +528,12 @@ public class Op_5_ConfereProtocolosCNJ {
 		
 		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosProtocolos, "Total de arquivos protocolos encontrados");
 		
+		if(arquivosProtocolos.size() == 0) {
+			LOGGER.error(String.format("Não foi encontrado nenhum arquivo .PROTOCOLO nas pastas %s e/ou %s.", 
+					Auxiliar.getPastaXMLsIndividuais(1).getAbsolutePath(), Auxiliar.getPastaXMLsIndividuais(2).getAbsolutePath()));
+			return;
+		}
+		
 		LOGGER.info("Carregando a data de início e data de fim da remessa.");
 		
 		List<String> parametrosData = carregarParametrosData(arquivosProtocolos);
@@ -1150,5 +1156,38 @@ public class Op_5_ConfereProtocolosCNJ {
 		} finally {
 			fw.close();
 		}
+	}
+	
+	/**
+	 * Grava em um arquivo as seguintes informações separadas por ponto e vírgula: instância, número do processo, número do protocolo
+	 * e data de geração do arquivo .PROTOCOLO.
+	 * 
+	 * @param arquivosComProtocolo Lista de arquivos com instância e protocolo
+	 * @param arquivoSaida Arquivo que será gravado. Como sugestão usar o método new File(Auxiliar.getPastaOutputRaiz(), "/nomeDoArquivo.txt"), 
+	 * 		  caso tenha realizado envios de vários tipos como COMPLETA, TESTES, PROCESSO, ETC. e queria que o arquivo seja gravado no mesmo local
+	 * 		  independentemente do método de geração usado. 
+	 * @param acrescentarFinalArquivo Indica se deverá sobrescrever o conteúdo do arquivo existente, ou então acrescentar o conteúdo
+	 *		  ao seu final, mantendo o conteúdo do arquivo. 
+	 * 
+	 * @throws IOException
+	 */
+	private void GravarListaProcessoProtocoloInstanciaEmArquivo(List<ArquivoComInstancia> arquivosComProtocolo, File arquivoSaida, boolean acrescentarFinalArquivo) throws IOException {
+
+		FileWriter fw = new FileWriter(arquivoSaida, acrescentarFinalArquivo);
+
+		for (ArquivoComInstancia arquivoComInstancia : arquivosComProtocolo) {
+
+			BasicFileAttributes atributos = Files.readAttributes(arquivoComInstancia.getArquivo().toPath(), BasicFileAttributes.class);
+			Date dataInicio = new Date(atributos.lastModifiedTime().toMillis());
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+
+			fw.append(String.format("%s;%s;%s;%s", arquivoComInstancia.getGrau(), 
+					arquivoComInstancia.getArquivo().getName().replace(".xml.protocolo", ""),
+					arquivoComInstancia.getProtocolo(),
+					formatter.format(dataInicio)));
+			fw.append("\r\n");
+		}
+
+		fw.close();			
 	}
 }
