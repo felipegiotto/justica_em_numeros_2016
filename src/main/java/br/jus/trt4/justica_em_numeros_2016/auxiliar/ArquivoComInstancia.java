@@ -1,8 +1,12 @@
 package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -131,11 +135,11 @@ public class ArquivoComInstancia {
 			
 			if (filho.isDirectory()) {
 				localizarArquivosRecursivamente(filho, grau, sufixo, arquivosParaEnviar);
-			} else {
-				try {
-					String protocolo = FileUtils.readFileToString(filho, "UTF-8");
+			} else {				
+				try(BufferedReader br = new BufferedReader(new FileReader(filho))) {
+					String protocolo = br.readLine();
 					arquivosParaEnviar.add(new ArquivoComInstancia(filho, grau, protocolo));
-				} catch (IOException e) {
+				} catch (Exception e) {
 					LOGGER.warn("* Não foi possível ler o arquivo " + filho.toString());
 				}			
 			}

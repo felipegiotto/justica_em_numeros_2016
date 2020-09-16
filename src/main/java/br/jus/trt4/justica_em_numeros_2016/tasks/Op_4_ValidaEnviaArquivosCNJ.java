@@ -157,7 +157,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		
 		// Lista com todos os arquivos pendentes
 		Auxiliar.prepararPastaDeSaida();
-		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml", true);
+		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml", false);
 		
 		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosXML, "Total de arquivos XML encontrados");
 		int totalArquivos = arquivosXML.size();
