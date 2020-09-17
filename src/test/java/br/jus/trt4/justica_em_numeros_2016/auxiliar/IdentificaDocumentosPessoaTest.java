@@ -156,7 +156,7 @@ public class IdentificaDocumentosPessoaTest extends AbstractTestCase {
 	private TipoPessoa carregaDocumentosPessoa(int grau, String nomePessoa, int idPessoa) throws SQLException, IOException {
 		BaseEmAnaliseEnum baseEmAnalise = BaseEmAnaliseEnum.PJE;
 		try (Connection conexaoBasePrincipal = Auxiliar.getConexao(grau, baseEmAnalise)) {
-			try (IdentificaDocumentosPessoa doc = new IdentificaDocumentosPessoa(conexaoBasePrincipal, baseEmAnalise)) {
+			try (IdentificaDocumentosPessoa doc = new IdentificaDocumentosPessoa(conexaoBasePrincipal, baseEmAnalise, grau)) {
 				TipoPessoa pessoa = new TipoPessoa();
 				pessoa.setNome(nomePessoa);
 				doc.preencherDocumentosPessoa(pessoa, idPessoa);

@@ -40,6 +40,8 @@ public enum Parametro {
 	descartar_movimentos_ausentes_de_para_cnj,
 	mesclar_movimentos_xml_legado_migrado,
 	movimentos_sem_serventia_cnj,
+	possui_deslocamento_oj_legado_1g,
+	possui_deslocamento_oj_legado_2g,
 	tipo_validacao_protocolo_cnj
 	;
 }

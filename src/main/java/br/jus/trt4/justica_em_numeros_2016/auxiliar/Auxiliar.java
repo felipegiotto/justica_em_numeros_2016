@@ -73,8 +73,8 @@ public class Auxiliar {
 	 * @param baseEmAnaliseEnum
 	 * @return
 	 */
-	public static String getPastaResources(BaseEmAnaliseEnum baseEmAnaliseEnum) {
-		return baseEmAnaliseEnum.isBasePJe() ? "pje" : "legado";
+	public static String getPastaResources(BaseEmAnaliseEnum baseEmAnaliseEnum, int grau) {
+		return baseEmAnaliseEnum.isBasePJe() ? "pje" : "legado/G" + grau;
 	}
 
 	/**

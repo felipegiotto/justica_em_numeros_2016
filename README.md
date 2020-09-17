@@ -82,9 +82,9 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
   instruções do CNJ em "http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/2016-06-02-17-51-25".
   As regras estão descritas a seguir:
   * Para a carga completa devem ser encaminhados a totalidade dos processos em tramitação em 31 de 
-    julho de 2016, bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2016. 
+    julho de 2020, bem como daqueles que foram baixados de 1° de janeiro de 2015 até 31 de julho de 2020. 
   * Para a carga mensal devem ser transmitidos os processos que tiveram movimentação ou alguma 
-    atualização no mês de agosto de 2016, com todos os dados e movimentos dos respectivos processos, 
+    atualização no mês de agosto de 2020, com todos os dados e movimentos dos respectivos processos, 
     de forma a evitar perda de algum tipo de informação.
   
   
@@ -134,7 +134,8 @@ Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os pa
   pessoas sejam remetidas sem informação de gênero/sexo (masculino / feminino). Por isso, o cadastro
   das pessoas, no 2o Grau, muitas vezes não possui essa informação.
   É possível, nas configurações, habilitar o parâmetro `contornar_falta_de_genero` para fazer com
-  que a ferramenta tente consultar as informações do gênero na outra instância.
+  que a ferramenta tente consultar as informações do gênero na outra instância. 
+  Observação: Esse comportamento também foi implementado para o sistema Legado.
 
 
 * Parte/Interesse público: não estão sendo tratados os casos em que a parte é considerada um interesse 
