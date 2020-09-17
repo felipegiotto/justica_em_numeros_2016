@@ -156,6 +156,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	public void localizarEnviarXMLsAoCNJ() throws JAXBException, InterruptedException, IOException {
 		
 		// Lista com todos os arquivos pendentes
+		LOGGER.info("* Localizando os arquivos .xml.");
 		Auxiliar.prepararPastaDeSaida();
 		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml", false);
 		
@@ -163,6 +164,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		int totalArquivos = arquivosXML.size();
 		
 		// Filtra somente os arquivos que ainda não foram enviados
+		LOGGER.info("* Filtrando os arquivos pendentes de envio.");
 		List<ArquivoComInstancia> arquivosParaEnviar = filtrarSomenteArquivosPendentesDeEnvio(arquivosXML);
 		
 		// Verifica se não há arquivos muito pequenos, que com certeza não contém um processo dentro (como ocorreu em Jan/2020 no TRT4)
@@ -191,8 +193,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			progresso.setProgress(totalArquivos - arquivosParaEnviar.size());
 		}
 		
-		// Inicia o envio
-		enviarXMLsAoCNJ(arquivosParaEnviar);
+		if(arquivosParaEnviar.size() > 0) {
+			// Inicia o envio
+			enviarXMLsAoCNJ(arquivosParaEnviar);
+		}
 		
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
