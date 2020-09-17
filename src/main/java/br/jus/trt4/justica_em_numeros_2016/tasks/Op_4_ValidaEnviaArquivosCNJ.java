@@ -158,6 +158,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 		// Lista com todos os arquivos pendentes
 		LOGGER.info("* Localizando os arquivos .xml.");
 		Auxiliar.prepararPastaDeSaida();
+		//TODO Foi desabilitada a ordenação dos arquivos no método abaixo usando o parâmetro false, pois não foi verificada
+		//nenhum ganho para essa ordenação, e se realmente for necessária, é preciso utilizar alguma estrutura mais otimizada
+		//pois o desempenho é muito baixo para centenas de milhares de arquivos. Dessa forma é necessário fazer uma avaliação
+		//minuciosa da desabilitação da ordenação.
 		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml", false);
 		
 		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosXML, "Total de arquivos XML encontrados");
