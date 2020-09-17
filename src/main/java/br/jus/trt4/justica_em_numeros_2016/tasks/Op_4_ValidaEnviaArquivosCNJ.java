@@ -156,13 +156,19 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	public void localizarEnviarXMLsAoCNJ() throws JAXBException, InterruptedException, IOException {
 		
 		// Lista com todos os arquivos pendentes
+		LOGGER.info("* Localizando os arquivos .xml.");
 		Auxiliar.prepararPastaDeSaida();
-		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml");
+		//TODO Foi desabilitada a ordenação dos arquivos no método abaixo usando o parâmetro false, pois não foi verificada
+		//nenhum ganho para essa ordenação, e se realmente for necessária, é preciso utilizar alguma estrutura mais otimizada
+		//pois o desempenho é muito baixo para centenas de milhares de arquivos. Dessa forma é necessário fazer uma avaliação
+		//minuciosa da desabilitação da ordenação.
+		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml", false);
 		
 		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosXML, "Total de arquivos XML encontrados");
 		int totalArquivos = arquivosXML.size();
 		
 		// Filtra somente os arquivos que ainda não foram enviados
+		LOGGER.info("* Filtrando os arquivos pendentes de envio.");
 		List<ArquivoComInstancia> arquivosParaEnviar = filtrarSomenteArquivosPendentesDeEnvio(arquivosXML);
 		
 		// Verifica se não há arquivos muito pequenos, que com certeza não contém um processo dentro (como ocorreu em Jan/2020 no TRT4)
@@ -191,8 +197,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			progresso.setProgress(totalArquivos - arquivosParaEnviar.size());
 		}
 		
-		// Inicia o envio
-		enviarXMLsAoCNJ(arquivosParaEnviar);
+		if(arquivosParaEnviar.size() > 0) {
+			// Inicia o envio
+			enviarXMLsAoCNJ(arquivosParaEnviar);
+		}
 		
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
@@ -211,7 +219,6 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	}
 
 	private void enviarXMLsAoCNJ(List<ArquivoComInstancia> arquivosParaEnviar) throws JAXBException, InterruptedException {
-
 		//Para evitar a exceção "Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingFileAppender 
 		//for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
 		numeroThreads = numeroThreads > arquivosParaEnviar.size() ? arquivosParaEnviar.size() : numeroThreads;

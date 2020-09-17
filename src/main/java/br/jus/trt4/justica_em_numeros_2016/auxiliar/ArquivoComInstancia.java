@@ -1,7 +1,12 @@
 package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -10,6 +15,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,11 +32,13 @@ public class ArquivoComInstancia {
 	private static final String SUFIXO_ARQUIVO_TENTOU_ENVIAR = ".tentativa_envio";
 	private File arquivo;
 	private int grau;
+	private String protocolo;
 	
-	public ArquivoComInstancia(File arquivo, int grau) {
+	public ArquivoComInstancia(File arquivo, int grau, String protocolo) {
 		super();
 		this.arquivo = arquivo;
 		this.grau = grau;
+		this.protocolo = protocolo;
 	}
 	
 	public File getArquivo() {
@@ -49,7 +57,11 @@ public class ArquivoComInstancia {
 		return grau;
 	}
 	
-	public static List<ArquivoComInstancia> localizarArquivosInstanciasHabilitadas(String sufixo) {
+	public String getProtocolo() {
+		return protocolo;
+	}
+
+	public static List<ArquivoComInstancia> localizarArquivosInstanciasHabilitadas(String sufixo, boolean ordenarArquivosTentouEnviar) {
 		
 		sufixo = sufixo.toUpperCase();
 		
@@ -61,26 +73,29 @@ public class ArquivoComInstancia {
 			localizarArquivos(1, sufixo, arquivos);
 		}
 		
-		// Coloca os arquivos que já tentou-se enviar (e, provavelmente, deu erro) no final da lista
-		Collections.sort(arquivos, new Comparator<ArquivoComInstancia>() {
-			
-			@Override
-			public int compare(ArquivoComInstancia o1, ArquivoComInstancia o2) {
-				
-				String o1Path = o1.getArquivo().getAbsolutePath();
-				String o2Path = o2.getArquivo().getAbsolutePath();
-				boolean o1TentouEnviar = new File(o1Path + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
-				boolean o2TentouEnviar = new File(o2Path + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
-				if (o1TentouEnviar && !o2TentouEnviar) {
-					return 1;
-				} else if (!o1TentouEnviar && o2TentouEnviar) {
-					return -1;
-				} else {
-					return o1Path.compareTo(o2Path);
+		//TODO Avaliar se essa ordenação é realmente necessário ou se, pelo menos, é possível melhorar essa ordenação, 
+		//     que é bastante lenta para remessas com centenas de milhares de processos
+		if (ordenarArquivosTentouEnviar) {
+			// Coloca os arquivos que já tentou-se enviar (e, provavelmente, deu erro) no final da lista
+			Collections.sort(arquivos, new Comparator<ArquivoComInstancia>() {
+
+				@Override
+				public int compare(ArquivoComInstancia o1, ArquivoComInstancia o2) {
+
+					String o1Path = o1.getArquivo().getAbsolutePath();
+					String o2Path = o2.getArquivo().getAbsolutePath();
+					boolean o1TentouEnviar = new File(o1Path + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
+					boolean o2TentouEnviar = new File(o2Path + SUFIXO_ARQUIVO_TENTOU_ENVIAR).exists();
+					if (o1TentouEnviar && !o2TentouEnviar) {
+						return 1;
+					} else if (!o1TentouEnviar && o2TentouEnviar) {
+						return -1;
+					} else {
+						return o1Path.compareTo(o2Path);
+					}
 				}
-			}
-		});
-		
+			});
+		}
 		
 		return arquivos;
 	}
@@ -120,8 +135,13 @@ public class ArquivoComInstancia {
 			
 			if (filho.isDirectory()) {
 				localizarArquivosRecursivamente(filho, grau, sufixo, arquivosParaEnviar);
-			} else {
-				arquivosParaEnviar.add(new ArquivoComInstancia(filho, grau));
+			} else {				
+				try(BufferedReader br = new BufferedReader(new FileReader(filho))) {
+					String protocolo = br.readLine();
+					arquivosParaEnviar.add(new ArquivoComInstancia(filho, grau, protocolo));
+				} catch (Exception e) {
+					LOGGER.error("* Não foi possível ler o arquivo " + filho.toString());
+				}			
 			}
 		}
 	}

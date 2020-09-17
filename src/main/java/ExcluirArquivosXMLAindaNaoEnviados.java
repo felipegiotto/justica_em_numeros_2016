@@ -22,7 +22,7 @@ public class ExcluirArquivosXMLAindaNaoEnviados {
 	public static void main(String[] args) throws Exception {
 		
 		Op_4_ValidaEnviaArquivosCNJ op = new Op_4_ValidaEnviaArquivosCNJ();
-		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml");
+		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml", true);
 		arquivosXML = op.filtrarSomenteArquivosPendentesDeEnvio(arquivosXML);
 		
 		if (arquivosXML.isEmpty()) {

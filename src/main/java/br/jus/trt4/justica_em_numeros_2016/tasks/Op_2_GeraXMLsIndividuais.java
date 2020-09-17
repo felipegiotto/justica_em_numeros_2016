@@ -836,6 +836,14 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 		// Movimentos processuais e complementos
 		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(processo, processoLegadoMigrado, cabecalho.getOrgaoJulgador()));
+		
+		//Se o processo tiver sido migrado pela CLET e não tiver nenhuma outra movimentação, o XML será gerado sem movimentos,
+		//pois o movimento de conversão não está mais ativo.
+		if(processoJudicial.getMovimento().size() == 0) {
+			LOGGER.error(String.format("Processo %s não possui nenhum movimento associado. Verifique se ele tem movimentos ativos "
+					+ "(tb_evento.in_ativo  = 'S') e se ele não foi descartado por causa do parâmetro "
+					+ "descartar_movimentos_ausentes_de_para_cnj.", processoJudicial.getDadosBasicos().getNumero()));
+		}
 
 		return processoJudicial;
 	}
