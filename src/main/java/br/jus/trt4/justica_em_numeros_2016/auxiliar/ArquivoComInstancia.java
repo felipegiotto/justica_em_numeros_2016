@@ -140,7 +140,7 @@ public class ArquivoComInstancia {
 					String protocolo = br.readLine();
 					arquivosParaEnviar.add(new ArquivoComInstancia(filho, grau, protocolo));
 				} catch (Exception e) {
-					LOGGER.warn("* Não foi possível ler o arquivo " + filho.toString());
+					LOGGER.error("* Não foi possível ler o arquivo " + filho.toString());
 				}			
 			}
 		}

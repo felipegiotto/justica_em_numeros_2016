@@ -797,19 +797,6 @@ public class Auxiliar {
 		return retorno;
 	}
 	
-	public static boolean deveValidarProtocolosComErro() {
-		
-		boolean retorno = false;
-		
-		String tipoValidacao = Auxiliar.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj, false);
-
-		if (tipoValidacao != null && tipoValidacao.equals(Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO)) {
-			retorno = true;
-		} 
-
-		return retorno;
-	}
-	
 	public static File getArquivoconfiguracoes() {
 		return arquivoConfiguracoes;
 	}
