@@ -767,7 +767,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				// Baixa dados de deslocamentos de OJ, que auxiliarão na identificação do OJ dos movimentos processuais
 				if (this.possuiHistoricoDeslocamentoOJ(BaseEmAnaliseEnum.LEGADO, this.grau)) {
 					LOGGER.trace("* nsHistoricoDeslocamentoOJLegadosMigrados...");
-					nsHistoricoDeslocamentoOJLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessos);
+					nsHistoricoDeslocamentoOJLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessosLegadosMigrados);
 					try (ResultSet rsHistoricoDeslocamentoOJ = nsHistoricoDeslocamentoOJLegadosMigrados.executeQuery()) {
 						while (rsHistoricoDeslocamentoOJ.next()) {
 							String nrProcesso = rsHistoricoDeslocamentoOJ.getString("nr_processo");
