@@ -17,6 +17,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoFluxo;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoSituacaoEnum;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 /**
  * Novo protótipo de operação completa que trabalha como uma linha de produção, gerando os arquivos XML, enviando-os ao CNJ
@@ -110,13 +111,13 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		
 		if (arquivoProcessosPje.exists()) {
 			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosPje)) {
-				processosFluxos.add(new ProcessoFluxo(grau, numeroProcesso));
+				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.PJE, numeroProcesso));
 			}			
 		}
 		
 		if (arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
 			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosSistemaLegadoNaoMigradosParaOPje)) {
-				processosFluxos.add(new ProcessoFluxo(grau, numeroProcesso));
+				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.LEGADO, numeroProcesso));
 			}
 		}
 	}

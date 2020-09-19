@@ -128,7 +128,7 @@ public class Op_X_OperacaoCompleta {
 
 			@Override
 			public void run() throws Exception {
-				Op_5_ConfereProtocolosCNJ.consultarProtocolosCNJ(true);
+				Op_5_ConfereProtocolosCNJ.executarOperacaoConfereProtocolosCNJ(true);
 			}
 		});
 

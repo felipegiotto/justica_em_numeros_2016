@@ -488,22 +488,22 @@ public class Auxiliar {
 	
 	/**
 	 * Retorna o arquivo onde deve ser gravada e lida a última página consultada do serviço 
-	 * que busca os protocolos com erro do CNJ
+	 * que busca os protocolos do CNJ
 	 * 
 	 * @return Arquivo com a última página consultada do serviço que busca os protocolos com erro do CNJ
 	 */
 	public static File getArquivoUltimaPaginaConsultaCNJ() {
-		return new File(prepararPastaDeSaida(), "/CNJ_ultima_pagina_consulta_protocolos_erro.txt");
+		return new File(prepararPastaDeSaida(), "/CNJ_ultima_pagina_consulta_protocolos.txt");
 	}
 	
 	/**
-	 * Retorna o arquivo onde deve ser gravada e lida a lista de processos que tiveram o protocolo processado com erro no CNJ 
-	 * de uma determinada instância.
+	 * Retorna o arquivo onde deve ser gravada e lida a lista de processos e as meta-informações retornadas pela
+	 * consulta de conferência de protocolos, realizada via serviço do CNJ, de uma determinada instância.
 	 * 
 	 * @return Arquivo com a última página consultada do serviço que busca os protocolos com erro do CNJ
 	 */
-	public static File getArquivoListaProcessosErroProtocolo(int grau) {
-		return new File(prepararPastaDeSaida(), "G" + grau + "/Lista_processos_erro_protocolo.txt");
+	public static File getArquivoListaProcessosProtocolo(int grau) {
+		return new File(prepararPastaDeSaida(), "G" + grau + "/Lista_processos_protocolo.txt");
 	}
 	
 	

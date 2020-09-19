@@ -13,6 +13,7 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
 public class ProcessoFluxo {
 
 	private int grau;
+	private BaseEmAnaliseEnum baseEmAnalise;
 	private File arquivoXML;
 	private File arquivoXMLErro;
 	private File arquivoXMLProtocolo;
@@ -20,10 +21,10 @@ public class ProcessoFluxo {
 	private File arquivoXMLNegado;
 	private ProcessoSituacaoEnum situacao;
 	
-	public ProcessoFluxo(int grau, String numeroProcesso) {
+	public ProcessoFluxo(int grau, BaseEmAnaliseEnum baseEmAnalise, String numeroProcesso) {
 		this.grau = grau;
-		// TODO: Implementar também para sistemas legados
-		this.arquivoXML = Auxiliar.gerarNomeArquivoIndividualParaProcesso(BaseEmAnaliseEnum.PJE, grau, numeroProcesso);
+		this.baseEmAnalise = baseEmAnalise;
+		this.arquivoXML = Auxiliar.gerarNomeArquivoIndividualParaProcesso(baseEmAnalise, grau, numeroProcesso);
 		this.arquivoXMLProtocolo = Auxiliar.gerarNomeArquivoProtocoloProcessoEnviado(arquivoXML);
 		this.arquivoXMLAceito = Auxiliar.gerarNomeArquivoProcessoSucesso(arquivoXMLProtocolo);
 		this.arquivoXMLNegado = Auxiliar.gerarNomeArquivoProcessoNegado(arquivoXMLProtocolo);
@@ -65,6 +66,10 @@ public class ProcessoFluxo {
 	
 	public int getGrau() {
 		return grau;
+	}
+
+	public BaseEmAnaliseEnum getBaseEmAnalise() {
+		return baseEmAnalise;
 	}
 
 	public ProcessoSituacaoEnum getSituacao() {
