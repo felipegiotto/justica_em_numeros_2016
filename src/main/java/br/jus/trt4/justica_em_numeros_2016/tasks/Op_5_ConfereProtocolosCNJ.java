@@ -399,6 +399,17 @@ public class Op_5_ConfereProtocolosCNJ {
 
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
+		
+		Calendar calendar = Calendar.getInstance();
+        calendar.setTime(dataInicio);
+        calendar.add(Calendar.DATE, - 1);
+        dataInicio = calendar.getTime();
+        
+        calendar = Calendar.getInstance();
+        calendar.setTime(dataFim);
+        calendar.add(Calendar.DATE, + 1);
+        dataFim = calendar.getTime();
+		
 		datas.add(formatter.format(dataInicio));
 		datas.add(formatter.format(dataFim));
 
