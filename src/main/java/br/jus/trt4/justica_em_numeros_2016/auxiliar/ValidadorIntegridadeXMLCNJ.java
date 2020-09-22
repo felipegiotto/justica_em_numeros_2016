@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -20,13 +21,15 @@ public class ValidadorIntegridadeXMLCNJ {
 		
 		JsonObject rootObject = JsonParser.parseString(jsonRespostaValidador).getAsJsonObject();
 		elementoJSONDeveExistir(rootObject, "Validador do CNJ não retornou um JSON válido");
-		
+
 		JsonArray processos = rootObject.get("processos").getAsJsonArray();
 		elementoJSONDeveExistir(processos, "Não foi possível identificar o array 'processos' dentro do JSON");
-		
+
 		JsonObject processo = processos.get(0).getAsJsonObject();
 		elementoJSONDeveExistir(processo, "Não foi possível identificar o processo dentro do JSON");
-		
+
+		JsonObject erros = rootObject.get("erros").getAsJsonObject();
+
 		List<String> problemas = new ArrayList<>();
 		
 		// O objeto "processo" conterá diversos campos, entre eles os campos "enriquecidos" pelo validador do CNJ.
@@ -50,6 +53,14 @@ public class ValidadorIntegridadeXMLCNJ {
 						problemas.add(key + ": " + itensInvalidos);
 					}
 				}
+			}
+		}
+		
+		for (String key : erros.keySet()) {
+			JsonArray errosJsonArray = erros.get(key).getAsJsonArray();
+			for (int i = 0; i < errosJsonArray.size(); i++) {
+				JsonObject erro = errosJsonArray.get(0).getAsJsonObject();
+				problemas.add(erro.get("id").getAsString() + ": " + erro.get("descricao").getAsString());
 			}
 		}
 		
