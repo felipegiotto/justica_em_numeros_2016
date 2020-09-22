@@ -39,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
@@ -81,8 +82,8 @@ public class Op_5_ConfereProtocolosCNJ {
 	// Padrão de como a última página consultada no CNJ de um status é armazenada no
 	// arquivo.
 	// Composto pelo número do status (que é preenchido dinamicamente), espaço e o
-	// número da página (dígito com 1 a 3 números).
-	private static final String PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA = "^(%s )(\\d{1,3})$";
+	// número da página (dígito com 1 a 10 números).
+	private static final String PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA = "^(%s )(\\d{1,10})$";
 
 	public static void main(String[] args) throws Exception {
 
@@ -121,7 +122,26 @@ public class Op_5_ConfereProtocolosCNJ {
 								.equals(tipo_validacao_protocolo_cnj)
 						|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(tipo_validacao_protocolo_cnj)
 						|| Auxiliar.VALIDACAO_CNJ_TODOS.equals(tipo_validacao_protocolo_cnj)) {
-					operacao.consultarProtocolosCNJ(tipo_validacao_protocolo_cnj);
+					List<ArquivoComInstancia> arquivosProtocolos = ArquivoComInstancia
+							.localizarArquivosInstanciasHabilitadas(Auxiliar.SUFIXO_PROTOCOLO, false);
+
+					ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosProtocolos,
+							"Total de arquivos protocolos encontrados");
+					int totalArquivos = arquivosProtocolos.size();
+
+					LOGGER.info("Filtrando os protocolos que ainda não foram processados no CNJ.");
+
+					// Filtra somente os arquivos XML que possuem protocolos e que ainda NÃO foram
+					// processados no CNJ
+					// TODO Avaliar se não haveria outra forma mais eficiente de executar a lógica
+					// do método abaixo, como essa implementação está muito demorada
+					List<ArquivoComInstancia> arquivosParaConsultar = filtrarSomenteArquivosPendentesDeConsulta(arquivosProtocolos);
+
+					// Mostra os arquivos que serão consultados
+					ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosParaConsultar,
+							"Protocolos que ainda precisam ser conferidos");
+					
+					operacao.consultarProtocolosCNJ(tipo_validacao_protocolo_cnj, arquivosParaConsultar);
 				} else {
 					throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_validacao_protocolo_cnj': "
 							+ tipo_validacao_protocolo_cnj);
@@ -214,7 +234,7 @@ public class Op_5_ConfereProtocolosCNJ {
 		}
 
 		// Inicia o pesquisa
-		consultarProtocolosCNJ(null);
+		consultarProtocolosCNJ(null, arquivosParaConsultar);
 
 		// Envio finalizado
 		List<ArquivoComInstancia> arquivosXMLPendentes = filtrarSomenteArquivosPendentesDeConsulta(
@@ -223,7 +243,7 @@ public class Op_5_ConfereProtocolosCNJ {
 				"Arquivos XML ainda pendentes de envio");
 	}
 
-	public List<ArquivoComInstancia> filtrarSomenteArquivosPendentesDeConsulta(
+	public static List<ArquivoComInstancia> filtrarSomenteArquivosPendentesDeConsulta(
 			List<ArquivoComInstancia> arquivosProtocolos) {
 		List<ArquivoComInstancia> arquivosPendentes = new ArrayList<>();
 		for (ArquivoComInstancia arquivo : arquivosProtocolos) {
@@ -244,7 +264,7 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * TODO: Reenviar automaticamente os protocolos com erro.
 	 * 
 	 */
-	private void consultarProtocolosCNJ(String tipo_validacao_protocolo_cnj) {
+	private void consultarProtocolosCNJ(String tipo_validacao_protocolo_cnj, List<ArquivoComInstancia> arquivosProtocolos) {
 
 		String parametroProcolo = "";
 		String parametroDataInicio = "";
@@ -258,15 +278,6 @@ public class Op_5_ConfereProtocolosCNJ {
 			// Validação padrão quando nenhum valor é preenchido
 			LOGGER.info("Tipo de validação escolhido: VALIDACAO_CNJ_TODOS.");
 		}
-
-		LOGGER.info("Carregando os arquivos de protocolos.");
-
-		// Lista com todos os protocolos
-		List<ArquivoComInstancia> arquivosProtocolos = ArquivoComInstancia
-				.localizarArquivosInstanciasHabilitadas(Auxiliar.SUFIXO_PROTOCOLO, false);
-
-		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosProtocolos,
-				"Total de arquivos protocolos encontrados");
 
 		if (arquivosProtocolos.size() == 0) {
 			LOGGER.error(String.format("Não foi encontrado nenhum arquivo .PROTOCOLO nas pastas %s e/ou %s.",
@@ -597,60 +608,62 @@ public class Op_5_ConfereProtocolosCNJ {
 
 		List<MetaInformacaoEnvio> listaProtocolosAnalisadosG1 = new ArrayList<MetaInformacaoEnvio>();
 		List<MetaInformacaoEnvio> listaProtocolosAnalisadosG2 = new ArrayList<MetaInformacaoEnvio>();
-
-		JsonObject rootObject = JsonParser.parseString(body).getAsJsonObject();
-
-		JsonArray processos = rootObject.get("resultado").getAsJsonArray();
-
-		for (JsonElement processoElement : processos) {
-
-			JsonObject processoObject = processoElement.getAsJsonObject();
-			String codHash = !processoObject.get("codHash").toString().equals("null")
-					? processoObject.get("codHash").getAsString()
-					: "";
-			String datDataEnvioProtocolo = !processoObject.get("datDataEnvioProtocolo").toString().equals("null")
-					? processoObject.get("datDataEnvioProtocolo").getAsString()
-					: "";
-			String flgExcluido = !processoObject.get("flgExcluido").toString().equals("null")
-					? processoObject.get("flgExcluido").getAsString()
-					: "";
-			String grau = !processoObject.get("grau").toString().equals("null")
-					? processoObject.get("grau").getAsString()
-					: "";
-			String numProtocolo = !processoObject.get("numProtocolo").toString().equals("null")
-					? processoObject.get("numProtocolo").getAsString()
-					: "";
-			String seqProtocolo = !processoObject.get("seqProtocolo").toString().equals("null")
-					? processoObject.get("seqProtocolo").getAsString()
-					: "";
-			String siglaOrgao = !processoObject.get("siglaOrgao").toString().equals("null")
-					? processoObject.get("siglaOrgao").getAsString()
-					: "";
-			String tamanhoArquivo = !processoObject.get("tamanhoArquivo").toString().equals("null")
-					? processoObject.get("tamanhoArquivo").getAsString()
-					: "";
-			String tipStatusProtocolo = !processoObject.get("tipStatusProtocolo").toString().equals("null")
-					? processoObject.get("tipStatusProtocolo").getAsString()
-					: "";
-			String urlArquivo = !processoObject.get("urlArquivo").toString().equals("null")
-					? processoObject.get("urlArquivo").getAsString()
-					: "";
-
-			if (!numProtocolo.equals("") && !grau.equals("")) {
-				if ("G1".equals(grau)) {
-					listaProtocolosAnalisadosG1.add(
-							new MetaInformacaoEnvio(codHash, datDataEnvioProtocolo, flgExcluido, grau, numProtocolo,
-									seqProtocolo, siglaOrgao, tamanhoArquivo, tipStatusProtocolo, urlArquivo));
-				} else if ("G2".equals(grau)) {
-					listaProtocolosAnalisadosG2.add(
-							new MetaInformacaoEnvio(codHash, datDataEnvioProtocolo, flgExcluido, grau, numProtocolo,
-									seqProtocolo, siglaOrgao, tamanhoArquivo, tipStatusProtocolo, urlArquivo));
+		try {
+			JsonObject rootObject = JsonParser.parseString(body).getAsJsonObject();
+	
+			JsonArray processos = rootObject.get("resultado").getAsJsonArray();
+	
+			for (JsonElement processoElement : processos) {
+	
+				JsonObject processoObject = processoElement.getAsJsonObject();
+				String codHash = !processoObject.get("codHash").toString().equals("null")
+						? processoObject.get("codHash").getAsString()
+						: "";
+				String datDataEnvioProtocolo = !processoObject.get("datDataEnvioProtocolo").toString().equals("null")
+						? processoObject.get("datDataEnvioProtocolo").getAsString()
+						: "";
+				String flgExcluido = !processoObject.get("flgExcluido").toString().equals("null")
+						? processoObject.get("flgExcluido").getAsString()
+						: "";
+				String grau = !processoObject.get("grau").toString().equals("null")
+						? processoObject.get("grau").getAsString()
+						: "";
+				String numProtocolo = !processoObject.get("numProtocolo").toString().equals("null")
+						? processoObject.get("numProtocolo").getAsString()
+						: "";
+				String seqProtocolo = !processoObject.get("seqProtocolo").toString().equals("null")
+						? processoObject.get("seqProtocolo").getAsString()
+						: "";
+				String siglaOrgao = !processoObject.get("siglaOrgao").toString().equals("null")
+						? processoObject.get("siglaOrgao").getAsString()
+						: "";
+				String tamanhoArquivo = !processoObject.get("tamanhoArquivo").toString().equals("null")
+						? processoObject.get("tamanhoArquivo").getAsString()
+						: "";
+				String tipStatusProtocolo = !processoObject.get("tipStatusProtocolo").toString().equals("null")
+						? processoObject.get("tipStatusProtocolo").getAsString()
+						: "";
+				String urlArquivo = !processoObject.get("urlArquivo").toString().equals("null")
+						? processoObject.get("urlArquivo").getAsString()
+						: "";
+	
+				if (!numProtocolo.equals("") && !grau.equals("")) {
+					if ("G1".equals(grau)) {
+						listaProtocolosAnalisadosG1.add(
+								new MetaInformacaoEnvio(codHash, datDataEnvioProtocolo, flgExcluido, grau, numProtocolo,
+										seqProtocolo, siglaOrgao, tamanhoArquivo, tipStatusProtocolo, urlArquivo));
+					} else if ("G2".equals(grau)) {
+						listaProtocolosAnalisadosG2.add(
+								new MetaInformacaoEnvio(codHash, datDataEnvioProtocolo, flgExcluido, grau, numProtocolo,
+										seqProtocolo, siglaOrgao, tamanhoArquivo, tipStatusProtocolo, urlArquivo));
+					}
+				} else {
+					LOGGER.warn(String.format("Erro ao carregar o protocolo %s do Grau %s.", numProtocolo, grau));
 				}
-			} else {
-				LOGGER.warn(String.format("Erro ao carregar o protocolo %s do Grau %s.", numProtocolo, grau));
 			}
+		} catch (RuntimeException ex) {
+			LOGGER.warn("Não foi possível ler o número do protocolo JSON do CNJ: " + body);
 		}
-
 		resposta.add(listaProtocolosAnalisadosG1);
 		resposta.add(listaProtocolosAnalisadosG2);
 
@@ -949,15 +962,11 @@ public class Op_5_ConfereProtocolosCNJ {
 	 *         protocolo a serem pesquisados.
 	 */
 	private Map<String, File> carregarListaFilesPorProtocolo(List<ArquivoComInstancia> arquivosComProtocolo) {
-
 		Map<String, File> protocolosComProcessos = new HashMap<String, File>();
 
 		for (ArquivoComInstancia arquivoComInstancia : arquivosComProtocolo) {
-
-			protocolosComProcessos.put(arquivoComInstancia.getProtocolo(), arquivoComInstancia.getArquivo());// .getName().replace(".xml.protocolo",
-																												// ""));
+			protocolosComProcessos.put(arquivoComInstancia.getProtocolo(), arquivoComInstancia.getArquivo());																								// ""));
 		}
-
 		return protocolosComProcessos;
 	}
 
@@ -968,7 +977,7 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * @param arquivo
 	 * @return
 	 */
-	private boolean deveConsultarArquivo(File arquivo) {
+	private static boolean deveConsultarArquivo(File arquivo) {
 		return !Auxiliar.gerarNomeArquivoProcessoSucesso(arquivo).exists()
 				&& !Auxiliar.gerarNomeArquivoProcessoNegado(arquivo).exists();
 	}
