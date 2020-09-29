@@ -13,8 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -99,29 +97,12 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 					propertiesDePara.load(is);
 				}
 				
-				// Lista de assuntos do lado "PARA" que não existem na lista nacional (e, por isso, deverão ser negados pelo CNJ):
-				Set<Integer> assuntosMapeadosIncorretamente = new TreeSet<>();
-				
 				// Grava os assuntos em um Map
 				for (String assuntoDe : propertiesDePara.stringPropertyNames()) {
 					String assuntoPara = propertiesDePara.getProperty(assuntoDe);
 					int assuntoParaInt = Integer.parseInt(assuntoPara);
 					assuntosProcessuaisDePara.put(Integer.parseInt(assuntoDe), assuntoParaInt);
-					
-					if (!assuntoExisteNasTabelasNacionais(assuntoParaInt)) {
-						assuntosMapeadosIncorretamente.add(assuntoParaInt);
-					}
 				}
-				
-				// UPDATE: Não precisa mais fazer essa validação, já que há a opção de validar diretamente com o aplicativo do CNJ (parâmetro "url_validador_cnj").
-//				if (!assuntosMapeadosIncorretamente.isEmpty()) {
-//					LOGGER.warn("");
-//					LOGGER.warn("Há assuntos que estão descritos na tabela 'de-para' como válidos no CNJ, mas não estão na lista de assuntos nacionais do CNJ: ");
-//					for (int codigo: assuntosMapeadosIncorretamente) {
-//						LOGGER.warn("* " + codigo);
-//					}
-//					Auxiliar.aguardaUsuarioApertarENTERComTimeout(2);
-//				}
 			}
 		}
 		
@@ -165,77 +146,77 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 				// FIXME: Resolver possível problema de acesso concorrente a esse PreparedStatement na geração de XMLs em várias threads
 				synchronized(psConsultaAssuntoPorCodigo) {
 				
-				// Pesquisa recursivamente os "pais" desse assunto, até encontrar um que exista nas
-				// tabelas nacionais do CNJ.
-				psConsultaAssuntoPorCodigo.setString(1, Integer.toString(codigoAssunto));
-				try (ResultSet rs = psConsultaAssuntoPorCodigo.executeQuery()) { // TODO: Otimizar acessos repetidos
-					if (rs.next()) {
-						String descricaoAssuntoLocal = Auxiliar.getCampoStringNotNull(rs, "ds_assunto_trf");
-						
-						// Variável que receberá um código de assunto que faça parte das TPUs, preenchida
-						// a partir de uma pesquisa recursiva na árvore de assuntos do processo, até
-						// encontrar algum nó pai que esteja nas TPUs.
-						Integer codigoPaiNacional = null;
-						
-						// Limita a quantidade de nós recursivos, para evitar um possível loop infinito
-						int tentativasRecursivas = 0;
-						
-						// Próximo assunto que será pesquisado recursivamente
-						int idProximoAssunto = rs.getInt("id_assunto_trf");
-						
-						// Variável auxiliar para montar a descrição do assunto no padrão do PJe, mostrando
-						// os códigos somente nos assuntos "pai", sem mostrar o código no assunto "folha", ex:
-						// DIREITO PROCESSUAL CIVIL E DO TRABALHO (8826) / Partes e Procuradores (8842) / Sucumbência (8874) / Honorários na Justiça do Trabalho
-						boolean assuntoFolha = true;
-						
-						// Itera, recursivamente, localizando assuntos "pai" na tabela
-						while (idProximoAssunto > 0 && tentativasRecursivas < 50) {
+					// Pesquisa recursivamente os "pais" desse assunto, até encontrar um que exista nas
+					// tabelas nacionais do CNJ.
+					psConsultaAssuntoPorCodigo.setString(1, Integer.toString(codigoAssunto));
+					try (ResultSet rs = psConsultaAssuntoPorCodigo.executeQuery()) { // TODO: Otimizar acessos repetidos
+						if (rs.next()) {
+							String descricaoAssuntoLocal = Auxiliar.getCampoStringNotNull(rs, "ds_assunto_trf");
 							
-							// FIXME: Resolver possível problema de acesso concorrente a esse PreparedStatement na geração de XMLs em várias threads
-							synchronized(psConsultaAssuntoPorID) {
+							// Variável que receberá um código de assunto que faça parte das TPUs, preenchida
+							// a partir de uma pesquisa recursiva na árvore de assuntos do processo, até
+							// encontrar algum nó pai que esteja nas TPUs.
+							Integer codigoPaiNacional = null;
 							
-							psConsultaAssuntoPorID.setInt(1, idProximoAssunto);
-							try (ResultSet rsAssunto = psConsultaAssuntoPorID.executeQuery()) { // TODO: Otimizar acessos repetidos
+							// Limita a quantidade de nós recursivos, para evitar um possível loop infinito
+							int tentativasRecursivas = 0;
+							
+							// Próximo assunto que será pesquisado recursivamente
+							int idProximoAssunto = rs.getInt("id_assunto_trf");
+							
+							// Variável auxiliar para montar a descrição do assunto no padrão do PJe, mostrando
+							// os códigos somente nos assuntos "pai", sem mostrar o código no assunto "folha", ex:
+							// DIREITO PROCESSUAL CIVIL E DO TRABALHO (8826) / Partes e Procuradores (8842) / Sucumbência (8874) / Honorários na Justiça do Trabalho
+							boolean assuntoFolha = true;
+							
+							// Itera, recursivamente, localizando assuntos "pai" na tabela
+							while (idProximoAssunto > 0 && tentativasRecursivas < 50) {
 								
-								// Verifica se chegou no fim da árvore
-								if (!rsAssunto.next()) {
-									break;
+								// FIXME: Resolver possível problema de acesso concorrente a esse PreparedStatement na geração de XMLs em várias threads
+								synchronized(psConsultaAssuntoPorID) {
+								
+									psConsultaAssuntoPorID.setInt(1, idProximoAssunto);
+									try (ResultSet rsAssunto = psConsultaAssuntoPorID.executeQuery()) { // TODO: Otimizar acessos repetidos
+										
+										// Verifica se chegou no fim da árvore
+										if (!rsAssunto.next()) {
+											break;
+										}
+										
+										// Se ainda está pesquisando um codigoPaiNacional e encontrou um, grava
+										// seu código.
+										int codigo = rsAssunto.getInt("cd_assunto_trf");
+										if (codigoPaiNacional == null && assuntoExisteNasTabelasNacionais(codigo)) {
+											codigoPaiNacional = codigo;
+										}
+										
+										// Localiza o próximo assunto que deverá ser consultado recursivamente
+										idProximoAssunto = rsAssunto.getInt("id_assunto_trf_superior");
+										
+										// Coloca o nó atual na descrição do assunto
+										if (assuntoFolha) {
+											assuntoFolha = false;
+										} else {
+											// TODO: Verificar se isso pode ser substituído pelo campo "ds_assunto_completo" de "tb_assunto_trf"
+											descricaoAssuntoLocal = rsAssunto.getString("ds_assunto_trf") + " (" + codigo + ") / " + descricaoAssuntoLocal;
+										}
+									}
 								}
-								
-								// Se ainda está pesquisando um codigoPaiNacional e encontrou um, grava
-								// seu código.
-								int codigo = rsAssunto.getInt("cd_assunto_trf");
-								if (codigoPaiNacional == null && assuntoExisteNasTabelasNacionais(codigo)) {
-									codigoPaiNacional = codigo;
-								}
-								
-								// Localiza o próximo assunto que deverá ser consultado recursivamente
-								idProximoAssunto = rsAssunto.getInt("id_assunto_trf_superior");
-								
-								// Coloca o nó atual na descrição do assunto
-								if (assuntoFolha) {
-									assuntoFolha = false;
-								} else {
-									// TODO: Verificar se isso pode ser substituído pelo campo "ds_assunto_completo" de "tb_assunto_trf"
-									descricaoAssuntoLocal = rsAssunto.getString("ds_assunto_trf") + " (" + codigo + ") / " + descricaoAssuntoLocal;
-								}
+								tentativasRecursivas++;
 							}
+							
+							// UPDATE 10/07/2020: CNJ não está mais aceitando assuntos locais com "codigoPaiNacional=0", então caso não encontre um pai nacional o assunto não será informado.
+							if (codigoPaiNacional == null) {
+								LOGGER.warn("Não foi possível identificar um \"código pai nacional\" para o assunto " + assuntoLocal.getCodigoAssunto() + " - " + descricaoAssuntoLocal);
+								return null;
 							}
-							tentativasRecursivas++;
+							assuntoLocal.setDescricao(descricaoAssuntoLocal);
+							assuntoLocal.setCodigoPaiNacional(codigoPaiNacional);
+							
+						} else {
+							throw new RuntimeException("Não foi encontrado assunto com código " + codigoAssunto + " na base do PJe!");
 						}
-						
-						// UPDATE 10/07/2020: CNJ não está mais aceitando assuntos locais com "codigoPaiNacional=0", então caso não encontre um pai nacional o assunto não será informado.
-						if (codigoPaiNacional == null) {
-							LOGGER.warn("Não foi possível identificar um \"código pai nacional\" para o assunto " + assuntoLocal.getCodigoAssunto() + " - " + descricaoAssuntoLocal);
-							return null;
-						}
-						assuntoLocal.setDescricao(descricaoAssuntoLocal);
-						assuntoLocal.setCodigoPaiNacional(codigoPaiNacional);
-						
-					} else {
-						throw new RuntimeException("Não foi encontrado assunto com código " + codigoAssunto + " na base do PJe!");
 					}
-				}
 				}
 			}
 		} else {
