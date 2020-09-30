@@ -50,6 +50,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.MetaInformacaoEnvio;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.enums.StatusProtocoloCNJ;
 
 /**
  * Chama os webservices do CNJ, validando cada um dos protocolos recebidos
@@ -280,7 +281,8 @@ public class Op_5_ConfereProtocolosCNJ {
 		}
 
 		if (arquivosProtocolos.size() == 0) {
-			LOGGER.error(String.format("Não foi encontrado nenhum arquivo .PROTOCOLO nas pastas %s e/ou %s.",
+			LOGGER.error(String.format("Todos os protocolos já foram analisados ou "
+					+ "não foi encontrado nenhum arquivo .PROTOCOLO nas pastas %s e/ou %s.",
 					Auxiliar.getPastaXMLsIndividuais(1).getAbsolutePath(),
 					Auxiliar.getPastaXMLsIndividuais(2).getAbsolutePath()));
 			return;
@@ -717,7 +719,7 @@ public class Op_5_ConfereProtocolosCNJ {
 				setProcessosAnalisadosG2.add(metaInformacaoEnvioG2);
 			} else {
 				LOGGER.warn("Não foi encontrado nos arquivos de protocolo o processo referente ao protocolo "
-						+ metaInformacaoEnvioG2.getNumProtocolo());
+						+ metaInformacaoEnvioG2.getNumProtocolo());			
 			}
 		}
 
@@ -1034,17 +1036,32 @@ public class Op_5_ConfereProtocolosCNJ {
 				fw.append(metaInformacaoEnvio.getInformacaoFormatada());
 				fw.append("\r\n");
 
+				Integer status = 0;
+				try {
+					status = Integer.parseInt(metaInformacaoEnvio.getTipStatusProtocolo());
+				} catch (NumberFormatException e) {
+					LOGGER.error(String.format("Não foi possível converter o status do protocolo em um número: %s.", 
+							metaInformacaoEnvio.getTipStatusProtocolo()));
+				}
+
 				// Marca o arquvido como processado com sucesso ou com erro.
-				boolean sucesso = !metaInformacaoEnvio.hasStatusErro();
-				this.marcarArquivoComoProcessado(mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()),
-						metaInformacaoEnvio.getInformacaoFormatada(), sucesso);
+				boolean sucesso = StatusProtocoloCNJ.SUCESSO.getId().equals(status);
+
 				if (sucesso) {
+					this.marcarArquivoComoProcessado(mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()),
+							metaInformacaoEnvio.getInformacaoFormatada(), sucesso);
 					LOGGER.debug(
 							"Protocolo baixado com SUCESSO: " + metaInformacaoEnvio.getNumProtocolo() + ", arquivo '"
 									+ mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()) + "'");
-				} else {
+				} else if(metaInformacaoEnvio.hasStatusErro()) {
+					this.marcarArquivoComoProcessado(mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()),
+							metaInformacaoEnvio.getInformacaoFormatada(), sucesso);
 					LOGGER.warn("Protocolo baixado com ERRO: " + metaInformacaoEnvio.getNumProtocolo() + ", arquivo '"
 							+ mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()) + "'");
+				} else {
+					LOGGER.debug(
+							"Protocolo NÃO baixado ainda: " + metaInformacaoEnvio.getNumProtocolo() + ", arquivo '"
+									+ mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()) + "'");
 				}
 			}
 		} finally {

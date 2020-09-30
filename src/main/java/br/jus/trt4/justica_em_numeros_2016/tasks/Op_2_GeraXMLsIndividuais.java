@@ -73,7 +73,6 @@ import br.jus.trt4.justica_em_numeros_2016.dto.AssuntoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ClasseJudicialDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.ComplementoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoDto;
-import br.jus.trt4.justica_em_numeros_2016.dto.DocumentoPessoaDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.EnderecoDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.HistoricoDeslocamentoOJDto;
 import br.jus.trt4.justica_em_numeros_2016.dto.MovimentoDto;
@@ -1427,7 +1426,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 					// Se encontrou, preenche CPF do magistrado prolator.
 					if (documentoRelacionado != null) {
 						movimento.getMagistradoProlator().add(documentoRelacionado.getCpfUsuarioAssinou());
-					}
+					} else {
+						LOGGER.warn(String.format("Não foi possível encontrar o magistrado prolator do movimento "
+												+ "com id_processo_evento %s do processo %s.", 
+												movimentoDto.getIdProcessoEvento(), processo.getNumeroProcesso()));
+					}					
+					
 				}
 	
 				// Identifica o OJ do processo no instante em que o movimento foi lançado, baseado no histórico de deslocamento.
