@@ -195,6 +195,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		if (deveProcessarProcessosPje) {
 			// Verifica se há alguma serventia inexistente. A análise de serventias só será realizada para o PJe,
 			// pois as informações do Sistema Judicial Legado já estão corretas.
+			//TODO checar se a análise de serventias ainda é necessária já que temos o validador do CNJ
 			AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ((BaseEmAnaliseEnum.PJE));
 			boolean problemaComServentias = analisaServentiasCNJ.diagnosticarServentiasPjeInexistentes();
 			if (problemaComServentias && aguardarCasoHajaProblemaComServentias) {

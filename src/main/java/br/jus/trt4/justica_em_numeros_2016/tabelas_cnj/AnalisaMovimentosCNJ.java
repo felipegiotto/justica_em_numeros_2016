@@ -143,6 +143,7 @@ public class AnalisaMovimentosCNJ {
 						complementoDto.setCodigoTipoComplemento(Integer.parseInt(complementoCNJ.getCodigoTipo()));
 						complementoDto.setNome(complementoCNJ.getDescricaoTipo());
 						complementoDto.setCodigoComplemento(complementoCNJ.getCodigoValor());
+						//TODO: verificar se esse tratamento continuará sendo dado ao movimento 1061
 						complementoDto.setValor(this.isComplementoDataMovimento1061(movimentoCNJ, complementoCNJ) 
 												? DateTimeFormatter.ofPattern("dd/MM/yyyy").format(movimentoDto.getDataAtualizacao()) 
 												: complementoCNJ.getDescricaoValor());

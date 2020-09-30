@@ -71,7 +71,6 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 		
 		// Se o gênero da pessoa não estiver no banco de dados, tenta localizar na outra instância, 
 		// contando que todas as informações necessárias estejam disponíveis (nome e documento).
-		// Comportamento implementado apenas para o PJe
 		String documentoPrincipal = pessoa.getNumeroDocumentoPrincipal();
 		if (!StringUtils.isBlank(documentoPrincipal) && nsConsultaGeneroOutraInstancia != null) {
 			
