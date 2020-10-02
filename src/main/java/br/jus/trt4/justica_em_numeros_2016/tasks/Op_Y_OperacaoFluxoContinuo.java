@@ -17,6 +17,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoFluxo;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoSituacaoEnum;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 
 /**
  * Novo protótipo de operação completa que trabalha como uma linha de produção, gerando os arquivos XML, enviando-os ao CNJ
@@ -110,13 +111,13 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		
 		if (arquivoProcessosPje.exists()) {
 			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosPje)) {
-				processosFluxos.add(new ProcessoFluxo(grau, numeroProcesso));
+				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.PJE, numeroProcesso));
 			}			
 		}
 		
 		if (arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
 			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosSistemaLegadoNaoMigradosParaOPje)) {
-				processosFluxos.add(new ProcessoFluxo(grau, numeroProcesso));
+				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.LEGADO, numeroProcesso));
 			}
 		}
 	}
@@ -129,10 +130,13 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 			Auxiliar.prepararThreadLog();
 			
 			while (isAlgumProcessoComStatusAnterior(ProcessoSituacaoEnum.CONCLUIDO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+				
+				LOGGER.info("Monitorando as alterações nos status dos processos.");
 				for (ProcessoFluxo processoFluxo : processosFluxos) {
 					processoFluxo.identificarSituacao();
 				}
 				
+				LOGGER.info("Pausa na monitoração das alterações nos status dos processos.");
 				Auxiliar.safeSleep(5_000);
 			}
 			
@@ -150,6 +154,8 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 			
 			while (isAlgumProcessoSemXML() && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				
+				LOGGER.info("Início da geração de arquivos XML.");
+				
 				// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (FILA)
 				try {
 					this.executandoOperacao2Geracao = true;
@@ -160,6 +166,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 					this.executandoOperacao2Geracao = false;
 				}
 				
+				LOGGER.info("Pausa na operação de geração de arquivos XML.");				
 				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
 			}
 			
@@ -172,6 +179,8 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 			// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (XML_GERADO)
 			while (isAlgumProcessoComStatusAnterior(ProcessoSituacaoEnum.ENVIADO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
 				
+				LOGGER.info("Início do envio de arquivos pendentes de envio.");
+				
 				if (isAlgumProcessoComStatus(ProcessoSituacaoEnum.XML_GERADO)) {
 					try {
 						this.executandoOperacao4Envio = true;
@@ -183,6 +192,8 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 						this.executandoOperacao4Envio = false;
 					}
 				}
+				
+				LOGGER.info("Pausa na operação de envio de arquivos pendentes de envio.");
 				
 				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
 			}
@@ -199,6 +210,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 			}
 			
 			while (isAlgumProcessoComStatusAnterior(ProcessoSituacaoEnum.CONCLUIDO) && !ControleAbortarOperacao.instance().isDeveAbortar()) {
+				LOGGER.info("Início da conferência de protocolos enviados.");
 				try {
 					this.executandoOperacao5Conferencia = true;
 					Op_5_ConfereProtocolosCNJ operacao = new Op_5_ConfereProtocolosCNJ();
@@ -212,6 +224,8 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				} finally {
 					this.executandoOperacao5Conferencia = false;
 				}
+				
+				LOGGER.info("Pausa na operação de conferência de protocolos.");
 				
 				ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(20);
 			}
