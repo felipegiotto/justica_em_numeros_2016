@@ -1287,7 +1287,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
 		 */
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
-		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, codigoOrgaoJulgadorLegado, baseEmAnalise);
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, null, codigoOrgaoJulgadorLegado, baseEmAnalise);
 		if (serventiaCNJ == null) {
 			if (!considerarParametroMovimentosSemServentiaCnj || this.paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_PROCESSO)) {
 				throw new DataJudException("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias());				

@@ -100,12 +100,13 @@ public class AnalisaServentiasCNJ {
 	 * Ao ler dados do sistema legado, o mapeamento não será realizado: o código e a descrição recebidos por parâmetro deverão estar preenchidos já com os valores corretos.
 	 * 
 	 * @param descricaoOrgaoJudicial : nome do órgão julgador (PJe) ou nome da serventia do CNJ (sistemas legados)
+	 * @param listaNumerosProcesso : Lista com números dos processos daquele OJ/serventia separados por ponto e vírgula e espaço 
 	 * @param codigoOrgaoJudicialLegado : código da serventia do CNJ (sistemas legados), não utilizado para o PJe.
 	 * @param baseEmAnaliseEnum : sistema (PJe ou Legado) que está sendo analisado
 	 * @return
 	 * @throws DadosInvalidosException
 	 */
-	public ServentiaCNJ getServentiaByOJ(String descricaoOrgaoJudicial, int codigoOrgaoJudicialLegado, BaseEmAnaliseEnum baseEmAnaliseEnum) {
+	public ServentiaCNJ getServentiaByOJ(String descricaoOrgaoJudicial, String listaNumerosProcesso, int codigoOrgaoJudicialLegado, BaseEmAnaliseEnum baseEmAnaliseEnum) {
 		if (baseEmAnaliseEnum.isBasePJe()) {
 			if (serventiasCNJ.containsKey(descricaoOrgaoJudicial)) {
 				return serventiasCNJ.get(descricaoOrgaoJudicial);
@@ -113,6 +114,9 @@ public class AnalisaServentiasCNJ {
 			} else {
 				if (orgaosJulgadoresSemServentiasCadastradas.add(descricaoOrgaoJudicial)) {
 					LOGGER.warn("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias() + ": " + descricaoOrgaoJudicial + ";<CODIGO SERVENTIA CNJ>;<NOME SERVENTIA CNJ>");
+					if(listaNumerosProcesso != null) {
+						LOGGER.warn(String.format("    Processos com histórico deslocamento ou na serventia %s: %s.", descricaoOrgaoJudicial, listaNumerosProcesso));
+					}
 				}
 				return null;
 			}
@@ -143,7 +147,7 @@ public class AnalisaServentiasCNJ {
 		
 		return false;
 	}
-	
+
 	public boolean diagnosticarServentiasPjeInexistentes() throws SQLException {
 		LOGGER.info("Iniciando diagnóstico de serventias inexistentes...");
 		
@@ -182,28 +186,34 @@ public class AnalisaServentiasCNJ {
 				//                StringBuilder sql = new StringBuilder("SELECT DISTINCT upper(to_ascii(replace (oj.ds_orgao_julgador, 'º', 'O'))) as ds_orgao_julgador " +
 				//                Fonte: e-mail com assunto "Sugestões de alterações justica_em_numeros_2016" do TRT6
 				//                Fonte: https://www.postgresql.org/message-id/20040607212810.15543.qmail@web13125.mail.yahoo.com
-				String sql = "SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
+				String sql = "SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, " +
+						" 				STRING_AGG(proc.nr_processo, '; ') as nr_processos " +
 						"FROM tb_processo proc " +
 						"INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf) " +
 						"INNER JOIN tb_orgao_julgador oj USING (id_orgao_julgador) " +
-						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
+						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ") " +
+						"GROUP BY oj.ds_orgao_julgador";
 				try (ResultSet rs = conexao.createStatement().executeQuery(sql.toString())) {
 					analisarExistenciaServentiasPje(rs);
 				}
 				
 				// Monta SQL para consultar os nomes de todos os outros OJs que o processo já passou, com base na tabela "tb_hist_desloca_oj".
 				// Esses dados serão utilizados para identificar o OJ que emitiu cada movimento processual.
-				String sqlHistorico = "SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
+				String sqlHistorico = "SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, " + 
+						" 					STRING_AGG(proc.nr_processo, '; ') as nr_processos " +
 						"FROM tb_hist_desloca_oj hdo " + 
 						"INNER JOIN tb_processo proc ON (proc.id_processo = hdo.id_processo_trf) " + 
 						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_origem) " + 
-						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ") " + 
+						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ") " +
+						"GROUP BY oj.ds_orgao_julgador " +
 						"UNION " + 
-						"SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador " + 
+						"SELECT DISTINCT upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, " +
+						" 					STRING_AGG(proc.nr_processo, '; ') as nr_processos " +
 						"FROM tb_hist_desloca_oj hdo " + 
 						"INNER JOIN tb_processo proc ON (proc.id_processo = hdo.id_processo_trf) " + 
 						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_destino) " + 
-						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ")";
+						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ") " + 
+						"GROUP BY oj.ds_orgao_julgador";
 				LOGGER.info("Consultando historicos de deslocamento...");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sqlHistorico.toString())) {
 					analisarExistenciaServentiasPje(rs);
@@ -214,7 +224,7 @@ public class AnalisaServentiasCNJ {
 	
 	private void analisarExistenciaServentiasPje(ResultSet rs) throws SQLException {
 		while (rs.next()) {
-			getServentiaByOJ(rs.getString("ds_orgao_julgador"), 0, BaseEmAnaliseEnum.PJE);
+			getServentiaByOJ(rs.getString("ds_orgao_julgador"), rs.getString("nr_processos"), 0, BaseEmAnaliseEnum.PJE);
 		}
 	}
 
