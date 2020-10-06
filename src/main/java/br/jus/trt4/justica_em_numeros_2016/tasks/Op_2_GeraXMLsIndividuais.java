@@ -9,7 +9,9 @@ import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1285,7 +1287,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
 		 */
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
-		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, codigoOrgaoJulgadorLegado, baseEmAnalise);
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, null, codigoOrgaoJulgadorLegado, baseEmAnalise);
 		if (serventiaCNJ == null) {
 			if (!considerarParametroMovimentosSemServentiaCnj || this.paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_PROCESSO)) {
 				throw new DataJudException("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias());				
@@ -1415,18 +1417,33 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 					
 					// Analisa a lista de sentenças e acórdãos do processo, para tentar encontrar qual o 
 					// magistrado responsável pelo movimento de julgamento
-					DocumentoDto documentoRelacionado = processo.getSentencasAcordaos().stream()
+					List<DocumentoDto> documentosRelacionados = processo.getSentencasAcordaos().stream()
 							
-						// Procura uma sentença ou acórdão ANTERIOR ao movimento para saber qual o magistrado prolator.
-						.filter(d -> d.getDataJuntada().isBefore(dataMovimento))
+						// Procura os documentos no período de tempo comprendido entre 7 dias antes do movimento e 7 dias depois.
+						.filter(d ->  d.getDataJuntada().isAfter(dataMovimento.minusDays(7))
+									&& d.getDataJuntada().isBefore(dataMovimento.plusDays(7)))
 						
-						// Volta no máximo uma semana, para evitar pegar um documento muito antigo
-						.filter(d -> d.getDataJuntada().isAfter(dataMovimento.minusDays(7)))
-						.findFirst().orElse(null);
+						// Ordena a lista pelo valor absoluto da diferença entre a data do movimento e a data do documento 
+						.sorted((d1, d2) -> Math.abs((int) Duration.between(d1.getDataJuntada(), dataMovimento).toMillis()) 
+											- Math.abs((int) Duration.between(d2.getDataJuntada(), dataMovimento).toMillis()))
+						
+						// Cria uma lista com o resultado
+						.collect(Collectors.toList());				
 					
 					// Se encontrou, preenche CPF do magistrado prolator.
-					if (documentoRelacionado != null) {
-						movimento.getMagistradoProlator().add(documentoRelacionado.getCpfUsuarioAssinou());
+					if (!documentosRelacionados.isEmpty()) {
+						movimento.getMagistradoProlator().add(documentosRelacionados.get(0).getCpfUsuarioAssinou());
+						
+						if(documentosRelacionados.size() > 1) {
+									
+							DateTimeFormatter formatadorData = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS");
+
+							LOGGER.warn(String.format("Foi encontrado mais de um documento com provável decisão para o movimento "
+												+ "com id_processo_evento %s do processo %s. O documento mais próximo e escolhido foi o com data igual a %s.", 
+									movimentoDto.getIdProcessoEvento(), processo.getNumeroProcesso(), 
+									formatadorData.format(documentosRelacionados.get(0).getDataJuntada())));
+						}
+						
 					} else {
 						LOGGER.warn(String.format("Não foi possível encontrar o magistrado prolator do movimento "
 												+ "com id_processo_evento %s do processo %s.", 
