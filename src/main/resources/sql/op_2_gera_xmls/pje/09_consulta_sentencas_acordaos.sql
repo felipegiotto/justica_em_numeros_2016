@@ -10,9 +10,13 @@ WHERE proc.nr_processo = ANY(:numeros_processos)
   AND doc.id_tipo_processo_documento::varchar IN (
 	SELECT vl_variavel
 	FROM tb_parametro
-	WHERE nm_variavel IN ('idTipoProcessoDocumentoAcordao', 'idTipoProcessoDocumentoSentenca')
+	WHERE nm_variavel IN ('idTipoProcessoDocumentoAcordao', 'idTipoProcessoDocumentoSentenca', 
+							'idTipoProcessoDocumentoAtaAudiencia', 'idTipoProcessoDocumentoDecisao')
   )
-
+  
+   --Não foi usado nenhum filtro de data para os documentos pois essa verificação é feita em código java
+  --considerado documentos retornados dessa consulta no período entre 7 dias antes e depois do movimento
+  
   -- Reforça a condição da data de autuação, pois um bug no PJe fez com que houvesse mais que um processo com mesma numeração (um com data de autuação e outro sem)
   AND ptrf.dt_autuacao IS NOT NULL
 
