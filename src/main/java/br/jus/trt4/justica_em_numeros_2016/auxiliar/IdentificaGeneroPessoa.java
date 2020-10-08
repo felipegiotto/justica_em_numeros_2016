@@ -14,6 +14,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeGeneroPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoQualificacaoPessoa;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 
 /**
  * Classe que visa contornar problema de ausência de informação de sexo no PJe.

@@ -1,4 +1,4 @@
-package br.jus.trt4.justica_em_numeros_2016.auxiliar;
+package br.jus.trt4.justica_em_numeros_2016.enums;
 
 /**
  * Lista todos os parâmetros que podem ser lidos do arquivo "config.properties".

@@ -29,6 +29,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+
 @SuppressWarnings("deprecation")
 public class HttpUtil {
 
