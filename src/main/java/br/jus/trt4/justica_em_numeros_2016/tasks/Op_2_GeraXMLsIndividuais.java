@@ -2,6 +2,7 @@ package br.jus.trt4.justica_em_numeros_2016.tasks;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +14,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +36,7 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.http.HttpEntity;
@@ -489,28 +494,45 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
     private void mesclarMovimentosLegadoMigrado(OperacaoGeracaoXML operacao, TipoProcessoJudicial processoJudicial)
             throws JAXBException {
         File pastaXMLsLegado = Auxiliar.getPastaXMLsLegado(grau);
-        File arquivoXMLLegado = new File(pastaXMLsLegado, operacao.arquivoXML.getName());
-        if (arquivoXMLLegado.exists()) {
-            LOGGER.debug("[" + operacao.numeroProcesso + "] Encontrado dados do sistema legado. O processo foi migrado para o PJe");
-            JAXBContext jaxbContext = JAXBContext.newInstance(Processos.class);  
-            
-            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();  
-            Processos processosLegado = (Processos) jaxbUnmarshaller.unmarshal(arquivoXMLLegado);
-            List<TipoMovimentoProcessual> movimentosLegado = processosLegado.getProcesso().get(0).getMovimento();
-            if (!movimentosLegado.isEmpty()) {
-                LOGGER.debug("[" + operacao.numeroProcesso + "] Encontrado " + movimentosLegado.size() + " movimento(s) no XML do sistema legado para o processo");
-                processoJudicial.getMovimento().addAll(0, movimentosLegado);
+        List<File> listaXMLLegado = listarXMLLegadoParaProcesso(pastaXMLsLegado, operacao.numeroProcesso, ".xml");
+        if (listaXMLLegado.isEmpty()) {
+            LOGGER.debug("[" + operacao.numeroProcesso + "] Encontrado dados do sistema legado. O processo foi migrado para o PJe. Total de arquivos: " + listaXMLLegado.size());
+            List<TipoMovimentoProcessual> movimentosLegado = new ArrayList<>();
+            JAXBContext jaxbContext = JAXBContext.newInstance(Processos.class);
+            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+            for (File arquivoXMLLegado : listaXMLLegado) {
+                LOGGER.debug("[" + operacao.numeroProcesso + "] Buscando movimentos do sistema legado no arquivo" + arquivoXMLLegado.getName());
+                Processos processosLegado = (Processos) jaxbUnmarshaller.unmarshal(arquivoXMLLegado);
+                List<TipoMovimentoProcessual> movimentosEncontrados = processosLegado.getProcesso().get(0).getMovimento();
+                LOGGER.debug("[" + operacao.numeroProcesso + "] Encontrado " + movimentosEncontrados.size() + " movimento(s) no XML do sistema legado para o processo");
+                movimentosLegado.addAll(movimentosEncontrados);
                 boolean renameTo = arquivoXMLLegado.renameTo(new File(arquivoXMLLegado.getAbsoluteFile() + ".migrado"));
+                
                 if (renameTo) {
                     LOGGER.debug("[" + operacao.numeroProcesso + "] O arquivo XML do sistema legado foi marcado como migrado");                                    
                 } else {
                     LOGGER.debug("[" + operacao.numeroProcesso + "] O arquivo XML do sistema legado não foi marcado como migrado");
                 }
             }
+                
+            if (!movimentosLegado.isEmpty()) {
+                LOGGER.debug("[" + operacao.numeroProcesso + "] Encontrado " + movimentosLegado.size() + " movimento(s) no(s) XML(s) do sistema legado para o processo");
+                Comparator<TipoMovimentoProcessual> porDataHora = (TipoMovimentoProcessual movimento1, TipoMovimentoProcessual movimento2) -> movimento1.getDataHora().compareTo(movimento2.getDataHora());
+                Collections.sort(movimentosLegado, porDataHora);
+                processoJudicial.getMovimento().addAll(0, movimentosLegado);
+            }
         }
     }
 
-	/**
+	private List<File> listarXMLLegadoParaProcesso(File pastaXMLsLegado, String numeroProcesso, String extensao) {
+	    if (!pastaXMLsLegado.exists()) {
+	        return new ArrayList<>();
+	    }
+	    FileFilter filtro = new WildcardFileFilter(numeroProcesso + "*" + extensao);
+	    return Arrays.asList(pastaXMLsLegado.listFiles(filtro));
+    }
+
+    /**
 	 * Valida um arquivo no "Programa validador de arquivos XML", conforme parâmetro "url_validador_cnj" das configurações
 	 *
 	 * TODO: Quando CNJ resolver o bug de concorrência no validador local, retirar o synchronized
