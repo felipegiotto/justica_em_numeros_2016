@@ -159,7 +159,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (FILA)
 				try {
 					this.executandoOperacao2Geracao = true;
-					Op_2_GeraXMLsIndividuais.executarOperacaoGeracaoXML(false);
+					Op_2_GeraXMLsIndividuais.executarOperacaoGeracaoXML();
 				} catch (Exception e) {
 					ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(10);
 				} finally {

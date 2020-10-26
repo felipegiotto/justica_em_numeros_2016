@@ -21,6 +21,7 @@ public enum Parametro {
 	tamanho_lote_geracao_processos,
 	numero_threads_simultaneas,
 	tipo_carga_xml,
+	mes_ano_corte,
 	codigo_municipio_ibge_trt,
 	url_jdbc_egestao_1g,
 	url_jdbc_egestao_2g,

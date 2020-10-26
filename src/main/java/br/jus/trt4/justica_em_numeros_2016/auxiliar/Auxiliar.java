@@ -567,7 +567,11 @@ public class Auxiliar {
 		
 		if (pastaSaida == null) {
 			File pastaOutputRaiz = getPastaOutputRaiz();
-			File pastaOutputCarga = new File(pastaOutputRaiz, Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true));
+			String tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
+			if (tipoCarga.equals("MENSAL")) {
+				tipoCarga = tipoCarga + " " + Auxiliar.getParametroConfiguracao(Parametro.mes_ano_corte, true);
+			}
+			File pastaOutputCarga = new File(pastaOutputRaiz, tipoCarga);
 			pastaSaida = pastaOutputCarga;
 			
 			// Mapeia STDOUT e STDERR para os arquivos de log

@@ -43,11 +43,10 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	private Connection conexaoBasePrincipalLegado;
 	private Connection conexaoBaseStagingEGestao;
 	private static final Pattern pCargaProcesso = Pattern.compile("^PROCESSO (\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4})$");
-	private static final Pattern pCargaMensal = Pattern.compile("^MENSAL (\\d+)-(\\d+)$");
+	private static final Pattern pMesAnoCorte = Pattern.compile("^(\\d+)-(\\d+)$");
 	
 	
 	public static void main(String[] args) throws SQLException, IOException {
-		
 		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(1/6) Baixa lista de números de processos");
 		try {
 			progresso.setMax(3);
@@ -97,6 +96,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		// Verifica quais os critérios selecionados pelo usuário, no arquivo "config.properties",
 		// pra escolher os processos que serão analisados.
 		String tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
+		String mesAnoCorte = Auxiliar.getParametroConfiguracao(Parametro.mes_ano_corte, true);
 		LOGGER.info("Executando consulta " + tipoCarga + "...");
 		ResultSet rsConsultaProcessosPje = null;
 		ResultSet rsConsultaProcessosMigradosLegado = null;
@@ -157,13 +157,23 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		} else if ("COMPLETA".equals(tipoCarga)) {
 			// Se usuário selecionou carga "COMPLETA" no parâmetro "tipo_carga_xml", 
 			// gera os XMLs de todos os processos que obedecerem às regras descritas no site do CNJ
-
 			if (this.deveProcessarProcessosPje) {
+				Matcher m = pMesAnoCorte.matcher(mesAnoCorte);
+				if (!m.find()) {
+					throw new RuntimeException("Parâmetro 'mes_ano_corte' não especifica corretamente o ano e o mês que precisam ser baixados! Verifique o arquivo 'config.properties'");
+				}
+				String dataFinalComHoras = this.getDataCorte(m, false, true);
+				String dataFinalSemHoras = this.getDataCorte(m, false, false);
+				LOGGER.info("* Considerando movimentações entre '01-01-2015 00:00:00.000' e '" + dataFinalComHoras + "'");
+				
 				String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/" + pastaIntermediariaPje + "/carga_completa_egestao_" + this.grau + "g.sql");
 				getConexaoBaseStagingEGestao().createStatement().execute("SET search_path TO pje_eg");
-				Statement statement = getConexaoBaseStagingEGestao().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+				PreparedStatement statement = getConexaoBaseStagingEGestao().prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+				statement.setDate(1, java.sql.Date.valueOf(dataFinalSemHoras));
+				statement.setDate(2, java.sql.Date.valueOf(dataFinalSemHoras));
+				statement.setString(3, dataFinalComHoras);
 				statement.setFetchSize(100);
-				rsConsultaProcessosPje = statement.executeQuery(sql);
+				rsConsultaProcessosPje = statement.executeQuery();
 			}
 			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
 				String sqlMigradosLegado = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/" + pastaIntermediariaLegado + "/carga_completa_migrados.sql");
@@ -202,21 +212,18 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				rsConsultaProcessosNaoMigradosLegado = statementNaoMigradosLegado.executeQuery(sqlNaoMigradosLegado);
 			}
 			
-		} else if (tipoCarga.startsWith("MENSAL ")) {
-			// Se usuário selecionou carga "MENSAL" no parâmetro "tipo_carga_xml", utiliza as
-			// regras definidas pelo CNJ
-			Matcher m = pCargaMensal.matcher(tipoCarga);
-			if (!m.find()) {
-				throw new RuntimeException("Parâmetro 'tipo_carga_xml' não especifica corretamente o ano e o mês que precisam ser baixados! Verifique o arquivo 'config.properties'");
-			}
+		} else if (tipoCarga.equals("MENSAL")) {
 			
 			if (this.deveProcessarProcessosPje) {
+				// Se usuário selecionou carga "MENSAL" no parâmetro "tipo_carga_xml", utiliza as
+				// regras definidas pelo CNJ
+				Matcher m = pMesAnoCorte.matcher(mesAnoCorte);
+				if (!m.find()) {
+					throw new RuntimeException("Parâmetro 'mes_ano_corte' não especifica corretamente o ano e o mês que precisam ser baixados! Verifique o arquivo 'config.properties'");
+				}
 				// Identifica o início e o término do mês selecionado
-				int ano = Integer.parseInt(m.group(1));
-				int mes = Integer.parseInt(m.group(2));
-				int maiorDiaNoMes = new GregorianCalendar(ano, (mes-1), 1).getActualMaximum(Calendar.DAY_OF_MONTH);
-				String dataInicial = ano + "-" + mes + "-1 00:00:00.000";
-				String dataFinal = ano + "-" + mes + "-" + maiorDiaNoMes + " 23:59:59.999";
+				String dataInicial = this.getDataCorte(m, true, true);
+				String dataFinal = this.getDataCorte(m, false, true);
 				LOGGER.info("* Considerando movimentações entre '" + dataInicial + "' e '" + dataFinal + "'");
 				
 				// Carrega o SQL do arquivo
@@ -256,6 +263,20 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			// Itera sobre os processos encontrados no Sistema Judicial Legado e que NÃO foram migrados
 			gravarListaProcessos(rsConsultaProcessosNaoMigradosLegado, Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(this.grau));
 		}
+	}
+	
+	private String getDataCorte(Matcher matcher, boolean returnarDataInicio, boolean informarHoras) {
+		String data  = null;
+
+		int ano = Integer.parseInt(matcher.group(1));
+		int mes = Integer.parseInt(matcher.group(2));
+		if (returnarDataInicio) {
+			data = ano + "-" + mes + (informarHoras ? "-1 00:00:00.000" : "");
+		} else {
+			int maiorDiaNoMes = new GregorianCalendar(ano, (mes - 1), 1).getActualMaximum(Calendar.DAY_OF_MONTH);
+			data = ano + "-" + mes + "-" + maiorDiaNoMes + (informarHoras ?" 23:59:59.999" : "");
+		}
+		return data;
 	}
 	
 	public static void gravarListaProcessos(ResultSet rsConsultaProcessos, File arquivoSaida) throws IOException, SQLException {

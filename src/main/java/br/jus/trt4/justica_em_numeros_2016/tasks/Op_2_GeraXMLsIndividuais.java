@@ -133,7 +133,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private NamedParameterStatement nsSentencasAcordaosLegadosMigrados;
 	private NamedParameterStatement nsHistoricoDeslocamentoOJLegadosMigrados;
 	private int codigoMunicipioIBGETRT;
-	private static AnalisaServentiasCNJ processaServentiasCNJ;
+	private AnalisaServentiasCNJ processaServentiasCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
 	private AnalisaClassesProcessuaisCNJ analisaClassesProcessuaisCNJ;
 	private AnalisaMovimentosCNJ analisaMovimentosCNJ;
@@ -173,9 +173,36 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		Auxiliar.prepararPastaDeSaida();
 		
 		try {
-			executarOperacaoGeracaoXML(true);
 
-			AnalisaServentiasCNJ.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
+			// Verifica se há alguma serventia inexistente. A análise de serventias só será realizada para o PJe,
+			// pois as informações do Sistema Judicial Legado já estão corretas.
+			//TODO checar se a análise de serventias ainda é necessária já que temos o validador do CNJ
+			AnalisaServentiasCNJ analisaServentiasCNJGrau1 = null;
+			AnalisaServentiasCNJ analisaServentiasCNJGrau2 = null;
+			if (Auxiliar.deveProcessarPrimeiroGrau()) {
+				analisaServentiasCNJGrau1 = new AnalisaServentiasCNJ(BaseEmAnaliseEnum.PJE, 1);				
+			}
+			
+			if (Auxiliar.deveProcessarSegundoGrau()) {
+				analisaServentiasCNJGrau2 = new AnalisaServentiasCNJ(BaseEmAnaliseEnum.PJE, 2);				
+			}
+			
+			boolean temServentiasNaoMapeadasPrimeiroGrau = (analisaServentiasCNJGrau1 != null ? analisaServentiasCNJGrau1.diagnosticarServentiasPjeInexistentes() : false);
+			boolean temServentiasNaoMapeadasSegundoGrau = (analisaServentiasCNJGrau2 != null ? analisaServentiasCNJGrau2.diagnosticarServentiasPjeInexistentes() : false);
+			if (temServentiasNaoMapeadasPrimeiroGrau || temServentiasNaoMapeadasSegundoGrau) {
+				Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
+			}
+
+			executarOperacaoGeracaoXML();
+			
+			if (analisaServentiasCNJGrau1 != null) {
+				analisaServentiasCNJGrau1.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
+			}
+			
+			if (analisaServentiasCNJGrau2 != null) {
+				analisaServentiasCNJGrau2.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
+			}
+			
 			AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
 			LOGGER.info("Fim!");
 		} finally {
@@ -191,7 +218,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("deprecation")
-	public static void executarOperacaoGeracaoXML(boolean aguardarCasoHajaProblemaComServentias) throws Exception {
+	public static void executarOperacaoGeracaoXML() throws Exception {
 		boolean deveProcessarProcessosPje = Auxiliar.deveProcessarProcessosPje();
 		boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje();
 		Op_2_GeraXMLsIndividuais baixaDados1g = null;
@@ -200,15 +227,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		Op_2_GeraXMLsIndividuais baixaDadosLegado2g = null;
 
 		if (deveProcessarProcessosPje) {
-			// Verifica se há alguma serventia inexistente. A análise de serventias só será realizada para o PJe,
-			// pois as informações do Sistema Judicial Legado já estão corretas.
-			//TODO checar se a análise de serventias ainda é necessária já que temos o validador do CNJ
-			AnalisaServentiasCNJ analisaServentiasCNJ = new AnalisaServentiasCNJ((BaseEmAnaliseEnum.PJE));
-			boolean problemaComServentias = analisaServentiasCNJ.diagnosticarServentiasPjeInexistentes();
-			if (problemaComServentias && aguardarCasoHajaProblemaComServentias) {
-				Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
-			}
-			
 			baixaDados1g = Auxiliar.deveProcessarPrimeiroGrau() ? new Op_2_GeraXMLsIndividuais(1, BaseEmAnaliseEnum.PJE) : null;
 			baixaDados2g = Auxiliar.deveProcessarSegundoGrau()  ? new Op_2_GeraXMLsIndividuais(2, BaseEmAnaliseEnum.PJE) : null;	
 		}
@@ -1278,14 +1296,14 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 
 	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ProcessoDto processo, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, DataJudException {
-		return analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), processo.getOrgaoJulgador().getNomeNormalizado(), processo.getOrgaoJulgador().getCodigoServentiaJudiciariaLegado(), processo.getOrgaoJulgador().getIdMunicipioIBGE(), baseEmAnalise, false);
+		return analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), processo.getOrgaoJulgador().getDescricaoServentiaJudiciariaLegado(), processo.getOrgaoJulgador().getCodigoServentia(), processo.getOrgaoJulgador().getIdMunicipioIBGE(), baseEmAnalise, false);
 	}
 	
 	/**
 	 * Retorna um órgão julgador com os dados das serventias do CNJ.
 	 * 
-	 * @param nomeOrgaoJulgadorProcesso : nome do órgão julgador conforme campo "ds_orgao_julgador" da tabela "tb_orgao_julgador".
-	 * @param codigoOrgaoJulgadorLegado: codigo do órgão julgador que é retornado apenas pelo sistema judicial legado (para composição da serventia)
+	 * @param nomeOrgaoJulgadorProcessoLegado : nome do órgão julgador que é retornado apenas pelo sistema judicial legado (para composição da serventia) 
+	 * @param codigoOrgaoJulgador: id do órgão julgador (PJe) ou código da serventia do CNJ (sistemas legados).
 	 * @param idMunicipioIBGE : código IBGE do município do órgão julgador. Se estiver gerando dados do segundo grau, 
 	 * 		esse parâmetro será ignorado e, em vez dele, será sempre preenchido o conteúdo do parâmetro "codigo_municipio_ibge_trt".
 	 * @param baseEmAnalise : PJe ou Legado 
@@ -1295,7 +1313,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * @throws SQLException
 	 * @throws DataJudException 
 	 */
-	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ClasseJudicialDto classe, String nomeOrgaoJulgadorProcesso, int codigoOrgaoJulgadorLegado, int idMunicipioIBGE, BaseEmAnaliseEnum baseEmAnalise, boolean considerarParametroMovimentosSemServentiaCnj) throws SQLException, DataJudException {
+	private TipoOrgaoJulgador analisarOrgaoJulgadorProcesso(ClasseJudicialDto classe, String nomeOrgaoJulgadorProcessoLegado, int codigoOrgaoJulgador, int idMunicipioIBGE, BaseEmAnaliseEnum baseEmAnalise, boolean considerarParametroMovimentosSemServentiaCnj) throws SQLException, DataJudException {
 		/*
 		 * Órgãos Julgadores
 				Para envio do elemento <orgaoJulgador >, pede-se os atributos <codigoOrgao> e <nomeOrgao>, conforme definido em <tipoOrgaoJulgador>. 
@@ -1309,7 +1327,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			Fonte: http://www.cnj.jus.br/programas-e-acoes/pj-justica-em-numeros/selo-justica-em-numeros/perguntas-frequentes
 		 */
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
-		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcesso, null, codigoOrgaoJulgadorLegado, baseEmAnalise);
+		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcessoLegado, null, codigoOrgaoJulgador, baseEmAnalise);
 		if (serventiaCNJ == null) {
 			if (!considerarParametroMovimentosSemServentiaCnj || this.paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_PROCESSO)) {
 				throw new DataJudException("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias());				
@@ -1484,10 +1502,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						TipoOrgaoJulgador orgaoJulgador = null;
 						
 						if (dataDeslocamento.isAfter(dataMovimento)) {
-							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), historico.getIdOrgaoJulgadorOrigem(), historico.getIdMunicipioOrigem(), baseEmAnalise, true);
+							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorOrigem(), historico.getCodigoOrgaoJulgadorOrigem(), historico.getIdMunicipioOrigem(), baseEmAnalise, true);
 							orgaoJulgadorEncontradoEmServentiaNaoMapeada = true;
 						} else if (dataDeslocamento.isBefore(dataMovimento) && dataRetorno.isAfter(dataMovimento)) {
-							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), historico.getIdOrgaoJulgadorDestino(), historico.getIdMunicipioDestino(), baseEmAnalise, true);
+							orgaoJulgador = analisarOrgaoJulgadorProcesso(processo.getClasseJudicial(), historico.getNomeOrgaoJulgadorDestino(), historico.getCodigoOrgaoJulgadorDestino(), historico.getIdMunicipioDestino(), baseEmAnalise, true);
 							orgaoJulgadorEncontradoEmServentiaNaoMapeada = true;
 						}
 						
@@ -1535,7 +1553,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 		// Objeto que fará o de/para dos OJ e OJC do PJe para os do CNJ
 		if (processaServentiasCNJ == null) {
-			processaServentiasCNJ = new AnalisaServentiasCNJ(this.baseEmAnalise);
+			processaServentiasCNJ = new AnalisaServentiasCNJ(this.baseEmAnalise, this.grau);
 		}
 
 		// Abre conexão com o banco de dados do PJe ou Legado
