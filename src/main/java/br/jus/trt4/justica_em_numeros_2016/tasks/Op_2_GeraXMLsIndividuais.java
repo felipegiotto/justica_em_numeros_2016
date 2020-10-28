@@ -864,9 +864,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		//Se o processo tiver sido migrado pela CLET e não tiver nenhuma outra movimentação, o XML será gerado sem movimentos,
 		//pois o movimento de conversão não está mais ativo.
 		if(processoJudicial.getMovimento().size() == 0) {
-			LOGGER.error(String.format("Processo %s não possui nenhum movimento associado. Verifique se ele tem movimentos ativos "
+			LOGGER.error(String.format("Processo %s do %s° grau não possui nenhum movimento associado. Verifique se ele tem movimentos ativos "
 					+ "(tb_evento.in_ativo  = 'S') e se ele não foi descartado por causa do parâmetro "
-					+ "descartar_movimentos_ausentes_de_para_cnj.", processoJudicial.getDadosBasicos().getNumero()));
+					+ "descartar_movimentos_ausentes_de_para_cnj.", processo.getNumeroProcesso(), processo.getNumeroInstancia()));
 		}
 
 		return processoJudicial;
@@ -1460,14 +1460,14 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 									
 							DateTimeFormatter formatadorData = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS");
 
-							LOGGER.warn(String.format("Foi encontrado mais de um documento com provável decisão para o movimento "
+							LOGGER.debug(String.format("Foi encontrado mais de um documento com provável decisão para o movimento "
 												+ "com id_processo_evento %s do processo %s. O documento mais próximo e escolhido foi o com data igual a %s.", 
 									movimentoDto.getIdProcessoEvento(), processo.getNumeroProcesso(), 
 									formatadorData.format(documentosRelacionados.get(0).getDataJuntada())));
 						}
 						
 					} else {
-						LOGGER.warn(String.format("Não foi possível encontrar o magistrado prolator do movimento "
+						LOGGER.info(String.format("Não foi possível encontrar o magistrado prolator do movimento "
 												+ "com id_processo_evento %s do processo %s.", 
 												movimentoDto.getIdProcessoEvento(), processo.getNumeroProcesso()));
 					}					
