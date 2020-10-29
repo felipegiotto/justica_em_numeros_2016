@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -20,6 +21,8 @@ import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
 /**
  * Classe que modela a tabela de remessa.
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 @Entity
 @Table(name = "tb_remessa", uniqueConstraints = @UniqueConstraint(columnNames = {
@@ -41,7 +44,7 @@ public class Remessa extends BaseEntidade {
 	@Column(name = "dt_corte", nullable = false)
 	private LocalDate dataCorte;
 
-	@OneToMany(mappedBy = "remessa", fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "remessa", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Lote> lotes = new ArrayList<>(0);
 
 	public Remessa() {

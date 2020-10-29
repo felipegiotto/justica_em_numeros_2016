@@ -1,6 +1,11 @@
 package br.jus.trt4.justica_em_numeros_2016.enums;
 
-public enum StatusProtocoloCNJ {
+/**
+ * Enum para mapear a situacao de um protocolo no CNJ.
+ * 
+ * @author ivan.franca@trt6.jus.br
+ */
+public enum SituacaoProtocoloCNJ {
 
     AGUARDANDO_PROCESSAMENTO("Aguardando Processamento", 1),
     SUCESSO("Processado com Sucesso", 3),
@@ -13,7 +18,7 @@ public enum StatusProtocoloCNJ {
     private Integer id;
 
 
-    private StatusProtocoloCNJ(String descricao, Integer id) {
+    private SituacaoProtocoloCNJ(String descricao, Integer id) {
         this.descricao = descricao;
         this.id = id;
     }
@@ -27,17 +32,17 @@ public enum StatusProtocoloCNJ {
     }
     
     public static String getDescricaoPeloID(Integer id) {
-        for (StatusProtocoloCNJ status : StatusProtocoloCNJ.values()) {
-			if (status.getId().equals(id)) {
-				return status.getDescricao(); 
+        for (SituacaoProtocoloCNJ situacao : SituacaoProtocoloCNJ.values()) {
+			if (situacao.getId().equals(id)) {
+				return situacao.getDescricao(); 
 			}
 		}
         return null;
     }
     
     public static boolean hasStatusErro(Integer id) {
-    	return id.equals(StatusProtocoloCNJ.PROCESSADO_COM_ERRO.getId())
-    			|| id.equals(StatusProtocoloCNJ.ERRO_NO_ARQUIVO.getId());
+    	return id.equals(SituacaoProtocoloCNJ.PROCESSADO_COM_ERRO.getId())
+    			|| id.equals(SituacaoProtocoloCNJ.ERRO_NO_ARQUIVO.getId());
     }
 
     

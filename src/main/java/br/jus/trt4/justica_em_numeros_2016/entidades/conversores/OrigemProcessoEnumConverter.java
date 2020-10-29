@@ -6,6 +6,8 @@ import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
 
 /**
  * Conversor para o enum OrigemProcessoEnum
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 public class OrigemProcessoEnumConverter
         implements AttributeConverter<OrigemProcessoEnum, String> {

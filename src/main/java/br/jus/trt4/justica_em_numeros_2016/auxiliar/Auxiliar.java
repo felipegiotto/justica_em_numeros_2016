@@ -568,7 +568,7 @@ public class Auxiliar {
 		if (pastaSaida == null) {
 			File pastaOutputRaiz = getPastaOutputRaiz();
 			String tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
-			if (tipoCarga.equals("MENSAL")) {
+			if (tipoCarga.equals("MENSAL") || tipoCarga.equals("COMPLETA")) {
 				tipoCarga = tipoCarga + " " + Auxiliar.getParametroConfiguracao(Parametro.mes_ano_corte, true);
 			}
 			File pastaOutputCarga = new File(pastaOutputRaiz, tipoCarga);
@@ -588,7 +588,6 @@ public class Auxiliar {
 		// TODO: Resolver problema reportado pelo Wiler: quando número de threads é maior que número de processos a gerar, dá um erro nos logs
 		ThreadContext.put("logFolder", pastaSaida.getAbsolutePath());
 	}
-
 
 	/**
 	 * Retorna o caminho da pasta "output raiz", conforme definido pelo parâmetro "pasta_saida_padrao" no arquivo de configurações.

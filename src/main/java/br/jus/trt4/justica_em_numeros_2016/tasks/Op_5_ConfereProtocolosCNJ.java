@@ -50,7 +50,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.MetaInformacaoEnvio;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
-import br.jus.trt4.justica_em_numeros_2016.enums.StatusProtocoloCNJ;
+import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoProtocoloCNJ;
 
 /**
  * Chama os webservices do CNJ, validando cada um dos protocolos recebidos
@@ -1045,7 +1045,7 @@ public class Op_5_ConfereProtocolosCNJ {
 				}
 
 				// Marca o arquvido como processado com sucesso ou com erro.
-				boolean sucesso = StatusProtocoloCNJ.SUCESSO.getId().equals(status);
+				boolean sucesso = SituacaoProtocoloCNJ.SUCESSO.getId().equals(status);
 
 				if (sucesso) {
 					this.marcarArquivoComoProcessado(mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()),

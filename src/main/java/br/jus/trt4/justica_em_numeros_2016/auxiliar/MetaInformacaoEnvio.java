@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import br.jus.trt4.justica_em_numeros_2016.enums.StatusProtocoloCNJ;
+import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoProtocoloCNJ;
 
 public class MetaInformacaoEnvio {
 
@@ -134,12 +134,12 @@ public class MetaInformacaoEnvio {
 	}
 	
 	public String getInformacaoFormatada() {
-		return this.numProcesso + ";" + this.grau + ";" + this.numProtocolo + ";" + StatusProtocoloCNJ.getDescricaoPeloID(new Integer(this.tipStatusProtocolo)) 
+		return this.numProcesso + ";" + this.grau + ";" + this.numProtocolo + ";" + SituacaoProtocoloCNJ.getDescricaoPeloID(new Integer(this.tipStatusProtocolo)) 
 		+ ";" + this.codHash + ";" + this.getDataEnvioProtocoloFormatada();
 	}
 	
 	public boolean hasStatusErro() {
-		return StatusProtocoloCNJ.hasStatusErro(new Integer(this.tipStatusProtocolo));
+		return SituacaoProtocoloCNJ.hasStatusErro(new Integer(this.tipStatusProtocolo));
 	}
 
 	

@@ -3,6 +3,7 @@ package br.jus.trt4.justica_em_numeros_2016.entidades;
 import java.time.LocalDateTime;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -22,6 +23,8 @@ import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteProcessoEnum;
 
 /**
  * Classe que modela a tabela que relaciona um lote e um processo.
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 @Entity
 @Table(name = "tb_lote_processo")
@@ -63,7 +66,7 @@ public class LoteProcesso extends BaseEntidade {
 	@JoinColumn(name = "id_lote")
 	private Lote lote;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "id_chave_processo_cnj")
 	private ChaveProcessoCNJ chaveProcessoCNJ;
 

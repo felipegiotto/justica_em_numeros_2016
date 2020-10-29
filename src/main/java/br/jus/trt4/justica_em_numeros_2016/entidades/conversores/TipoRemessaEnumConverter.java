@@ -6,6 +6,8 @@ import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
 /**
  * Conversor para o enum TipoRemessaEnum
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 public class TipoRemessaEnumConverter
         implements AttributeConverter<TipoRemessaEnum, String> {

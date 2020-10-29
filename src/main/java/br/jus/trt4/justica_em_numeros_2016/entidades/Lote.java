@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -14,8 +15,13 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
+import br.jus.trt4.justica_em_numeros_2016.entidades.conversores.SituacaoLoteEnumConverter;
+import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteEnum;
+
 /**
  * Classe que modela a tabela de lote.
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 @Entity
 @Table(name = "tb_lote")
@@ -31,10 +37,15 @@ public class Lote extends BaseEntidade {
 
 	@Column(name = "nm_numero", nullable = false, length = 10)
 	private String numero;
+	
+	@Convert(converter = SituacaoLoteEnumConverter.class)
+	@Column(name = "en_situacao", length = 2, nullable = true)
+	private SituacaoLoteEnum situacao;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_remessa")
 	private Remessa remessa;
+	
 	//TODO: Testar o @LazyCollection(LazyCollectionOption.EXTRA) se o desempenho estiver ruim
 	@OneToMany(mappedBy = "lote", fetch = FetchType.LAZY)
 	private List<LoteProcesso> lotesProcessos = new ArrayList<>(0);
@@ -57,6 +68,14 @@ public class Lote extends BaseEntidade {
 
 	public void setNumero(String numero) {
 		this.numero = numero;
+	}
+
+	public SituacaoLoteEnum getSituacao() {
+		return situacao;
+	}
+
+	public void setSituacao(SituacaoLoteEnum situacao) {
+		this.situacao = situacao;
 	}
 
 	public Remessa getRemessa() {

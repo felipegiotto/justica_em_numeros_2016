@@ -6,6 +6,8 @@ import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteProcessoEnum;
 
 /**
  * Conversor para o enum SituacaoLoteProcessoEnum
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 public class SituacaoLoteProcessoEnumConverter
         implements AttributeConverter<SituacaoLoteProcessoEnum, String> {

@@ -3,17 +3,18 @@ package br.jus.trt4.justica_em_numeros_2016.enums;
 import java.util.Objects;
 
 /**
- * Enum para mapear o tipo de uma remessa.
+ * Enum para mapear a situacao de um Lote.
  *
  * @author ivan.franca@trt6.jus.br
  */
-public enum TipoRemessaEnum {
-    COMPLETA("C", "COMPLETA"), MENSAL("M", "MENSAL");
+public enum SituacaoLoteEnum {
+	CRIADO_PARCIALMENTE("1", "Lote criado parcialmente. Nem todos os processos foram recuperados."), 
+	CRIADO("2", "Criado");
     
     private final String codigo;
     private final String label;
     
-    private TipoRemessaEnum(String codigo, String label) {
+    private SituacaoLoteEnum(String codigo, String label) {
         this.codigo = codigo;
         this.label = label;
     }
@@ -31,13 +32,13 @@ public enum TipoRemessaEnum {
      * Método responsável por retornar o enum associado ao código.
      * 
      * @param codigo codigo do enum
-     * @return Retorna o tipo da remessa em {@link TipoRemessaEnum}.
+     * @return Retorna a situação de um lote em {@link SituacaoLoteEnum}.
      */
-    public static TipoRemessaEnum criar(String codigo) {
+    public static SituacaoLoteEnum criar(String codigo) {
         if (Objects.nonNull(codigo)) {
-            for (TipoRemessaEnum tipoRemessa : TipoRemessaEnum.values()) {
-                if (tipoRemessa.getCodigo().equals(codigo)) {
-                    return tipoRemessa;
+            for (SituacaoLoteEnum situacaoLote : SituacaoLoteEnum.values()) {
+                if (situacaoLote.getCodigo().equals(codigo)) {
+                    return situacaoLote;
                 }
             }
         }
@@ -48,13 +49,13 @@ public enum TipoRemessaEnum {
      * Método responsável por retornar o enum associado ao label.
      * 
      * @param label label do enum
-     * @return Retorna o tipo da remessa em {@link TipoRemessaEnum}.
+     * @return Retorna a situação de um lote em {@link SituacaoLoteEnum}.
      */
-    public static TipoRemessaEnum criarApartirDoLabel(String label) {
+    public static SituacaoLoteEnum criarApartirDoLabel(String label) {
         if (Objects.nonNull(label)) {
-            for (TipoRemessaEnum tipoRemessa : TipoRemessaEnum.values()) {
-                if (tipoRemessa.getLabel().equals(label)) {
-                    return tipoRemessa;
+            for (SituacaoLoteEnum situacaoLote : SituacaoLoteEnum.values()) {
+                if (situacaoLote.getLabel().equals(label)) {
+                    return situacaoLote;
                 }
             }
         }

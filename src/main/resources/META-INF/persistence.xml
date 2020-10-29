@@ -10,6 +10,13 @@
         <class>br.jus.trt4.justica_em_numeros_2016.entidades.LoteProcesso</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
+            <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false" />
+            <property name="hibernate.jdbc.batch_size" value="50" />
+            <property name="hibernate.order_inserts" value="true" />
+            <property name="hibernate.order_updates" value="true" />
+            <!-- <property name="hibernate.jdbc.fetch_size" value="400" /> -->
+          <!--  <property  name="hibernate.generate_statistics"  value="true"/> -->
+
             <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />
             <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://#SERVERNAME:5432/#DATABASE" />
       		<property name="hibernate.default_schema" value="datajud"/>
@@ -18,8 +25,8 @@
       		
             <property name="hibernate.hbm2ddl.auto" value="validate"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
-            <property name="hibernate.show_sql" value="true"/>
-            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="false"/>
         </properties>
     </persistence-unit>
 </persistence>

@@ -3,39 +3,35 @@ package br.jus.trt4.justica_em_numeros_2016.dao;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.List;
 
-import javax.persistence.TypedQuery;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
 
 import org.hibernate.Session;
 
 import br.jus.trt4.justica_em_numeros_2016.entidades.BaseEntidade;
-import br.jus.trt4.justica_em_numeros_2016.util.StringUtil;
 
 /**
  * Classe básica para acesso a dados
  * 
+ * @author ivan.franca@trt6.jus.br
  */
 public class DataJudBaseDao<T extends BaseEntidade> {
 
-	protected Class<T> classeEntidade;
+	protected Class<T> classe;
 
-	/**
-	 * Construtor padrão.
-	 */
 	@SuppressWarnings("unchecked")
 	public DataJudBaseDao() {
 		Type genericSuperclass = this.getClass().getGenericSuperclass();
 
 		if (ParameterizedType.class.isInstance(genericSuperclass)) {
 			ParameterizedType parameterizedType = ParameterizedType.class.cast(genericSuperclass);
-			this.classeEntidade = (Class<T>) parameterizedType.getActualTypeArguments()[0];
+			this.classe = (Class<T>) parameterizedType.getActualTypeArguments()[0];
 		}
 	}
 
 	/**
-	 * Método para gravar a entidade no banco de dados, através de uma inserção ou
-	 * alteração.
+	 * Método para gravar a entidade no banco de dados, através de uma inserção ou alteração.
 	 * 
 	 * @param entidade que se deseja persistir.
 	 */
@@ -71,49 +67,39 @@ public class DataJudBaseDao<T extends BaseEntidade> {
 		return JPAUtil.getEntityManager().merge(entidade);
 	}
 
-	/**
-	 * Método para obter a lista padrão de registros de uma entidade.
-	 *
-	 * @return Lista de instâncias da entidade.
-	 */
-	public List<T> listar() {
-		TypedQuery<T> query = JPAUtil.getEntityManager()
-				.createQuery(this.criarComandoPesquisaEntidade(this.classeEntidade, "entidade"), this.classeEntidade);
-		return query.getResultList();
+	public void clear() {
+		JPAUtil.getEntityManager().clear();
+	}
+
+	public void flush() {
+		JPAUtil.getEntityManager().flush();
+		;
 	}
 
 	/**
-	 * Cria o comando de pesquisa a ser usado para pesquisa de um entidade.
-	 *
-	 * @param classe
-	 * @param aliasEntidade
-	 * @return
-	 */
-	protected String criarComandoPesquisaEntidade(Class classe, String aliasEntidade) {
-		StringBuilder comando = new StringBuilder();
-		comando.append("FROM ").append(classe.getCanonicalName()).append(StringUtil.CARACTER_ESPACO)
-				.append(aliasEntidade).append(StringUtil.CARACTER_ESPACO);
-		return comando.toString();
-	}
-
-	/**
-	 * 
-	 * @param aliasEntidade
-	 * @return
-	 */
-	protected String criarComandoPesquisaEntidade(String aliasEntidade) {
-		return this.criarComandoPesquisaEntidade(this.classeEntidade, aliasEntidade);
-	}
-
-	/**
-	 * Método para localizar uma única instância de um entidade, de acordo com sua
-	 * chave primária.
+	 * Método para localizar uma única instância de um entidade, de acordo com sua chave primária.
 	 * 
 	 * @param idEntidade A chave principal (primary-key) da entidade.
 	 * @return Uma instância da entidade.
 	 */
 	public T buscar(Serializable idEntidade) {
-		return JPAUtil.getEntityManager().find(this.classeEntidade, idEntidade);
+		return JPAUtil.getEntityManager().find(this.classe, idEntidade);
 	}
 
+	/**
+	 * Alternativa para "javax.persistence.Query.getSingleResult()".
+	 * 
+	 * Método não lançará a exceção "NoResultException" (caso nenhum registro seja encontrado).
+	 * 
+	 * @param query A consulta que será executada.
+	 * @return O único registro retornado na consulta, ou 'null' se não houver registro retornado.
+	 */
+	@SuppressWarnings("unchecked")
+	public <E> E getSingleResultOrNull(Query query) {
+		try {
+			return (E) query.getSingleResult();
+		} catch (NoResultException noResultException) {
+			return null;
+		}
+	}
 }

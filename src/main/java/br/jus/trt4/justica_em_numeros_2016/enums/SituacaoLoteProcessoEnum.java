@@ -4,7 +4,8 @@ import java.util.Objects;
 
 /**
  * Enum para mapear a situacao de um LoteProcesso.
- *
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 public enum SituacaoLoteProcessoEnum {
 	AGUARDANDO_GERACAO_XML("1", "Aguardando Geração do XML"), 

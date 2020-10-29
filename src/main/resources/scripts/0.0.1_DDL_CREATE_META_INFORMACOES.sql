@@ -54,12 +54,17 @@ CREATE TABLE datajud.tb_lote
 (
 	id_lote bigint NOT NULL DEFAULT nextval('datajud.sq_tb_lote'::regclass),
     nm_numero varchar(10) NOT NULL,
+    en_situacao varchar(2),
     id_remessa bigint NOT NULL,
-    constraint tb_lote_pk primary key (id_lote)
+    constraint tb_lote_pk primary key (id_lote),
+    constraint tb_lote_ck01 check (en_situacao in ('1','2'))
 );
 
 COMMENT ON COLUMN datajud.tb_lote.nm_numero
     IS 'Número do Lote.';
+    
+COMMENT ON COLUMN datajud.tb_lote.en_situacao
+ 	IS 'Situação Lote que será enviado ao CNJ. 1:Aguardando inclusão de todos os processos no processo; 2:Criado';
     
 alter table datajud.tb_lote
 add constraint tb_lote_fk01 foreign key (id_remessa)

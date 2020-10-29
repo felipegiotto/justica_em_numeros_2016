@@ -1,5 +1,10 @@
 package br.jus.trt4.justica_em_numeros_2016.enums;
 
+/**
+ * Enum para mapear a base sendo analisada em cada operação
+ * 
+ * @author ivan.franca@trt6.jus.br
+ */
 public enum BaseEmAnaliseEnum {
 
     PJE("PJe", 1),

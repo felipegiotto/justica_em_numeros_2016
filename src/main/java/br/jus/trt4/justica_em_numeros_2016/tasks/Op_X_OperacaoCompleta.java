@@ -98,7 +98,7 @@ public class Op_X_OperacaoCompleta {
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
 
 			@Override
-			public void run() throws SQLException, IOException {
+			public void run() throws Exception {
 				Op_1_BaixaListaDeNumerosDeProcessos.main(null);
 			}
 		});

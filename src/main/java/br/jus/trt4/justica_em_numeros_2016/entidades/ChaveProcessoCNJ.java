@@ -15,6 +15,8 @@ import javax.persistence.UniqueConstraint;
 
 /**
  * Classe que modela a tabela da chave de um processo no CNJ.
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 @Entity
 @Table(name = "tb_chave_processo_cnj", uniqueConstraints = @UniqueConstraint(columnNames = { "nr_processo",
@@ -22,9 +24,10 @@ import javax.persistence.UniqueConstraint;
 public class ChaveProcessoCNJ extends BaseEntidade {
 
 	private static final long serialVersionUID = 1L;
-
+	
+	// TODO: avaliar desempenho allocationSize = 100)
 	@Id
-	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_chave_processo_cnj", allocationSize = 1) // TODO: avaliar desempenho allocationSize = 100)
+	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_chave_processo_cnj", allocationSize = 1) 
 	@GeneratedValue(generator = "generator")
 	@Column(name = "id_chave_processo_cnj", unique = true, nullable = false)
 	private Long id;

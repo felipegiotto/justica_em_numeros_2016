@@ -4,7 +4,8 @@ import java.util.Objects;
 
 /**
  * Enum para mapear a origem de um processo.
- *
+ * 
+ * @author ivan.franca@trt6.jus.br
  */
 public enum OrigemProcessoEnum {
 	HIBRIDO("H", "Híbrido"), 

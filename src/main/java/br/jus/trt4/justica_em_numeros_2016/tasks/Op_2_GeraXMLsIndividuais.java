@@ -459,6 +459,17 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 						synchronized (jaxbMarshaller) {
 							jaxbMarshaller.marshal(processos, operacao.arquivoXMLTemporario);
 						}
+						
+						//TODO: salvar conteudo no banco
+//						byte [] conteudoXML = null;
+//						// Gera o arquivo XML temporário
+//						synchronized (jaxbMarshaller) {
+//							ByteArrayOutputStream out = new ByteArrayOutputStream();
+//							jaxbMarshaller.marshal(processos, out);
+//							conteudoXML = out.toByteArray();
+//						}
+						
+						
 		
 						// OPCIONAL: Valida o arquivo XML com o "Programa validador de arquivos XML" do CNJ
 						validarArquivoXML(operacao.arquivoXMLTemporario);
