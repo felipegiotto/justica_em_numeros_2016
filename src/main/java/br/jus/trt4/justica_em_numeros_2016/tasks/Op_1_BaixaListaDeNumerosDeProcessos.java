@@ -8,11 +8,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,6 +25,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.dao.ChaveProcessoCNJDao;
+import br.jus.trt4.justica_em_numeros_2016.dao.JPAUtil;
 import br.jus.trt4.justica_em_numeros_2016.dao.LoteDao;
 import br.jus.trt4.justica_em_numeros_2016.dao.LoteProcessoDao;
 import br.jus.trt4.justica_em_numeros_2016.dao.RemessaDao;
@@ -41,7 +46,7 @@ import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
  * 
  * @author felipe.giotto@trt4.jus.br
  */
-public class Op_1_BaixaListaDeNumerosDeProcessos extends OperacaoAbstract implements AutoCloseable {
+public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 	private static final Logger LOGGER = LogManager.getLogger(Op_1_BaixaListaDeNumerosDeProcessos.class);
 
@@ -50,7 +55,10 @@ public class Op_1_BaixaListaDeNumerosDeProcessos extends OperacaoAbstract implem
 	private static final LoteDao loteDAO = new LoteDao();
 	private static final LoteProcessoDao loteProcessosDAO = new LoteProcessoDao();
 
+	// O valor do BATCH_SIZE deve ser igual à propriedade hibernate.jdbc.batch_size no persistence.xml
 	private static final int BATCH_SIZE = 50;
+	private static final int COMMIT_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_commit_operacao_1);
+	
 	private String tipoCarga;
 	private int mesCorte;
 	private int anoCorte;
@@ -73,26 +81,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos extends OperacaoAbstract implem
 		}
 	}
 
-	@Override
-	public void definirOperacao() throws Exception {
-		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica(
-				"(1/6) Baixa lista de números de processos");
-		try {
-			progresso.setMax(2);
-
-			progresso.incrementProgress();
-
-			this.baixarListaProcessos();
-
-			progresso.incrementProgress();
-
-			AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
-			LOGGER.info("Fim!");
-		} finally {
-			progresso.close();
-		}
-	}
-
 	public Op_1_BaixaListaDeNumerosDeProcessos() {
 		this.deveProcessarProcessosPje = Auxiliar.deveProcessarProcessosPje();
 		this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar
@@ -112,16 +100,51 @@ public class Op_1_BaixaListaDeNumerosDeProcessos extends OperacaoAbstract implem
 		this.mesCorte = this.getMesCorte(matcher);
 		this.anoCorte = this.getAnoCorte(matcher);
 	}
+	
+	public void executarOperacao() throws Exception {
+		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica(
+				"(1/6) Baixa lista de números de processos");
+		try {
+			progresso.setMax(2);
 
-	public Lote obterNovoLote() {
+			progresso.incrementProgress();
+
+			this.baixarListaProcessos();
+
+			progresso.incrementProgress();
+
+			AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
+			LOGGER.info("Fim!");
+		} finally {
+			progresso.close();
+		}
+	}
+	
+	public void baixarListaProcessos() throws IOException, SQLException {
 		LocalDate dataCorte = LocalDate.now().withMonth(this.mesCorte).withYear(this.anoCorte);
 		dataCorte = dataCorte.withDayOfMonth(dataCorte.lengthOfMonth());
-
 		TipoRemessaEnum tipoRemessa = TipoRemessaEnum.criarApartirDoLabel(this.tipoCarga);
 
+		Lote loteAtual = this.obterLoteAtual(dataCorte, tipoRemessa);
+		
+		this.salvarRemessa(loteAtual.getRemessa());
+		
+		int [] graus = {1, 2};
+
+		for (int grau : graus) {
+			if (Auxiliar.deveProcessarGrau(grau)) {
+				Map<String, ChaveProcessoCNJDto> mapChavesProcessos = this.baixarListaProcessos(grau, loteAtual);
+				this.gravarListaProcessosEmBanco(mapChavesProcessos, grau, loteAtual);
+			}
+		}
+
+		this.atualizarSituacaoLoteCriado(loteAtual);
+	}
+
+	public Lote obterLoteAtual(LocalDate dataCorte, TipoRemessaEnum tipoRemessa) {
 		if (tipoRemessa == null) {
 			// TODO: implementar os ajustes necessários para que a aplicação funcione para os tipos de carga:
-			// TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO
+			// TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO. Outra possibilidade é remover de vez essas cargas do código.
 			throw new RuntimeException("Apenas os tipos de carga MENSAL e COMPLETA estão funcionando adequadamente.");
 		}
 
@@ -152,27 +175,53 @@ public class Op_1_BaixaListaDeNumerosDeProcessos extends OperacaoAbstract implem
 
 				remessa.getLotes().add(loteAtual);
 			} else if (ultimoLoteRemessa.getSituacao().equals(SituacaoLoteEnum.CRIADO_PARCIALMENTE)) {
-				// Atualizando o último lote da remessa que foi criado parcialmente
+				// Atualizando o último lote da remessa que foi criado parcialmente. As listas serão carregadas.
 				loteAtual = loteDAO.getUltimoLoteDeUmaRemessa(dataCorte, tipoRemessa, true);
 			}
 		}
-		remessaDAO.incluir(remessa);
-
+		
 		return loteAtual;
 	}
 
-	public void baixarListaProcessos() throws IOException, SQLException {
-		Lote novoLote = this.obterNovoLote();
-		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			baixarListaProcessos(1, novoLote);
-		}
+	private void salvarRemessa(Remessa remessa) {
+		try {
+			JPAUtil.iniciarTransacao();
 
-		if (Auxiliar.deveProcessarSegundoGrau()) {
-			baixarListaProcessos(2, novoLote);
+			remessaDAO.incluir(remessa);
+
+			JPAUtil.commit();
+		} catch (Exception e) {
+			String origemOperacao = "Erro ao salvar remessa.";
+			AcumuladorExceptions.instance().adicionarException(origemOperacao,
+					"Erro ao salvar remessa: " + e.getLocalizedMessage(), e, true);
+			JPAUtil.rollback();
+		} finally {
+			// JPAUtil.printEstatisticas();
+			JPAUtil.close();
+		}
+	}
+	
+	private void atualizarSituacaoLoteCriado(Lote lote) {
+		try {
+			JPAUtil.iniciarTransacao();
+
+			lote.setSituacao(SituacaoLoteEnum.CRIADO);
+
+			loteDAO.alterar(lote);
+
+			JPAUtil.commit();
+		} catch (Exception e) {
+			String origemOperacao = "Erro ao salvar situação do lote.";
+			AcumuladorExceptions.instance().adicionarException(origemOperacao,
+					"Erro ao salvar situação do lote: " + e.getLocalizedMessage(), e, true);
+			JPAUtil.rollback();
+		} finally {
+			// JPAUtil.printEstatisticas();
+			JPAUtil.close();
 		}
 	}
 
-	public void baixarListaProcessos(int grau, Lote lote) throws IOException, SQLException {
+	public Map<String, ChaveProcessoCNJDto> baixarListaProcessos(int grau, Lote lote) throws IOException, SQLException {
 		LOGGER.info("Executando consulta " + this.tipoCarga + " para o " + grau + "G...");
 		ResultSet rsConsultaProcessosPje = null;
 		ResultSet rsConsultaProcessosMigradosLegado = null;
@@ -403,11 +452,21 @@ public class Op_1_BaixaListaDeNumerosDeProcessos extends OperacaoAbstract implem
 					obterChavesProcessos(rsConsultaProcessosNaoMigradosLegado, OrigemProcessoEnum.LEGADO, grau, lote));
 		}
 
-		// Salva a lista de processos no banco
-		this.gravarListaProcessosEmBanco(mapChavesProcessos, grau, lote);
+		return mapChavesProcessos;
 
 	}
 
+	/**
+	 * Recupera as informações básicas dos processos que serão adicionados ao novo lote da Remessa atual.
+	 * 
+	 * @param rsConsultaProcessos
+	 * @param origemProcesso
+	 * @param grau
+	 * @param lote
+	 * @return
+	 * @throws IOException
+	 * @throws SQLException
+	 */
 	public Map<String, ChaveProcessoCNJDto> obterChavesProcessos(ResultSet rsConsultaProcessos,
 			OrigemProcessoEnum origemProcesso, int grau, Lote lote) throws IOException, SQLException {
 		// Itera sobre os processos encontrados
@@ -449,10 +508,9 @@ public class Op_1_BaixaListaDeNumerosDeProcessos extends OperacaoAbstract implem
 	}
 
 	public void gravarListaProcessosEmBanco(Map<String, ChaveProcessoCNJDto> mapChavesProcessos, int grau, Lote lote) {
-		int count = 0;
 
-		//Quando a inserção será realizada em um lote cadastrado parcialmente, só será necessário adicionar
-		//no lote os processos que ainda não foram inseridos.
+		// Quando a inserção é realizada em um lote cadastrado parcialmente, só será necessário adicionar
+		// no lote os processos que ainda não foram inseridos.
 		for (LoteProcesso loteProcesso : lote.getLotesProcessos()) {
 			ChaveProcessoCNJ chaveProcessoCNJ = loteProcesso.getChaveProcessoCNJ();
 			String chaveMapa = this.getChaveMapa(chaveProcessoCNJ.getGrau(), chaveProcessoCNJ.getNumeroProcesso(),
@@ -462,40 +520,53 @@ public class Op_1_BaixaListaDeNumerosDeProcessos extends OperacaoAbstract implem
 			}
 		}
 
-		for (ChaveProcessoCNJDto chaveProcesso : mapChavesProcessos.values()) {
-			ChaveProcessoCNJ chaveProcessoCNJPersistida = chaveProcessoCNJDAO.getChaveProcessoCNJ(
-					chaveProcesso.getNumeroProcesso(), chaveProcesso.getCodigoClasseJudicial(),
-					chaveProcesso.getCodigoOrgaoJulgador(), Integer.toString(grau));
+		int qtdLoteProcessosSalvos = 0;
 
-			ChaveProcessoCNJ chaveProcessoCNJ = new ChaveProcessoCNJ();
-			if (chaveProcessoCNJPersistida == null) {
-				chaveProcessoCNJ.setCodigoOrgaoJulgador(chaveProcesso.getCodigoOrgaoJulgador());
-				chaveProcessoCNJ.setCodigoClasseJudicial(chaveProcesso.getCodigoClasseJudicial());
-				chaveProcessoCNJ.setNumeroProcesso(chaveProcesso.getNumeroProcesso());
-				chaveProcessoCNJ.setGrau(Integer.toString(grau));
-			} else {
-				chaveProcessoCNJ = chaveProcessoCNJPersistida;
+		final AtomicInteger counter = new AtomicInteger();
+		final Collection<List<ChaveProcessoCNJDto>> chavesProcessos = mapChavesProcessos.values().stream()
+				.collect(Collectors.groupingBy(it -> counter.getAndIncrement() / COMMIT_SIZE)).values();
+
+		for (List<ChaveProcessoCNJDto> loteChavesProcessos : chavesProcessos) {
+			try {
+				JPAUtil.iniciarTransacao();
+				for (ChaveProcessoCNJDto chaveProcesso : loteChavesProcessos) {
+					ChaveProcessoCNJ chaveProcessoCNJPersistida = chaveProcessoCNJDAO.getChaveProcessoCNJ(
+							chaveProcesso.getNumeroProcesso(), chaveProcesso.getCodigoClasseJudicial(),
+							chaveProcesso.getCodigoOrgaoJulgador(), Integer.toString(grau));
+					ChaveProcessoCNJ chaveProcessoCNJ = new ChaveProcessoCNJ();
+					if (chaveProcessoCNJPersistida == null) {
+						chaveProcessoCNJ.setCodigoOrgaoJulgador(chaveProcesso.getCodigoOrgaoJulgador());
+						chaveProcessoCNJ.setCodigoClasseJudicial(chaveProcesso.getCodigoClasseJudicial());
+						chaveProcessoCNJ.setNumeroProcesso(chaveProcesso.getNumeroProcesso());
+						chaveProcessoCNJ.setGrau(Integer.toString(grau));
+					} else {
+						chaveProcessoCNJ = chaveProcessoCNJPersistida;
+					}
+
+					LoteProcesso loteProcesso = new LoteProcesso();
+					loteProcesso.setChaveProcessoCNJ(chaveProcessoCNJ);
+					loteProcesso.setLote(lote);
+					loteProcesso.setOrigem(chaveProcesso.getOrigemProcessoEnum());
+					loteProcesso.setSituacao(SituacaoLoteProcessoEnum.AGUARDANDO_GERACAO_XML);
+
+					loteProcessosDAO.incluir(loteProcesso);
+					if (qtdLoteProcessosSalvos > 0 && qtdLoteProcessosSalvos % BATCH_SIZE == 0) {
+						loteProcessosDAO.flush();
+						loteProcessosDAO.clear();
+					}
+					qtdLoteProcessosSalvos++;
+				}
+				JPAUtil.commit();
+			} catch (Exception e) {
+				String origemOperacao = "Erro ao salvar lista de processos. Grau: " + grau;
+				AcumuladorExceptions.instance().adicionarException(origemOperacao,
+						"Erro ao salvar lista de processos: " + e.getLocalizedMessage(), e, true);
+				JPAUtil.rollback();
+			} finally {
+				// JPAUtil.printEstatisticas();
+				JPAUtil.close();
 			}
-
-			LoteProcesso loteProcesso = new LoteProcesso();
-			loteProcesso.setChaveProcessoCNJ(chaveProcessoCNJ);
-			loteProcesso.setLote(lote);
-			loteProcesso.setOrigem(chaveProcesso.getOrigemProcessoEnum());
-			loteProcesso.setSituacao(SituacaoLoteProcessoEnum.AGUARDANDO_GERACAO_XML);
-
-			chaveProcessoCNJ.getLotesProcessos().add(loteProcesso);
-			lote.getLotesProcessos().add(loteProcesso);
-
-			loteProcessosDAO.incluir(loteProcesso);
-			if (count > 0 && count % BATCH_SIZE == 0) {
-				loteProcessosDAO.flush();
-				loteProcessosDAO.clear();
-			}
-			count++;
 		}
-
-		lote.setSituacao(SituacaoLoteEnum.CRIADO);
-		loteDAO.alterar(lote);
 
 		LOGGER.info("Foram carregados " + mapChavesProcessos.size() + " processo(s) no " + grau + "º Grau.");
 	}

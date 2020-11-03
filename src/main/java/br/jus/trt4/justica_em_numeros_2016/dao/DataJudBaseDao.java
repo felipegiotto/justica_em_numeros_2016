@@ -73,7 +73,6 @@ public class DataJudBaseDao<T extends BaseEntidade> {
 
 	public void flush() {
 		JPAUtil.getEntityManager().flush();
-		;
 	}
 
 	/**

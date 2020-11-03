@@ -23,7 +23,7 @@ public class JPAUtil {
 	private static EntityManager entityManager;
 
 	public static EntityManager getEntityManager() {
-		if (entityManager == null) {
+		if (entityManager == null || !entityManager.isOpen()) {
 			entityManager = emf.createEntityManager();
 		}
 		return entityManager;

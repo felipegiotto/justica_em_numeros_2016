@@ -43,6 +43,7 @@ public enum Parametro {
 	movimentos_sem_serventia_cnj,
 	possui_deslocamento_oj_legado_1g,
 	possui_deslocamento_oj_legado_2g,
-	tipo_validacao_protocolo_cnj
+	tipo_validacao_protocolo_cnj,
+	tamanho_lote_commit_operacao_1
 	;
 }

@@ -27,16 +27,18 @@ public class LoteDao extends DataJudBaseDao<Lote> {
 		StringBuilder hql = new StringBuilder();
 		hql.append("select lot from Lote lot ");
 		if (fetchLoteProcesso) {
-			hql.append(" join fetch lot.lotesProcessos lp ");	
-			hql.append(" join fetch lp.chaveProcessoCNJ ch ");
+			hql.append(" LEFT JOIN FETCH lot.lotesProcessos lp ");	
+			hql.append(" LEFT JOIN FETCH lp.chaveProcessoCNJ ch ");
 		}
-		hql.append(" where lot.remessa.dataCorte = :dataCorte");
-		hql.append(" and lot.remessa.tipoRemessa = :tipoRemessa");
-		hql.append(" order by lot.id DESC");
+		hql.append(" where lot.remessa.dataCorte = :dataCorte ");
+		hql.append(" and lot.remessa.tipoRemessa = :tipoRemessa ");
+		hql.append(" and lot.numero = ( select MAX(lotm.numero) from Lote lotm ");
+		hql.append(" where lotm.remessa.dataCorte = :dataCorte ");
+		hql.append(" and lotm.remessa.tipoRemessa = :tipoRemessa)");
+
 		TypedQuery<Lote> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Lote.class);
 		query.setParameter("dataCorte", dataCorte);
 		query.setParameter("tipoRemessa", tipoRemessa);
-		query.setMaxResults(1);
 
 		return getSingleResultOrNull(query);
 	}

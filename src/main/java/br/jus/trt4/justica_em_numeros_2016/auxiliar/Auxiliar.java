@@ -764,6 +764,15 @@ public class Auxiliar {
 		return getParametroBooleanConfiguracao(Parametro.gerar_xml_1G);
 	}
 	
+	public static boolean deveProcessarGrau(int grau) {
+		if (grau == 1) {
+			return getParametroBooleanConfiguracao(Parametro.gerar_xml_1G);
+		} else if (grau == 2) {
+			return getParametroBooleanConfiguracao(Parametro.gerar_xml_2G);
+		}
+		return false;
+	}
+	
 	public static boolean deveProcessarProcessosPje() {
 		boolean retorno = false;
 		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
