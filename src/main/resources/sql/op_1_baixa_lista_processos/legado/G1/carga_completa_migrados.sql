@@ -1,7 +1,5 @@
 SELECT
-    nr_processo,
-    cd_classe_judicial,
-    cd_orgao_julgador 
+    nr_processo
 FROM
     stage_legado_1grau.processo
 WHERE 

@@ -1,16 +1,12 @@
 select 
-    numero_unico as nr_processo,
-	num_classe_interno as cd_classe_judicial,
-	ioj.id_orgao_julgador as cd_orgao_julgador
+    numero_unico as nr_processo
 from (
     select 
         pj.id_processo, pj.numero_unico,
         fn_get_classe_data(pj.id_processo, ?) as num_classe_interno,
         fn_get_fase_processo(pj.id_processo, ?) fase
     from tb_processos_judiciais pj 
-) mx, 
-tb_processos_hist_distrib phd, 
-tb_info_orgao_julgador ioj
+) mx
 where 1=1 --REGRAS DE NEGOCIO:
     and (
         mx.fase <> 'ARQ' --não está arquivado no dia referência
@@ -23,9 +19,6 @@ where 1=1 --REGRAS DE NEGOCIO:
                 and ?::timestamp
         )
     )
-and phd.id_orgao_julgador = ioj.id_orgao_julgador
-and mx.id_processo = phd.id_processo
-and dta_distribuicao = (select max(phd2.dta_distribuicao) from tb_processos_hist_distrib phd2 where phd.id_processo = phd2.id_processo)
     -- Comentado para considerar qualquer classe, senão as cartas seriam inoradas.
 --  and mx.num_classe_interno in ( --somente classes das três contidas nas 3 fases conforme e-gestão
 --      select rci.cd_classe_judicial 
