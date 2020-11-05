@@ -55,10 +55,16 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	
 	public static void main(String[] args) throws Exception {
 		
-		System.out.println("Se algum arquivo for negado no CNJ, você quer que a operação seja reiniciada?");
-		System.out.println("Responda 'S' para que o envio ao CNJ rode diversas vezes, até que o webservice não recuse nenhum arquivo.");
-		System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
-		String resposta = Auxiliar.readStdin().toUpperCase();
+		String resposta;
+
+		if(args != null && args.length > 0) {
+			resposta = args[0];
+		} else {
+			System.out.println("Se algum arquivo for negado no CNJ, você quer que a operação seja reiniciada?");
+			System.out.println("Responda 'S' para que o envio ao CNJ rode diversas vezes, até que o webservice não recuse nenhum arquivo.");
+			System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
+			resposta = Auxiliar.readStdin().toUpperCase();		
+		}
 		
 		validarEnviarArquivosCNJ("S".equals(resposta));
 	}

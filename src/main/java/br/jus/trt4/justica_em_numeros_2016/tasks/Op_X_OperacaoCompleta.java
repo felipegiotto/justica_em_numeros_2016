@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
 
 /**
  * Prototipo de rotina de envio completo dos dados ao CNJ
@@ -109,6 +110,10 @@ public class Op_X_OperacaoCompleta {
 			@Override
 			public void run() throws SQLException, Exception {
 				Op_2_GeraXMLsIndividuais.main(null);
+				
+				//Remove essa exceção caso exista para que não interfira nas demais fases.
+				String agrupadorErro = "Órgãos julgadores sem serventia cadastrada no arquivo " + AnalisaServentiasCNJ.getArquivoServentias();
+				AcumuladorExceptions.instance().removerExceptionsDoAgrupador(agrupadorErro);
 			}
 		});
 
@@ -141,8 +146,24 @@ public class Op_X_OperacaoCompleta {
 			}
 		});
 		
-		LOGGER.info("Operação completa realizada com sucesso!");
-		LOGGER.info("Os dados referentes a este envio ao CNJ foram gravados na pasta '" + pastaOutput + "'.");
+		if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
+			LOGGER.info("Operação completa realizada com alguns erros!");
+			LOGGER.info("Os dados referentes a este envio ao CNJ foram gravados na pasta '" + pastaOutput + "'.");
+			AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();			
+		} else {
+			LOGGER.info("Operação completa realizada com sucesso!");
+			LOGGER.info("Os dados referentes a este envio ao CNJ foram gravados na pasta '" + pastaOutput + "'.");		
+		}
+		
+		// Apaga o arquivo com a última operação executada. Como todas as operações foram executadas 
+		// não tem sentido mantê-lo.
+		File arquivoOperacaoAtual = getArquivoOperacaoAtual(pastaOutput);
+
+		if (arquivoOperacaoAtual.exists()) {
+			arquivoOperacaoAtual.delete();
+		}
+
+		
 	}
 
 	/**
@@ -169,11 +190,7 @@ public class Op_X_OperacaoCompleta {
 			}
 			LOGGER.info("Operação " + descricaoOperacao + " concluída!");
 
-			// Se algum problema foi identificado, aborta.
-			if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
-				throw new Exception("Operação " + descricaoOperacao + " abortada!");
-			}
-
+			//Não aborta a execução das demais operações caso tenha acontecido algum erro.
 			setUltimaOperacaoExecutada(controleOperacoes.getOrdem());
 
 		} else {
