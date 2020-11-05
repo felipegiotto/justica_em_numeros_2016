@@ -22,7 +22,7 @@ public class MainClass {
 
 		if (args.length > 0) {
 			opcao = args[0];
-			tipoCargaXml = args.length > 1 ? args[1] : "S";
+			tipoCargaXml = args.length > 1 ? args[1] : null;
 			reinicioEmCasoErro = args.length > 2 ? args[2] : "S";
 		} else {
 			System.out.println("Digite código da operação a ser executada:");
