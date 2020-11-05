@@ -42,10 +42,6 @@ import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
  * @author fgiotto
  *
  */
-/**
- * @author wiler.coelho
- *
- */
 public class Auxiliar {
 
 	private static final File arquivoConfiguracoes = new File("config.properties");
