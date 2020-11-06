@@ -111,30 +111,30 @@ public class AnalisaMovimentosCNJ {
 	 * @throws DadosInvalidosException 
 	 */
 	public void preencheDadosMovimentoCNJ(ProcessoDto processo, TipoMovimentoProcessual movimento, MovimentoDto movimentoDto, BaseEmAnaliseEnum baseEmAnaliseEnum) throws SQLException, DataJudException {
-		
+
 		int codigoMovimento = movimentoDto.getCodMovimentoCNJ();
 		String descricao = movimentoDto.getTextoMovimento();
 		String descricaoEventoProcessual = movimentoDto.getTextoEvento();
 		if (baseEmAnaliseEnum.isBasePJe()) {
 			// Aplica o DE-PARA de movimentos e complementos.
 			boolean forcarMovimentoNacional = false;
-				
+
 			// Instancia o movimento com os complementos, no formato esperado pelo DE-PARA
 			MovimentoJT movimentoJT = new MovimentoJT(processo.getNumeroInstancia(), Integer.toString(codigoMovimento), Integer.toString(processo.getClasseJudicial().getCodigo()));
 			for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
 				movimentoJT.adicionaComplementoJT(Integer.toString(complementoDto.getCodigoTipoComplemento()), complementoDto.getCodigoComplemento(), complementoDto.getValor());
 			}
 			try {
-				
+
 				// Verifica se o movimento está nas tabelas DE-PARA
 				Optional<MovimentoCNJ> recuperarMovimentoComplementosCNJ = gerenteDeParaJTCNJ.recuperarMovimentoComplementosCNJ(movimentoJT);
 				if (recuperarMovimentoComplementosCNJ.isPresent()) {
-					
+
 					// Se o movimento está nas tabelas DE-PARA, precisa substituir totalmente os dados dos movimentos e complementos
 					// do banco de dados do PJe pelos retornados pela ferramenta.
 					MovimentoCNJ movimentoCNJ = recuperarMovimentoComplementosCNJ.get();
 					forcarMovimentoNacional = true;
-					
+
 					// Substitui os complementos
 					codigoMovimento = Integer.parseInt(movimentoCNJ.getCodigoMovimento());
 					movimentoDto.getComplementos().clear();
@@ -145,8 +145,8 @@ public class AnalisaMovimentosCNJ {
 						complementoDto.setCodigoComplemento(complementoCNJ.getCodigoValor());
 						//TODO: verificar se esse tratamento continuará sendo dado ao movimento 1061
 						complementoDto.setValor(this.isComplementoDataMovimento1061(movimentoCNJ, complementoCNJ) 
-												? DateTimeFormatter.ofPattern("dd/MM/yyyy").format(movimentoDto.getDataAtualizacao()) 
-												: complementoCNJ.getDescricaoValor());
+								? DateTimeFormatter.ofPattern("dd/MM/yyyy").format(movimentoDto.getDataAtualizacao()) 
+										: complementoCNJ.getDescricaoValor());
 						complementoDto.setComplementoTipoTabelado(TipoTipoComplemento.TABELADO.equals(complementoCNJ.getTipoTipoComplemento()));
 						movimentoDto.getComplementos().add(complementoDto);
 					}
@@ -161,7 +161,7 @@ public class AnalisaMovimentosCNJ {
 			// 0 - decisão MONOCRATICA
 			// 1 - decisão COLEGIADA
 			// movimento.setTipoDecisao(...);
-			
+
 			if (Auxiliar.getParametroBooleanConfiguracao(Parametro.descartar_movimentos_ausentes_de_para_cnj, false)) {
 				if (forcarMovimentoNacional) {
 					//Apenas movimentos mapeados no DE-PARA do CNJ serão mantidos
@@ -169,13 +169,25 @@ public class AnalisaMovimentosCNJ {
 					movimentoNacional.setCodigoNacional(codigoMovimento);
 					movimento.setMovimentoNacional(movimentoNacional);
 				}
+				else {
+
+					String complementos = "";
+					for (String complemento : movimento.getComplemento()) {
+						complementos += complemento + " | ";
+					}
+
+					LOGGER.info(String.format("O movimento (id=%s) de código %s (complementos: %s) foi descartado pelo mapeador DE-PARA.", 
+							movimentoDto.getIdProcessoEvento(),
+							movimentoDto.getCodMovimentoCNJ(),
+							complementos.length() > 0 ? complementos.substring(0, complementos.length() - 3) : "nenhum"));
+				}
 			} else {
 				// Verifica se o movimento deve ser enviado como NACIONAL ou como LOCAL
 				if (forcarMovimentoNacional || movimentoExisteNasTabelasNacionais(codigoMovimento)) {
 					TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
 					movimentoNacional.setCodigoNacional(codigoMovimento);
 					movimento.setMovimentoNacional(movimentoNacional);
-					
+
 				} else {
 					if (descricao == null) {
 						LOGGER.info("Movimento com código " + codigoMovimento + " não possui descrição. Será utilizada a descrição da tabela tb_evento_processual: " + descricaoEventoProcessual);
@@ -185,24 +197,52 @@ public class AnalisaMovimentosCNJ {
 					movimentoLocal.setCodigoMovimento(codigoMovimento);
 					movimentoLocal.setDescricao(descricao);
 					movimento.setMovimentoLocal(movimentoLocal);
-					
+
 					int movimentoPai = procurarRecursivamenteMovimentoPaiNaTabelaNacional(codigoMovimento);
 					movimentoLocal.setCodigoPaiNacional(movimentoPai);
 					if (movimentoPai == 0) {
 						LOGGER.warn("Não foi possível identificar um \"movimento pai nacional\" para o movimento " + codigoMovimento + " - " + descricao);
 					}
 				}
-			}
+			}		
 		} else {
-			//FIXME: Apenas movimentos nacionais do sistema judicial legado serão enviados. Cada Regional poderá dar um tratamento diferente.
-			TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
-			movimentoNacional.setCodigoNacional(codigoMovimento);
-			movimento.setMovimentoNacional(movimentoNacional);
+			//Base Legado
 			
-			//Verifica se o complemento é do tipo tabelado ou não
-			for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
-				TipoTipoComplementoCNJ tipoTipoComplementoCNJ = getTipoTipoComplementoCNJPorCodigo(complementoDto.getCodigoTipoComplemento());
-				complementoDto.setComplementoTipoTabelado(tipoTipoComplementoCNJ != null && tipoTipoComplementoCNJ.isComplementoTabelado());
+			if (movimentoExisteNasTabelasNacionais(codigoMovimento)) {
+				//Movimento Nacional
+				TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
+				movimentoNacional.setCodigoNacional(codigoMovimento);
+				movimento.setMovimentoNacional(movimentoNacional);
+
+				//Verifica se o complemento é do tipo tabelado ou não
+				for (ComplementoDto complementoDto : movimentoDto.getComplementos()) {
+					TipoTipoComplementoCNJ tipoTipoComplementoCNJ = getTipoTipoComplementoCNJPorCodigo(
+							complementoDto.getCodigoTipoComplemento());
+					complementoDto.setComplementoTipoTabelado(
+							tipoTipoComplementoCNJ != null && tipoTipoComplementoCNJ.isComplementoTabelado());
+				}
+			} else {
+				//Movimento Local
+				
+				boolean incluirTodosMovimentosLegado = Auxiliar.getParametroBooleanConfiguracao(Parametro.incluir_todos_movimentos_base_legado, false);
+				
+				if(incluirTodosMovimentosLegado) {
+					if (descricao == null) {
+						LOGGER.info("Movimento com código " + codigoMovimento + " não possui descrição. Será utilizada a descrição da tabela tb_evento_processual: " + descricaoEventoProcessual);
+						descricao = descricaoEventoProcessual;
+					}
+
+					TipoMovimentoLocal movimentoLocal = new TipoMovimentoLocal();
+					movimentoLocal.setCodigoMovimento(codigoMovimento);
+					movimentoLocal.setDescricao(descricao);
+					movimento.setMovimentoLocal(movimentoLocal);
+
+					int movimentoPai = procurarRecursivamenteMovimentoPaiNaTabelaNacional(codigoMovimento);
+					movimentoLocal.setCodigoPaiNacional(movimentoPai);
+					if (movimentoPai == 0) {
+						LOGGER.warn("Não foi possível identificar um \"movimento pai nacional\" para o movimento " + codigoMovimento + " - " + descricao);
+					}
+				}
 			}
 		}
 	}
