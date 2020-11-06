@@ -21,8 +21,16 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
  * Esta classe seguirá o mais próximo possível das instruções descritas no arquivo CHECKLIST_RESUMO.txt,
  * executando as operações necessárias em sequência.
  * 
- * Ela recebe OPCIONAMENTE como parâmetro um caractere ('S' ou 'N') indicando se as operações Op_4_ValidaEnviaArquivosCNJ e 
- * Op_5_ConfereProtocolosCNJ serão reiniciadas caso aconteça algum erro.
+ * Ela recebe OPCIONAMENTE como argumento de execução: 
+ * 		1) Um caractere ('S' ou 'N') indicando se as operações Op_4_ValidaEnviaArquivosCNJ e 
+ * 		   Op_5_ConfereProtocolosCNJ serão reiniciadas caso aconteça algum erro. É recomendável usar a opção 'N', 
+ * 		   pois um erro em qualquer das operações anteriores às da 4 e 5 fará com que essas operações não terminem.
+ * 		   Valor padrão é 'S'. 
+ * 		2) Um caractere ('S' ou 'N') indicando se a operação Op_X_OperacaoCompleta deve continuar caso aconteça algum erro em quaisquer 
+ *		   das operações. As operações 4 e 5 podem ser reiniciadas caso aconteça algum erro, porém os erros das operações anteriores
+ *		   são considerados e farão com que essas operações nunca terminem, mesmo que não aconteça nenhum erro nelas.
+ *		   Valor padrão é 'N'
+ * 
  * 
  * Se alguma exceção capturada ocorrer, a operação não será abortada. Caso a execução termine inesperadamente, 
  * é possível continuar da etapa em que parou, reexecutando a classe. O controle das operações já executadas ficará 
@@ -63,23 +71,27 @@ public class Op_X_OperacaoCompleta {
 	private static final Logger LOGGER = LogManager.getLogger(Op_X_OperacaoCompleta.class);
 
 	private interface Operacao {
-		void run(boolean reiniciarEmCasoErro) throws Exception;
+		void run(boolean reiniciarOperacaoEmCasoErro) throws Exception;
 	}
 	
 	File pastaOutput;
 	
-	private boolean reiniciarEmCasoErro = true;
+	private boolean reiniciarOperacaoEmCasoErro = true;
+
+	private boolean continuarOperacaoCompletaEmCasoErro = false;
 
 	public static void main(String[] args) throws Exception {
 		
-		boolean reiniciarEmCasoErro = true;
+		boolean reiniciarOperacaoEmCasoErro = true;
+		boolean continuarOperacaoCompletaEmCasoErro = false;
 		
 		if(args != null && args.length > 0) {
-			reiniciarEmCasoErro = "S".equals(args[0]);
+			reiniciarOperacaoEmCasoErro = "S".equals(args[0]);
+			continuarOperacaoCompletaEmCasoErro = args.length > 1 ? "S".equals(args[1]) : false;
 		}			
 		
 		try {
-			Op_X_OperacaoCompleta operacaoCompleta = new Op_X_OperacaoCompleta(reiniciarEmCasoErro);
+			Op_X_OperacaoCompleta operacaoCompleta = new Op_X_OperacaoCompleta(reiniciarOperacaoEmCasoErro, continuarOperacaoCompletaEmCasoErro);
 			try {
 				operacaoCompleta.executarOperacaoCompleta();
 			} finally {
@@ -90,11 +102,12 @@ public class Op_X_OperacaoCompleta {
 		}
 	}
 
-	public Op_X_OperacaoCompleta(boolean reiniciarEmCasoErro) {
+	public Op_X_OperacaoCompleta(boolean reiniciarOperacaoEmCasoErro, boolean continuarOperacaoCompletaEmCasoErro) {
 		this.pastaOutput = Auxiliar.prepararPastaDeSaida();
 		this.progresso = new ProgressoInterfaceGrafica("Operação Completa");
 		this.progresso.setMax(ControleOperacoes.values().length);
-		this.reiniciarEmCasoErro = reiniciarEmCasoErro;
+		this.reiniciarOperacaoEmCasoErro = reiniciarOperacaoEmCasoErro;
+		this.continuarOperacaoCompletaEmCasoErro = continuarOperacaoCompletaEmCasoErro;
 	}
 
 	public void close() {
@@ -113,52 +126,52 @@ public class Op_X_OperacaoCompleta {
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
 			
 			@Override
-			public void run(boolean reiniciarEmCasoErro) throws SQLException, IOException {
+			public void run(boolean reiniciarOperacaoEmCasoErro) throws SQLException, IOException {
 				Op_1_BaixaListaDeNumerosDeProcessos.main(null);
 			}
-		}, this.reiniciarEmCasoErro);
+		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 
 		// CHECKLIST: 5. Execute a classe "Op_2_GeraXMLsIndividuais"
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_GERAR_XMLS_INDIVIDUAIS, new Operacao() {
 
 			@Override
-			public void run(boolean reiniciarEmCasoErro) throws SQLException, Exception {
+			public void run(boolean reiniciarOperacaoEmCasoErro) throws SQLException, Exception {
 				Op_2_GeraXMLsIndividuais.main(null);
 				
 				//Remove essa exceção caso exista para que não interfira nas demais fases.
 				String agrupadorErro = "Órgãos julgadores sem serventia cadastrada no arquivo " + AnalisaServentiasCNJ.getArquivoServentias();
 				AcumuladorExceptions.instance().removerExceptionsDoAgrupador(agrupadorErro);
 			}
-		}, this.reiniciarEmCasoErro);
+		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 
 		// CHECKLIST: 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", ...
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ, new Operacao() {
 			
 			@Override
-			public void run(boolean reiniciarEmCasoErro) throws Exception {
+			public void run(boolean reiniciarOperacaoEmCasoErro) throws Exception {
 				
 				// Envia os XMLs ao CNJ
-				Op_4_ValidaEnviaArquivosCNJ.validarEnviarArquivosCNJ(reiniciarEmCasoErro);
+				Op_4_ValidaEnviaArquivosCNJ.validarEnviarArquivosCNJ(reiniciarOperacaoEmCasoErro);
 			}
-		}, this.reiniciarEmCasoErro);
+		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 		
 		// CHECKLIST: TODO
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_5_CONFERE_PROTOCOLOS_CNJ, new Operacao() {
 
 			@Override
-			public void run(boolean reiniciarEmCasoErro) throws Exception {
-				Op_5_ConfereProtocolosCNJ.executarOperacaoConfereProtocolosCNJ(reiniciarEmCasoErro);
+			public void run(boolean reiniciarOperacaoEmCasoErro) throws Exception {
+				Op_5_ConfereProtocolosCNJ.executarOperacaoConfereProtocolosCNJ(reiniciarOperacaoEmCasoErro);
 			}
-		}, this.reiniciarEmCasoErro);
+		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 
 		// CHECKLIST: 12. Efetue backup dos seguintes dados, para referência futura: ...
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_9_ULTIMOS_BACKUPS, new Operacao() {
 			
 			@Override
-			public void run(boolean reiniciarEmCasoErro) throws Exception {
+			public void run(boolean reiniciarOperacaoEmCasoErro) throws Exception {
 				Op_6_BackupConfiguracoes.main(null);
 			}
-		}, this.reiniciarEmCasoErro);
+		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 		
 		if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
 			LOGGER.info("Operação completa realizada com alguns erros!");
@@ -189,7 +202,7 @@ public class Op_X_OperacaoCompleta {
 	 * 
 	 * @throws Exception
 	 */
-	private void executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes controleOperacoes, Operacao operacao, boolean reiniciarEmCasoErro) throws Exception {
+	private void executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes controleOperacoes, Operacao operacao, boolean reiniciarOperacaoEmCasoErro, boolean continuarOperacaoCompletaEmCasoErro) throws Exception {
 
 		String descricaoOperacao = controleOperacoes + " (" + controleOperacoes.getOrdem() + ")";
 		if (getUltimaOperacaoExecutada() < controleOperacoes.getOrdem()) {
@@ -197,14 +210,18 @@ public class Op_X_OperacaoCompleta {
 			LOGGER.info("Iniciando operação " + descricaoOperacao + "...");
 			
 			try {
-				operacao.run(reiniciarEmCasoErro);
+				operacao.run(reiniciarOperacaoEmCasoErro);
 			} catch (Exception ex) {
 				LOGGER.error("Erro na operação " + descricaoOperacao + ": " + ex.getLocalizedMessage(), ex);
 				throw ex;
 			}
 			LOGGER.info("Operação " + descricaoOperacao + " concluída!");
 
-			//Não aborta a execução das demais operações caso tenha acontecido algum erro.
+			// Se algum problema foi identificado, aborta.
+			if (!continuarOperacaoCompletaEmCasoErro && AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
+				throw new Exception("Operação " + descricaoOperacao + " abortada!");
+			}
+			
 			setUltimaOperacaoExecutada(controleOperacoes.getOrdem());
 
 		} else {
