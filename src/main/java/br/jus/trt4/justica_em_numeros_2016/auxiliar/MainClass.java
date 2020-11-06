@@ -15,10 +15,11 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
  * 		1) Código da operação a ser executada
  * 		2) Tipo de carga XML , podendo ser COMPLETA, MENSAL, TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO.  
  *		3) Caractere (S, N) indicando se as operações Op_4_ValidaEnviaArquivosCNJ e Op_5_ConfereProtocolosCNJ
- *		   serão reiniciadas caso aconteça algum erro.
+ *		   serão reiniciadas caso aconteça algum erro. Valor padrão: S.
  *		4) Caractere (S, N) indicando se a operação Op_X_OperacaoCompleta deve continuar caso aconteça algum erro em quaisquer 
  *		   das operações. As operações 4 e 5 podem ser reiniciadas caso aconteça algum erro, porém os erros das operações anteriores
- *		   são considerados e farão com que essas operações nunca terminem, mesmo que não aconteça nenhum erro nelas.    
+ *		   são considerados e farão com que essas operações nunca terminem, mesmo que não aconteça nenhum erro nelas.
+ *		   Valor padrão: N.    
  * @see br.jus.trt4.justica_em_numeros_2016.auxiliar#carregarPropertiesDoArquivo(String)
  * 
  * @author felipe.giotto@trt4.jus.br
@@ -29,13 +30,13 @@ public class MainClass {
 		String opcao;
 		String tipoCargaXml = null;
 		String reiniciarOperacaoEmCasoErro = "S";
-		String continuarOperacaoCompletaEmCasoErro = "S";
+		String continuarOperacaoCompletaEmCasoErro = "N";
 
 		if (args.length > 0) {
 			opcao = args[0];
 			tipoCargaXml = args.length > 1 ? args[1] : null;
 			reiniciarOperacaoEmCasoErro = args.length > 2 ? args[2] : "S";
-			continuarOperacaoCompletaEmCasoErro = args.length > 3 ? args[3] : "S";
+			continuarOperacaoCompletaEmCasoErro = args.length > 3 ? args[3] : "N";
 		} else {
 			System.out.println("Digite código da operação a ser executada:");
 			System.out.println("1: BaixaListaDeNumerosDeProcessos");
