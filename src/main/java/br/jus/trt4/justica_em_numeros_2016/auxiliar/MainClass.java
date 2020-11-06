@@ -10,7 +10,14 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
 
 /**
  * Classe disparada ao se executar diretamente o jar da aplicação.
- *
+ * 
+ * OPCIONALMENTE pode receber até três argumentos de execucação: 
+ * 		1) Código da operação a ser executada
+ * 		2) Tipo de carga XML , podendo ser COMPLETA, MENSAL, TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO.  
+ *		3) Caractere (S, N) indicando se as operações Op_4_ValidaEnviaArquivosCNJ e Op_5_ConfereProtocolosCNJ
+ *		   serão reiniciadas caso aconteça algum erro.  
+ * @see br.jus.trt4.justica_em_numeros_2016.auxiliar#carregarPropertiesDoArquivo(String)
+ * 
  * @author felipe.giotto@trt4.jus.br
  */
 public class MainClass {
@@ -18,12 +25,12 @@ public class MainClass {
 	public static void main(String[] args) throws Exception {
 		String opcao;
 		String tipoCargaXml = null;
-		String reinicioEmCasoErro = "S";
+		String reiniciarEmCasoErro = "S";
 
 		if (args.length > 0) {
 			opcao = args[0];
 			tipoCargaXml = args.length > 1 ? args[1] : null;
-			reinicioEmCasoErro = args.length > 2 ? args[2] : "S";
+			reiniciarEmCasoErro = args.length > 2 ? args[2] : "S";
 		} else {
 			System.out.println("Digite código da operação a ser executada:");
 			System.out.println("1: BaixaListaDeNumerosDeProcessos");
@@ -48,16 +55,16 @@ public class MainClass {
 			Op_2_GeraXMLsIndividuais.main(null);
 			break;
 		case "4":
-			Op_4_ValidaEnviaArquivosCNJ.main(new String [] {reinicioEmCasoErro});
+			Op_4_ValidaEnviaArquivosCNJ.main(new String [] {reiniciarEmCasoErro});
 			break;
 		case "5":
-			Op_5_ConfereProtocolosCNJ.main(new String [] {reinicioEmCasoErro});
+			Op_5_ConfereProtocolosCNJ.main(new String [] {reiniciarEmCasoErro});
 			break;
 		case "6":
 			Op_6_BackupConfiguracoes.main(null);
 			break;
 		case "X":
-			Op_X_OperacaoCompleta.main(null);
+			Op_X_OperacaoCompleta.main(new String [] {reiniciarEmCasoErro});
 			break;
 		case "Y":
 			Op_Y_OperacaoFluxoContinuo.main(null);

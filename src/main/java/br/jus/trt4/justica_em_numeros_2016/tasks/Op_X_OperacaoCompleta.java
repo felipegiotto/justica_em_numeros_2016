@@ -21,9 +21,12 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
  * Esta classe seguirá o mais próximo possível das instruções descritas no arquivo CHECKLIST_RESUMO.txt,
  * executando as operações necessárias em sequência.
  * 
- * Se algum erro ocorrer, a operação será abortada, mas posteriormente poderá continuar da etapa em que parou,
- * reexecutando a classe. O controle das operações já executadas ficará no arquivo "operacao_atual.dat", dentro
- * da pasta "output/<TIPO_CARGA_XML>_backup_operacao_completa"
+ * Ela recebe OPCIONAMENTE como parâmetro um caractere ('S' ou 'N') indicando se as operações Op_4_ValidaEnviaArquivosCNJ e 
+ * Op_5_ConfereProtocolosCNJ serão reiniciadas caso aconteça algum erro.
+ * 
+ * Se alguma exceção capturada ocorrer, a operação não será abortada. Caso a execução termine inesperadamente, 
+ * é possível continuar da etapa em que parou, reexecutando a classe. O controle das operações já executadas ficará 
+ * no arquivo "operacao_atual.dat", dentro da pasta "output/<TIPO_CARGA_XML>_backup_operacao_completa"
  * 
  * TODO: Tentar fazer uma nova operação completa, com processamento paralelo (enquanto alguns estão gerando, outros estão enviando, outros estão conferindo protocolo), como uma linha de produção.
  * Para acompanhar, gerar constantemente um arquivo HTML que, ao ser aberto no navegador, mostra o status de cada uma das fases, os totais, os erros que precisam ser resolvidos,
@@ -54,19 +57,29 @@ public class Op_X_OperacaoCompleta {
 	    public int getOrdem() {
 	        return this.ordem;
 	    }
+	    
 	}
 
 	private static final Logger LOGGER = LogManager.getLogger(Op_X_OperacaoCompleta.class);
 
 	private interface Operacao {
-		void run() throws Exception;
+		void run(boolean reiniciarEmCasoErro) throws Exception;
 	}
 	
 	File pastaOutput;
+	
+	private boolean reiniciarEmCasoErro = true;
 
 	public static void main(String[] args) throws Exception {
+		
+		boolean reiniciarEmCasoErro = true;
+		
+		if(args != null && args.length > 0) {
+			reiniciarEmCasoErro = "S".equals(args[0]);
+		}			
+		
 		try {
-			Op_X_OperacaoCompleta operacaoCompleta = new Op_X_OperacaoCompleta();
+			Op_X_OperacaoCompleta operacaoCompleta = new Op_X_OperacaoCompleta(reiniciarEmCasoErro);
 			try {
 				operacaoCompleta.executarOperacaoCompleta();
 			} finally {
@@ -77,10 +90,11 @@ public class Op_X_OperacaoCompleta {
 		}
 	}
 
-	public Op_X_OperacaoCompleta() {
+	public Op_X_OperacaoCompleta(boolean reiniciarEmCasoErro) {
 		this.pastaOutput = Auxiliar.prepararPastaDeSaida();
 		this.progresso = new ProgressoInterfaceGrafica("Operação Completa");
 		this.progresso.setMax(ControleOperacoes.values().length);
+		this.reiniciarEmCasoErro = reiniciarEmCasoErro;
 	}
 
 	public void close() {
@@ -97,54 +111,54 @@ public class Op_X_OperacaoCompleta {
 
 		// CHECKLIST: 4. Execute a classe "Op_1_BaixaListaDeNumerosDeProcessos".
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
-
+			
 			@Override
-			public void run() throws SQLException, IOException {
+			public void run(boolean reiniciarEmCasoErro) throws SQLException, IOException {
 				Op_1_BaixaListaDeNumerosDeProcessos.main(null);
 			}
-		});
+		}, this.reiniciarEmCasoErro);
 
 		// CHECKLIST: 5. Execute a classe "Op_2_GeraXMLsIndividuais"
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_GERAR_XMLS_INDIVIDUAIS, new Operacao() {
 
 			@Override
-			public void run() throws SQLException, Exception {
+			public void run(boolean reiniciarEmCasoErro) throws SQLException, Exception {
 				Op_2_GeraXMLsIndividuais.main(null);
 				
 				//Remove essa exceção caso exista para que não interfira nas demais fases.
 				String agrupadorErro = "Órgãos julgadores sem serventia cadastrada no arquivo " + AnalisaServentiasCNJ.getArquivoServentias();
 				AcumuladorExceptions.instance().removerExceptionsDoAgrupador(agrupadorErro);
 			}
-		});
+		}, this.reiniciarEmCasoErro);
 
 		// CHECKLIST: 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", ...
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ, new Operacao() {
 			
 			@Override
-			public void run() throws Exception {
+			public void run(boolean reiniciarEmCasoErro) throws Exception {
 				
 				// Envia os XMLs ao CNJ
-				Op_4_ValidaEnviaArquivosCNJ.validarEnviarArquivosCNJ(true);
+				Op_4_ValidaEnviaArquivosCNJ.validarEnviarArquivosCNJ(reiniciarEmCasoErro);
 			}
-		});
+		}, this.reiniciarEmCasoErro);
 		
 		// CHECKLIST: TODO
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_5_CONFERE_PROTOCOLOS_CNJ, new Operacao() {
 
 			@Override
-			public void run() throws Exception {
-				Op_5_ConfereProtocolosCNJ.executarOperacaoConfereProtocolosCNJ(true);
+			public void run(boolean reiniciarEmCasoErro) throws Exception {
+				Op_5_ConfereProtocolosCNJ.executarOperacaoConfereProtocolosCNJ(reiniciarEmCasoErro);
 			}
-		});
+		}, this.reiniciarEmCasoErro);
 
 		// CHECKLIST: 12. Efetue backup dos seguintes dados, para referência futura: ...
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_9_ULTIMOS_BACKUPS, new Operacao() {
 			
 			@Override
-			public void run() throws Exception {
+			public void run(boolean reiniciarEmCasoErro) throws Exception {
 				Op_6_BackupConfiguracoes.main(null);
 			}
-		});
+		}, this.reiniciarEmCasoErro);
 		
 		if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
 			LOGGER.info("Operação completa realizada com alguns erros!");
@@ -175,7 +189,7 @@ public class Op_X_OperacaoCompleta {
 	 * 
 	 * @throws Exception
 	 */
-	private void executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes controleOperacoes, Operacao operacao) throws Exception {
+	private void executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes controleOperacoes, Operacao operacao, boolean reiniciarEmCasoErro) throws Exception {
 
 		String descricaoOperacao = controleOperacoes + " (" + controleOperacoes.getOrdem() + ")";
 		if (getUltimaOperacaoExecutada() < controleOperacoes.getOrdem()) {
@@ -183,7 +197,7 @@ public class Op_X_OperacaoCompleta {
 			LOGGER.info("Iniciando operação " + descricaoOperacao + "...");
 			
 			try {
-				operacao.run();
+				operacao.run(reiniciarEmCasoErro);
 			} catch (Exception ex) {
 				LOGGER.error("Erro na operação " + descricaoOperacao + ": " + ex.getLocalizedMessage(), ex);
 				throw ex;
