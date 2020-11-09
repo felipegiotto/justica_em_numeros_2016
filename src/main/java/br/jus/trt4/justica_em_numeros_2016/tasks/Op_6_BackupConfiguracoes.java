@@ -44,14 +44,11 @@ public class Op_6_BackupConfiguracoes {
 				try (FileWriter fw = new FileWriter(arquivoConfiguracaoBackup)) {
 					while (scanner.hasNextLine()) {
 						String line = scanner.nextLine();
-						
 						// Se for uma linha que contém alguma senha, não grava no backup
-						if (line.contains("password")) {
-							
-							// Mostra somente o "nome" da propriedade, omitindo seu valor
+						if (line.contains("password") && line.indexOf('=') >= 0) {
 							int posicao = line.indexOf('=');
+							// Mostra somente o "nome" da propriedade, omitindo seu valor
 							fw.append(line.substring(0, posicao) + "=(linha omitida por questões de segurança)\n");
-							
 						} else {
 							fw.append(line + "\n");
 						}

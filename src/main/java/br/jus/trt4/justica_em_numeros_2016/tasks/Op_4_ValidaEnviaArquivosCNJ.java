@@ -55,19 +55,25 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	
 	public static void main(String[] args) throws Exception {
 		
-		System.out.println("Se algum arquivo for negado no CNJ, você quer que a operação seja reiniciada?");
-		System.out.println("Responda 'S' para que o envio ao CNJ rode diversas vezes, até que o webservice não recuse nenhum arquivo.");
-		System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
-		String resposta = Auxiliar.readStdin().toUpperCase();
+		String resposta;
+
+		if(args != null && args.length > 0) {
+			resposta = args[0];
+		} else {
+			System.out.println("Se algum arquivo for negado no CNJ, você quer que a operação seja reiniciada?");
+			System.out.println("Responda 'S' para que o envio ao CNJ rode diversas vezes, até que o webservice não recuse nenhum arquivo.");
+			System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
+			resposta = Auxiliar.readStdin().toUpperCase();		
+		}
 		
 		validarEnviarArquivosCNJ("S".equals(resposta));
 	}
 
-	public static void validarEnviarArquivosCNJ(boolean continuarEmCasoDeErro) throws Exception {
+	public static void validarEnviarArquivosCNJ(boolean reiniciarEmCasoDeErro) throws Exception {
 		
 		Auxiliar.prepararPastaDeSaida();
 		
-		if (continuarEmCasoDeErro) {
+		if (reiniciarEmCasoDeErro) {
 			LOGGER.info("Se ocorrer algum erro no envio, a operação será reiniciada quantas vezes for necessário!");
 		}
 		
@@ -84,7 +90,7 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 				AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
 				
 				// Verifica se deve executar novamente em caso de erros
-				if (continuarEmCasoDeErro) {
+				if (reiniciarEmCasoDeErro) {
 					if (AcumuladorExceptions.instance().isExisteExceptionRegistrada()) {
 						progresso.setInformacoes("Aguardando para reiniciar...");
 						LOGGER.warn("A operação foi concluída com erros! O envio será reiniciado em 2min... Se desejar, aborte este script.");
