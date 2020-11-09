@@ -3,11 +3,11 @@ package br.jus.trt4.justica_em_numeros_2016.dto;
 import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
 
 /**
- * DTO que armazena informações de uma entity ChaveProcessoCNJ, a partir das consultas realizadas na operação 1.
+ * DTO que armazena informações básicas de um processo.
  *
  * @author ivan.franca@trt6.jus.br
  */
-public class ChaveProcessoCNJDto {
+public class DadosBasicosProcessoDto {
 
 	private String numeroProcesso;
 
@@ -19,7 +19,7 @@ public class ChaveProcessoCNJDto {
 
 	private OrigemProcessoEnum origemProcessoEnum;
 
-	public ChaveProcessoCNJDto(String numeroProcesso, String codigoClasseJudicial, Long codigoOrgaoJulgador,
+	public DadosBasicosProcessoDto(String numeroProcesso, String codigoClasseJudicial, Long codigoOrgaoJulgador,
 			String grau, OrigemProcessoEnum origemProcessoEnum) {
 		this.numeroProcesso = numeroProcesso;
 		this.codigoClasseJudicial = codigoClasseJudicial;
@@ -88,7 +88,7 @@ public class ChaveProcessoCNJDto {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ChaveProcessoCNJDto other = (ChaveProcessoCNJDto) obj;
+		DadosBasicosProcessoDto other = (DadosBasicosProcessoDto) obj;
 		if (codigoClasseJudicial == null) {
 			if (other.codigoClasseJudicial != null)
 				return false;

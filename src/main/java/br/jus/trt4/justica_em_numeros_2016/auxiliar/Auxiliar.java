@@ -52,6 +52,7 @@ public class Auxiliar {
 	private static boolean permitirAguardarUsuarioApertarENTER = true;
 	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
 	private static final SimpleDateFormat dfDataMovimentoProcessual = new SimpleDateFormat("yyyyMMddHHmmss");
+	private static final DateTimeFormatter dfDataDiaMesAno = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	private static File pastaSaida = null;
 	public static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
 	public static final String SUFIXO_PROTOCOLO = ".protocolo";
@@ -554,6 +555,10 @@ public class Auxiliar {
 	public static String formataDataMovimento(LocalDateTime data) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 		return formatter.format(data);
+	}
+	
+	public static String formataDataDiaMesAno(LocalDate data) {
+		return dfDataDiaMesAno.format(data);
 	}
 	
 	/**

@@ -67,14 +67,6 @@ public class DataJudBaseDao<T extends BaseEntidade> {
 		return JPAUtil.getEntityManager().merge(entidade);
 	}
 
-	public void clear() {
-		JPAUtil.getEntityManager().clear();
-	}
-
-	public void flush() {
-		JPAUtil.getEntityManager().flush();
-	}
-
 	/**
 	 * Método para localizar uma única instância de um entidade, de acordo com sua chave primária.
 	 * 

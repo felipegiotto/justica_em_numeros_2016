@@ -46,12 +46,13 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		iniciarServidorWeb();
 		
 		// Baixa lista de processos do PJe ou no Legado
-		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			op1BaixarListaProcesssoSeNecessario(1);
-		}
-		if (Auxiliar.deveProcessarSegundoGrau()) {
-			op1BaixarListaProcesssoSeNecessario(2);
-		}
+		//TODO ajustar comportamento da operação 1 na operação y
+//		if (Auxiliar.deveProcessarPrimeiroGrau()) {
+//			op1BaixarListaProcesssoSeNecessario(1);
+//		}
+//		if (Auxiliar.deveProcessarSegundoGrau()) {
+//			op1BaixarListaProcesssoSeNecessario(2);
+//		}
 		
 		iniciarAtualizacaoStatusBackground();
 		iniciarOperacoesGeracaoEnvioValidacaoEmBackground();
@@ -90,37 +91,37 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	 * @throws SQLException 
 	 * @throws IOException 
 	 */
-	private void op1BaixarListaProcesssoSeNecessario(int grau) throws IOException, SQLException {
-
-		File arquivoProcessosPje = Auxiliar.getArquivoListaProcessosPje(grau);
-		File arquivoProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(grau);
-		File arquivoProcessosSistemaLegadoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoMigradosParaOPJe(grau);
-		
-		try (Op_1_BaixaListaDeNumerosDeProcessos baixaListaProcessos = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
-			if ((Auxiliar.deveProcessarProcessosPje() && !arquivoProcessosPje.exists())
-					|| (Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje() && !arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists())
-					|| (Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe() && !arquivoProcessosSistemaLegadoMigradosParaOPje.exists())) {
-				try {
-					executandoOperacao1BaixandoLista = true;
-					baixaListaProcessos.baixarListaProcessos();
-				} finally {
-					executandoOperacao1BaixandoLista = false;
-				}
-			}
-		}
-		
-		if (arquivoProcessosPje.exists()) {
-			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosPje)) {
-				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.PJE, numeroProcesso));
-			}			
-		}
-		
-		if (arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
-			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosSistemaLegadoNaoMigradosParaOPje)) {
-				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.LEGADO, numeroProcesso));
-			}
-		}
-	}
+//	private void op1BaixarListaProcesssoSeNecessario(int grau) throws IOException, SQLException {
+//
+//		File arquivoProcessosPje = Auxiliar.getArquivoListaProcessosPje(grau);
+//		File arquivoProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(grau);
+//		File arquivoProcessosSistemaLegadoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoMigradosParaOPJe(grau);
+//		
+//		try (Op_1_BaixaListaDeNumerosDeProcessos baixaListaProcessos = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
+//			if ((Auxiliar.deveProcessarProcessosPje() && !arquivoProcessosPje.exists())
+//					|| (Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje() && !arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists())
+//					|| (Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe() && !arquivoProcessosSistemaLegadoMigradosParaOPje.exists())) {
+//				try {
+//					executandoOperacao1BaixandoLista = true;
+//					baixaListaProcessos.baixarListaProcessos();
+//				} finally {
+//					executandoOperacao1BaixandoLista = false;
+//				}
+//			}
+//		}
+//		
+//		if (arquivoProcessosPje.exists()) {
+//			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosPje)) {
+//				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.PJE, numeroProcesso));
+//			}			
+//		}
+//		
+//		if (arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
+//			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosSistemaLegadoNaoMigradosParaOPje)) {
+//				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.LEGADO, numeroProcesso));
+//			}
+//		}
+//	}
 	
 	/**
 	 * Inicia uma thread, em background, que ficará monitorando as alterações nos status dos processos

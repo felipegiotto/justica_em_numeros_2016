@@ -8,8 +8,12 @@ import java.util.Objects;
  * @author ivan.franca@trt6.jus.br
  */
 public enum SituacaoLoteEnum {
-	CRIADO_PARCIALMENTE("1", "Lote criado parcialmente. Nem todos os processos foram recuperados."), 
-	CRIADO("2", "Criado");
+	CRIADO_PARCIALMENTE("1", "Lote criado parcialmente. Nem todos os processos (LoteProcesso) foram criados."), 
+	CRIADO_COM_ERROS("2", "Pelo menos um processo do lote teve o XML gerado com erro"),
+	CRIADO_SEM_ERROS("3", "Todos os processos do lote tiveram o XML gerado sem erro."), 
+	ENVIADO("4", "Todos os processos indicados para envio no lote foram enviados."),
+	CONFERIDO_CNJ("5", "Todos os processos do lote (LoteProcesso) se encontram em um dos estados finais: "
+			+ "PROCESSADO_COM_SUCESSO_CNJ, DUPLICADO_CNJ, PROCESSADO_COM_ERRO_CNJ, ERRO_NO_ARQUIVO_CNJ");
     
     private final String codigo;
     private final String label;

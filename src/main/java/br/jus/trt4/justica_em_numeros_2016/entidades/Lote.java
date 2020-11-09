@@ -39,7 +39,7 @@ public class Lote extends BaseEntidade {
 	private String numero;
 	
 	@Convert(converter = SituacaoLoteEnumConverter.class)
-	@Column(name = "en_situacao", length = 2, nullable = true)
+	@Column(name = "en_situacao", length = 1, nullable = true)
 	private SituacaoLoteEnum situacao;
 
 	@ManyToOne(fetch = FetchType.LAZY)

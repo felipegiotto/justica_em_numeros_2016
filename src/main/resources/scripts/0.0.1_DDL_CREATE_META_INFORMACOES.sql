@@ -54,17 +54,17 @@ CREATE TABLE datajud.tb_lote
 (
 	id_lote bigint NOT NULL DEFAULT nextval('datajud.sq_tb_lote'::regclass),
     nm_numero varchar(10) NOT NULL,
-    en_situacao varchar(2),
+    en_situacao varchar(1),
     id_remessa bigint NOT NULL,
     constraint tb_lote_pk primary key (id_lote),
-    constraint tb_lote_ck01 check (en_situacao in ('1','2'))
+    constraint tb_lote_ck01 check (en_situacao in ('1','2','3','4','5'))
 );
 
 COMMENT ON COLUMN datajud.tb_lote.nm_numero
     IS 'Número do Lote.';
     
 COMMENT ON COLUMN datajud.tb_lote.en_situacao
- 	IS 'Situação Lote que será enviado ao CNJ. 1:Aguardando inclusão de todos os processos no processo; 2:Criado';
+ 	IS 'Situação Lote que será enviado ao CNJ. 1:Criado Parcialmente; 2:Criado Com Erros; 3: Criado sem Erros; 4:Enviado; 5:Conferido no CNJ';
     
 alter table datajud.tb_lote
 add constraint tb_lote_fk01 foreign key (id_remessa)
@@ -138,7 +138,7 @@ CREATE TABLE datajud.tb_lote_processo
     conteudo_xml bytea,
     id_lote bigint NOT NULL,
     id_chave_processo_cnj bigint NOT NULL,
-    constraint tb_lote_processo_ck01 check (en_situacao in ('1','2','3','4','5','6','7','8','9','10')),
+    constraint tb_lote_processo_ck01 check (en_situacao in ('1','2','3','4','5','6','7','8','9')),
     constraint tb_lote_processo_ck02 check (en_origem_processo in ('H','L','P')),
     constraint tb_lote_processo_pk primary key (id_lote_processo)
 );
@@ -156,9 +156,9 @@ COMMENT ON COLUMN datajud.tb_lote_processo.dh_recebimento_cnj
     IS 'Momento em que o XML é recebido pelo CNJ.';
     
 COMMENT ON COLUMN datajud.tb_lote_processo.en_situacao
- 	IS 'Situação do XML que será gerado para envio ao CNJ. 1:AGUARDANDO GERACAO DO XML; 2:XML GERADO COM SUCESSO; 3:XML GERADO COM ERRO;
-    4:ENVIADO; 5:RECEBIDO NO CNJ; 6:AGUARDANDO PROCESSAMENTO NO CNJ; 7:PROCESSADO COM SUCESSO NO CNJ;
-    8:DUPLICADO NO CNJ; 9:PROCESSADO COM ERRO NO CNJ;10:ERRO NO ARQUIVO NO CNJ';
+ 	IS 'Situação do XML que será gerado para envio ao CNJ. 1:XML GERADO COM SUCESSO; 2:XML GERADO COM ERRO;
+    3:ENVIADO; 4:RECEBIDO NO CNJ; 5:AGUARDANDO PROCESSAMENTO NO CNJ; 6:PROCESSADO COM SUCESSO NO CNJ;
+    7:DUPLICADO NO CNJ; 8:PROCESSADO COM ERRO NO CNJ;9:ERRO NO ARQUIVO NO CNJ';
 
 COMMENT ON COLUMN datajud.tb_lote_processo.en_origem_processo
     IS 'Origem do Processo. H: Híbrido; L: Legado; P: PJe';
@@ -174,3 +174,42 @@ references datajud.tb_lote (id_lote);
 alter table datajud.tb_lote_processo
 add constraint tb_lote_processo_fk02 foreign key (id_chave_processo_cnj)
 references datajud.tb_chave_processo_cnj (id_chave_processo_cnj);
+
+--------------------------------------------------------------
+------------------------ProcessoEnvio-------------------------
+--------------------------------------------------------------
+-- SEQUENCE: datajud.sq_tb_processo_envio
+
+
+CREATE SEQUENCE datajud.sq_tb_processo_envio
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+	
+-- Table: datajud.tb_processo_envio
+
+CREATE TABLE datajud.tb_processo_envio
+(
+	id_processo_envio bigint NOT NULL DEFAULT nextval('datajud.sq_tb_processo_envio'::regclass),
+    nr_processo varchar(30) NOT NULL,
+    en_origem_processo varchar(1) NOT NULL,
+    nm_grau varchar(1) NOT NULL,
+    id_remessa bigint NOT NULL,
+    constraint tb_processo_envio_pk primary key (id_processo_envio),
+    constraint tb_processo_envio_ck01 check (en_origem_processo in ('H','L','P'))
+);
+
+COMMENT ON COLUMN datajud.tb_processo_envio.nr_processo
+    IS 'Número do Processo.';
+
+    COMMENT ON COLUMN datajud.tb_processo_envio.en_origem_processo
+    IS 'Origem do Processo. H: Híbrido; L: Legado; P: PJe';
+
+    COMMENT ON COLUMN datajud.tb_processo_envio.nm_grau
+    IS 'Instância do processo.';
+    
+alter table datajud.tb_processo_envio
+add constraint tb_processo_envio_fk01 foreign key (id_remessa)
+references datajud.tb_remessa (id_remessa);

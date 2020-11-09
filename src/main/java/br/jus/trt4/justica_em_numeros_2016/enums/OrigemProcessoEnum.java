@@ -67,6 +67,10 @@ public enum OrigemProcessoEnum {
         return this.label;
     }
     
+    public boolean equals(OrigemProcessoEnum origemProcessoEnum) {
+        return this.getCodigo().equals(origemProcessoEnum.getCodigo());
+    }
+    
     @Override
     public String toString() {
         return getLabel();

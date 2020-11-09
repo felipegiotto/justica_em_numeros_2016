@@ -46,6 +46,9 @@ public class Remessa extends BaseEntidade {
 
 	@OneToMany(mappedBy = "remessa", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Lote> lotes = new ArrayList<>(0);
+	
+	@OneToMany(mappedBy = "remessa", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<ProcessoEnvio> processosEnvio = new ArrayList<>(0);
 
 	public Remessa() {
 		// construtor padrao
@@ -82,5 +85,15 @@ public class Remessa extends BaseEntidade {
 	public void setLotes(List<Lote> lotes) {
 		this.lotes = lotes;
 	}
+
+	public List<ProcessoEnvio> getProcessosEnvio() {
+		return processosEnvio;
+	}
+
+	public void setProcessosEnvio(List<ProcessoEnvio> processosEnvio) {
+		this.processosEnvio = processosEnvio;
+	}
+	
+	
 
 }
