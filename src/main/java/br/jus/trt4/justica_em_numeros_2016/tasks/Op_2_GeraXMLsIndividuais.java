@@ -1384,9 +1384,14 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// OBS: os complementos só existem no MovimentoNacional
 			TipoMovimentoNacional movimentoNacional = movimento.getMovimentoNacional();
 			
-			// Se o parâmetro descartar_movimentos_ausentes_de_para_cnj tiver o valor SIM, apenas movimentos mapeados no DE-PARA do CNJ serão mantidos
+			// Se o parâmetro descartar_movimentos_ausentes_de_para_cnj tiver o valor SIM, apenas movimentos mapeados 
+			// no DE-PARA do CNJ serão mantidos. No caso dos movimentos do legado, o parâmetro incluir_todos_movimentos_base_legado
+			// desconsidera o valor daquele parâmetro. 
 			boolean descartarMovimentosAusentesDeParaCNJ = Auxiliar.getParametroBooleanConfiguracao(Parametro.descartar_movimentos_ausentes_de_para_cnj, false);
-			if (!descartarMovimentosAusentesDeParaCNJ || (movimentoNacional != null)) {
+			
+			boolean incluirTodosMovimentosLegado = Auxiliar.getParametroBooleanConfiguracao(Parametro.incluir_todos_movimentos_base_legado, false);
+			if (!descartarMovimentosAusentesDeParaCNJ || (movimentoNacional != null)
+					|| (incluirTodosMovimentosLegado && baseEmAnalise.isBaseLegado())) {
 				movimentos.add(movimento);
 			} 
 

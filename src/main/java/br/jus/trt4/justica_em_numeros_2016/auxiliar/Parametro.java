@@ -38,6 +38,7 @@ public enum Parametro {
 	url_legado_2g,
 	sistema_judicial,
 	descartar_movimentos_ausentes_de_para_cnj,
+	incluir_todos_movimentos_base_legado,
 	mesclar_movimentos_xml_legado_migrado,
 	movimentos_sem_serventia_cnj,
 	possui_deslocamento_oj_legado_1g,
