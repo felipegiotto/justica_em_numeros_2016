@@ -451,12 +451,11 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 					processoEnvio.setRemessa(remessa);
 
 					processoEnvioDAO.incluir(processoEnvio);
-				//	if (qtdLoteProcessosSalvos > 0 && qtdLoteProcessosSalvos % BATCH_SIZE == 0) {
-				//		JPAUtil.flush();
-				//		JPAUtil.clear();
-					//}
+					if (qtdLoteProcessosSalvos > 0 && qtdLoteProcessosSalvos % BATCH_SIZE == 0) {
+						JPAUtil.flush();
+						JPAUtil.clear();
+					}
 					qtdLoteProcessosSalvos++;
-					System.out.println(qtdLoteProcessosSalvos);
 				}
 				JPAUtil.commit();
 			} catch (Exception e) {
