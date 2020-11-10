@@ -10,6 +10,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import br.jus.trt4.justica_em_numeros_2016.entidades.conversores.OrigemProcessoEnumConverter;
 import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
@@ -20,7 +21,8 @@ import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
  * @author ivan.franca@trt6.jus.br
  */
 @Entity
-@Table(name = "tb_processo_envio")
+@Table(name = "tb_processo_envio", uniqueConstraints = @UniqueConstraint(columnNames = { "nr_processo",
+		"nm_grau" }))
 public class ProcessoEnvio extends BaseEntidade {
 
 	private static final long serialVersionUID = 1L;

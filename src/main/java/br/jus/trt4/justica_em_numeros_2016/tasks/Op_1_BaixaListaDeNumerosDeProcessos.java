@@ -100,14 +100,16 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		TipoRemessaEnum tipoRemessa = TipoRemessaEnum.criarApartirDoLabel(this.tipoCarga);
 
 		Remessa remessaAtual = this.obterRemessaAtual(dataCorte, tipoRemessa);
-		this.salvarRemessa(remessaAtual);			
+		if (remessaAtual.getId() == null) {
+			this.salvarRemessa(remessaAtual, true);						
+		}
 
 		int [] graus = {1, 2};
 
 		for (int grau : graus) {
 			if (Auxiliar.deveProcessarGrau(grau)) {
 				Map<String, DadosBasicosProcessoDto> mapDadosBasicosProcessos = this.baixarListaProcessos(grau);
-				this.gravarListaProcessosEmBanco(mapDadosBasicosProcessos, grau, remessaAtual);
+				remessaAtual = this.gravarListaProcessosEmBanco(mapDadosBasicosProcessos, grau, remessaAtual);
 			}
 		}
 	}
@@ -125,17 +127,20 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			remessa = new Remessa();
 			remessa.setDataCorte(dataCorte);
 			remessa.setTipoRemessa(tipoRemessa);
-		} else {
-			remessa.getProcessosEnvio().clear();
 		}
 		return remessa;
 	}
 
-	private void salvarRemessa(Remessa remessa) {
+	private Remessa salvarRemessa(Remessa remessa, boolean isInsert) {
+		Remessa retorno = null;
 		try {
 			JPAUtil.iniciarTransacao();
 
-			remessaDAO.incluir(remessa);
+			if (isInsert) {
+				remessaDAO.incluir(remessa);				
+			} else {
+				retorno = remessaDAO.alterar(remessa);
+			}
 
 			JPAUtil.commit();
 		} catch (Exception e) {
@@ -147,6 +152,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			// JPAUtil.printEstatisticas();
 			JPAUtil.close();
 		}
+		return retorno;
 	}
 
 	public Map<String, DadosBasicosProcessoDto> baixarListaProcessos(int grau) throws IOException, SQLException {
@@ -433,9 +439,31 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		return mapDadosBasicosProcessos;
 	}
 
-	public void gravarListaProcessosEmBanco(Map<String, DadosBasicosProcessoDto> mapChavesProcessos, int grau, Remessa remessa) {
-		int qtdLoteProcessosSalvos = 0;
+	public Remessa gravarListaProcessosEmBanco(Map<String, DadosBasicosProcessoDto> mapChavesProcessos, int grau, Remessa remessa) {
+		int qtdProcessosAEnviar = mapChavesProcessos.size();
+		List<ProcessoEnvio> processosRemover = new ArrayList<ProcessoEnvio>();
 
+		for (ProcessoEnvio processoEnvio : remessa.getProcessosEnvio()) {
+			if (processoEnvio.getGrau().equals(Integer.toString(grau))) {
+				String numProcesso = processoEnvio.getNumeroProcesso();
+				DadosBasicosProcessoDto dadosBasicosProcesso = mapChavesProcessos.get(numProcesso);
+				if (dadosBasicosProcesso != null) {
+					if (!processoEnvio.getOrigem().equals(dadosBasicosProcesso.getOrigemProcessoEnum())) {
+						processoEnvio.setOrigem(dadosBasicosProcesso.getOrigemProcessoEnum());
+					}
+					mapChavesProcessos.remove(numProcesso);
+				} else {
+					processosRemover.add(processoEnvio);
+				}
+			}
+		}
+		
+		remessa.getProcessosEnvio().removeAll(processosRemover);
+		
+		remessa = this.salvarRemessa(remessa, false);
+
+
+		int qtdLoteProcessosSalvos = 0;
 		final AtomicInteger counter = new AtomicInteger();
 		final Collection<List<DadosBasicosProcessoDto>> dadosBasicosProcessos = mapChavesProcessos.values().stream()
 				.collect(Collectors.groupingBy(it -> counter.getAndIncrement() / COMMIT_SIZE)).values();
@@ -449,7 +477,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 					processoEnvio.setNumeroProcesso(processo.getNumeroProcesso());
 					processoEnvio.setOrigem(processo.getOrigemProcessoEnum());
 					processoEnvio.setRemessa(remessa);
-
+					remessa.getProcessosEnvio().add(processoEnvio);
+					
 					processoEnvioDAO.incluir(processoEnvio);
 					if (qtdLoteProcessosSalvos > 0 && qtdLoteProcessosSalvos % BATCH_SIZE == 0) {
 						JPAUtil.flush();
@@ -469,7 +498,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			}
 		}
 
-		LOGGER.info("Foram carregados " + mapChavesProcessos.size() + " processo(s) no " + grau + "º Grau.");
+		LOGGER.info("Foram carregados " + qtdProcessosAEnviar + " processo(s) no " + grau + "º Grau.");
+		return remessa;
 	}
 
 	public Connection getConexaoBasePrincipalPJe(int grau) throws SQLException {

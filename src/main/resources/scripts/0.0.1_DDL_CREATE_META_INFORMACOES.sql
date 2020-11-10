@@ -198,6 +198,7 @@ CREATE TABLE datajud.tb_processo_envio
     nm_grau varchar(1) NOT NULL,
     id_remessa bigint NOT NULL,
     constraint tb_processo_envio_pk primary key (id_processo_envio),
+    constraint tb_processo_envio_uk01 UNIQUE( nr_processo, nm_grau),
     constraint tb_processo_envio_ck01 check (en_origem_processo in ('H','L','P'))
 );
 
