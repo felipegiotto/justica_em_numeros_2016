@@ -114,6 +114,9 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 		for (int grau : graus) {
 			if (Auxiliar.deveProcessarGrau(grau)) {
+				this.conexaoBasePrincipal = null;
+				this.conexaoBasePrincipalLegado = null;
+				this.conexaoBaseStagingEGestao = null;
 				Map<String, DadosBasicosProcessoDto> mapDadosBasicosProcessos = this.baixarListaProcessos(grau);
 				remessaAtual = this.gravarListaProcessosEmBanco(mapDadosBasicosProcessos, grau, remessaAtual);
 			}
