@@ -98,7 +98,13 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	public void baixarListaProcessos() throws IOException, SQLException {
 		LocalDate dataCorte = DataJudUtil.getDataCorte();
 		TipoRemessaEnum tipoRemessa = TipoRemessaEnum.criarApartirDoLabel(this.tipoCarga);
-
+		
+		if (tipoRemessa == null) {
+			// TODO: implementar os ajustes necessários para que a aplicação funcione para os tipos de carga:
+			// TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO. Outra possibilidade é remover de vez essas cargas do código.
+			throw new RuntimeException("Apenas os tipos de carga MENSAL e COMPLETA estão funcionando adequadamente.");
+		}
+		
 		Remessa remessaAtual = this.obterRemessaAtual(dataCorte, tipoRemessa);
 		if (remessaAtual.getId() == null) {
 			this.salvarRemessa(remessaAtual, true);						
@@ -115,12 +121,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	}
 
 	public Remessa obterRemessaAtual(LocalDate dataCorte, TipoRemessaEnum tipoRemessa) {
-		if (tipoRemessa == null) {
-			// TODO: implementar os ajustes necessários para que a aplicação funcione para os tipos de carga:
-			// TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO. Outra possibilidade é remover de vez essas cargas do código.
-			throw new RuntimeException("Apenas os tipos de carga MENSAL e COMPLETA estão funcionando adequadamente.");
-		}
-
 		Remessa remessa = remessaDAO.getRemessa(dataCorte, tipoRemessa, true);
 
 		if (remessa == null) {

@@ -22,7 +22,7 @@ import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
  */
 @Entity
 @Table(name = "tb_processo_envio", uniqueConstraints = @UniqueConstraint(columnNames = { "nr_processo",
-		"nm_grau" }))
+		"nm_grau", "id_remessa" }))
 public class ProcessoEnvio extends BaseEntidade {
 
 	private static final long serialVersionUID = 1L;
