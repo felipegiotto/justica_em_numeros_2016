@@ -126,7 +126,7 @@ public class Op_X_OperacaoCompleta {
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
 			
 			@Override
-			public void run(boolean reiniciarOperacaoEmCasoErro) throws SQLException, IOException {
+			public void run(boolean reiniciarOperacaoEmCasoErro) throws Exception {
 				Op_1_BaixaListaDeNumerosDeProcessos.main(null);
 			}
 		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
