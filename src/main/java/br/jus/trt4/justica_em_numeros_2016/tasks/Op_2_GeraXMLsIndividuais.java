@@ -197,31 +197,31 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			// Verifica se há alguma serventia inexistente. A análise de serventias só será realizada para o PJe,
 			// pois as informações do Sistema Judicial Legado já estão corretas.
 			//TODO checar se a análise de serventias ainda é necessária já que temos o validador do CNJ
-//			AnalisaServentiasCNJ analisaServentiasCNJGrau1 = null;
-//			AnalisaServentiasCNJ analisaServentiasCNJGrau2 = null;
-//			if (Auxiliar.deveProcessarPrimeiroGrau()) {
-//				analisaServentiasCNJGrau1 = new AnalisaServentiasCNJ(BaseEmAnaliseEnum.PJE, 1);				
-//			}
-//			
-//			if (Auxiliar.deveProcessarSegundoGrau()) {
-//				analisaServentiasCNJGrau2 = new AnalisaServentiasCNJ(BaseEmAnaliseEnum.PJE, 2);				
-//			}
-//			
-//			boolean temServentiasNaoMapeadasPrimeiroGrau = (analisaServentiasCNJGrau1 != null ? analisaServentiasCNJGrau1.diagnosticarServentiasPjeInexistentes() : false);
-//			boolean temServentiasNaoMapeadasSegundoGrau = (analisaServentiasCNJGrau2 != null ? analisaServentiasCNJGrau2.diagnosticarServentiasPjeInexistentes() : false);
-//			if (temServentiasNaoMapeadasPrimeiroGrau || temServentiasNaoMapeadasSegundoGrau) {
-//				Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
-//			}
+			AnalisaServentiasCNJ analisaServentiasCNJGrau1 = null;
+			AnalisaServentiasCNJ analisaServentiasCNJGrau2 = null;
+			if (Auxiliar.deveProcessarPrimeiroGrau()) {
+				analisaServentiasCNJGrau1 = new AnalisaServentiasCNJ(BaseEmAnaliseEnum.PJE, 1);				
+			}
+			
+			if (Auxiliar.deveProcessarSegundoGrau()) {
+				analisaServentiasCNJGrau2 = new AnalisaServentiasCNJ(BaseEmAnaliseEnum.PJE, 2);				
+			}
+			
+			boolean temServentiasNaoMapeadasPrimeiroGrau = (analisaServentiasCNJGrau1 != null ? analisaServentiasCNJGrau1.diagnosticarServentiasPjeInexistentes() : false);
+			boolean temServentiasNaoMapeadasSegundoGrau = (analisaServentiasCNJGrau2 != null ? analisaServentiasCNJGrau2.diagnosticarServentiasPjeInexistentes() : false);
+			if (temServentiasNaoMapeadasPrimeiroGrau || temServentiasNaoMapeadasSegundoGrau) {
+				Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
+			}
 
 			baixaDados.executarOperacaoGeracaoXML();
 
-//			if (analisaServentiasCNJGrau1 != null) {
-//				analisaServentiasCNJGrau1.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
-//			}
-//			
-//			if (analisaServentiasCNJGrau2 != null) {
-//				analisaServentiasCNJGrau2.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
-//			}
+			if (analisaServentiasCNJGrau1 != null) {
+				analisaServentiasCNJGrau1.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
+			}
+			
+			if (analisaServentiasCNJGrau2 != null) {
+				analisaServentiasCNJGrau2.mostrarWarningSeAlgumaServentiaNaoFoiEncontrada();
+			}
 			
 			AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
 			LOGGER.info("Fim!");
