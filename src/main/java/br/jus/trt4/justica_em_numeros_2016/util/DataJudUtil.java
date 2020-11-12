@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
 public class DataJudUtil {
 	
@@ -59,6 +60,10 @@ public class DataJudUtil {
 	public static LocalDate getDataCorte() {
 		LocalDate dataCorte = LocalDate.now().withMonth(DataJudUtil.getMesCorte()).withYear(DataJudUtil.getAnoCorte());
 		return dataCorte.withDayOfMonth(dataCorte.lengthOfMonth());
+	}
+	
+	public static TipoRemessaEnum getTipoRemessa() {
+		return TipoRemessaEnum.criarApartirDoLabel(Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true));
 	}
 
 }

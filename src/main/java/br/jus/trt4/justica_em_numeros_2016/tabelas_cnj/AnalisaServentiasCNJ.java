@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,9 @@ import org.apache.logging.log4j.Logger;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
 /**
  * Classe responsável por ler os arquivos de serventia do CNJ (conforme parâmetro arquivo_serventias_cnj)
@@ -157,7 +160,8 @@ public class AnalisaServentiasCNJ {
 	public boolean diagnosticarServentiasPjeInexistentes() throws SQLException {
 		LOGGER.info("Iniciando diagnóstico de serventias inexistentes no grau " + this.grau + " ...");
 
-		List<String> listaProcessos = Auxiliar.carregarListaProcessosDoArquivo(Auxiliar.getArquivoListaProcessosPje(this.grau));
+		List<String> listaProcessos = Auxiliar.carregarListaProcessosPJe(Integer.toString(grau));
+
 		if (!listaProcessos.isEmpty()) {
 			
 			// Monta um SQL plano com todos os números de processo

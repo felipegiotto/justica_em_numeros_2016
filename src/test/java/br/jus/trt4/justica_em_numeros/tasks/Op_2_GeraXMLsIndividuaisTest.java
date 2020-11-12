@@ -53,18 +53,20 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 	 */
 	@Test
 	public void testGerarProcessosEmLote() throws Exception {
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(2, BaseEmAnaliseEnum.PJE);
+		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais();
+		int grau = 2;
+		BaseEmAnaliseEnum base = BaseEmAnaliseEnum.PJE;
 		try {
-			baixaDados.prepararConexao();
+			baixaDados.prepararConexao(grau, base, true);
 			List<String> numeros = new ArrayList<>();
 			numeros.add("0020821-54.2013.5.04.0221");
 			numeros.add("0020583-31.2014.5.04.0017");
-			baixaDados.prepararCacheDadosProcessos(numeros);
+			baixaDados.prepararCacheDadosProcessos(numeros, grau, base, true);
 			
-			TipoProcessoJudicial processo1 = baixaDados.analisarProcessoJudicialCompleto("0020821-54.2013.5.04.0221");
+			TipoProcessoJudicial processo1 = baixaDados.analisarProcessoJudicialCompleto("0020821-54.2013.5.04.0221", grau, base);
 			assertEquals("00208215420135040221", processo1.getDadosBasicos().getNumero());
 			
-			TipoProcessoJudicial processo2 = baixaDados.analisarProcessoJudicialCompleto("0020583-31.2014.5.04.0017");
+			TipoProcessoJudicial processo2 = baixaDados.analisarProcessoJudicialCompleto("0020583-31.2014.5.04.0017", grau, base);
 			assertEquals("00205833120145040017", processo2.getDadosBasicos().getNumero());
 			
 		} finally {
@@ -725,13 +727,14 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws Exception {
 		
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau, BaseEmAnaliseEnum.PJE);
+		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais();
+		BaseEmAnaliseEnum base = BaseEmAnaliseEnum.PJE;
 		try {
-			baixaDados.prepararConexao();
+			baixaDados.prepararConexao(grau, base, true);
 			List<String> numeros = new ArrayList<>();
 			numeros.add(numeroProcesso);
-			baixaDados.prepararCacheDadosProcessos(numeros);
-			return baixaDados.analisarProcessoJudicialCompleto(numeroProcesso);
+			baixaDados.prepararCacheDadosProcessos(numeros, grau, base, true);
+			return baixaDados.analisarProcessoJudicialCompleto(numeroProcesso, grau, base);
 		} finally {
 			baixaDados.close();
 		}

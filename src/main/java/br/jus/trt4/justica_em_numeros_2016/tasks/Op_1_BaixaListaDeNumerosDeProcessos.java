@@ -45,8 +45,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	private static final RemessaDao remessaDAO = new RemessaDao();
 	private static final ProcessoEnvioDao processoEnvioDAO = new ProcessoEnvioDao();
 
-	// O valor do BATCH_SIZE deve ser igual à propriedade hibernate.jdbc.batch_size no persistence.xml
-	private static final int BATCH_SIZE = 50;
+	private static final int BATCH_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_batch);
 	private static final int COMMIT_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_commit_operacao_1);
 
 	private String tipoCarga;
@@ -114,17 +113,21 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 		for (int grau : graus) {
 			if (Auxiliar.deveProcessarGrau(grau)) {
-				this.conexaoBasePrincipal = null;
-				this.conexaoBasePrincipalLegado = null;
-				this.conexaoBaseStagingEGestao = null;
 				Map<String, DadosBasicosProcessoDto> mapDadosBasicosProcessos = this.baixarListaProcessos(grau);
 				remessaAtual = this.gravarListaProcessosEmBanco(mapDadosBasicosProcessos, grau, remessaAtual);
+				this.fecharConexoes();
 			}
 		}
 	}
 
-	public Remessa obterRemessaAtual(LocalDate dataCorte, TipoRemessaEnum tipoRemessa) {
-		Remessa remessa = remessaDAO.getRemessa(dataCorte, tipoRemessa, true);
+	private void fecharConexoes() {
+		this.conexaoBasePrincipal = null;
+		this.conexaoBasePrincipalLegado = null;
+		this.conexaoBaseStagingEGestao = null;
+	}
+	
+	private Remessa obterRemessaAtual(LocalDate dataCorte, TipoRemessaEnum tipoRemessa) {
+		Remessa remessa = remessaDAO.getRemessa(dataCorte, tipoRemessa, true, false);
 
 		if (remessa == null) {
 			remessa = new Remessa();

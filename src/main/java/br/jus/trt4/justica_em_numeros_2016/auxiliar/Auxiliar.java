@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -35,8 +36,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 
+import br.jus.trt4.justica_em_numeros_2016.dao.ProcessoEnvioDao;
+import br.jus.trt4.justica_em_numeros_2016.entidades.ProcessoEnvio;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
+import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
 /**
  * Classe que contém métodos auxiliares utilizados nesse projeto.
@@ -66,6 +72,8 @@ public class Auxiliar {
 	public static final String VALIDACAO_CNJ_TODOS_COM_ERRO = "TODOS_COM_ERRO";
 	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO = "APENAS_COM_ERRO_PROCESSADO_COM_ERRO";
 	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO = "APENAS_COM_ERRO_NO_ARQUIVO";
+	
+	private static final ProcessoEnvioDao processoEnvioDAO = new ProcessoEnvioDao();
 	
 	/**
 	 * Recupera a pasta em que se encontram os arquivos sql dos diretórios 'op_1_baixa_lista_processos '
@@ -701,32 +709,54 @@ public class Auxiliar {
 	    }
 	}
 	
-	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) {
-		if (!arquivoEntrada.exists()) {
-			LOGGER.warn("Arquivo de lista de processos não existe, nenhum processo será analisado nessa instância: " + arquivoEntrada);
-			return new ArrayList<String>();
-		}
-		
+	/**
+	 * Recupera a lista de processos do PJe que serão enviados na remessa atual.
+	 * 
+	 * @param grau
+	 * @return
+	 */
+	public static List<String> carregarListaProcessosPJe(String grau) {
 		try {
-			List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
-			LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
+			LocalDate dataCorte = DataJudUtil.getDataCorte();
+			TipoRemessaEnum tipoRemessa = DataJudUtil.getTipoRemessa();
+			List<OrigemProcessoEnum> origens = new ArrayList<OrigemProcessoEnum>();
+			origens.add(OrigemProcessoEnum.PJE);
+			origens.add(OrigemProcessoEnum.HIBRIDO);
+
+			List<ProcessoEnvio> processosEnvio = processoEnvioDAO.getProcessosRemessa(dataCorte, tipoRemessa, grau, origens);
+			List<String> listaProcessos = processosEnvio.stream().map(o -> o.getNumeroProcesso()).collect(Collectors.toList());
+
+
+			LOGGER.info("Foram carregados " + listaProcessos.size() + " processo(s). Grau: " + grau +". Base: PJe");
 			return listaProcessos;
 			
-		} catch (IOException ex) {
+		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}
 	}
+	
+	/**
+	 * Informa onde deve ser gravado o arquivo XML de um determinado processo
+	 * @param grau
+	 * @param numeroProcesso
+	 * @return
+	 */
+	public static File gerarNomeArquivoJson(int grau, String numeroProcesso, OrigemProcessoEnum origemProcessoEnum) {
+		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
+		File pastaRaizSistemaJudicial = new File(pastaRaiz, origemProcessoEnum.equals(OrigemProcessoEnum.LEGADO) ? "Legado" : (origemProcessoEnum.equals(OrigemProcessoEnum.HIBRIDO) ? "PJe/Hibrido": "PJe"));
+		return new File(pastaRaizSistemaJudicial, numeroProcesso + "_validador_cnj.json");
+	}
 
 	/**
-	 * Informa onde deve ser gravado o arquivo XML de um determinado processo do PJe
+	 * Informa onde deve ser gravado o arquivo XML de um determinado processo
 	 * @param grau
 	 * @param numeroProcesso
 	 * @return
 	 */
 	public static File gerarNomeArquivoIndividualParaProcesso(BaseEmAnaliseEnum base, int grau, String numeroProcesso) {
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
-		File pastaRaizPJe = new File(pastaRaiz, base.isBasePJe() ? "PJe" : "Legado");
-		return new File(pastaRaizPJe, numeroProcesso + ".xml");
+		File pastaRaizSistemaJudicial = new File(pastaRaiz, base.isBasePJe() ? "PJe" : "Legado");
+		return new File(pastaRaizSistemaJudicial, numeroProcesso + ".xml");
 	}
 	
 	/**

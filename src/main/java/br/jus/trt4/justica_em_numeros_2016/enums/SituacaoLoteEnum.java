@@ -66,6 +66,19 @@ public enum SituacaoLoteEnum {
         return null;
     }
     
+    public boolean in(SituacaoLoteEnum... situacoesLotes) {
+        for (SituacaoLoteEnum situacaoLote : situacoesLotes) {
+            if (this.equals(situacaoLote)) {
+                return true;
+            }
+        }
+        return false;
+    }    
+    
+    public boolean equals(SituacaoLoteEnum situacaoLoteEnum) {
+        return this.getCodigo().equals(situacaoLoteEnum.getCodigo());
+    }
+    
     public String getLabel() {
         return this.label;
     }

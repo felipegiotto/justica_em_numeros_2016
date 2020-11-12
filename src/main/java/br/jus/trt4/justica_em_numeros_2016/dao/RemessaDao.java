@@ -20,14 +20,18 @@ public class RemessaDao extends DataJudBaseDao<Remessa> {
 	 * @param dataCorte   data de corte da Remessa
 	 * @param tipoRemessa tipo da Remessa
 	 * @param fetchProcessoEnvio indica se deve ser realizado um fetch com processosEnvio
+	 * @param fetchLote indica se deve ser realizado um fetch com lotes
 	 * 
 	 * @return uma instância de Remessa
 	 */
-	public Remessa getRemessa(LocalDate dataCorte, TipoRemessaEnum tipoRemessa, boolean fetchProcessoEnvio) {
+	public Remessa getRemessa(LocalDate dataCorte, TipoRemessaEnum tipoRemessa, boolean fetchProcessoEnvio, boolean fetchLote) {
 		StringBuilder hql = new StringBuilder();
 		hql.append("select rm from Remessa rm ");
 		if (fetchProcessoEnvio) {
 			hql.append(" LEFT JOIN FETCH rm.processosEnvio pe ");
+		}
+		if (fetchLote) {
+			hql.append(" LEFT JOIN FETCH rm.lotes lt ");
 		}
 		hql.append(" where rm.dataCorte = :dataCorte ");
 		hql.append(" and rm.tipoRemessa = :tipoRemessa ");
