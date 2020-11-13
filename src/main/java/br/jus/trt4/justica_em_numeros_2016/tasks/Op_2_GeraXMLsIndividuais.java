@@ -132,7 +132,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private boolean paramPossuiDeslocamentoOJLegado2G;
 
 	private Connection conexaoBasePrincipal;
-	private Connection conexaoBaseLegadoMigrados;
+	private Connection conexaoBaseHibridos;
 	private NamedParameterStatement nsConsultaProcessos;
 	private NamedParameterStatement nsPartes;
 	private NamedParameterStatement nsDocumentos;
@@ -143,11 +143,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private NamedParameterStatement nsIncidentes;
 	private NamedParameterStatement nsSentencasAcordaos;
 	private NamedParameterStatement nsHistoricoDeslocamentoOJ;
-	private NamedParameterStatement nsConsultaProcessosLegadosMigrados;
-	private NamedParameterStatement nsMovimentosLegadosMigrados;
-	private NamedParameterStatement nsComplementosLegadosMigrados;
-	private NamedParameterStatement nsSentencasAcordaosLegadosMigrados;
-	private NamedParameterStatement nsHistoricoDeslocamentoOJLegadosMigrados;
+	private NamedParameterStatement nsConsultaProcessosHibridos;
+	private NamedParameterStatement nsMovimentosHibridos;
+	private NamedParameterStatement nsComplementosHibridos;
+	private NamedParameterStatement nsSentencasAcordaosHibridos;
+	private NamedParameterStatement nsHistoricoDeslocamentoOJHibridos;
 	private int codigoMunicipioIBGETRT;
 	private AnalisaServentiasCNJ processaServentiasCNJ;
 	private AnalisaAssuntosCNJ analisaAssuntosCNJ;
@@ -158,7 +158,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 	private String statusString;
 	//Recupera a lista de processos que foram migrados do sistema judicial legado para o pje
-	private Map<String, String> mapaProcessosLegadoMigrados;
+	private Map<String, String> mapaProcessosHibridos;
 	
 	private Map<String, List<ProcessoEnvio>> mapaProcessosPorGrauEBaseAnalise;
 	
@@ -174,7 +174,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 	// Objetos que armazenam os dados que foram migrados do Sistema Judicial Legado para o Pje, para poder trazer dados de processos em lote,
 	// resultando em menos consultas ao banco de dados.
-	private final Map<String, ProcessoDto> cacheProcessosLegadosMigradosDtos = new HashMap<>();
+	private final Map<String, ProcessoDto> cacheProcessosHibridosDtos = new HashMap<>();
 	
 	private static final int BATCH_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_batch);
 
@@ -368,11 +368,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 	private void carregarMapasProcessos (List<ProcessoEnvio> processosEnvio) {
 		this.mapaProcessosPorGrauEBaseAnalise = new HashMap<String, List<ProcessoEnvio>>();
-		this.mapaProcessosLegadoMigrados = new HashMap<String, String>();
+		this.mapaProcessosHibridos = new HashMap<String, String>();
 		
 		for (ProcessoEnvio processoEnvio : processosEnvio) {
-			String chaveMigrados = processoEnvio.getGrau() + "_" + processoEnvio.getNumeroProcesso();			
-			this.mapaProcessosLegadoMigrados.put(chaveMigrados, processoEnvio.getNumeroProcesso());
+			if (processoEnvio.getOrigem().equals(OrigemProcessoEnum.HIBRIDO)) {
+				String chaveMigrados = processoEnvio.getGrau() + "_" + processoEnvio.getNumeroProcesso();			
+				this.mapaProcessosHibridos.put(chaveMigrados, processoEnvio.getNumeroProcesso());
+			}
 			
 			BaseEmAnaliseEnum baseEmAnaliseProcesso = processoEnvio.getOrigem().equals(OrigemProcessoEnum.LEGADO)
 					? BaseEmAnaliseEnum.LEGADO
@@ -692,12 +694,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 	}
 
-	public void prepararCacheDadosProcessos(List<String> numerosProcessos, int grau, BaseEmAnaliseEnum baseEmAnalise, boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe) throws SQLException {
+	public void prepararCacheDadosProcessos(List<String> numerosProcessos, int grau, BaseEmAnaliseEnum baseEmAnalise, boolean deveProcessarProcessosHibridos) throws SQLException {
 		
 		LOGGER.info("Baixando cache de dados para " + numerosProcessos.size() + " processo(s)...");
 		Array arrayNumerosProcessos = conexaoBasePrincipal.createArrayOf("varchar", numerosProcessos.toArray());
 		this.cacheProcessosDtos.clear();
-		this.cacheProcessosLegadosMigradosDtos.clear();
+		this.cacheProcessosHibridosDtos.clear();
 		
 		// Carrega dados principais dos processos
 		LOGGER.trace("* nsConsultaProcessos...");
@@ -842,78 +844,78 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 		
 		//Carregando dados de processos do sistema judicial legado que foram migrados para o PJe
-		if (deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-			List<String> numerosProcessosLegadosMigrados = new ArrayList<String>();
+		if (deveProcessarProcessosHibridos) {
+			List<String> numerosProcessosHibridos = new ArrayList<String>();
 			
 			for (String numeroProcesso : numerosProcessos) {
 				String chave = grau + "_" + numeroProcesso;
-				if (this.mapaProcessosLegadoMigrados.containsKey(chave)) {
-					numerosProcessosLegadosMigrados.add(this.mapaProcessosLegadoMigrados.get(chave));
+				if (this.mapaProcessosHibridos.containsKey(chave)) {
+					numerosProcessosHibridos.add(this.mapaProcessosHibridos.get(chave));
 				}
 			}
 
-			if (!numerosProcessosLegadosMigrados.isEmpty()) {
-				Array arrayNumerosProcessosLegadosMigrados = conexaoBaseLegadoMigrados.createArrayOf("varchar", numerosProcessosLegadosMigrados.toArray());
+			if (!numerosProcessosHibridos.isEmpty()) {
+				Array arrayNumerosProcessosHibridos = conexaoBaseHibridos.createArrayOf("varchar", numerosProcessosHibridos.toArray());
 
 				// Carrega dados principais dos processos no sistema judicial legado
-				LOGGER.trace("* nsConsultaProcessosLegadosMigrados...");
-				nsConsultaProcessosLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessosLegadosMigrados);
-				try (ResultSet rsProcessos = nsConsultaProcessosLegadosMigrados.executeQuery()) {
+				LOGGER.trace("* nsConsultaProcessosHibridos...");
+				nsConsultaProcessosHibridos.setArray("numeros_processos", arrayNumerosProcessosHibridos);
+				try (ResultSet rsProcessos = nsConsultaProcessosHibridos.executeQuery()) {
 					while (rsProcessos.next()) {
 						String nrProcesso = rsProcessos.getString("nr_processo");
 						ProcessoDto processoDto = new ProcessoDto(rsProcessos, false);
 						processoDto.setNumeroInstancia(grau);
-						this.cacheProcessosLegadosMigradosDtos.put(nrProcesso, processoDto);
+						this.cacheProcessosHibridosDtos.put(nrProcesso, processoDto);
 						
 					}
 				}
 				
 				// Consulta todos os movimentos dos processos que foram migrados do sistema judicial legado para o pje
-				LOGGER.trace("* nsMovimentosLegadosMigrados...");
-				Map<Integer, MovimentoDto> movimentosPorIdProcessoEventoLegado = new HashMap<>();
-				nsMovimentosLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessosLegadosMigrados);
-				try (ResultSet rsMovimentos = nsMovimentosLegadosMigrados.executeQuery()) {
+				LOGGER.trace("* nsMovimentosHibridos...");
+				Map<Integer, MovimentoDto> movimentosPorIdProcessoEventoHibrido = new HashMap<>();
+				nsMovimentosHibridos.setArray("numeros_processos", arrayNumerosProcessosHibridos);
+				try (ResultSet rsMovimentos = nsMovimentosHibridos.executeQuery()) {
 					while (rsMovimentos.next()) {
 						String nrProcesso = rsMovimentos.getString("nr_processo");
 						MovimentoDto movimento = new MovimentoDto(rsMovimentos);
-						cacheProcessosLegadosMigradosDtos.get(nrProcesso).getMovimentos().add(movimento);
-						movimentosPorIdProcessoEventoLegado.put(movimento.getIdProcessoEvento(), movimento);
+						cacheProcessosHibridosDtos.get(nrProcesso).getMovimentos().add(movimento);
+						movimentosPorIdProcessoEventoHibrido.put(movimento.getIdProcessoEvento(), movimento);
 					}
 				}
 				
 				// Consulta os complementos desses movimentos processuais.
 				// OBS: os complementos só existem no MovimentoNacional
-				LOGGER.trace("* nsComplementosLegadosMigrados...");
-				Array arrayIdProcessoEventoLegado = conexaoBaseLegadoMigrados.createArrayOf("int", movimentosPorIdProcessoEventoLegado.keySet().toArray());
-				nsComplementosLegadosMigrados.setArray("id_movimento_processo", arrayIdProcessoEventoLegado);
-				try (ResultSet rsComplementos = nsComplementosLegadosMigrados.executeQuery()) {
+				LOGGER.trace("* nsComplementosHibridos...");
+				Array arrayIdProcessoEventoHibridos = conexaoBaseHibridos.createArrayOf("int", movimentosPorIdProcessoEventoHibrido.keySet().toArray());
+				nsComplementosHibridos.setArray("id_movimento_processo", arrayIdProcessoEventoHibridos);
+				try (ResultSet rsComplementos = nsComplementosHibridos.executeQuery()) {
 					while (rsComplementos.next()) {
 						int idMovimentoProcesso = rsComplementos.getInt("id_movimento_processo");
 						ComplementoDto complemento = new ComplementoDto(rsComplementos);
-						movimentosPorIdProcessoEventoLegado.get(idMovimentoProcesso).getComplementos().add(complemento);
+						movimentosPorIdProcessoEventoHibrido.get(idMovimentoProcesso).getComplementos().add(complemento);
 					}
 				}
 				
 				// Baixa dados de sentenças e acórdãos dos processos, que auxiliarão na identificação do magistrado responsável
-				LOGGER.trace("* nsSentencasAcordaosLegadosMigrados...");
-				nsSentencasAcordaosLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessosLegadosMigrados);
-				try (ResultSet rsSentencasAcordaos = nsSentencasAcordaosLegadosMigrados.executeQuery()) {
+				LOGGER.trace("* nsSentencasAcordaosHibridos...");
+				nsSentencasAcordaosHibridos.setArray("numeros_processos", arrayNumerosProcessosHibridos);
+				try (ResultSet rsSentencasAcordaos = nsSentencasAcordaosHibridos.executeQuery()) {
 					while (rsSentencasAcordaos.next()) {
 						String nrProcesso = rsSentencasAcordaos.getString("nr_processo");
 						DocumentoDto documentoDto = new DocumentoDto(rsSentencasAcordaos);
-						cacheProcessosLegadosMigradosDtos.get(nrProcesso).getSentencasAcordaos().add(documentoDto);
+						cacheProcessosHibridosDtos.get(nrProcesso).getSentencasAcordaos().add(documentoDto);
 					}
 				}
 				
 				// Baixa dados de deslocamentos de OJ, que auxiliarão na identificação do OJ dos movimentos processuais
 				if (this.possuiHistoricoDeslocamentoOJ(BaseEmAnaliseEnum.LEGADO, grau)) {
-					LOGGER.trace("* nsHistoricoDeslocamentoOJLegadosMigrados...");
-					nsHistoricoDeslocamentoOJLegadosMigrados.setArray("numeros_processos", arrayNumerosProcessosLegadosMigrados);
-					try (ResultSet rsHistoricoDeslocamentoOJ = nsHistoricoDeslocamentoOJLegadosMigrados.executeQuery()) {
+					LOGGER.trace("* nsHistoricoDeslocamentoOJHibridos...");
+					nsHistoricoDeslocamentoOJHibridos.setArray("numeros_processos", arrayNumerosProcessosHibridos);
+					try (ResultSet rsHistoricoDeslocamentoOJ = nsHistoricoDeslocamentoOJHibridos.executeQuery()) {
 						while (rsHistoricoDeslocamentoOJ.next()) {
 							String nrProcesso = rsHistoricoDeslocamentoOJ.getString("nr_processo");
 							HistoricoDeslocamentoOJDto historico = new HistoricoDeslocamentoOJDto(rsHistoricoDeslocamentoOJ);
-							cacheProcessosLegadosMigradosDtos.get(nrProcesso).getHistoricosDeslocamentoOJ().add(historico);
+							cacheProcessosHibridosDtos.get(nrProcesso).getHistoricosDeslocamentoOJ().add(historico);
 						}
 					}
 				}
@@ -937,13 +939,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 		if (cacheProcessosDtos.containsKey(numeroProcesso)) {
 			if (baseEmAnalise.isBasePJe()) {
-				ProcessoDto processoLegado = null;
-				if (cacheProcessosLegadosMigradosDtos.containsKey(numeroProcesso)) {
+				ProcessoDto processoHibrido = null;
+				if (cacheProcessosHibridosDtos.containsKey(numeroProcesso)) {
 					//contém as informações do processo no sistema judicial legado,
 					//necessárias para realização do merge de movimentos e complementos
-					processoLegado = cacheProcessosLegadosMigradosDtos.get(numeroProcesso);
+					processoHibrido = cacheProcessosHibridosDtos.get(numeroProcesso);
 				}
-				return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso), processoLegado, grau, baseEmAnalise);
+				return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso), processoHibrido, grau, baseEmAnalise);
 			} else {
 				return analisarProcessoJudicialCompleto(cacheProcessosDtos.get(numeroProcesso), null, grau, baseEmAnalise);				
 			}
@@ -957,7 +959,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * Método criado com base no script recebido do TRT14
 	 * para preencher os dados de um processo judicial dentro das classes que gerarão o XML.
 	 * 
-	 * @param processoLegadoMigrado contém as informações do processo no sistema judicial legado,
+	 * @param processoHibrido contém as informações do processo no sistema judicial legado,
 	 * necessárias para realização do merge de movimentos e complementos
 	 * @param processoJudicial
 	 * @param rsProcesso
@@ -966,7 +968,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	 * @throws IOException 
 	 * @throws DataJudException 
 	 */
-	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ProcessoDto processo, ProcessoDto processoLegadoMigrado, int grau, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, IOException, DataJudException {
+	public TipoProcessoJudicial analisarProcessoJudicialCompleto(ProcessoDto processo, ProcessoDto processoHibrido, int grau, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, IOException, DataJudException {
 
 		// Objeto que será retornado
 		TipoProcessoJudicial processoJudicial = new TipoProcessoJudicial();
@@ -976,7 +978,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		processoJudicial.setDadosBasicos(cabecalho);
 
 		// Movimentos processuais e complementos
-		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(processo, processoLegadoMigrado, cabecalho.getOrgaoJulgador(), grau, baseEmAnalise));
+		processoJudicial.getMovimento().addAll(analisarMovimentosProcesso(processo, processoHibrido, cabecalho.getOrgaoJulgador(), grau, baseEmAnalise));
 		
 		//Se o processo tiver sido migrado pela CLET e não tiver nenhuma outra movimentação, o XML será gerado sem movimentos,
 		//pois o movimento de conversão não está mais ativo.
@@ -1457,12 +1459,12 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		return orgaoJulgador;
 	}
 
-	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(ProcessoDto processo, ProcessoDto processoLegadoMigrado, TipoOrgaoJulgador orgaoJulgadorProcessoCabecalho, int grau, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, IOException, DataJudException {
+	private List<TipoMovimentoProcessual> analisarMovimentosProcesso(ProcessoDto processo, ProcessoDto processoHibrido, TipoOrgaoJulgador orgaoJulgadorProcessoCabecalho, int grau, BaseEmAnaliseEnum baseEmAnalise) throws SQLException, IOException, DataJudException {
 
 		List<TipoMovimentoProcessual> movimentos = new ArrayList<>();
 		if (baseEmAnalise.isBasePJe()) {
-			if (processoLegadoMigrado != null) {
-				movimentos.addAll(this.getMovimentosProcesso(processoLegadoMigrado, analisarOrgaoJulgadorProcesso(processoLegadoMigrado, grau, BaseEmAnaliseEnum.LEGADO), grau, BaseEmAnaliseEnum.LEGADO));				
+			if (processoHibrido != null) {
+				movimentos.addAll(this.getMovimentosProcesso(processoHibrido, analisarOrgaoJulgadorProcesso(processoHibrido, grau, BaseEmAnaliseEnum.LEGADO), grau, BaseEmAnaliseEnum.LEGADO));				
 			}
 			movimentos.addAll(this.getMovimentosProcesso(processo, orgaoJulgadorProcessoCabecalho, grau, baseEmAnalise));
 		} else {
@@ -1650,7 +1652,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	}
 
 
-	public void prepararConexao(int grau, BaseEmAnaliseEnum baseEmAnalise, boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe) throws SQLException, IOException, InterruptedException {
+	public void prepararConexao(int grau, BaseEmAnaliseEnum baseEmAnalise, boolean deveProcessarProcessosHibridos) throws SQLException, IOException, InterruptedException {
 
 		LOGGER.info("Preparando informações para gerar XMLs da base " + baseEmAnalise.getDescricao() + " - " + grau + "o Grau...");
 		this.statusString = "Preparando dados";
@@ -1718,31 +1720,31 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 		//Se a base em análise é a do pje, será preciso recuperar, para processos que foram migrados do sistema judicial legado,
 		// os respectivos movimentos e complementos
-		if (deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+		if (deveProcessarProcessosHibridos) {
 			BaseEmAnaliseEnum baseLegada = BaseEmAnaliseEnum.LEGADO;
-			conexaoBaseLegadoMigrados = Auxiliar.getConexao(grau, baseLegada);
-			conexaoBaseLegadoMigrados.setAutoCommit(false);
-			String pastaIntermediariaLegadoMigrados = Auxiliar.getPastaResources(baseLegada, grau);
+			conexaoBaseHibridos = Auxiliar.getConexao(grau, baseLegada);
+			conexaoBaseHibridos.setAutoCommit(false);
+			String pastaIntermediariaHibridos = Auxiliar.getPastaResources(baseLegada, grau);
 			
-			String sqlConsultaProcessosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/01_consulta_processo.sql");
-			nsConsultaProcessosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaProcessosLegadoMigrados, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			String sqlConsultaProcessosHibridos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaHibridos + "/01_consulta_processo.sql");
+			nsConsultaProcessosHibridos = new NamedParameterStatement(conexaoBaseHibridos, sqlConsultaProcessosHibridos, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
 
 			// SQL que fará a consulta dos movimentos processuais
-			String sqlConsultaMovimentosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/06_consulta_movimentos.sql");
-			nsMovimentosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaMovimentosLegadoMigrados);
+			String sqlConsultaMovimentosHibridos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaHibridos + "/06_consulta_movimentos.sql");
+			nsMovimentosHibridos = new NamedParameterStatement(conexaoBaseHibridos, sqlConsultaMovimentosHibridos);
 
 			// Le o SQL que fará a consulta dos complementos dos movimentos processuais
-			String sqlConsultaComplementosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/07_consulta_complementos.sql");
-			nsComplementosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaComplementosLegadoMigrados);
+			String sqlConsultaComplementosHibridos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaHibridos + "/07_consulta_complementos.sql");
+			nsComplementosHibridos = new NamedParameterStatement(conexaoBaseHibridos, sqlConsultaComplementosHibridos);
 
 			// Le o SQL que fará a consulta das sentenças e acórdãos
-			String sqlConsultaSentencasAcordaosLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/09_consulta_sentencas_acordaos.sql");
-			nsSentencasAcordaosLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaSentencasAcordaosLegadoMigrados);
+			String sqlConsultaSentencasAcordaosHibridos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaHibridos + "/09_consulta_sentencas_acordaos.sql");
+			nsSentencasAcordaosHibridos = new NamedParameterStatement(conexaoBaseHibridos, sqlConsultaSentencasAcordaosHibridos);
 			
 			// Le o SQL que fará a consulta do histórico de deslocamento
 			if (this.possuiHistoricoDeslocamentoOJ(baseLegada, grau)) {
-				String sqlConsultaHistoricoDeslocamentoOJLegadoMigrados = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaLegadoMigrados + "/10_consulta_deslocamento_oj.sql");
-				nsHistoricoDeslocamentoOJLegadosMigrados = new NamedParameterStatement(conexaoBaseLegadoMigrados, sqlConsultaHistoricoDeslocamentoOJLegadoMigrados);			
+				String sqlConsultaHistoricoDeslocamentoOJHibridos = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_2_gera_xmls/" + pastaIntermediariaHibridos + "/10_consulta_deslocamento_oj.sql");
+				nsHistoricoDeslocamentoOJHibridos = new NamedParameterStatement(conexaoBaseHibridos, sqlConsultaHistoricoDeslocamentoOJHibridos);			
 			}
 			
 		}
@@ -1800,20 +1802,20 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		Auxiliar.fechar(nsHistoricoDeslocamentoOJ);
 		nsHistoricoDeslocamentoOJ = null;			
 
-		Auxiliar.fechar(nsConsultaProcessosLegadosMigrados);
-		nsConsultaProcessosLegadosMigrados = null;
-		Auxiliar.fechar(nsMovimentosLegadosMigrados);
-		nsMovimentosLegadosMigrados = null;
-		Auxiliar.fechar(nsComplementosLegadosMigrados);
-		nsComplementosLegadosMigrados = null;
-		Auxiliar.fechar(nsSentencasAcordaosLegadosMigrados);
-		nsSentencasAcordaosLegadosMigrados = null;
-		Auxiliar.fechar(nsHistoricoDeslocamentoOJLegadosMigrados);
-		nsHistoricoDeslocamentoOJLegadosMigrados = null;	
+		Auxiliar.fechar(nsConsultaProcessosHibridos);
+		nsConsultaProcessosHibridos = null;
+		Auxiliar.fechar(nsMovimentosHibridos);
+		nsMovimentosHibridos = null;
+		Auxiliar.fechar(nsComplementosHibridos);
+		nsComplementosHibridos = null;
+		Auxiliar.fechar(nsSentencasAcordaosHibridos);
+		nsSentencasAcordaosHibridos = null;
+		Auxiliar.fechar(nsHistoricoDeslocamentoOJHibridos);
+		nsHistoricoDeslocamentoOJHibridos = null;	
 		
 		Auxiliar.fechar(conexaoBasePrincipal);
 		conexaoBasePrincipal = null;
-		Auxiliar.fechar(conexaoBaseLegadoMigrados);
-		conexaoBaseLegadoMigrados = null;
+		Auxiliar.fechar(conexaoBaseHibridos);
+		conexaoBaseHibridos = null;
 	}
 }
