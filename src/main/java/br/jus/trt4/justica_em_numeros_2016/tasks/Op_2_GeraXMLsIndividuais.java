@@ -508,6 +508,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							//Criando a estrutura de banco
 							String codClasseJudicial = Integer.toString(processoJudicial.getDadosBasicos().getClasseProcessual());
 							Long codOJ = new Long(processoJudicial.getDadosBasicos().getOrgaoJulgador().getCodigoOrgao());
+							if (codClasseJudicial == null || codOJ == null) {
+								throw new DataJudException("Não foi possível gerar o XML do processo " + processoEnvio.getNumeroProcesso() + " Grau: " + grau 
+										+ ". O código da classe judicial e do órgão julgador deve ser um valor válido.");
+							}
 							String chave = this.getChaveMapa(Integer.toString(grau), processoEnvio.getNumeroProcesso(), codClasseJudicial, codOJ);
 							
 							
