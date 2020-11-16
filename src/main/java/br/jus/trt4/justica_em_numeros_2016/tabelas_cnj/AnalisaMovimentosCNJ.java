@@ -64,29 +64,29 @@ public class AnalisaMovimentosCNJ {
 	public AnalisaMovimentosCNJ(BaseEmAnaliseEnum baseEmAnaliseEnum, Connection conexaoPJe) throws IOException, SQLException {
 		super();
 		carregarTiposComplementoCNJ();
-		if (baseEmAnaliseEnum.isBasePJe()) {
-			File arquivoMovimentos = new File("src/main/resources/tabelas_cnj/movimentos_cnj.csv");
-			LOGGER.info("Carregando lista de movimentos CNJ do arquivo " + arquivoMovimentos + "...");
-			
-			// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
-			// deverá ser registrado com as tags "<assunto><codigoNacional>" ou "<assunto><assuntoLocal>"
-			// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
-			this.movimentosProcessuaisCNJ = new ArrayList<>();
-			for (String movimentoString: FileUtils.readLines(arquivoMovimentos, "UTF-8")) {
-				movimentosProcessuaisCNJ.add(Integer.parseInt(movimentoString));
-			}
-			
-			// PreparedStatements que localizarão movimentos no banco de dados do PJe
-			this.eventosPorId = new HashMap<>();
-			try (PreparedStatement psEventos = conexaoPJe.prepareStatement("SELECT * FROM tb_evento")) {
-				try (ResultSet rsEventos = psEventos.executeQuery()) {
-					while (rsEventos.next()) {
-						EventoDto evento = new EventoDto(rsEventos);
-						this.eventosPorId.put(evento.getId(), evento);
-					}
+
+		File arquivoMovimentos = new File("src/main/resources/tabelas_cnj/movimentos_cnj.csv");
+		LOGGER.info("Carregando lista de movimentos CNJ do arquivo " + arquivoMovimentos + "...");
+		
+		// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
+		// deverá ser registrado com as tags "<assunto><codigoNacional>" ou "<assunto><assuntoLocal>"
+		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
+		this.movimentosProcessuaisCNJ = new ArrayList<>();
+		for (String movimentoString: FileUtils.readLines(arquivoMovimentos, "UTF-8")) {
+			movimentosProcessuaisCNJ.add(Integer.parseInt(movimentoString));
+		}
+		
+		// PreparedStatements que localizarão movimentos no banco de dados do PJe
+		this.eventosPorId = new HashMap<>();
+		try (PreparedStatement psEventos = conexaoPJe.prepareStatement("SELECT * FROM tb_evento")) {
+			try (ResultSet rsEventos = psEventos.executeQuery()) {
+				while (rsEventos.next()) {
+					EventoDto evento = new EventoDto(rsEventos);
+					this.eventosPorId.put(evento.getId(), evento);
 				}
 			}
-			
+		}
+	    if (baseEmAnaliseEnum.isBasePJe()) {
 			// Ferramenta DE-PARA de movimentos e complementos, criada pelo TRT3.
 			try {
 				gerenteDeParaJTCNJ = GerenteDeParaJTCNJ.getInstancia();
