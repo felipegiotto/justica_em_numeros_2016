@@ -88,12 +88,19 @@ public class Op_5_ConfereProtocolosCNJ {
 
 	public static void main(String[] args) throws Exception {
 
-		System.out.println(
-				"Se algum arquivo ainda não foi processado no CNJ, ou se ocorrer algum erro na resposta do CNJ, você quer que a operação seja reiniciada?");
-		System.out.println(
-				"Responda 'S' para que as validações no CNJ rodem diversas vezes, até que o webservice não recuse nenhum arquivo e até que todos os XMLs sejam processados.");
-		System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
-		String resposta = Auxiliar.readStdin().toUpperCase();
+		String resposta;
+		
+		if(args != null && args.length > 0) {
+			resposta = args[0];
+		}
+		else {
+			System.out.println(
+					"Se algum arquivo ainda não foi processado no CNJ, ou se ocorrer algum erro na resposta do CNJ, você quer que a operação seja reiniciada?");
+			System.out.println(
+					"Responda 'S' para que as validações no CNJ rodem diversas vezes, até que o webservice não recuse nenhum arquivo e até que todos os XMLs sejam processados.");
+			System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
+			resposta = Auxiliar.readStdin().toUpperCase();
+		}		
 
 		executarOperacaoConfereProtocolosCNJ("S".equals(resposta));
 	}

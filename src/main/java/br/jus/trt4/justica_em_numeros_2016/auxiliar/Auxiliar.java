@@ -297,6 +297,30 @@ public class Auxiliar {
 		}
 		return p;
 	}
+	
+	
+	/**
+	 *  Carrega os dados de um arquivo ".properties", possibilitando que o parâmetro tipo_carga_xml seja
+	 *  passado como parâmetro da função, desconsiderando o que está no arquivo de propriedades.
+	 *  Esse método visa possibilitar a execução automatizada do extrator por linha de comando, evitando que seja necessário
+	 *  alterar o arquivo de propriedades indicando a competência de cada remessa mensal.
+
+	 * @param tipoCargaXml Tipo de carga em que os processos serão extraídos, podendo ser COMPLETA, MENSAL, 
+	 * 					   TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO.
+	 */
+	public static void carregarPropertiesDoArquivo(String tipoCargaXml) {
+		
+		final String ParametroTipoCargaXml = "tipo_carga_xml";
+		
+		if (configs == null) {
+			configs = getConfigs();
+		}
+		
+		if(tipoCargaXml != null && tipoCargaXml.length() > 0) {
+			configs.setProperty(ParametroTipoCargaXml, tipoCargaXml);			
+		}
+		
+	}
 
 	
 	/**
