@@ -283,8 +283,8 @@ public class AnalisaMovimentosCNJ {
 		return 0;
 	}
 	
-	public boolean movimentoExisteNasTabelasNacionais(int codigoAssunto) {
-		return movimentosProcessuaisCNJ.contains(codigoAssunto);
+	public boolean movimentoExisteNasTabelasNacionais(int codigoMovimento) {
+		return movimentosProcessuaisCNJ.contains(codigoMovimento);
 	}
 	
 	/**

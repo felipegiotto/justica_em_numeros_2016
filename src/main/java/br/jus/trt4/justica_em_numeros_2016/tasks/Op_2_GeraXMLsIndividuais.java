@@ -36,7 +36,6 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang3.StringUtils;
@@ -78,7 +77,6 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.NamedParameterStatement;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ValidadorIntegridadeXMLCNJ;
 import br.jus.trt4.justica_em_numeros_2016.dao.ChaveProcessoCNJDao;
-import br.jus.trt4.justica_em_numeros_2016.dao.DataJudBaseDao;
 import br.jus.trt4.justica_em_numeros_2016.dao.JPAUtil;
 import br.jus.trt4.justica_em_numeros_2016.dao.LoteDao;
 import br.jus.trt4.justica_em_numeros_2016.dao.LoteProcessoDao;
@@ -184,7 +182,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_SERVENTIA_OJ_PRINCIPAL = "SERVENTIA_OJ_PRINCIPAL";
 	
 	private boolean lotePossuiXMLsComErro;
-	private int qtdLoteProcessosSalvos;
 	
 	public static void main(String[] args) throws Exception {
 		progresso = new ProgressoInterfaceGrafica("(2/6) Geração de XMLs individuais");
@@ -283,11 +280,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			}
 		}
 		
-		this.atualizarSituacaoLoteCriado(loteAtual);
+		this.atualizarSituacaoLoteCriado(loteAtual, processosEnvio.size());
 	}
 	
 	private Lote obterLoteAtual(Remessa remessa) {
-		//TODO testar
 		Lote ultimoLoteRemessa = remessa.getLotes().isEmpty() ? null : Collections.max(remessa.getLotes(), Comparator.comparing(s -> new Integer(s.getNumero())));
 
 		Lote loteAtual = new Lote();
@@ -334,17 +330,22 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 	}
 	
-	private void atualizarSituacaoLoteCriado(Lote lote) {
+	private void atualizarSituacaoLoteCriado(Lote lote, int quantidadeProcessosRemessa) {
 		try {
 			JPAUtil.iniciarTransacao();
-			if (this.lotePossuiXMLsComErro) {
-				lote.setSituacao(SituacaoLoteEnum.CRIADO_COM_ERROS);				
+			if (quantidadeProcessosRemessa == lote.getLotesProcessos().size()) {
+				if (this.lotePossuiXMLsComErro) {
+					lote.setSituacao(SituacaoLoteEnum.CRIADO_COM_ERROS);				
+				} else {
+					lote.setSituacao(SituacaoLoteEnum.CRIADO_SEM_ERROS);	
+				}				
+				loteDAO.alterar(lote);
+				
+			} else if (quantidadeProcessosRemessa > lote.getLotesProcessos().size()) {
+				lote.setSituacao(SituacaoLoteEnum.CRIADO_PARCIALMENTE);
 			} else {
-				lote.setSituacao(SituacaoLoteEnum.CRIADO_SEM_ERROS);	
+				LOGGER.error("Atenção: O lote mais recente desta Remessa possui mais processos do que o esperado.");
 			}
-
-			loteDAO.alterar(lote);
-
 			JPAUtil.commit();
 		} catch (Exception e) {
 			String origemOperacao = "Erro ao salvar situação do lote.";
@@ -408,192 +409,204 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 		// Carrega a lista de processos que precisará ser analisada
 		List<ProcessoEnvio> listaProcessos = this.getProcessos(grau, baseEmAnalise);
-
-		// Monta uma lista de "operações" (cada operação é um processo a ser baixado)
-		Map<String, ProcessoEnvio> mapProcessos = listaProcessos.stream().collect(Collectors.toMap(ProcessoEnvio::getNumeroProcesso, x -> x));
-		
-		// Quando a inserção é realizada em um lote cadastrado parcialmente ou gerado com erros, só será necessário adicionar
-		// no lote os processos que ainda não foram tratados ou que tiveram erro na geração do XML.
-		Map<String, LoteProcesso> mapProcessosComXMLGeradoComErro = new HashMap<String, LoteProcesso>();
-		for (LoteProcesso loteProcesso : lote.getLotesProcessos()) {
-			if (loteProcesso.getSituacao().equals(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO)) { 
-				ChaveProcessoCNJ chaveProcesso = loteProcesso.getChaveProcessoCNJ();
-				String chave = this.getChaveMapa(chaveProcesso.getGrau(), chaveProcesso.getNumeroProcesso(), chaveProcesso.getCodigoClasseJudicial(), chaveProcesso.getCodigoOrgaoJulgador());
-				mapProcessosComXMLGeradoComErro.put(chave, loteProcesso);
-			} else {
-				String numeroProcesso = loteProcesso.getChaveProcessoCNJ().getNumeroProcesso();
-				if (mapProcessos.containsKey(numeroProcesso)) {
-					mapProcessos.remove(numeroProcesso);
-					LOGGER.trace("O XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
-					if (progresso != null) {
-						progresso.incrementProgress();
-					}
-				}
-			}
-		}
-		
-		List<ProcessoEnvio> operacoes = new ArrayList<>(mapProcessos.values());
-
-		// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
-		final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos, 1), 1);
-		final AtomicInteger counter = new AtomicInteger();
-		final Collection<List<ProcessoEnvio>> lotesProcessos = operacoes.stream()
-		    .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote))
-		    .values();
-
-		//Para evitar a exceção "Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingFileAppender 
-		//for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
-		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1) > lotesProcessos.size() ? 
-				lotesProcessos.size() : 
-				Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
-		
-		statusString = "Gerando XMLs do " + grau + "o Grau";
+		statusString = "Gerando XMLs do " + grau + "o Grau. Base: " + baseEmAnalise.getDescricao();
 		LOGGER.info(statusString + "...");
-		AtomicInteger posicaoAtual = new AtomicInteger();
-		this.qtdLoteProcessosSalvos = 0;
-		for (List<ProcessoEnvio> processosEnvio : lotesProcessos) {
-			try {
-				JPAUtil.iniciarTransacao();
-				List<String> processosPendentes = processosEnvio.stream().map(o -> o.getNumeroProcesso()).collect(Collectors.toList());
-				prepararCacheDadosProcessos(processosPendentes, grau, baseEmAnalise, baseEmAnalise.isBasePJe());
+		if (listaProcessos != null && !listaProcessos.isEmpty()) {
 
-				ExecutorService threadPool = Executors.newFixedThreadPool(numeroThreads);
-				for (ProcessoEnvio processoEnvio : processosEnvio) {
-					
-					// Cálculo do tempo restante
-					long antes = System.currentTimeMillis();
-					int i = posicaoAtual.incrementAndGet();
-					threadPool.execute(() -> {
-					
-						Auxiliar.prepararThreadLog();
-						// Calcula e mostra tempo restante
-						// TODO: Sugerir calcular o ETA a partir do tempo de lote, já que fica difícil calcular individualmente, de forma precisa, em multi-thread. 
-						int xmlsRestantes = operacoes.size() - i;
-						long tempoRestante = 0;
-						long mediaPorProcesso = 0;
-						if (qtdXMLGerados.get() > 0) {
-							mediaPorProcesso = tempoGasto.get() / qtdXMLGerados.get();
-							tempoRestante = xmlsRestantes * mediaPorProcesso / numeroThreads;
-						}
-						String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
-						LOGGER.debug("Gravando Processo " + processoEnvio.getNumeroProcesso() + " (" + i + "/" + operacoes.size() + " - " + i * 100 / operacoes.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + ")...");
-						if (tempoRestanteStr != null && progresso != null) {
-							progresso.setInformacoes("G" + grau + " - " + tempoRestanteStr);
-						}
+			// Monta uma lista de "operações" (cada operação é um processo a ser baixado)
+			Map<String, ProcessoEnvio> mapProcessos = listaProcessos.stream().collect(Collectors.toMap(ProcessoEnvio::getNumeroProcesso, x -> x));
 			
-						String origemOperacao = processoEnvio.getNumeroProcesso() + ", base " + baseEmAnalise + ", grau " + grau;
-						LoteProcesso loteProcesso = new LoteProcesso();
-						try {
-							// Executa a consulta desse processo no banco de dados do PJe
-							TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(processoEnvio.getNumeroProcesso(), grau, baseEmAnalise);
-				
-							if (Auxiliar.getParametroBooleanConfiguracao(Parametro.mesclar_movimentos_xml_legado_migrado, false)) {
-							    mesclarMovimentosLegadoMigrado(processoEnvio.getNumeroProcesso(), processoJudicial, grau);   
-							}
-	                                                
-							// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
-							// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
-							// processo serão unificados, junto com os XMLs dos outros sistemas legados.
-							Processos processos = new Processos();
-							processos.getProcesso().add(processoJudicial);
+			// Quando a inserção é realizada em um lote cadastrado parcialmente ou gerado com erros, só será necessário adicionar
+			// no lote os processos que ainda não foram tratados ou que tiveram erro na geração do XML.
+			Map<String, LoteProcesso> mapProcessosComXMLGeradoComErro = new HashMap<String, LoteProcesso>();
 
-							byte [] conteudoXML = null;
-							// Gera o arquivo XML
-							synchronized (jaxbMarshaller) {
-								ByteArrayOutputStream out = new ByteArrayOutputStream();
-								jaxbMarshaller.marshal(processos, out);
-								conteudoXML = out.toByteArray();
-							}
-							
-							//Criando a estrutura de banco
-							String codClasseJudicial = Integer.toString(processoJudicial.getDadosBasicos().getClasseProcessual());
-							Long codOJ = new Long(processoJudicial.getDadosBasicos().getOrgaoJulgador().getCodigoOrgao());
-							if (codClasseJudicial == null || codOJ == null) {
-								throw new DataJudException("Não foi possível gerar o XML do processo " + processoEnvio.getNumeroProcesso() + " Grau: " + grau 
-										+ ". O código da classe judicial e do órgão julgador deve ser um valor válido.");
-							}
-							String chave = this.getChaveMapa(Integer.toString(grau), processoEnvio.getNumeroProcesso(), codClasseJudicial, codOJ);
-							
-							
-							if (mapProcessosComXMLGeradoComErro.containsKey(chave)) {
-								//Processo presente no lote e que possuia um XML gerado, mas com erro.
-								loteProcesso = mapProcessosComXMLGeradoComErro.get(chave);
-								
-							} else {
-								//Gerando um novo processo para o lote atual
-								ChaveProcessoCNJ chaveProcessoCNJPersistida = chaveProcessoCNJDAO.getChaveProcessoCNJ(
-										processoEnvio.getNumeroProcesso(), codClasseJudicial, codOJ, Integer.toString(grau));
-								
-								ChaveProcessoCNJ chaveProcessoCNJ = new ChaveProcessoCNJ();
-								if (chaveProcessoCNJPersistida == null) {
-									chaveProcessoCNJ.setCodigoOrgaoJulgador(codOJ);
-									chaveProcessoCNJ.setCodigoClasseJudicial(codClasseJudicial);
-									chaveProcessoCNJ.setNumeroProcesso(processoEnvio.getNumeroProcesso());
-									chaveProcessoCNJ.setGrau(Integer.toString(grau));
-								} else {
-									chaveProcessoCNJ = chaveProcessoCNJPersistida;
-								}
-
-								loteProcesso.setChaveProcessoCNJ(chaveProcessoCNJ);
-								loteProcesso.setLote(lote);
-							}
-							
-							loteProcesso.setConteudoXML(conteudoXML);
-							loteProcesso.setSituacao(SituacaoLoteProcessoEnum.XML_GERADO_COM_SUCESSO);
-							loteProcesso.setOrigem(processoEnvio.getOrigem());
-							
-							loteProcessoDAO.incluirOuAlterar(loteProcesso);								
-		
-							if (this.qtdLoteProcessosSalvos > 0 && this.qtdLoteProcessosSalvos % BATCH_SIZE == 0) {
-								JPAUtil.flush();
-								JPAUtil.clear();
-							}
-							this.qtdLoteProcessosSalvos++;
-			
-							// OPCIONAL: Valida o arquivo XML com o "Programa validador de arquivos XML" do CNJ
-							validarArquivoXML(conteudoXML, grau, processoEnvio);
-							
-							// Geração ocorreu com sucesso!!
-							LOGGER.trace("Processo gravado com sucesso: " + processoEnvio.getNumeroProcesso());
-							
-							// Cálculo do tempo restante
-							tempoGasto.addAndGet(System.currentTimeMillis() - antes);
-							qtdXMLGerados.incrementAndGet();
-				
-							AcumuladorExceptions.instance().removerException(origemOperacao);
-							
-						} catch (Exception ex) {
-							try {
-								this.lotePossuiXMLsComErro = true;
-								loteProcesso.setSituacao(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO);
-								loteProcessoDAO.incluirOuAlterar(loteProcesso);
-							} catch (Exception e2) { 
-							}
-							AcumuladorExceptions.instance().adicionarException(origemOperacao, "Erro na geração do XML do processo: " + ex.getLocalizedMessage(), ex, true);
-						}
-						
+			for (LoteProcesso loteProcesso : lote.getLotesProcessos()) {
+				if (loteProcesso.getSituacao().equals(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO)) { 
+					ChaveProcessoCNJ chaveProcesso = loteProcesso.getChaveProcessoCNJ();
+					String chave = this.getChaveMapa(chaveProcesso.getGrau(), chaveProcesso.getNumeroProcesso(), chaveProcesso.getCodigoClasseJudicial(), chaveProcesso.getCodigoOrgaoJulgador());
+					mapProcessosComXMLGeradoComErro.put(chave, loteProcesso);
+				} else {
+					String numeroProcesso = loteProcesso.getChaveProcessoCNJ().getNumeroProcesso();
+					if (mapProcessos.containsKey(numeroProcesso)) {
+						mapProcessos.remove(numeroProcesso);
+						LOGGER.trace("O XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
 						if (progresso != null) {
 							progresso.incrementProgress();
 						}
-					});
+					}
 				}
-			
-				JPAUtil.commit();
-				threadPool.shutdown();
-				threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-			} catch (Exception e) {
-				String origemOperacao = "Erro ao salvar XMLs de processos. Grau: " + grau;
-				AcumuladorExceptions.instance().adicionarException(origemOperacao,
-						"Erro ao salvar XMLs de processos: " + e.getLocalizedMessage(), e, true);
-				JPAUtil.rollback();
-			} finally {
-				// JPAUtil.printEstatisticas();
-				JPAUtil.close();
 			}
+			
+			List<ProcessoEnvio> operacoes = new ArrayList<>(mapProcessos.values());
+	
+			// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
+			final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos, 1), 1);
+			final AtomicInteger counter = new AtomicInteger();
+			final Collection<List<ProcessoEnvio>> lotesProcessos = operacoes.stream()
+			    .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote))
+			    .values();
+	
+			//Para evitar a exceção "Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingFileAppender 
+			//for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
+			int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1) > lotesProcessos.size() ? 
+					lotesProcessos.size() : 
+					Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
+			
+			AtomicInteger posicaoAtual = new AtomicInteger();
+			for (List<ProcessoEnvio> processosEnvio : lotesProcessos) {
+				try {
+					JPAUtil.iniciarTransacao();
+					List<String> processosPendentes = processosEnvio.stream().map(o -> o.getNumeroProcesso()).collect(Collectors.toList());
+					prepararCacheDadosProcessos(processosPendentes, grau, baseEmAnalise, baseEmAnalise.isBasePJe());
+	
+					ExecutorService threadPool = Executors.newFixedThreadPool(numeroThreads);
+					for (ProcessoEnvio processoEnvio : processosEnvio) {
+						
+						// Cálculo do tempo restante
+						long antes = System.currentTimeMillis();
+						int i = posicaoAtual.incrementAndGet();
+						threadPool.execute(() -> {
+						
+							Auxiliar.prepararThreadLog();
+							// Calcula e mostra tempo restante
+							// TODO: Sugerir calcular o ETA a partir do tempo de lote, já que fica difícil calcular individualmente, de forma precisa, em multi-thread. 
+							int xmlsRestantes = operacoes.size() - i;
+							long tempoRestante = 0;
+							long mediaPorProcesso = 0;
+							if (qtdXMLGerados.get() > 0) {
+								mediaPorProcesso = tempoGasto.get() / qtdXMLGerados.get();
+								tempoRestante = xmlsRestantes * mediaPorProcesso / numeroThreads;
+							}
+							String tempoRestanteStr = tempoRestante == 0 ? null : "ETA: " + DurationFormatUtils.formatDurationHMS(tempoRestante);
+							LOGGER.debug("Gravando Processo " + processoEnvio.getNumeroProcesso() + " (" + i + "/" + operacoes.size() + " - " + i * 100 / operacoes.size() + "%" + (tempoRestanteStr == null ? "" : " - " + tempoRestanteStr) + (mediaPorProcesso == 0 ? "" : ", media de " + mediaPorProcesso + "ms/processo") + ")...");
+							if (tempoRestanteStr != null && progresso != null) {
+								progresso.setInformacoes("G" + grau + " - " + tempoRestanteStr);
+							}
+				
+							String origemOperacao = processoEnvio.getNumeroProcesso() + ", base " + baseEmAnalise + ", grau " + grau;
+							LoteProcesso loteProcesso = new LoteProcesso();
+							try {
+								// Executa a consulta desse processo no banco de dados do PJe
+								TipoProcessoJudicial processoJudicial = analisarProcessoJudicialCompleto(processoEnvio.getNumeroProcesso(), grau, baseEmAnalise);
+					
+								if (Auxiliar.getParametroBooleanConfiguracao(Parametro.mesclar_movimentos_xml_legado_migrado, false)) {
+								    mesclarMovimentosLegadoMigrado(processoEnvio.getNumeroProcesso(), processoJudicial, grau);   
+								}
+		                                                
+								// Objeto que, de acordo com o padrão MNI, que contém uma lista de processos. 
+								// Nesse caso, ele conterá somente UM processo. Posteriormente, os XMLs de cada
+								// processo serão unificados, junto com os XMLs dos outros sistemas legados.
+								Processos processos = new Processos();
+								processos.getProcesso().add(processoJudicial);
+	
+								byte [] conteudoXML = null;
+								// Gera o arquivo XML
+								synchronized (jaxbMarshaller) {
+									ByteArrayOutputStream out = new ByteArrayOutputStream();
+									jaxbMarshaller.marshal(processos, out);
+									conteudoXML = out.toByteArray();
+								}
+								String codClasseJudicial = Integer.toString(processoJudicial.getDadosBasicos().getClasseProcessual());
+								Long codOJ = new Long(processoJudicial.getDadosBasicos().getOrgaoJulgador().getCodigoOrgao());
+								
+								loteProcesso = this.salvarXML(grau, processoEnvio, lote, loteProcesso, codClasseJudicial, codOJ, conteudoXML, mapProcessosComXMLGeradoComErro);							
+				
+								// OPCIONAL: Valida o arquivo XML com o "Programa validador de arquivos XML" do CNJ
+								validarArquivoXML(conteudoXML, grau, processoEnvio);
+								
+								// Geração ocorreu com sucesso!!
+								LOGGER.trace("Processo gravado com sucesso: " + processoEnvio.getNumeroProcesso());
+								
+								// Cálculo do tempo restante
+								tempoGasto.addAndGet(System.currentTimeMillis() - antes);
+								qtdXMLGerados.incrementAndGet();
+					
+								AcumuladorExceptions.instance().removerException(origemOperacao);
+								
+							} catch (Exception ex) {
+								try {
+									this.ajustarSituacaoLoteProcesso(loteProcesso);
+								} catch (Exception e2) { 
+								}
+								AcumuladorExceptions.instance().adicionarException(origemOperacao, "Erro na geração do XML do processo: " + ex.getLocalizedMessage(), ex, true);
+							}
+							
+							if (progresso != null) {
+								progresso.incrementProgress();
+							}
+						});
+					}
+				
+					threadPool.shutdown();
+					threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+					JPAUtil.commit();
+				} catch (Exception e) {
+					String origemOperacao = "Erro ao salvar XMLs de processos. Grau: " + grau;
+					AcumuladorExceptions.instance().adicionarException(origemOperacao,
+							"Erro ao salvar XMLs de processos: " + e.getLocalizedMessage(), e, true);
+					JPAUtil.rollback();
+				} finally {
+					// JPAUtil.printEstatisticas();
+					JPAUtil.close();
+				}
+			}
+			LOGGER.info("Arquivos XML da base " + baseEmAnalise.getDescricao() + " - " + grau + "o Grau gerados!");
+		} else {
+			LOGGER.info("Nenhum Processo foi localizado na base " + baseEmAnalise.getDescricao() + " - " + grau + "o Grau");
 		}
-		LOGGER.info("Arquivos XML da base " + baseEmAnalise.getDescricao() + " - " + grau + "o Grau gerados!");
 		this.statusString = null;
 	}
+	
+	private synchronized void ajustarSituacaoLoteProcesso(LoteProcesso loteProcesso) {
+		this.lotePossuiXMLsComErro = true;
+		loteProcesso.setSituacao(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO);
+		loteProcessoDAO.incluirOuAlterar(loteProcesso);
+	}
+	
+	private synchronized LoteProcesso salvarXML(int grau, ProcessoEnvio processoEnvio, Lote lote, LoteProcesso loteProcesso, String codClasseJudicial, 
+			Long codOJ, byte [] conteudoXML, Map<String, LoteProcesso> mapProcessosComXMLGeradoComErro) throws DataJudException {
+		if (codClasseJudicial == null || codOJ == null) {
+			throw new DataJudException("Não foi possível gerar o XML do processo " + processoEnvio.getNumeroProcesso() + " Grau: " + grau 
+					+ ". O código da classe judicial e do órgão julgador deve ser um valor válido.");
+		}
+		String chave = this.getChaveMapa(Integer.toString(grau), processoEnvio.getNumeroProcesso(), codClasseJudicial, codOJ);
+		
+		
+		if (mapProcessosComXMLGeradoComErro.containsKey(chave)) {
+			//LoteProcesso presente no lote e já possui um XML gerado, mas com erro.
+			loteProcesso = mapProcessosComXMLGeradoComErro.get(chave);
+			
+		} else {
+			//Gerando um novo processo para o lote atual
+			ChaveProcessoCNJ chaveProcessoCNJPersistida = chaveProcessoCNJDAO.getChaveProcessoCNJ(
+					processoEnvio.getNumeroProcesso(), codClasseJudicial, codOJ, Integer.toString(grau));
+			
+			ChaveProcessoCNJ chaveProcessoCNJ = new ChaveProcessoCNJ();
+			if (chaveProcessoCNJPersistida == null) {
+				chaveProcessoCNJ.setCodigoOrgaoJulgador(codOJ);
+				chaveProcessoCNJ.setCodigoClasseJudicial(codClasseJudicial);
+				chaveProcessoCNJ.setNumeroProcesso(processoEnvio.getNumeroProcesso());
+				chaveProcessoCNJ.setGrau(Integer.toString(grau));
+			} else {
+				chaveProcessoCNJ = chaveProcessoCNJPersistida;
+			}
+
+			loteProcesso.setChaveProcessoCNJ(chaveProcessoCNJ);
+			loteProcesso.setLote(lote);
+			
+			if (loteProcesso.getId() == null) {
+				lote.getLotesProcessos().add(loteProcesso);				
+			}
+			
+		}
+		
+		loteProcesso.setConteudoXML(conteudoXML);
+		loteProcesso.setSituacao(SituacaoLoteProcessoEnum.XML_GERADO_COM_SUCESSO);
+		loteProcesso.setOrigem(processoEnvio.getOrigem());
+		
+		loteProcessoDAO.incluirOuAlterar(loteProcesso);	
+		return loteProcesso;
+	} 
 	
 	private String getChaveMapa(String grau, String numProcesso, String codClasse, Long codOrgaoJulgador) {
 		return (grau + "_" + codClasse + "_" + numProcesso + "_" + codOrgaoJulgador);
@@ -1767,13 +1780,13 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		
 		// Objeto que identificará os movimentos processuais das tabelas nacionais do CNJ
 		Connection conexaoPJe = null;
-		if (this.baseEmAnalise.isBaseLegado()) {
-			conexaoPJe = Auxiliar.getConexao(this.grau, BaseEmAnaliseEnum.PJE);
+		if (baseEmAnalise.isBaseLegado()) {
+			conexaoPJe = Auxiliar.getConexao(grau, BaseEmAnaliseEnum.PJE);
 			conexaoPJe.setAutoCommit(false);			
 		} else {
 			conexaoPJe = this.conexaoBasePrincipal;
 		}
-		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(this.baseEmAnalise, conexaoPJe);
+		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(baseEmAnalise, conexaoPJe);
 		analisaClassesProcessuaisCNJ = new AnalisaClassesProcessuaisCNJ();
 		
 		this.statusString = null;
