@@ -21,6 +21,8 @@ public enum Parametro {
 	tamanho_lote_geracao_processos_operacao_2,
 	numero_threads_simultaneas_operacao_2,
 	numero_threads_simultaneas_operacao_3,
+	situacao_xml_para_envio_operacao_3,
+	tamanho_lote_envio_operacao_3,
 	tipo_carga_xml,
 	mes_ano_corte,
 	codigo_municipio_ibge_trt,

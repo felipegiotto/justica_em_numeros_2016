@@ -245,15 +245,12 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 	 */
 	@SuppressWarnings("deprecation")
 	public void executarOperacaoGeracaoXML() throws Exception {
-		LocalDate dataCorte = DataJudUtil.getDataCorte();
-		TipoRemessaEnum tipoRemessa = DataJudUtil.getTipoRemessa();
-		if (tipoRemessa == null) {
-			// TODO: implementar os ajustes necessários para que a aplicação funcione para os tipos de carga:
-			// TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO. Outra possibilidade é remover de vez essas cargas do código.
-			throw new RuntimeException("Apenas os tipos de carga MENSAL e COMPLETA estão funcionando adequadamente.");
-		}
+		LocalDate dataCorteRemessaAtual = DataJudUtil.getDataCorte();
+		TipoRemessaEnum tipoRemessaAtual = DataJudUtil.getTipoRemessa();
+
+		Auxiliar.validarTipoRemessaAtual(tipoRemessaAtual);
 		
-		Remessa remessa = remessaDAO.getRemessa(dataCorte, tipoRemessa, false, true);
+		Remessa remessa = remessaDAO.getRemessa(dataCorteRemessaAtual, tipoRemessaAtual, false, true);
 		
 		if (remessa == null) {
 			throw new RuntimeException("Não foi possível localizar a remessa indicada em config.properties. "
@@ -264,7 +261,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 		
 		this.salvarRemessa(loteAtual.getRemessa());
 		
-		List<ProcessoEnvio> processosEnvio = processoEnvioDAO.getProcessosRemessa(dataCorte, tipoRemessa);
+		List<ProcessoEnvio> processosEnvio = processoEnvioDAO.getProcessosRemessa(dataCorteRemessaAtual, tipoRemessaAtual);
 
 		// Conta quantos processos serão baixados, para mostrar barra de progresso
 		if (progresso != null) {
@@ -306,7 +303,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 				remessa.getLotes().add(loteAtual);
 			} else if (ultimoLoteRemessa.getSituacao().in(SituacaoLoteEnum.CRIADO_PARCIALMENTE, SituacaoLoteEnum.CRIADO_COM_ERROS)) {
 				// Atualizando o último lote da remessa que foi criado parcialmente ou com erros. As listas serão carregadas.
-				loteAtual = loteDAO.getUltimoLoteDeUmaRemessa(remessa, true);
+				loteAtual = loteDAO.getUltimoLoteDeUmaRemessa(remessa.getDataCorte(), remessa.getTipoRemessa(), true);
 			}
 		}
 		
@@ -383,9 +380,6 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 				String chaveProcessosComXMLGeradosCorretamente = chaveProcesso.getGrau() + "_" + chaveProcesso.getNumeroProcesso();
 				mapProcessosComXMLGeradosCorretamente.put(chaveProcessosComXMLGeradosCorretamente, chaveProcesso.getNumeroProcesso());
 			}
-//			FileUtils.writeByteArrayToFile(Auxiliar.gerarNomeArquivoIndividualParaProcesso(loteProcesso.getOrigem().equals(OrigemProcessoEnum.LEGADO) 
-//					? BaseEmAnaliseEnum.LEGADO : BaseEmAnaliseEnum.PJE, 
-//					new Integer(loteProcesso.getChaveProcessoCNJ().getGrau()), loteProcesso.getChaveProcessoCNJ().getNumeroProcesso()), loteProcesso.getConteudoXML());
 		}
 
 		for (ProcessoEnvio processoEnvio : processosEnvio) {
@@ -441,18 +435,18 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 			// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
 			final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos_operacao_2, 1), 1);
 			final AtomicInteger counter = new AtomicInteger();
-			final Collection<List<ProcessoEnvio>> lotesProcessos = operacoes.stream()
+			final Collection<List<ProcessoEnvio>> lotesProcessosParaEnvio = operacoes.stream()
 			    .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote))
 			    .values();
 	
 			//Para evitar a exceção "Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingFileAppender 
 			//for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
-			int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_2, 1) > lotesProcessos.size() 
-					? lotesProcessos.size() 
+			int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_2, 1) > lotesProcessosParaEnvio.size() 
+					? lotesProcessosParaEnvio.size() 
 					: Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_2, 1);
 			
 			AtomicInteger posicaoAtual = new AtomicInteger();
-			for (List<ProcessoEnvio> processosEnvio : lotesProcessos) {
+			for (List<ProcessoEnvio> processosEnvio : lotesProcessosParaEnvio) {
 				try {
 					JPAUtil.iniciarTransacao();
 					List<String> processosPendentes = processosEnvio.stream().map(o -> o.getNumeroProcesso()).collect(Collectors.toList());
@@ -678,7 +672,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 			
 			try {
 				HttpPost post = new HttpPost(url);
-				String nomeArquivo = grau + "_" + processoEnvio.getGrau();
+				String nomeArquivo = grau + "_" + processoEnvio.getNumeroProcesso();
 				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("arquivo", conteudoXML, ContentType.DEFAULT_BINARY, nomeArquivo).build();
 				post.setEntity(entity);
 				

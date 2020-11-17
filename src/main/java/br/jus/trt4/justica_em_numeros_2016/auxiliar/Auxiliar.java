@@ -60,18 +60,24 @@ public class Auxiliar {
 	private static final SimpleDateFormat dfDataMovimentoProcessual = new SimpleDateFormat("yyyyMMddHHmmss");
 	private static final DateTimeFormatter dfDataDiaMesAno = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	private static File pastaSaida = null;
+	
 	public static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
 	public static final String SUFIXO_PROTOCOLO = ".protocolo";
 	public static final String SUFIXO_PROTOCOLO_SUCESSO = ".sucesso";
 	public static final String SUFIXO_PROTOCOLO_ERRO = ".erro";
+	
 	public static final String SISTEMA_JUDICIAL_APENAS_LEGADO = "APENAS_LEGADO";
 	public static final String SISTEMA_JUDICIAL_APENAS_PJE = "APENAS_PJE";
 	public static final String SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO = "APENAS_PJE_COM_MIGRADOS_LEGADO";
 	public static final String SISTEMA_JUDICIAL_TODOS = "TODOS";
+	
 	public static final String VALIDACAO_CNJ_TODOS = "TODOS";
 	public static final String VALIDACAO_CNJ_TODOS_COM_ERRO = "TODOS_COM_ERRO";
 	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO = "APENAS_COM_ERRO_PROCESSADO_COM_ERRO";
 	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO = "APENAS_COM_ERRO_NO_ARQUIVO";
+	
+	public static final String ENVIAR_TODOS_OS_XMLS = "TODOS";
+	public static final String ENVIAR_APENAS_XMLS_GERADOS_COM_SUCESSO = "APENAS_SUCESSO";
 	
 	private static final ProcessoEnvioDao processoEnvioDAO = new ProcessoEnvioDao();
 	
@@ -874,6 +880,15 @@ public class Auxiliar {
 
 		return retorno;
 	}
+	
+	public static void validarTipoRemessaAtual(TipoRemessaEnum tipoRemessaAtual) {
+		if (tipoRemessaAtual == null) {
+			// TODO: implementar os ajustes necessários para que a aplicação funcione para os tipos de carga:
+			// TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO. Outra possibilidade é remover de vez essas cargas do código.
+			throw new RuntimeException("Apenas os tipos de carga MENSAL e COMPLETA estão funcionando adequadamente.");
+		}
+	}
+	
 	
 	public static File getArquivoconfiguracoes() {
 		return arquivoConfiguracoes;

@@ -1,9 +1,12 @@
 package br.jus.trt4.justica_em_numeros_2016.dao;
 
+import java.time.LocalDate;
+
 import javax.persistence.TypedQuery;
 
 import br.jus.trt4.justica_em_numeros_2016.entidades.Lote;
 import br.jus.trt4.justica_em_numeros_2016.entidades.Remessa;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
 /**
  * Classe responsável por acessar dados da entidade Lote
@@ -21,21 +24,25 @@ public class LoteDao extends DataJudBaseDao<Lote> {
      * 
      * @return uma instância do Lote
      */
-	public Lote getUltimoLoteDeUmaRemessa(Remessa remessa, boolean fetchLoteProcesso) {
+	public Lote getUltimoLoteDeUmaRemessa(LocalDate dataCorte, TipoRemessaEnum tipoRemessa, boolean fetchLoteProcesso) {
 		StringBuilder hql = new StringBuilder();
 		hql.append("select lot from Lote lot ");
 		if (fetchLoteProcesso) {
 			hql.append(" LEFT JOIN FETCH lot.lotesProcessos lp ");	
-			hql.append(" LEFT JOIN FETCH lp.chaveProcessoCNJ ch ");	
+			hql.append(" LEFT JOIN FETCH lp.chaveProcessoCNJ ch ");
 		}
-		hql.append(" where lot.remessa.id = :idRemessa ");
+		hql.append(" where lot.remessa.dataCorte = :dataCorte ");
+		hql.append(" and lot.remessa.tipoRemessa = :tipoRemessa ");
 		hql.append(" and lot.numero = ( select MAX(lotm.numero) from Lote lotm ");
-		hql.append(" where lotm.remessa.id = :idRemessa )");
+		hql.append(" where lotm.remessa.dataCorte = :dataCorte ");
+		hql.append(" and lotm.remessa.tipoRemessa = :tipoRemessa)");
 
 		TypedQuery<Lote> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Lote.class);
-		query.setParameter("idRemessa", remessa.getId());
+		query.setParameter("dataCorte", dataCorte);
+		query.setParameter("tipoRemessa", tipoRemessa);
 
 		return getSingleResultOrNull(query);
 	}
+
 
 }
