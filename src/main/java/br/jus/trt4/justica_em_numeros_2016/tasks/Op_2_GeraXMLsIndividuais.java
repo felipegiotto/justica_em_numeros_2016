@@ -159,6 +159,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private Map<String, String> mapaProcessosHibridos;
 	
 	private Map<String, List<ProcessoEnvio>> mapaProcessosPorGrauEBaseAnalise;
+	private Map<String, LoteProcesso> mapProcessosComXMLGeradoComErro;
 	
 	private static final RemessaDao remessaDAO = new RemessaDao();
 	private static final LoteDao loteDAO = new LoteDao();
@@ -174,7 +175,6 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	// resultando em menos consultas ao banco de dados.
 	private final Map<String, ProcessoDto> cacheProcessosHibridosDtos = new HashMap<>();
 	
-	private static final int BATCH_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_batch);
 
 	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_PROCESSO = "DESCARTAR_PROCESSO";
 	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_MOVIMENTO = "DESCARTAR_MOVIMENTO";
@@ -273,7 +273,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	    int [] graus = {1, 2};
 	    BaseEmAnaliseEnum [] basesEmAnaliseEnums = {BaseEmAnaliseEnum.PJE, BaseEmAnaliseEnum.LEGADO};
 	    this.lotePossuiXMLsComErro = false;
-	    this.carregarMapasProcessos(processosEnvio);
+	    this.carregarMapasProcessos(processosEnvio, loteAtual.getLotesProcessos());
 		for (int grau : graus) {	
 			for (BaseEmAnaliseEnum baseEmAnalise : basesEmAnaliseEnums) {	
 				this.gerarXMLs(grau, baseEmAnalise, loteAtual);
@@ -367,26 +367,47 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		gerarXML(grau, baseEmAnalise, lote);
 	}
 	
-	private void carregarMapasProcessos (List<ProcessoEnvio> processosEnvio) {
+	private void carregarMapasProcessos (List<ProcessoEnvio> processosEnvio, List<LoteProcesso> processosLote) {
 		this.mapaProcessosPorGrauEBaseAnalise = new HashMap<String, List<ProcessoEnvio>>();
 		this.mapaProcessosHibridos = new HashMap<String, String>();
+		this.mapProcessosComXMLGeradoComErro = new HashMap<String, LoteProcesso>();
+		Map<String, String> mapProcessosComXMLGeradosCorretamente = new HashMap<String, String>();
 		
-		for (ProcessoEnvio processoEnvio : processosEnvio) {
-			if (processoEnvio.getOrigem().equals(OrigemProcessoEnum.HIBRIDO)) {
-				String chaveMigrados = processoEnvio.getGrau() + "_" + processoEnvio.getNumeroProcesso();			
-				this.mapaProcessosHibridos.put(chaveMigrados, processoEnvio.getNumeroProcesso());
+		for (LoteProcesso loteProcesso : processosLote) {
+			ChaveProcessoCNJ chaveProcesso = loteProcesso.getChaveProcessoCNJ();
+			if (loteProcesso.getSituacao().equals(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO)) { 
+				String chave = this.getChaveMapProcessosComXMLGeradoComErro(chaveProcesso.getGrau(), chaveProcesso.getNumeroProcesso(), chaveProcesso.getCodigoClasseJudicial(), chaveProcesso.getCodigoOrgaoJulgador());
+				this.mapProcessosComXMLGeradoComErro.put(chave, loteProcesso);
+			} else {
+				String chaveProcessosComXMLGeradosCorretamente = chaveProcesso.getGrau() + "_" + chaveProcesso.getNumeroProcesso();
+				mapProcessosComXMLGeradosCorretamente.put(chaveProcessosComXMLGeradosCorretamente, chaveProcesso.getNumeroProcesso());
 			}
-			
-			BaseEmAnaliseEnum baseEmAnaliseProcesso = processoEnvio.getOrigem().equals(OrigemProcessoEnum.LEGADO)
-					? BaseEmAnaliseEnum.LEGADO
-					: BaseEmAnaliseEnum.PJE;
-			String chaveGrauBase = processoEnvio.getGrau() + "_" + baseEmAnaliseProcesso.getDescricao();
-			if (!this.mapaProcessosPorGrauEBaseAnalise.containsKey(chaveGrauBase)) {
-				this.mapaProcessosPorGrauEBaseAnalise.put(chaveGrauBase, new ArrayList<ProcessoEnvio>());
-			}
-			this.mapaProcessosPorGrauEBaseAnalise.get(chaveGrauBase).add(processoEnvio);
 		}
 
+		for (ProcessoEnvio processoEnvio : processosEnvio) {
+			String chaveProcessosComXMLGeradosCorretamente = processoEnvio.getGrau() + "_" + processoEnvio.getNumeroProcesso();
+			if (mapProcessosComXMLGeradosCorretamente.containsKey(chaveProcessosComXMLGeradosCorretamente)) {
+				LOGGER.trace("O XML do processo " + mapProcessosComXMLGeradosCorretamente.get(chaveProcessosComXMLGeradosCorretamente) + " já existe e não será gerado novamente.");
+				if (progresso != null) {
+					progresso.incrementProgress();
+				}
+			} else {
+				//Processos que não tiveram o XML gerado ainda, ou que tiveram o XML gerados com Erro
+				if (processoEnvio.getOrigem().equals(OrigemProcessoEnum.HIBRIDO)) {
+					String chaveMigrados = processoEnvio.getGrau() + "_" + processoEnvio.getNumeroProcesso();			
+					this.mapaProcessosHibridos.put(chaveMigrados, processoEnvio.getNumeroProcesso());
+				}
+				
+				BaseEmAnaliseEnum baseEmAnaliseProcesso = processoEnvio.getOrigem().equals(OrigemProcessoEnum.LEGADO)
+						? BaseEmAnaliseEnum.LEGADO
+								: BaseEmAnaliseEnum.PJE;
+				String chaveGrauBase = processoEnvio.getGrau() + "_" + baseEmAnaliseProcesso.getDescricao();
+				if (!this.mapaProcessosPorGrauEBaseAnalise.containsKey(chaveGrauBase)) {
+					this.mapaProcessosPorGrauEBaseAnalise.put(chaveGrauBase, new ArrayList<ProcessoEnvio>());
+				}
+				this.mapaProcessosPorGrauEBaseAnalise.get(chaveGrauBase).add(processoEnvio);
+			}
+		}
 	}
 	
 	private List<ProcessoEnvio> getProcessos (int grau, BaseEmAnaliseEnum baseEmAnalise) {
@@ -408,37 +429,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		AtomicLong tempoGasto = new AtomicLong();
 
 		// Carrega a lista de processos que precisará ser analisada
-		List<ProcessoEnvio> listaProcessos = this.getProcessos(grau, baseEmAnalise);
+		List<ProcessoEnvio> operacoes = this.getProcessos(grau, baseEmAnalise);
 		statusString = "Gerando XMLs do " + grau + "o Grau. Base: " + baseEmAnalise.getDescricao();
 		LOGGER.info(statusString + "...");
-		if (listaProcessos != null && !listaProcessos.isEmpty()) {
+		if (operacoes != null && !operacoes.isEmpty()) {
 
-			// Monta uma lista de "operações" (cada operação é um processo a ser baixado)
-			Map<String, ProcessoEnvio> mapProcessos = listaProcessos.stream().collect(Collectors.toMap(ProcessoEnvio::getNumeroProcesso, x -> x));
-			
-			// Quando a inserção é realizada em um lote cadastrado parcialmente ou gerado com erros, só será necessário adicionar
-			// no lote os processos que ainda não foram tratados ou que tiveram erro na geração do XML.
-			Map<String, LoteProcesso> mapProcessosComXMLGeradoComErro = new HashMap<String, LoteProcesso>();
-
-			for (LoteProcesso loteProcesso : lote.getLotesProcessos()) {
-				if (loteProcesso.getSituacao().equals(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO)) { 
-					ChaveProcessoCNJ chaveProcesso = loteProcesso.getChaveProcessoCNJ();
-					String chave = this.getChaveMapa(chaveProcesso.getGrau(), chaveProcesso.getNumeroProcesso(), chaveProcesso.getCodigoClasseJudicial(), chaveProcesso.getCodigoOrgaoJulgador());
-					mapProcessosComXMLGeradoComErro.put(chave, loteProcesso);
-				} else {
-					String numeroProcesso = loteProcesso.getChaveProcessoCNJ().getNumeroProcesso();
-					if (mapProcessos.containsKey(numeroProcesso)) {
-						mapProcessos.remove(numeroProcesso);
-						LOGGER.trace("O XML do processo " + numeroProcesso + " já existe e não será gerado novamente.");
-						if (progresso != null) {
-							progresso.incrementProgress();
-						}
-					}
-				}
-			}
-			
-			List<ProcessoEnvio> operacoes = new ArrayList<>(mapProcessos.values());
-	
 			// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
 			final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos, 1), 1);
 			final AtomicInteger counter = new AtomicInteger();
@@ -509,10 +504,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 								String codClasseJudicial = Integer.toString(processoJudicial.getDadosBasicos().getClasseProcessual());
 								Long codOJ = new Long(processoJudicial.getDadosBasicos().getOrgaoJulgador().getCodigoOrgao());
 								
-								loteProcesso = this.salvarXML(grau, processoEnvio, lote, loteProcesso, codClasseJudicial, codOJ, conteudoXML, mapProcessosComXMLGeradoComErro);							
+								loteProcesso = this.salvarXML(grau, processoEnvio, lote, loteProcesso, codClasseJudicial, codOJ, conteudoXML);							
 				
 								// OPCIONAL: Valida o arquivo XML com o "Programa validador de arquivos XML" do CNJ
-								validarArquivoXML(conteudoXML, grau, processoEnvio);
+								this.validarArquivoXML(conteudoXML, grau, processoEnvio);
 								
 								// Geração ocorreu com sucesso!!
 								LOGGER.trace("Processo gravado com sucesso: " + processoEnvio.getNumeroProcesso());
@@ -564,17 +559,17 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	}
 	
 	private synchronized LoteProcesso salvarXML(int grau, ProcessoEnvio processoEnvio, Lote lote, LoteProcesso loteProcesso, String codClasseJudicial, 
-			Long codOJ, byte [] conteudoXML, Map<String, LoteProcesso> mapProcessosComXMLGeradoComErro) throws DataJudException {
+			Long codOJ, byte [] conteudoXML) throws DataJudException {
 		if (codClasseJudicial == null || codOJ == null) {
 			throw new DataJudException("Não foi possível gerar o XML do processo " + processoEnvio.getNumeroProcesso() + " Grau: " + grau 
 					+ ". O código da classe judicial e do órgão julgador deve ser um valor válido.");
 		}
-		String chave = this.getChaveMapa(Integer.toString(grau), processoEnvio.getNumeroProcesso(), codClasseJudicial, codOJ);
-		
-		
-		if (mapProcessosComXMLGeradoComErro.containsKey(chave)) {
+		String chaveMapProcessosComXMLGeradoComErro = this.getChaveMapProcessosComXMLGeradoComErro(Integer.toString(grau), 
+				processoEnvio.getNumeroProcesso(), codClasseJudicial, codOJ);
+
+		if (this.mapProcessosComXMLGeradoComErro.containsKey(chaveMapProcessosComXMLGeradoComErro)) {
 			//LoteProcesso presente no lote e já possui um XML gerado, mas com erro.
-			loteProcesso = mapProcessosComXMLGeradoComErro.get(chave);
+			loteProcesso = this.mapProcessosComXMLGeradoComErro.get(chaveMapProcessosComXMLGeradoComErro);
 			
 		} else {
 			//Gerando um novo processo para o lote atual
@@ -593,11 +588,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 
 			loteProcesso.setChaveProcessoCNJ(chaveProcessoCNJ);
 			loteProcesso.setLote(lote);
-			
-			if (loteProcesso.getId() == null) {
-				lote.getLotesProcessos().add(loteProcesso);				
-			}
-			
+			lote.getLotesProcessos().add(loteProcesso);				
 		}
 		
 		loteProcesso.setConteudoXML(conteudoXML);
@@ -608,7 +599,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		return loteProcesso;
 	} 
 	
-	private String getChaveMapa(String grau, String numProcesso, String codClasse, Long codOrgaoJulgador) {
+	private String getChaveMapProcessosComXMLGeradoComErro(String grau, String numProcesso, String codClasse, Long codOrgaoJulgador) {
 		return (grau + "_" + codClasse + "_" + numProcesso + "_" + codOrgaoJulgador);
 	}
 

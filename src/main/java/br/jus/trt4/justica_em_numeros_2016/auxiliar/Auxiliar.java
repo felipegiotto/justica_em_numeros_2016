@@ -743,7 +743,13 @@ public class Auxiliar {
 	 */
 	public static File gerarNomeArquivoJson(int grau, String numeroProcesso, OrigemProcessoEnum origemProcessoEnum) {
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
-		File pastaRaizSistemaJudicial = new File(pastaRaiz, origemProcessoEnum.equals(OrigemProcessoEnum.LEGADO) ? "Legado" : (origemProcessoEnum.equals(OrigemProcessoEnum.HIBRIDO) ? "PJe/Hibrido": "PJe"));
+		String diretorio = origemProcessoEnum.equals(OrigemProcessoEnum.LEGADO) 
+						? "Legado" 
+						: (origemProcessoEnum.equals(OrigemProcessoEnum.HIBRIDO) 
+								? "PJe/Hibrido"
+								: "PJe"
+						  );
+		File pastaRaizSistemaJudicial = new File(pastaRaiz, diretorio);
 		return new File(pastaRaizSistemaJudicial, numeroProcesso + "_validador_cnj.json");
 	}
 
