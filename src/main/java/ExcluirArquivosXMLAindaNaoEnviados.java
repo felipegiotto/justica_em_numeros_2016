@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ArquivoComInstancia;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ValidaEnviaArquivosCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_3_EnviaArquivosCNJ;
 
 /**
  * Classe auxiliar que pode ser utilizada se muitos arquivos forem negados no CNJ e for preciso gerar novamente os XMLs.
@@ -21,7 +21,7 @@ public class ExcluirArquivosXMLAindaNaoEnviados {
 	
 	public static void main(String[] args) throws Exception {
 		
-		Op_4_ValidaEnviaArquivosCNJ op = new Op_4_ValidaEnviaArquivosCNJ();
+		Op_3_EnviaArquivosCNJ op = new Op_3_EnviaArquivosCNJ();
 		List<ArquivoComInstancia> arquivosXML = ArquivoComInstancia.localizarArquivosInstanciasHabilitadas(".xml", true);
 		arquivosXML = op.filtrarSomenteArquivosPendentesDeEnvio(arquivosXML);
 		

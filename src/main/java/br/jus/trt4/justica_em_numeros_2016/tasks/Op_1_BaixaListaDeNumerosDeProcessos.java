@@ -77,7 +77,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	
 	public void executarOperacao() throws Exception {
 		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica(
-				"(1/6) Baixa lista de números de processos");
+				"(1/5) Baixa lista de números de processos");
 		try {
 			progresso.setMax(2);
 

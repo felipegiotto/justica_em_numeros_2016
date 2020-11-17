@@ -31,7 +31,7 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraEValidaXMLsIndividuais;
 
 /**
  * Testa a geração dos campos nos formatos exigidos pelo CNJ.
@@ -53,7 +53,7 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 	 */
 	@Test
 	public void testGerarProcessosEmLote() throws Exception {
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais();
+		Op_2_GeraEValidaXMLsIndividuais baixaDados = new Op_2_GeraEValidaXMLsIndividuais();
 		int grau = 2;
 		BaseEmAnaliseEnum base = BaseEmAnaliseEnum.PJE;
 		try {
@@ -727,7 +727,7 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws Exception {
 		
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais();
+		Op_2_GeraEValidaXMLsIndividuais baixaDados = new Op_2_GeraEValidaXMLsIndividuais();
 		BaseEmAnaliseEnum base = BaseEmAnaliseEnum.PJE;
 		try {
 			baixaDados.prepararConexao(grau, base, true);

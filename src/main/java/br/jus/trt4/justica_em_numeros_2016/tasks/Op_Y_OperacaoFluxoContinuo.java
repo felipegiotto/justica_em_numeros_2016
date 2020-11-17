@@ -160,7 +160,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (FILA)
 				try {
 					this.executandoOperacao2Geracao = true;
-					Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais();
+					Op_2_GeraEValidaXMLsIndividuais baixaDados = new Op_2_GeraEValidaXMLsIndividuais();
 					baixaDados.executarOperacaoGeracaoXML();
 				} catch (Exception e) {
 					ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(10);
@@ -186,7 +186,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				if (isAlgumProcessoComStatus(ProcessoSituacaoEnum.XML_GERADO)) {
 					try {
 						this.executandoOperacao4Envio = true;
-						Op_4_ValidaEnviaArquivosCNJ operacao4Envia = new Op_4_ValidaEnviaArquivosCNJ();
+						Op_3_EnviaArquivosCNJ operacao4Envia = new Op_3_EnviaArquivosCNJ();
 						operacao4Envia.localizarEnviarXMLsAoCNJ();
 					} catch (Exception e) {
 						LOGGER.error("Erro enviando dados ao CNJ: " + e.getLocalizedMessage(), e);
@@ -215,7 +215,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				LOGGER.info("Início da conferência de protocolos enviados.");
 				try {
 					this.executandoOperacao5Conferencia = true;
-					Op_5_ConfereProtocolosCNJ operacao = new Op_5_ConfereProtocolosCNJ();
+					Op_4_ConfereProtocolosCNJ operacao = new Op_4_ConfereProtocolosCNJ();
 					operacao.localizarProtocolosConsultarNoCNJ();
 					operacao.gravarTotalProtocolosRecusados();
 					

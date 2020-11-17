@@ -39,13 +39,13 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 
 /**
- * Chama os webservices do CNJ, enviando os XMLs que foram gerados pela classe {@link Op_3_UnificaArquivosXML}.
+ * Chama os webservices do CNJ, enviando os XMLs que foram gerados pela classe {@link Op_2_GeraEValidaXMLsIndividuais}.
  * 
  * @author felipe.giotto@trt4.jus.br
  */
-public class Op_4_ValidaEnviaArquivosCNJ {
+public class Op_3_EnviaArquivosCNJ {
 	
-	private static final Logger LOGGER = LogManager.getLogger(Op_4_ValidaEnviaArquivosCNJ.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_3_EnviaArquivosCNJ.class);
 	private CloseableHttpClient httpClient;
 	private final List<Long> temposEnvioCNJ = new ArrayList<>();
 	private long ultimaExibicaoProgresso;
@@ -77,13 +77,13 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 			LOGGER.info("Se ocorrer algum erro no envio, a operação será reiniciada quantas vezes for necessário!");
 		}
 		
-		progresso = new ProgressoInterfaceGrafica("(4/6) Envio dos arquivos ao CNJ");
+		progresso = new ProgressoInterfaceGrafica("(3/5) Envio dos arquivos ao CNJ");
 		try {
 			boolean executar = true;
 			do {
 				progresso.setProgress(0);
 				
-				Op_4_ValidaEnviaArquivosCNJ operacao = new Op_4_ValidaEnviaArquivosCNJ();
+				Op_3_EnviaArquivosCNJ operacao = new Op_3_EnviaArquivosCNJ();
 				
 				operacao.localizarEnviarXMLsAoCNJ();
 				
@@ -117,10 +117,10 @@ public class Op_4_ValidaEnviaArquivosCNJ {
 	 * 
 	 * @throws Exception
 	 */
-	public Op_4_ValidaEnviaArquivosCNJ() throws Exception {
+	public Op_3_EnviaArquivosCNJ() throws Exception {
 		
 		// Número de threads simultâneas para conectar ao CNJ
-		numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
+		numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1);
 		
 		httpClient = HttpUtil.criarNovoHTTPClientComAutenticacaoCNJ();
 	}

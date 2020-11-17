@@ -121,9 +121,9 @@ import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
  * 
  * @author felipe.giotto@trt4.jus.br
  */
-public class Op_2_GeraXMLsIndividuais implements Closeable {
+public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraXMLsIndividuais.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_2_GeraEValidaXMLsIndividuais.class);
 	private static ProgressoInterfaceGrafica progresso;
 
 	private String paramMovimentosSemServentiaCnj;
@@ -185,10 +185,10 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	private boolean lotePossuiXMLsComErro;
 	
 	public static void main(String[] args) throws Exception {
-		progresso = new ProgressoInterfaceGrafica("(2/6) Geração de XMLs individuais");
+		progresso = new ProgressoInterfaceGrafica("(2/5) Geração de XMLs individuais");
 		Auxiliar.prepararPastaDeSaida();
 		
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais();
+		Op_2_GeraEValidaXMLsIndividuais baixaDados = new Op_2_GeraEValidaXMLsIndividuais();
 		
 		try {
 
@@ -231,7 +231,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 	}
 	
-	public Op_2_GeraXMLsIndividuais() {
+	public Op_2_GeraEValidaXMLsIndividuais() {
 		this.paramMovimentosSemServentiaCnj = Auxiliar.getParametroConfiguracao(Parametro.movimentos_sem_serventia_cnj, true);
 		this.paramPossuiDeslocamentoOJLegado1G = Auxiliar.getParametroBooleanConfiguracao(Parametro.possui_deslocamento_oj_legado_1g);
 		this.paramPossuiDeslocamentoOJLegado2G = Auxiliar.getParametroBooleanConfiguracao(Parametro.possui_deslocamento_oj_legado_2g);
@@ -439,7 +439,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		if (operacoes != null && !operacoes.isEmpty()) {
 
 			// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
-			final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos, 1), 1);
+			final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_geracao_processos_operacao_2, 1), 1);
 			final AtomicInteger counter = new AtomicInteger();
 			final Collection<List<ProcessoEnvio>> lotesProcessos = operacoes.stream()
 			    .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote))
@@ -447,9 +447,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 	
 			//Para evitar a exceção "Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingFileAppender 
 			//for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
-			int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1) > lotesProcessos.size() ? 
-					lotesProcessos.size() : 
-					Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
+			int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_2, 1) > lotesProcessos.size() 
+					? lotesProcessos.size() 
+					: Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_2, 1);
 			
 			AtomicInteger posicaoAtual = new AtomicInteger();
 			for (List<ProcessoEnvio> processosEnvio : lotesProcessos) {
@@ -1443,7 +1443,7 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		// Conversando com Clara, decidimos utilizar sempre a serventia do OJ do processo
 		ServentiaCNJ serventiaCNJ = processaServentiasCNJ.getServentiaByOJ(nomeOrgaoJulgadorProcessoLegado, null, codigoOrgaoJulgador, baseEmAnalise);
 		if (serventiaCNJ == null) {
-			if (!considerarParametroMovimentosSemServentiaCnj || this.paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_PROCESSO)) {
+			if (!considerarParametroMovimentosSemServentiaCnj || this.paramMovimentosSemServentiaCnj.equals(Op_2_GeraEValidaXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_PROCESSO)) {
 				throw new DataJudException("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias());				
 			} else {
 				return null;
@@ -1632,11 +1632,11 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 							if (orgaoJulgador != null) {
 								movimento.setOrgaoJulgador(orgaoJulgador);
 							} else {
-								if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_MOVIMENTO)) {
+								if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraEValidaXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_DESCARTAR_MOVIMENTO)) {
 									movimentos.remove(movimento);
-								} else if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_SEM_SERVENTIA)) {
+								} else if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraEValidaXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_SEM_SERVENTIA)) {
 									movimento.setOrgaoJulgador(null);
-								} else if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_SERVENTIA_OJ_PRINCIPAL)) {
+								} else if (paramMovimentosSemServentiaCnj.equals(Op_2_GeraEValidaXMLsIndividuais.MOVIMENTOS_SEM_SERVENTIA_CNJ_SERVENTIA_OJ_PRINCIPAL)) {
 									movimento.setOrgaoJulgador(orgaoJulgadorProcesso);
 								}
 							}

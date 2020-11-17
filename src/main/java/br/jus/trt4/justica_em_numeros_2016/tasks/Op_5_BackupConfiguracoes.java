@@ -22,9 +22,9 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
  * 
  * @author felipe.giotto@trt4.jus.br
  */
-public class Op_6_BackupConfiguracoes {
+public class Op_5_BackupConfiguracoes {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_6_BackupConfiguracoes.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_5_BackupConfiguracoes.class);
 	
 	public static void main(String[] args) throws IOException {
 		efetuarBackupArquivosDeConfiguracao();
@@ -32,7 +32,7 @@ public class Op_6_BackupConfiguracoes {
 	
 	public static void efetuarBackupArquivosDeConfiguracao() throws IOException {
 		
-		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(6/6) Backup dos arquivos de configuração");
+		ProgressoInterfaceGrafica progresso = new ProgressoInterfaceGrafica("(5/5) Backup dos arquivos de configuração");
 		try {
 			progresso.setMax(4);
 			File pastaOutput = Auxiliar.prepararPastaDeSaida();

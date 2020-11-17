@@ -1,10 +1,10 @@
 package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_1_BaixaListaDeNumerosDeProcessos;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ValidaEnviaArquivosCNJ;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_5_ConfereProtocolosCNJ;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_6_BackupConfiguracoes;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraEValidaXMLsIndividuais;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_3_EnviaArquivosCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ConfereProtocolosCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_5_BackupConfiguracoes;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_X_OperacaoCompleta;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
 
@@ -14,7 +14,7 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
  * OPCIONALMENTE pode receber até três argumentos de execucação: 
  * 		1) Código da operação a ser executada
  * 		2) Tipo de carga XML , podendo ser COMPLETA, MENSAL, TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO.  
- *		3) Caractere (S, N) indicando se as operações Op_4_ValidaEnviaArquivosCNJ e Op_5_ConfereProtocolosCNJ
+ *		3) Caractere (S, N) indicando se as operações Op_3_EnviaArquivosCNJ e Op_4_ConfereProtocolosCNJ
  *		   serão reiniciadas caso aconteça algum erro. Valor padrão: S.
  *		4) Caractere (S, N) indicando se a operação Op_X_OperacaoCompleta deve continuar caso aconteça algum erro em quaisquer 
  *		   das operações. As operações 4 e 5 podem ser reiniciadas caso aconteça algum erro, porém os erros das operações anteriores
@@ -58,16 +58,16 @@ public class MainClass {
 			Op_1_BaixaListaDeNumerosDeProcessos.main(null);
 			break;
 		case "2":
-			Op_2_GeraXMLsIndividuais.main(null);
+			Op_2_GeraEValidaXMLsIndividuais.main(null);
 			break;
 		case "4":
-			Op_4_ValidaEnviaArquivosCNJ.main(new String [] {reiniciarOperacaoEmCasoErro});
+			Op_3_EnviaArquivosCNJ.main(new String [] {reiniciarOperacaoEmCasoErro});
 			break;
 		case "5":
-			Op_5_ConfereProtocolosCNJ.main(new String [] {reiniciarOperacaoEmCasoErro});
+			Op_4_ConfereProtocolosCNJ.main(new String [] {reiniciarOperacaoEmCasoErro});
 			break;
 		case "6":
-			Op_6_BackupConfiguracoes.main(null);
+			Op_5_BackupConfiguracoes.main(null);
 			break;
 		case "X":
 			Op_X_OperacaoCompleta.main(new String [] {reiniciarOperacaoEmCasoErro, continuarOperacaoCompletaEmCasoErro});

@@ -54,7 +54,7 @@ import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoProtocoloCNJ;
 
 /**
  * Chama os webservices do CNJ, validando cada um dos protocolos recebidos
- * previamente do CNJ na fase 4: {@link Op_4_ValidaEnviaArquivosCNJ}.
+ * previamente do CNJ na fase 4: {@link Op_3_EnviaArquivosCNJ}.
  * 
  * TODO: Implementar também o reenvio automático, se for erro interno no CNJ,
  * dos processos dos protocolos com erro. Como sugestão criar um arquivo do tipo
@@ -63,9 +63,9 @@ import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoProtocoloCNJ;
  *
  * @author felipe.giotto@trt4.jus.br
  */
-public class Op_5_ConfereProtocolosCNJ {
+public class Op_4_ConfereProtocolosCNJ {
 
-	private static final Logger LOGGER = LogManager.getLogger(Op_5_ConfereProtocolosCNJ.class);
+	private static final Logger LOGGER = LogManager.getLogger(Op_4_ConfereProtocolosCNJ.class);
 	private CloseableHttpClient httpClient;
 	private static ProgressoInterfaceGrafica progresso;
 
@@ -113,13 +113,13 @@ public class Op_5_ConfereProtocolosCNJ {
 			LOGGER.info("Se ocorrer algum erro no envio, a operação será reiniciada quantas vezes for necessário!");
 		}
 
-		progresso = new ProgressoInterfaceGrafica("(5/6) Conferência dos protocolos no CNJ");
+		progresso = new ProgressoInterfaceGrafica("(4/5) Conferência dos protocolos no CNJ");
 		try {
 			boolean executar = true;
 			do {
 				progresso.setProgress(0);
 
-				Op_5_ConfereProtocolosCNJ operacao = new Op_5_ConfereProtocolosCNJ();
+				Op_4_ConfereProtocolosCNJ operacao = new Op_4_ConfereProtocolosCNJ();
 
 				String tipo_validacao_protocolo_cnj = Auxiliar
 						.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj, false);
@@ -197,7 +197,7 @@ public class Op_5_ConfereProtocolosCNJ {
 	 * 
 	 * @throws Exception
 	 */
-	public Op_5_ConfereProtocolosCNJ() {
+	public Op_4_ConfereProtocolosCNJ() {
 		httpClient = HttpUtil.criarNovoHTTPClientComAutenticacaoCNJ();
 	}
 

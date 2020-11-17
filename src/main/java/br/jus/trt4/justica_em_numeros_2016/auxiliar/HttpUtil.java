@@ -44,7 +44,7 @@ public class HttpUtil {
 		HttpClientBuilder httpClientBuilder = HttpClients.custom();
 
 		// Aumenta o limite de conexoes, para permitir acesso multi-thread
-		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas, 1);
+		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1);
 		httpClientBuilder.setMaxConnPerRoute(numeroThreads * 2);
 		httpClientBuilder.setMaxConnTotal(numeroThreads * 2);
 

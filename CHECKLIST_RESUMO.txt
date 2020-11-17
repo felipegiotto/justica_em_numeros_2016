@@ -10,7 +10,7 @@ Primeiro leia o arquivo README.txt para entender como a ferramenta funciona, dep
    que NÃO EXISTA uma pasta "output/<TIPO_CARGA_XML>". Ela será recriada em seguida, por esta aplicação.
 
 
-OBS: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa que engloba a execução das classes "Op_1..." a "Op_5...", 
+OBS: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa que engloba a execução das classes "Op_1..." a "Op_4...", 
      descritas abaixo. Use-a com cautela!
 
 
@@ -29,7 +29,7 @@ OBS: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa qu
              que possa ser útil no futuro. Preencha esse arquivo conforme as operações forem sendo executadas.
    
 
-5. Execute a classe "Op_2_GeraXMLsIndividuais"
+5. Execute a classe "Op_2_GeraEValidaXMLsIndividuais"
 
    5.1. Verifique novamente se algum problema foi registrado nos arquivos de log, conforme instrução anterior.
    
@@ -47,27 +47,24 @@ OBS: A classe "Op_X_OperacaoCompleta" é um protótipo de execução completa qu
                nas configurações, inserindo o código e o nome correto da serventia do CNJ. 
                A área de negócios do tribunal, responsável pelas estatísticas, deve possuir os códigos
                dessas serventias.
-   
-
-6. OBS: A classe "Op_3_UnificaArquivosXML" não deve mais ser utilizada.
 
 
-7. Execute a classe "Op_4_ValidaEnviaArquivosCNJ" para remeter os arquivos ao CNJ.
+6. Execute a classe "Op_3_EnviaArquivosCNJ" para remeter os arquivos ao CNJ.
 
 
-8. Execute a classe "Op_5_ConfereProtocolosCNJ" para conferir cada um dos protocolos recebidos do CNJ.
+7. Execute a classe "Op_4_ConfereProtocolosCNJ" para conferir cada um dos protocolos recebidos do CNJ.
 
 
-9. Execute a classe "Op_6_BackupConfiguracoes" para fazer backup de arquivos relevantes (como o arquivo de configurações e o de serventias)
+8. Execute a classe "Op_5_BackupConfiguracoes" para fazer backup de arquivos relevantes (como o arquivo de configurações e o de serventias)
 
 
-10. Efetue backup da pasta "output/<TIPO_CARGA_XML>", para referência futura. Ela contém os números de processo, os arquivos XML 
+9. Efetue backup da pasta "output/<TIPO_CARGA_XML>", para referência futura. Ela contém os números de processo, os arquivos XML 
    gerados (individuais e unificados) e os arquivos de log completos.
 
 
-   10.1. SOMENTE TRT4: Compacte toda a pasta de backup, com o nome no padrão "MENSAL AAAA-MM.tar.gz", onde:
+   9.1. SOMENTE TRT4: Compacte toda a pasta de backup, com o nome no padrão "MENSAL AAAA-MM.tar.gz", onde:
         "AAAA-MM" é o ano e o mês que os dados se referem (conforme parâmetro "tipo_carga_xml" nas configurações)
  
-   10.2. SOMENTE TRT4: Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
+   9.2. SOMENTE TRT4: Grave esse arquivo compactado na pasta "T:\SETIC\SAPJE\CNJ - Selo Justiça em Números\AAAA"
 
 
