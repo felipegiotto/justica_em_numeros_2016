@@ -44,6 +44,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -382,6 +383,9 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 				String chaveProcessosComXMLGeradosCorretamente = chaveProcesso.getGrau() + "_" + chaveProcesso.getNumeroProcesso();
 				mapProcessosComXMLGeradosCorretamente.put(chaveProcessosComXMLGeradosCorretamente, chaveProcesso.getNumeroProcesso());
 			}
+//			FileUtils.writeByteArrayToFile(Auxiliar.gerarNomeArquivoIndividualParaProcesso(loteProcesso.getOrigem().equals(OrigemProcessoEnum.LEGADO) 
+//					? BaseEmAnaliseEnum.LEGADO : BaseEmAnaliseEnum.PJE, 
+//					new Integer(loteProcesso.getChaveProcessoCNJ().getGrau()), loteProcesso.getChaveProcessoCNJ().getNumeroProcesso()), loteProcesso.getConteudoXML());
 		}
 
 		for (ProcessoEnvio processoEnvio : processosEnvio) {
@@ -674,7 +678,8 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 			
 			try {
 				HttpPost post = new HttpPost(url);
-				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("arquivo", conteudoXML).build();
+				String nomeArquivo = grau + "_" + processoEnvio.getGrau();
+				HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("arquivo", conteudoXML, ContentType.DEFAULT_BINARY, nomeArquivo).build();
 				post.setEntity(entity);
 				
 				HttpClient httpClient = HttpClients.createDefault();
