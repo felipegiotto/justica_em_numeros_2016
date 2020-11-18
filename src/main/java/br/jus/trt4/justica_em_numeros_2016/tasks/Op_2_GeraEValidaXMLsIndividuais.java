@@ -98,6 +98,7 @@ import br.jus.trt4.justica_em_numeros_2016.entidades.Lote;
 import br.jus.trt4.justica_em_numeros_2016.entidades.LoteProcesso;
 import br.jus.trt4.justica_em_numeros_2016.entidades.ProcessoEnvio;
 import br.jus.trt4.justica_em_numeros_2016.entidades.Remessa;
+import br.jus.trt4.justica_em_numeros_2016.entidades.XMLProcesso;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
@@ -182,6 +183,8 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_SEM_SERVENTIA = "SEM_SERVENTIA";
 	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_SERVENTIA_OJ_PRINCIPAL = "SERVENTIA_OJ_PRINCIPAL";
 	
+	private static final int BATCH_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_batch);
+	
 	private boolean lotePossuiXMLsComErro;
 	
 	public static void main(String[] args) throws Exception {
@@ -262,7 +265,8 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 		this.salvarRemessa(loteAtual.getRemessa());
 		
 		List<ProcessoEnvio> processosEnvio = processoEnvioDAO.getProcessosRemessa(dataCorteRemessaAtual, tipoRemessaAtual);
-
+		List<LoteProcesso> loteProcessos = loteProcessoDAO.getLoteProcesso(loteAtual);
+		
 		// Conta quantos processos serão baixados, para mostrar barra de progresso
 		if (progresso != null) {
 			progresso.setMax(processosEnvio.size());
@@ -271,7 +275,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 	    int [] graus = {1, 2};
 	    BaseEmAnaliseEnum [] basesEmAnaliseEnums = {BaseEmAnaliseEnum.PJE, BaseEmAnaliseEnum.LEGADO};
 	    this.lotePossuiXMLsComErro = false;
-	    this.carregarMapasProcessos(processosEnvio, loteAtual.getLotesProcessos());
+	    this.carregarMapasProcessos(processosEnvio, loteProcessos);
 		for (int grau : graus) {	
 			for (BaseEmAnaliseEnum baseEmAnalise : basesEmAnaliseEnums) {	
 				this.gerarXMLs(grau, baseEmAnalise, loteAtual);
@@ -303,7 +307,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 				remessa.getLotes().add(loteAtual);
 			} else if (ultimoLoteRemessa.getSituacao().in(SituacaoLoteEnum.CRIADO_PARCIALMENTE, SituacaoLoteEnum.CRIADO_COM_ERROS)) {
 				// Atualizando o último lote da remessa que foi criado parcialmente ou com erros. As listas serão carregadas.
-				loteAtual = loteDAO.getUltimoLoteDeUmaRemessa(remessa.getDataCorte(), remessa.getTipoRemessa(), true);
+				loteAtual = loteDAO.getUltimoLoteDeUmaRemessa(remessa.getDataCorte(), remessa.getTipoRemessa());
 			}
 		}
 		
@@ -331,7 +335,8 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 	private void atualizarSituacaoLoteCriado(Lote lote, int quantidadeProcessosRemessa) {
 		try {
 			JPAUtil.iniciarTransacao();
-			if (quantidadeProcessosRemessa == lote.getLotesProcessos().size()) {
+			Long quantidadeProcessosNoLote = loteProcessoDAO.getQuantidadeProcessosPorLote(lote);
+			if (quantidadeProcessosRemessa == quantidadeProcessosNoLote.intValue()) {
 				if (this.lotePossuiXMLsComErro) {
 					lote.setSituacao(SituacaoLoteEnum.CRIADO_COM_ERROS);				
 				} else {
@@ -339,7 +344,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 				}				
 				loteDAO.alterar(lote);
 				
-			} else if (quantidadeProcessosRemessa > lote.getLotesProcessos().size()) {
+			} else if (quantidadeProcessosRemessa > quantidadeProcessosNoLote.intValue()) {
 				lote.setSituacao(SituacaoLoteEnum.CRIADO_PARCIALMENTE);
 			} else {
 				LOGGER.error("Atenção: O lote mais recente desta Remessa possui mais processos do que o esperado.");
@@ -365,13 +370,13 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 		gerarXML(grau, baseEmAnalise, lote);
 	}
 	
-	private void carregarMapasProcessos (List<ProcessoEnvio> processosEnvio, List<LoteProcesso> processosLote) {
+	private void carregarMapasProcessos (List<ProcessoEnvio> processosEnvio, List<LoteProcesso> loteProcessos) {
 		this.mapaProcessosPorGrauEBaseAnalise = new HashMap<String, List<ProcessoEnvio>>();
 		this.mapaProcessosHibridos = new HashMap<String, String>();
 		this.mapProcessosComXMLGeradoComErro = new HashMap<String, LoteProcesso>();
 		Map<String, String> mapProcessosComXMLGeradosCorretamente = new HashMap<String, String>();
 		
-		for (LoteProcesso loteProcesso : processosLote) {
+		for (LoteProcesso loteProcesso : loteProcessos) {
 			ChaveProcessoCNJ chaveProcesso = loteProcesso.getChaveProcessoCNJ();
 			if (loteProcesso.getSituacao().equals(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO)) { 
 				String chave = this.getChaveMapProcessosComXMLGeradoComErro(chaveProcesso.getGrau(), chaveProcesso.getNumeroProcesso(), chaveProcesso.getCodigoClasseJudicial(), chaveProcesso.getCodigoOrgaoJulgador());
@@ -503,7 +508,12 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 								Long codOJ = new Long(processoJudicial.getDadosBasicos().getOrgaoJulgador().getCodigoOrgao());
 								
 								loteProcesso = this.salvarXML(grau, processoEnvio, lote, loteProcesso, codClasseJudicial, codOJ, conteudoXML);							
-				
+								
+								if (i > 0 && i % BATCH_SIZE == 0) {
+									JPAUtil.flush();
+									JPAUtil.clear();
+								}
+								
 								// OPCIONAL: Valida o arquivo XML com o "Programa validador de arquivos XML" do CNJ
 								this.validarArquivoXML(conteudoXML, grau, processoEnvio);
 								
@@ -585,11 +595,12 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 			}
 
 			loteProcesso.setChaveProcessoCNJ(chaveProcessoCNJ);
-			loteProcesso.setLote(lote);
-			lote.getLotesProcessos().add(loteProcesso);				
+			loteProcesso.setXmlProcesso(new XMLProcesso());
+			loteProcesso.setLote(lote);	
+			
 		}
 		
-		loteProcesso.setConteudoXML(conteudoXML);
+		loteProcesso.getXmlProcesso().setConteudoXML(conteudoXML);
 		loteProcesso.setSituacao(SituacaoLoteProcessoEnum.XML_GERADO_COM_SUCESSO);
 		loteProcesso.setOrigem(processoEnvio.getOrigem());
 		

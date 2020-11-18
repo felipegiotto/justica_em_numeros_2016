@@ -1,5 +1,6 @@
 package br.jus.trt4.justica_em_numeros_2016.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.TypedQuery;
@@ -15,6 +16,21 @@ import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteProcessoEnum;
  */
 public class LoteProcessoDao extends DataJudBaseDao<LoteProcesso> {
 
+	public List<LoteProcesso> getLoteProcesso(Lote lote) {
+		List<LoteProcesso> retorno = new ArrayList<LoteProcesso>();
+		if (lote.getId() != null) {
+			StringBuilder hql = new StringBuilder();
+			hql.append("select lp from LoteProcesso lp ");
+			hql.append(" LEFT JOIN FETCH lp.chaveProcessoCNJ ch ");	
+			hql.append(" where lp.lote.id = :idLote ");
+
+			TypedQuery<LoteProcesso> query = JPAUtil.getEntityManager().createQuery(hql.toString(), LoteProcesso.class);
+			query.setParameter("idLote", lote.getId());
+			retorno = query.getResultList();
+		}
+
+		return retorno;
+	}
 	
 	public Long getQuantidadeProcessosPorLote(Lote lote) {
 		StringBuilder hql = new StringBuilder();
@@ -36,6 +52,19 @@ public class LoteProcessoDao extends DataJudBaseDao<LoteProcesso> {
 		TypedQuery<LoteProcesso> query = JPAUtil.getEntityManager().createQuery(hql.toString(), LoteProcesso.class);
 		query.setParameter("idLote", lote.getId());
 		query.setParameter("situacoes", situacoes);
+
+		return query.getResultList();
+	}
+	
+	public List<LoteProcesso> getProcessosComXMLPorIDs(List<Long> ids) {
+		StringBuilder hql = new StringBuilder();
+		hql.append("select lp from LoteProcesso lp ");
+		hql.append(" LEFT JOIN FETCH lp.chaveProcessoCNJ ch ");	
+		hql.append(" LEFT JOIN FETCH lp.xmlProcesso xm ");	
+		hql.append(" where lp.id IN ( :ids ) ");
+		
+		TypedQuery<LoteProcesso> query = JPAUtil.getEntityManager().createQuery(hql.toString(), LoteProcesso.class);
+		query.setParameter("ids", ids);
 
 		return query.getResultList();
 	}

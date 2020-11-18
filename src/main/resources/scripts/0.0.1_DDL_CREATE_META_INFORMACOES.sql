@@ -109,7 +109,30 @@ COMMENT ON COLUMN datajud.tb_chave_processo_cnj.nm_grau
 COMMENT ON COLUMN datajud.tb_chave_processo_cnj.cd_orgao_julgador
     IS 'Código do Órgão Julgador do processo.';
     
+--------------------------------------------------------------
+------------------------XMLProcesso-------------------------
+--------------------------------------------------------------
+-- SEQUENCE: datajud.sq_tb_xml_processo
 
+
+CREATE SEQUENCE datajud.sq_tb_xml_processo
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+	
+-- Table: datajud.tb_xml_processo
+
+CREATE TABLE datajud.tb_xml_processo
+(
+	id_xml_processo bigint NOT NULL DEFAULT nextval('datajud.sq_tb_xml_processo'::regclass),
+    conteudo_xml bytea NOT NULL,
+    constraint tb_xml_processo_pk primary key (id_xml_processo)
+);
+
+COMMENT ON COLUMN datajud.tb_xml_processo.conteudo_xml
+    IS 'Arquivo XML enviado ao CNJ.';
 
 --------------------------------------------------------------
 -----------------------------LoteProcesso---------------------
@@ -135,9 +158,9 @@ CREATE TABLE datajud.tb_lote_processo
     dh_recebimento_cnj timestamp,
     en_situacao varchar(2),
     en_origem_processo varchar(1),
-    conteudo_xml bytea,
     id_lote bigint NOT NULL,
     id_chave_processo_cnj bigint NOT NULL,
+    id_xml_processo bigint NOT NULL,
     constraint tb_lote_processo_ck01 check (en_situacao in ('1','2','3','4','5','6','7','8','9')),
     constraint tb_lote_processo_ck02 check (en_origem_processo in ('H','L','P')),
     constraint tb_lote_processo_pk primary key (id_lote_processo)
@@ -162,9 +185,6 @@ COMMENT ON COLUMN datajud.tb_lote_processo.en_situacao
 
 COMMENT ON COLUMN datajud.tb_lote_processo.en_origem_processo
     IS 'Origem do Processo. H: Híbrido; L: Legado; P: PJe';
-    
-COMMENT ON COLUMN datajud.tb_lote_processo.conteudo_xml
-    IS 'Arquivo XML enviado ao CNJ.';
 
     
 alter table datajud.tb_lote_processo
@@ -174,6 +194,10 @@ references datajud.tb_lote (id_lote);
 alter table datajud.tb_lote_processo
 add constraint tb_lote_processo_fk02 foreign key (id_chave_processo_cnj)
 references datajud.tb_chave_processo_cnj (id_chave_processo_cnj);
+
+alter table datajud.tb_lote_processo
+add constraint tb_lote_processo_fk03 foreign key (id_xml_processo)
+references datajud.tb_xml_processo (id_xml_processo);
 
 --------------------------------------------------------------
 ------------------------ProcessoEnvio-------------------------
@@ -214,3 +238,7 @@ COMMENT ON COLUMN datajud.tb_processo_envio.nr_processo
 alter table datajud.tb_processo_envio
 add constraint tb_processo_envio_fk01 foreign key (id_remessa)
 references datajud.tb_remessa (id_remessa);
+
+
+
+    

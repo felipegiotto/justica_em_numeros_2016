@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import javax.persistence.TypedQuery;
 
 import br.jus.trt4.justica_em_numeros_2016.entidades.Lote;
-import br.jus.trt4.justica_em_numeros_2016.entidades.Remessa;
 import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
 /**
@@ -20,17 +19,12 @@ public class LoteDao extends DataJudBaseDao<Lote> {
      * 
      * @param dataCorte data de corte da Remessa
      * @param tipoRemessa tipo da Remessa
-     * @param fetchLoteProcesso indica se deve ser realizado um fetch com lotesProcessos e chaveProcessoCNJ
      * 
      * @return uma instância do Lote
      */
-	public Lote getUltimoLoteDeUmaRemessa(LocalDate dataCorte, TipoRemessaEnum tipoRemessa, boolean fetchLoteProcesso) {
+	public Lote getUltimoLoteDeUmaRemessa(LocalDate dataCorte, TipoRemessaEnum tipoRemessa) {
 		StringBuilder hql = new StringBuilder();
 		hql.append("select lot from Lote lot ");
-		if (fetchLoteProcesso) {
-			hql.append(" LEFT JOIN FETCH lot.lotesProcessos lp ");	
-			hql.append(" LEFT JOIN FETCH lp.chaveProcessoCNJ ch ");
-		}
 		hql.append(" where lot.remessa.dataCorte = :dataCorte ");
 		hql.append(" and lot.remessa.tipoRemessa = :tipoRemessa ");
 		hql.append(" and lot.numero = ( select MAX(lotm.numero) from Lote lotm ");

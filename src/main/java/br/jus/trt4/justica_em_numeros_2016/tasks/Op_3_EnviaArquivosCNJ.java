@@ -202,7 +202,7 @@ public class Op_3_EnviaArquivosCNJ {
 		
 		Auxiliar.validarTipoRemessaAtual(tipoRemessaAtual);
 		
-		Lote loteAtual = loteDAO.getUltimoLoteDeUmaRemessa(dataCorteRemessaAtual, tipoRemessaAtual, false);
+		Lote loteAtual = loteDAO.getUltimoLoteDeUmaRemessa(dataCorteRemessaAtual, tipoRemessaAtual);
 		
 		if (loteAtual == null) {
 			throw new RuntimeException("Não foi possível localizar o último lote da Remessa indicada em config.properties. "
@@ -218,21 +218,22 @@ public class Op_3_EnviaArquivosCNJ {
 		List<LoteProcesso> processosComXMLParaEnvio = loteProcessoDAO.getProcessosPorLoteESituacao(loteAtual, getSituacoesProcessosEnvio(enviarTodosOsXMLs));
 
 		// Verifica se não há arquivos muito pequenos, que com certeza não contém um processo dentro (como ocorreu em Jan/2020 no TRT4)
-		List<LoteProcesso> processosComArquivosPequenos = processosComXMLParaEnvio
-			.stream()
-			.filter(a -> a.getConteudoXML().length < 200)
-			.collect(Collectors.toList());
-		if (!processosComArquivosPequenos.isEmpty()) {
-			LOGGER.warn("");
-			LOGGER.warn("");
-			LOGGER.warn("");
-			for (LoteProcesso loteProcesso: processosComArquivosPequenos) {
-				LOGGER.warn("* Processo: " + loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() 
-						+ ". Grau: " + loteProcesso.getChaveProcessoCNJ().getGrau());;
-			}
-			LOGGER.warn("Os arquivos dos processos listados acima são muito pequenos e, por isso, provavelmente estão incompletos.");
-			Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
-		}
+		//TODO: ajustar esse bloco de código para tratar durante a execução de processos
+//		List<LoteProcesso> processosComArquivosPequenos = processosComXMLParaEnvio
+//			.stream()
+//			.filter(a -> a.getXmlProcesso().getConteudoXML().length < 200)
+//			.collect(Collectors.toList());
+//		if (!processosComArquivosPequenos.isEmpty()) {
+//			LOGGER.warn("");
+//			LOGGER.warn("");
+//			LOGGER.warn("");
+//			for (LoteProcesso loteProcesso: processosComArquivosPequenos) {
+//				LOGGER.warn("* Processo: " + loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() 
+//						+ ". Grau: " + loteProcesso.getChaveProcessoCNJ().getGrau());;
+//			}
+//			LOGGER.warn("Os arquivos dos processos listados acima são muito pequenos e, por isso, provavelmente estão incompletos.");
+//			Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
+//		}
 		
 		LOGGER.info("Arquivos XML que precisam ser enviados: " + processosComXMLParaEnvio.size());
 
@@ -251,9 +252,9 @@ public class Op_3_EnviaArquivosCNJ {
 		
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
-		LOGGER.info("Arquivos XMLs ainda pendentes de envio: " + qtdProcessosPendentes);
+		LOGGER.info("Arquivos XMLs ainda pendentes de envio: " + qtdProcessosPendentes.intValue());
 
-		if (qtdProcessosPendentes.intValue() > 0) {
+		if (qtdProcessosPendentes.intValue() == 0) {
 			atualizarSituacaoLoteAtual(loteAtual);
 		}
 	}
@@ -292,25 +293,28 @@ public class Op_3_EnviaArquivosCNJ {
 		final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_envio_operacao_3, 1), 1);
 		final AtomicInteger counter = new AtomicInteger();
 
-		final Collection<List<LoteProcesso>> lotesProcessos = processosComXMLParaEnviar.stream()
+		final Collection<List<LoteProcesso>> loteLoteProcessos = processosComXMLParaEnviar.stream()
 				.collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote)).values();
 
 		// Para evitar a exceção "Unable to invoke factory method in class
 		// org.apache.logging.log4j.core.appender.RollingFileAppender
 		// for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
-		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1) > lotesProcessos.size() 
-				? lotesProcessos.size()
+		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1) > loteLoteProcessos.size() 
+				? loteLoteProcessos.size()
 				: Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1);
 
 		// Objeto que fará o envio dos arquivos em várias threads
 		LOGGER.info("Iniciando o envio de " + processosComXMLParaEnviar.size() + " XMLs, utilizando " + numeroThreads + " thread(s)");
 		AtomicInteger posicaoAtual = new AtomicInteger();
-		for (List<LoteProcesso> lotesProcesso : lotesProcessos) {
+		for (List<LoteProcesso> loteProcessos : loteLoteProcessos) {
 			try {
 				JPAUtil.iniciarTransacao();
-
+				
+				List<Long> idsLoteProcessos = loteProcessos.stream().map(o -> o.getId()).collect(Collectors.toList());
+				List<LoteProcesso> loteProcessosComXML = loteProcessoDAO.getProcessosComXMLPorIDs(idsLoteProcessos);
+				
 				ExecutorService threadPool = Executors.newFixedThreadPool(numeroThreads);
-				for (LoteProcesso loteProcesso : lotesProcesso) {
+				for (LoteProcesso loteProcesso : loteProcessosComXML) {
 					int i = posicaoAtual.incrementAndGet();
 					threadPool.execute(() -> {
 						Auxiliar.prepararThreadLog();
@@ -337,7 +341,7 @@ public class Op_3_EnviaArquivosCNJ {
 						
 						// Prepara um request com Multipart
 						String nomeArquivo = processo.getGrau() + "_" + processo.getNumeroProcesso();
-						HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("file", loteProcesso.getConteudoXML(), ContentType.DEFAULT_BINARY, nomeArquivo).build();
+						HttpEntity entity = MultipartEntityBuilder.create().addBinaryBody("file", loteProcesso.getXmlProcesso().getConteudoXML(), ContentType.DEFAULT_BINARY, nomeArquivo).build();
 						
 						post.setEntity(entity);
 						

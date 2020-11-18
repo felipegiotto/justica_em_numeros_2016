@@ -9,6 +9,7 @@
         <class>br.jus.trt4.justica_em_numeros_2016.entidades.ChaveProcessoCNJ</class>
         <class>br.jus.trt4.justica_em_numeros_2016.entidades.LoteProcesso</class>
         <class>br.jus.trt4.justica_em_numeros_2016.entidades.ProcessoEnvio</class>
+        <class>br.jus.trt4.justica_em_numeros_2016.entidades.XMLProcesso</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false" />

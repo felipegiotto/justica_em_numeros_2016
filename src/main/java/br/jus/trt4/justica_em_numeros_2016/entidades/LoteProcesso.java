@@ -2,7 +2,6 @@ package br.jus.trt4.justica_em_numeros_2016.entidades;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -11,8 +10,8 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
@@ -34,7 +33,7 @@ public class LoteProcesso extends BaseEntidade {
 
 	// TODO: avaliar desempenho allocationSize = 100)
 	@Id
-	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_lote_processo", allocationSize = 1) 
+	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_lote_processo", allocationSize = 1)
 	@GeneratedValue(generator = "generator")
 	@Column(name = "id_lote_processo", unique = true, nullable = false)
 	private Long id;
@@ -59,12 +58,13 @@ public class LoteProcesso extends BaseEntidade {
 	@Column(name = "en_origem_processo", length = 1, nullable = true)
 	private OrigemProcessoEnum origem;
 
-	@Column(name = "conteudo_xml", nullable = true)
-	private byte[] conteudoXML;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_lote")
 	private Lote lote;
+
+	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "id_xml_processo")
+	private XMLProcesso xmlProcesso;
 
 	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "id_chave_processo_cnj")
@@ -130,15 +130,6 @@ public class LoteProcesso extends BaseEntidade {
 		this.origem = origem;
 	}
 
-	@Lob @Basic(fetch = FetchType.LAZY)
-	public byte[] getConteudoXML() {
-		return conteudoXML;
-	}
-
-	public void setConteudoXML(byte[] conteudoXML) {
-		this.conteudoXML = conteudoXML;
-	}
-
 	public Lote getLote() {
 		return lote;
 	}
@@ -153,6 +144,14 @@ public class LoteProcesso extends BaseEntidade {
 
 	public void setChaveProcessoCNJ(ChaveProcessoCNJ chaveProcessoCNJ) {
 		this.chaveProcessoCNJ = chaveProcessoCNJ;
+	}
+
+	public XMLProcesso getXmlProcesso() {
+		return xmlProcesso;
+	}
+
+	public void setXmlProcesso(XMLProcesso xmlProcesso) {
+		this.xmlProcesso = xmlProcesso;
 	}
 
 }
