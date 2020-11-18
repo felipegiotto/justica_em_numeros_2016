@@ -2,11 +2,9 @@ package br.jus.trt4.justica_em_numeros_2016.entidades;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Lob;
-import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
@@ -30,9 +28,6 @@ public class XMLProcesso extends BaseEntidade {
 	@Column(name = "conteudo_xml", nullable = false)
 	private byte[] conteudoXML;
 
-	@OneToOne(mappedBy = "xmlProcesso", fetch = FetchType.LAZY)
-	private LoteProcesso loteProcesso;
-
 	public XMLProcesso() {
 		// construtor padrao
 	}
@@ -52,14 +47,6 @@ public class XMLProcesso extends BaseEntidade {
 
 	public void setConteudoXML(byte[] conteudoXML) {
 		this.conteudoXML = conteudoXML;
-	}
-
-	public LoteProcesso getLoteProcesso() {
-		return loteProcesso;
-	}
-
-	public void setLoteProcesso(LoteProcesso loteProcesso) {
-		this.loteProcesso = loteProcesso;
 	}
 
 }

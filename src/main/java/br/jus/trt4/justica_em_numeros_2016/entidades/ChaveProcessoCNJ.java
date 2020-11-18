@@ -1,14 +1,9 @@
 package br.jus.trt4.justica_em_numeros_2016.entidades;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -44,19 +39,8 @@ public class ChaveProcessoCNJ extends BaseEntidade {
 	@Column(name = "nm_grau", nullable = false, length = 1)
 	private String grau;
 
-	@OneToMany(mappedBy = "chaveProcessoCNJ", fetch = FetchType.LAZY)
-	private List<LoteProcesso> lotesProcessos = new ArrayList<>(0);
-
 	public ChaveProcessoCNJ() {
 		// construtor padrao
-	}
-
-	public List<LoteProcesso> getLotesProcessos() {
-		return lotesProcessos;
-	}
-
-	public void setLotesProcessos(List<LoteProcesso> lotesProcessos) {
-		this.lotesProcessos = lotesProcessos;
 	}
 
 	public Long getId() {

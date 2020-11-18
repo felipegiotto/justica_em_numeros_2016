@@ -509,10 +509,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 								
 								loteProcesso = this.salvarXML(grau, processoEnvio, lote, loteProcesso, codClasseJudicial, codOJ, conteudoXML);							
 								
-								if (i > 0 && i % BATCH_SIZE == 0) {
-									JPAUtil.flush();
-									JPAUtil.clear();
-								}
+								
 								
 								// OPCIONAL: Valida o arquivo XML com o "Programa validador de arquivos XML" do CNJ
 								this.validarArquivoXML(conteudoXML, grau, processoEnvio);
@@ -537,6 +534,11 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 							if (progresso != null) {
 								progresso.incrementProgress();
 							}
+							
+//							if (i > 0 && i % BATCH_SIZE == 0) {
+//								JPAUtil.flush();
+//								JPAUtil.clear();
+//							}
 						});
 					}
 				
@@ -605,6 +607,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 		loteProcesso.setOrigem(processoEnvio.getOrigem());
 		
 		loteProcessoDAO.incluirOuAlterar(loteProcesso);	
+		
 		return loteProcesso;
 	} 
 	
