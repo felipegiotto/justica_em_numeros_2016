@@ -217,24 +217,6 @@ public class Op_3_EnviaArquivosCNJ {
 		LOGGER.info("Total de arquivos XML encontrados: " + tamanhoDoLoteAtual.intValue());
 		
 		List<LoteProcesso> processosComXMLParaEnvio = loteProcessoDAO.getProcessosPorLoteESituacao(loteAtual, getSituacoesProcessosEnvio(enviarTodosOsXMLs));
-
-		// Verifica se não há arquivos muito pequenos, que com certeza não contém um processo dentro (como ocorreu em Jan/2020 no TRT4)
-		//TODO: ajustar esse bloco de código para tratar durante a execução de processos
-//		List<LoteProcesso> processosComArquivosPequenos = processosComXMLParaEnvio
-//			.stream()
-//			.filter(a -> a.getXmlProcesso().getConteudoXML().length < 200)
-//			.collect(Collectors.toList());
-//		if (!processosComArquivosPequenos.isEmpty()) {
-//			LOGGER.warn("");
-//			LOGGER.warn("");
-//			LOGGER.warn("");
-//			for (LoteProcesso loteProcesso: processosComArquivosPequenos) {
-//				LOGGER.warn("* Processo: " + loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() 
-//						+ ". Grau: " + loteProcesso.getChaveProcessoCNJ().getGrau());;
-//			}
-//			LOGGER.warn("Os arquivos dos processos listados acima são muito pequenos e, por isso, provavelmente estão incompletos.");
-//			Auxiliar.aguardaUsuarioApertarENTERComTimeout(1);
-//		}
 		
 		LOGGER.info("Arquivos XML que precisam ser enviados: " + processosComXMLParaEnvio.size());
 
@@ -319,8 +301,18 @@ public class Op_3_EnviaArquivosCNJ {
 					int i = posicaoAtual.incrementAndGet();
 					threadPool.execute(() -> {
 						Auxiliar.prepararThreadLog();
-
 						ChaveProcessoCNJ processo = loteProcesso.getChaveProcessoCNJ();
+						
+						// Verifica se não há arquivos muito pequenos, que com certeza não contém um processo dentro (como ocorreu em Jan/2020 no TRT4)
+						if (loteProcesso.getXmlProcesso().getConteudoXML().length < 200) {
+							LOGGER.warn("");
+							LOGGER.warn("");
+
+							LOGGER.warn("O arquivo do processo " + processo.getNumeroProcesso() 
+								+ ", grau " + loteProcesso.getChaveProcessoCNJ().getGrau()
+								+ " são muito pequenos e, por isso, provavelmente estão incompletos.");
+						}
+						
 						LOGGER.trace("Enviando XML do processo: " + processo.getNumeroProcesso() + ". Grau: " + processo.getGrau() + " ...");
 						
 						// Monta a URL para enviar processos ao CNJ.
