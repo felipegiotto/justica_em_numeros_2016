@@ -183,8 +183,6 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_SEM_SERVENTIA = "SEM_SERVENTIA";
 	public static final String MOVIMENTOS_SEM_SERVENTIA_CNJ_SERVENTIA_OJ_PRINCIPAL = "SERVENTIA_OJ_PRINCIPAL";
 	
-	private static final int BATCH_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_batch);
-	
 	private boolean lotePossuiXMLsComErro;
 	
 	public static void main(String[] args) throws Exception {
@@ -525,8 +523,11 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 								
 							} catch (Exception ex) {
 								try {
-									this.ajustarSituacaoLoteProcesso(loteProcesso);
+									if (loteProcesso.getId() != null) {
+										this.ajustarSituacaoLoteProcesso(loteProcesso);										
+									}
 								} catch (Exception e2) { 
+									AcumuladorExceptions.instance().adicionarException(origemOperacao, "Erro na geração do XML do processo: " + e2.getLocalizedMessage(), e2, true);
 								}
 								AcumuladorExceptions.instance().adicionarException(origemOperacao, "Erro na geração do XML do processo: " + ex.getLocalizedMessage(), ex, true);
 							}
@@ -534,11 +535,6 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 							if (progresso != null) {
 								progresso.incrementProgress();
 							}
-							
-//							if (i > 0 && i % BATCH_SIZE == 0) {
-//								JPAUtil.flush();
-//								JPAUtil.clear();
-//							}
 						});
 					}
 				
