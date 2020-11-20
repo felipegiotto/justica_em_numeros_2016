@@ -46,7 +46,6 @@ public class Lote extends BaseEntidade {
 	@JoinColumn(name = "id_remessa")
 	private Remessa remessa;
 	
-	//TODO: Testar o @LazyCollection(LazyCollectionOption.EXTRA) se o desempenho estiver ruim
 	@OneToMany(mappedBy = "lote", fetch = FetchType.LAZY)
 	private List<LoteProcesso> lotesProcessos = new ArrayList<>(0);
 

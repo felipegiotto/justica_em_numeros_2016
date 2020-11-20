@@ -10,13 +10,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +25,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
@@ -39,26 +37,30 @@ import org.apache.logging.log4j.Logger;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ArquivoComInstancia;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.DataJudException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.MetaInformacaoEnvio;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
+import br.jus.trt4.justica_em_numeros_2016.dao.JPAUtil;
+import br.jus.trt4.justica_em_numeros_2016.dao.LoteProcessoDao;
+import br.jus.trt4.justica_em_numeros_2016.dao.RemessaDao;
+import br.jus.trt4.justica_em_numeros_2016.entidades.LoteProcesso;
+import br.jus.trt4.justica_em_numeros_2016.entidades.Remessa;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
-import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoProtocoloCNJ;
+import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteProcessoEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
+import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
 /**
- * Chama os webservices do CNJ, validando cada um dos protocolos recebidos
- * previamente do CNJ na fase 4: {@link Op_3_EnviaArquivosCNJ}.
+ * Chama os webservices do CNJ, validando cada um dos protocolos recebidos previamente do CNJ na fase 3:
+ * {@link Op_3_EnviaArquivosCNJ}.
  * 
- * TODO: Implementar também o reenvio automático, se for erro interno no CNJ,
- * dos processos dos protocolos com erro. Como sugestão criar um arquivo do tipo
- * .protocolo.erro que terá todos os protocolos com status de erro de um
+ * TODO: Implementar também o reenvio automático, se for erro interno no CNJ, dos processos dos protocolos com erro.
+ * Como sugestão criar um arquivo do tipo .protocolo.erro que terá todos os protocolos com status de erro de um
  * processo.
  *
  * @author felipe.giotto@trt4.jus.br
@@ -79,6 +81,10 @@ public class Op_4_ConfereProtocolosCNJ {
 	private static final String NOME_PARAMETRO_DATA_FIM = "dataFim";
 	private static final String NOME_PARAMETRO_STATUS = "status";
 	private static final String NOME_PARAMETRO_PAGINA = "page";
+	
+	private static int qtdProtocolosConferidos = 0;
+
+	private String tipoValidacaoProtocoloCNJ;
 
 	// Padrão de como a última página consultada no CNJ de um status é armazenada no
 	// arquivo.
@@ -86,27 +92,59 @@ public class Op_4_ConfereProtocolosCNJ {
 	// número da página (dígito com 1 a 10 números).
 	private static final String PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA = "^(%s )(\\d{1,10})$";
 
+	private static final RemessaDao remessaDAO = new RemessaDao();
+	private static final LoteProcessoDao loteProcessoDAO = new LoteProcessoDao();
+
 	public static void main(String[] args) throws Exception {
 
 		String resposta;
-		
-		if(args != null && args.length > 0) {
+
+		if (args != null && args.length > 0) {
 			resposta = args[0];
-		}
-		else {
+		} else {
 			System.out.println(
 					"Se algum arquivo ainda não foi processado no CNJ, ou se ocorrer algum erro na resposta do CNJ, você quer que a operação seja reiniciada?");
 			System.out.println(
 					"Responda 'S' para que as validações no CNJ rodem diversas vezes, até que o webservice não recuse nenhum arquivo e até que todos os XMLs sejam processados.");
 			System.out.println("Responda 'N' para que o envio ao CNJ rode somente uma vez.");
 			resposta = Auxiliar.readStdin().toUpperCase();
-		}		
+		}
 
 		executarOperacaoConfereProtocolosCNJ("S".equals(resposta));
 	}
 
-	public static void executarOperacaoConfereProtocolosCNJ(boolean continuarEmCasoDeErro) throws Exception {
+	/**
+	 * Prepara o componente HttpClient para conectar aos serviços REST do CNJ
+	 * 
+	 */
+	public Op_4_ConfereProtocolosCNJ() {
+		this.httpClient = HttpUtil.criarNovoHTTPClientComAutenticacaoCNJ();
+		this.tipoValidacaoProtocoloCNJ = Auxiliar.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj,
+				false);
 
+		if (this.isTipoValidacaoProtocoloCNJValido()) {
+			if (this.tipoValidacaoProtocoloCNJ != null) {
+				LOGGER.info(String.format("Tipo de validação escolhido: %s.", this.tipoValidacaoProtocoloCNJ));
+			} else {
+				// Validação padrão quando nenhum valor é preenchido
+				LOGGER.info("Tipo de validação escolhido: " + Auxiliar.VALIDACAO_CNJ_TODOS);
+			}
+		} else {
+			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_validacao_protocolo_cnj': "
+					+ this.tipoValidacaoProtocoloCNJ);
+		}
+	}
+
+	private boolean isTipoValidacaoProtocoloCNJValido() {
+		// TODO criar um enum
+		return this.tipoValidacaoProtocoloCNJ == null
+				|| Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
+				|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
+				|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(this.tipoValidacaoProtocoloCNJ)
+				|| Auxiliar.VALIDACAO_CNJ_TODOS.equals(this.tipoValidacaoProtocoloCNJ);
+	}
+
+	public static void executarOperacaoConfereProtocolosCNJ(boolean continuarEmCasoDeErro) throws Exception {
 		Auxiliar.prepararPastaDeSaida();
 
 		if (continuarEmCasoDeErro) {
@@ -116,46 +154,13 @@ public class Op_4_ConfereProtocolosCNJ {
 		progresso = new ProgressoInterfaceGrafica("(4/5) Conferência dos protocolos no CNJ");
 		try {
 			boolean executar = true;
+
 			do {
 				progresso.setProgress(0);
 
 				Op_4_ConfereProtocolosCNJ operacao = new Op_4_ConfereProtocolosCNJ();
 
-				String tipo_validacao_protocolo_cnj = Auxiliar
-						.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj, false);
-
-				if (tipo_validacao_protocolo_cnj == null
-						|| Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(tipo_validacao_protocolo_cnj)
-						|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO
-								.equals(tipo_validacao_protocolo_cnj)
-						|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(tipo_validacao_protocolo_cnj)
-						|| Auxiliar.VALIDACAO_CNJ_TODOS.equals(tipo_validacao_protocolo_cnj)) {
-					List<ArquivoComInstancia> arquivosProtocolos = ArquivoComInstancia
-							.localizarArquivosInstanciasHabilitadas(Auxiliar.SUFIXO_PROTOCOLO, false);
-
-					ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosProtocolos,
-							"Total de arquivos protocolos encontrados");
-					int totalArquivos = arquivosProtocolos.size();
-
-					LOGGER.info("Filtrando os protocolos que ainda não foram processados no CNJ.");
-
-					// Filtra somente os arquivos XML que possuem protocolos e que ainda NÃO foram
-					// processados no CNJ
-					// TODO Avaliar se não haveria outra forma mais eficiente de executar a lógica
-					// do método abaixo, como essa implementação está muito demorada
-					List<ArquivoComInstancia> arquivosParaConsultar = filtrarSomenteArquivosPendentesDeConsulta(arquivosProtocolos);
-
-					// Mostra os arquivos que serão consultados
-					ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosParaConsultar,
-							"Protocolos que ainda precisam ser conferidos");
-					
-					operacao.consultarProtocolosCNJ(tipo_validacao_protocolo_cnj, arquivosParaConsultar);
-				} else {
-					throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_validacao_protocolo_cnj': "
-							+ tipo_validacao_protocolo_cnj);
-				}
-
-				// TODO Fazer reenvio dos protocolos com erro
+				operacao.consultarProtocolosCNJ();
 
 				AcumuladorExceptions.instance().mostrarExceptionsAcumuladas();
 
@@ -193,111 +198,57 @@ public class Op_4_ConfereProtocolosCNJ {
 	}
 
 	/**
-	 * Prepara o componente HttpClient para conectar aos serviços REST do CNJ
-	 * 
-	 * @throws Exception
-	 */
-	public Op_4_ConfereProtocolosCNJ() {
-		httpClient = HttpUtil.criarNovoHTTPClientComAutenticacaoCNJ();
-	}
-
-	/**
-	 * Carrega os arquivos XML das instâncias selecionadas (1G e/ou 2G) e envia ao
-	 * CNJ.
+	 * Consulta os protocolos no CNJ de acordo com o tipo de validação preenchido no arquivo de configuração: TODOS,
+	 * TODOS_COM_ERRO (status 6 e 7), APENAS_COM_ERRO_PROCESSADO_COM_ERRO (status 6) e APENAS_COM_ERRO_NO_ARQUIVO
+	 * (status 7). Salva a lista de processos em arquivo e também a página atual da consulta para permitir o reinício a
+	 * partir dessa página.
 	 * 
 	 */
-	public void localizarProtocolosConsultarNoCNJ() {
+	public void consultarProtocolosCNJ() {
 
-		// Lista com todos os arquivos pendentes
-		Auxiliar.prepararPastaDeSaida();
+		LocalDate dataCorteRemessaAtual = DataJudUtil.getDataCorte();
+		TipoRemessaEnum tipoRemessaAtual = DataJudUtil.getTipoRemessa();
 
-		LOGGER.info("Carregando os arquivos de protocolos.");
+		Auxiliar.validarTipoRemessaAtual(tipoRemessaAtual);
 
-		// TODO Avaliar a necessidade de ordenação dessa lista, uma vez que será
-		// necessário iterar por toda ela para filtrar os
-		// protocolos que foram processados com sucesso e não necessitam de reenvio
-		List<ArquivoComInstancia> arquivosProtocolos = ArquivoComInstancia
-				.localizarArquivosInstanciasHabilitadas(Auxiliar.SUFIXO_PROTOCOLO, false);
+		Remessa remessa = remessaDAO.getRemessa(dataCorteRemessaAtual, tipoRemessaAtual, false, false);
 
-		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosProtocolos,
-				"Total de arquivos protocolos encontrados");
-		int totalArquivos = arquivosProtocolos.size();
+		if (remessa == null) {
+			throw new RuntimeException("Não foi possível localizar a remessa indicada em config.properties. "
+					+ "Certifique-se de que a operação Op_1_BaixaListaDeNumerosDeProcessos foi executada com sucesso.");
+		}
 
-		LOGGER.info("Filtrando os protocolos que ainda não foram processados no CNJ.");
+		Long totalProtocolosRecebidosDoCNJ = loteProcessoDAO.getQuantidadeProcessosPorRemessaESituacao(remessa,
+				getSituacoesProcessosComProtocolo());
+		LOGGER.info("Quantidade de protocolos encontrados: " + totalProtocolosRecebidosDoCNJ.intValue());
 
-		// Filtra somente os arquivos XML que possuem protocolos e que ainda NÃO foram
-		// processados no CNJ
-		// TODO Avaliar se não haveria outra forma mais eficiente de executar a lógica
-		// do método abaixo, como essa implementação está muito demorada
-		List<ArquivoComInstancia> arquivosParaConsultar = filtrarSomenteArquivosPendentesDeConsulta(arquivosProtocolos);
+		if (totalProtocolosRecebidosDoCNJ.intValue() == 0) {
+			LOGGER.error("Não foram encontrados na Remessa atual protocolos recebidos do CNJ.");
+			return;
+		}
 
-		// Mostra os arquivos que serão consultados
-		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosParaConsultar,
-				"Protocolos que ainda precisam ser conferidos");
+		List<LoteProcesso> loteProcessosParaConsultar = loteProcessoDAO.getProcessosPorRemessaESituacao(remessa,
+				getSituacoesProcessosComProtocoloPendenteDeConsulta());
+		LOGGER.info("Protocolos que ainda precisam ser conferidos no CNJ: " + loteProcessosParaConsultar.size());
 
 		// Atualiza o progresso na interface
 		if (progresso != null) {
-			progresso.setMax(totalArquivos);
-			progresso.setProgress(totalArquivos - arquivosParaConsultar.size());
+			progresso.setMax(totalProtocolosRecebidosDoCNJ.intValue());
+			progresso.setProgress(totalProtocolosRecebidosDoCNJ.intValue() - loteProcessosParaConsultar.size());
 		}
-
-		// Inicia o pesquisa
-		consultarProtocolosCNJ(null, arquivosParaConsultar);
-
-		// Envio finalizado
-		List<ArquivoComInstancia> arquivosXMLPendentes = filtrarSomenteArquivosPendentesDeConsulta(
-				arquivosParaConsultar);
-		ArquivoComInstancia.mostrarTotalDeArquivosPorPasta(arquivosXMLPendentes,
-				"Arquivos XML ainda pendentes de envio");
-	}
-
-	public static List<ArquivoComInstancia> filtrarSomenteArquivosPendentesDeConsulta(
-			List<ArquivoComInstancia> arquivosProtocolos) {
-		List<ArquivoComInstancia> arquivosPendentes = new ArrayList<>();
-		for (ArquivoComInstancia arquivo : arquivosProtocolos) {
-			if (deveConsultarArquivo(arquivo.getArquivo())) {
-				arquivosPendentes.add(arquivo);
-			}
-		}
-		return arquivosPendentes;
-	}
-
-	/**
-	 * Consulta os protocolos no CNJ de acordo com o tipo de validação preenchido no
-	 * arquivo de configuração: TODOS, TODOS_COM_ERRO (status 6 e 7),
-	 * APENAS_COM_ERRO_PROCESSADO_COM_ERRO (status 6) e APENAS_COM_ERRO_NO_ARQUIVO
-	 * (status 7). Salva a lista de processos em arquivo e também a página atual da
-	 * consulta para permitir o reinício a partir dessa página.
-	 * 
-	 * TODO: Reenviar automaticamente os protocolos com erro.
-	 * 
-	 */
-	private void consultarProtocolosCNJ(String tipo_validacao_protocolo_cnj, List<ArquivoComInstancia> arquivosProtocolos) {
 
 		String parametroProcolo = "";
 		String parametroDataInicio = "";
 		String parametroDataFim = "";
 
-		int totalProcessosAnalisados = 0;
-
-		if (tipo_validacao_protocolo_cnj != null) {
-			LOGGER.info(String.format("Tipo de validação escolhido: %s.", tipo_validacao_protocolo_cnj));
-		} else {
-			// Validação padrão quando nenhum valor é preenchido
-			LOGGER.info("Tipo de validação escolhido: VALIDACAO_CNJ_TODOS.");
-		}
-
-		if (arquivosProtocolos.size() == 0) {
-			LOGGER.error(String.format("Todos os protocolos já foram analisados ou "
-					+ "não foi encontrado nenhum arquivo .PROTOCOLO nas pastas %s e/ou %s.",
-					Auxiliar.getPastaXMLsIndividuais(1).getAbsolutePath(),
-					Auxiliar.getPastaXMLsIndividuais(2).getAbsolutePath()));
+		if (loteProcessosParaConsultar.size() == 0) {
+			LOGGER.info("Nenhum processo possui protocolos pendentes de análise no CNJ!");
 			return;
 		}
 
 		LOGGER.info("Carregando a data de início e data de fim da remessa.");
 
-		List<String> parametrosData = carregarParametrosData(arquivosProtocolos);
+		List<String> parametrosData = this.carregarParametrosData(loteProcessosParaConsultar);
 
 		parametroDataInicio = parametrosData.get(0);
 		parametroDataFim = parametrosData.get(1);
@@ -306,130 +257,81 @@ public class Op_4_ConfereProtocolosCNJ {
 
 		LOGGER.info("Carregando os protocolos dos arquivos.");
 
-		// Carregando a tupla protocolo/arquivo do protocolo num Map pois a consulta
-		// média é bem mais rápida do que em uma lista.
-		Map<String, File> mapProtocolosComArquivos = carregarListaFilesPorProtocolo(arquivosProtocolos);
-
-		Set<MetaInformacaoEnvio> setMetaInformacoesProcessosG1 = new HashSet<MetaInformacaoEnvio>();
-		Set<MetaInformacaoEnvio> setMetaInformacoesProcessosG2 = new HashSet<MetaInformacaoEnvio>();
+		Map<String, LoteProcesso> mapProtocolosComLoteProcessos = carregarListaFilesPorProtocolo(loteProcessosParaConsultar);
 
 		URIBuilder builder;
 
-		if (tipo_validacao_protocolo_cnj == null || Auxiliar.VALIDACAO_CNJ_TODOS.equals(tipo_validacao_protocolo_cnj)) {
+
+		if (this.tipoValidacaoProtocoloCNJ == null
+				|| Auxiliar.VALIDACAO_CNJ_TODOS.equals(this.tipoValidacaoProtocoloCNJ)) {
 			// Constrói a URL com o status "Processado com erro"
 			builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, "");
 
-			executarConsultasProtocolosCNJ(builder, mapProtocolosComArquivos, setMetaInformacoesProcessosG1,
-					setMetaInformacoesProcessosG2, Auxiliar.VALIDACAO_CNJ_TODOS);
+			executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, 
+					Auxiliar.VALIDACAO_CNJ_TODOS);
 		} else {
-			if (Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(tipo_validacao_protocolo_cnj)
+			if (Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
 					|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO
-							.equals(tipo_validacao_protocolo_cnj)) {
+							.equals(this.tipoValidacaoProtocoloCNJ)) {
 				// Constrói a URL com o status "Processado com erro"
 				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
 						STATUS_CNJ_PROCESSADO_COM_ERRO);
 
-				executarConsultasProtocolosCNJ(builder, mapProtocolosComArquivos, setMetaInformacoesProcessosG1,
-						setMetaInformacoesProcessosG2, Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO);
+				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, 
+						Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO);
 			}
 
-			if (Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(tipo_validacao_protocolo_cnj)
-					|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(tipo_validacao_protocolo_cnj)) {
+			if (Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
+					|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(this.tipoValidacaoProtocoloCNJ)) {
 				// Constrói a URL com o status "Erro no arquivo"
 				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
 						STATUS_CNJ_ERRO_ARQUIVO);
 
-				executarConsultasProtocolosCNJ(builder, mapProtocolosComArquivos, setMetaInformacoesProcessosG1,
-						setMetaInformacoesProcessosG2, Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO);
+				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, 
+						Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO);
 			}
 		}
 
-		if (setMetaInformacoesProcessosG1.size() > 0 || setMetaInformacoesProcessosG2.size() > 0) {
-			if (Auxiliar.deveProcessarPrimeiroGrau()) {
-
-				totalProcessosAnalisados += setMetaInformacoesProcessosG1.size();
-
-				if (Auxiliar.deveProcessarSegundoGrau()) {
-					totalProcessosAnalisados += setMetaInformacoesProcessosG2.size();
-					LOGGER.warn("Um total de " + totalProcessosAnalisados
-							+ " processos foram ANALISADOS no CNJ. A lista completa foi gravada " + "nos arquivos "
-							+ Auxiliar.getArquivoListaProcessosProtocolo(1).getAbsoluteFile() + " e "
-							+ Auxiliar.getArquivoListaProcessosProtocolo(2).getAbsoluteFile() + ".");
-				} else {
-					LOGGER.warn("Um total de " + totalProcessosAnalisados
-							+ " processos foram ANALISADOS no CNJ. A lista completa foi gravada " + "no arquivo "
-							+ Auxiliar.getArquivoListaProcessosProtocolo(1).getAbsoluteFile() + ".");
-				}
-			} else if (Auxiliar.deveProcessarSegundoGrau()) {
-				totalProcessosAnalisados += setMetaInformacoesProcessosG2.size();
-				LOGGER.warn("Um total de " + totalProcessosAnalisados
-						+ " processos foram ANALISADOS no CNJ. A lista completa foi gravada " + "no arquivo "
-						+ Auxiliar.getArquivoListaProcessosProtocolo(2).getAbsoluteFile() + ".");
-			}
+		if (qtdProtocolosConferidos > 0) {
+			LOGGER.warn("Um total de " + qtdProtocolosConferidos + " processos foram ANALISADOS no CNJ.");
 		} else {
 			LOGGER.warn("Nenhum protocolo foi encontrado para o tipo de validação informada.");
 		}
+
+		// Envio finalizado
+		Long qtdProcessosPendentes = loteProcessoDAO.getQuantidadeProcessosPorRemessaESituacao(remessa,
+				getSituacoesProcessosComProtocoloPendenteDeConsulta());
+		LOGGER.info("Protocolos da remessa atual que ainda não foram analisados: " + qtdProcessosPendentes.intValue());
 	}
 
 	/**
-	 * Itera sobre todos os arquivos carregados para buscar a menor e maior data dos
-	 * arquivos de protocolos.
+	 * Itera sobre todos os loteProcessos carregados para buscar a menor e maior data do envio dos XMLs.
 	 * 
-	 * @param arquivosProtocolos Arquivos de protocolos
-	 * @return Lista com duas String: a primeira com a menor data e a segunda com a
-	 *         maior data
+	 * @param loteProcessos Processos com protocolos pendentes
+	 * @return Lista com duas String: a primeira com a menor data e a segunda com a maior data
 	 */
-	private List<String> carregarParametrosData(List<ArquivoComInstancia> arquivosProtocolos) {
+	private List<String> carregarParametrosData(List<LoteProcesso> loteProcessos) {
 
 		List<String> datas = new ArrayList<>();
 
-		Date dataInicio;
-		Date dataFim;
+		LocalDateTime dataInicio = loteProcessos.get(0).getDataEnvioLocal();
+		LocalDateTime dataFim = dataInicio;
 
-		BasicFileAttributes atributos;
+		for (LoteProcesso loteProcesso : loteProcessos) {
+			LocalDateTime dataModificacaoArquivo = loteProcesso.getDataEnvioLocal();
 
-		try {
-			atributos = Files.readAttributes(arquivosProtocolos.get(0).getArquivo().toPath(),
-					BasicFileAttributes.class);
-			dataInicio = new Date(atributos.lastModifiedTime().toMillis());
-			dataFim = dataInicio;
-		} catch (IOException e1) {
-			LOGGER.warn(
-					"Não foi possível ler os atributos do arquivo " + arquivosProtocolos.get(0).getArquivo().toPath());
-			dataInicio = new GregorianCalendar(2100, Calendar.DECEMBER, 31).getTime();
-			dataFim = new GregorianCalendar(1900, Calendar.JANUARY, 01).getTime();
-		}
-
-		for (ArquivoComInstancia arquivoComInstancia : arquivosProtocolos) {
-			try {
-				atributos = Files.readAttributes(arquivoComInstancia.getArquivo().toPath(), BasicFileAttributes.class);
-				Date dataModificacaoArquivo = new Date(atributos.lastModifiedTime().toMillis());
-
-				if (dataInicio.after(dataModificacaoArquivo)) {
-					dataInicio = dataModificacaoArquivo;
-				} else if (dataFim.before(dataModificacaoArquivo)) {
-					dataFim = dataModificacaoArquivo;
-				}
-
-			} catch (IOException e) {
-				LOGGER.warn(
-						"Não foi possível ler os atributos do arquivo " + arquivoComInstancia.getArquivo().toPath());
+			if (dataInicio.isAfter(dataModificacaoArquivo)) {
+				dataInicio = dataModificacaoArquivo;
+			} else if (dataFim.isBefore(dataModificacaoArquivo)) {
+				dataFim = dataModificacaoArquivo;
 			}
 		}
 
+		dataInicio = dataInicio.minusDays(1);
+		dataFim = dataFim.plusDays(1);
+		
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
-		
-		Calendar calendar = Calendar.getInstance();
-        calendar.setTime(dataInicio);
-        calendar.add(Calendar.DATE, - 1);
-        dataInicio = calendar.getTime();
-        
-        calendar = Calendar.getInstance();
-        calendar.setTime(dataFim);
-        calendar.add(Calendar.DATE, + 1);
-        dataFim = calendar.getTime();
-		
 		datas.add(formatter.format(dataInicio));
 		datas.add(formatter.format(dataFim));
 
@@ -437,56 +339,26 @@ public class Op_4_ConfereProtocolosCNJ {
 	}
 
 	/**
-	 * Realiza a consulta ao webservice do CNJ e gera um arquivo com a lista de
-	 * processos e suas meta-informações para cada instância.
+	 * Realiza a consulta ao webservice do CNJ e gera um arquivo com a lista de processos e suas meta-informações para
+	 * cada instância.
 	 * 
 	 * @param builder                       URIBuilder com a URI a ser consultada
-	 * @param mapProtocolosComArquivos      Map com a tupla Protocolo/Arquivo do
-	 *                                      Protocolo para conseguir o número do
-	 *                                      processo a partir do protocolo retornado
-	 *                                      pelo serviço do CNJ.
-	 * @param setMetaInformacoesProcessosG1 Lista com as meta informações,
-	 *                                      retornadas pelo CNJ, dos processos
-	 *                                      analisados do 1° Grau
-	 * @param setMetaInformacoesProcessosG2 Lista com as meta informações,
-	 *                                      retornadas pelo CNJ, dos processos
-	 *                                      analisados do 2° Grau
+	 * @param mapProtocolosComLoteProcessos Map com a tupla Protocolo/LoteProcesso do Protocolo para conseguir o número do
+	 *                                      processo a partir do protocolo retornado pelo serviço do CNJ.
+	 * @param setMetaInformacoesProcessosG1 Lista com as meta informações, retornadas pelo CNJ, dos processos analisados
+	 *                                      do 1° Grau
+	 * @param setMetaInformacoesProcessosG2 Lista com as meta informações, retornadas pelo CNJ, dos processos analisados
+	 *                                      do 2° Grau
 	 */
-	private void executarConsultasProtocolosCNJ(URIBuilder builder, Map<String, File> mapProtocolosComArquivos,
-			Set<MetaInformacaoEnvio> setMetaInformacoesProcessosG1,
-			Set<MetaInformacaoEnvio> setMetaInformacoesProcessosG2, String tipoValidacaoProtocolo) {
+	private void executarConsultasProtocolosCNJ(URIBuilder builder, Map<String, LoteProcesso> mapProtocolosComLoteProcessos, String tipoValidacaoProtocolo) {
 
 		String agrupadorErrosConsultaProtocolosCNJ = "Consulta de protocolos no CNJ";
 
 		int parametroPaginaAtual = buscarUltimaPaginaConsultadaPorTipoDeValidacao(tipoValidacaoProtocolo) + 1;
 
-		File arquivoProcessosProtocolosG1 = Auxiliar.getArquivoListaProcessosProtocolo(1);
-		File arquivoProcessosProtocolosG2 = Auxiliar.getArquivoListaProcessosProtocolo(2);
-
-		if (!Auxiliar.getArquivoUltimaPaginaConsultaCNJ().exists()) {
-			// Consulta está começando pela primeira vez, então se existirem os arquivos com
-			// a lista de processos,
-			// eles serão removidos, pois serão lixo. Não faz a comparação com o número da
-			// página, pois a consulta de protocolos
-			// pode ter sido executada com outro tipo de validação. Nesse caso, o arquivo
-			// com o resultado do processamento
-			// pode estar preenchido com informações analisadas em outro tipo de validação e
-			// esse arquivo deve ser apagado nesse caso.
-
-			if (Auxiliar.deveProcessarPrimeiroGrau() && arquivoProcessosProtocolosG1.exists()) {
-				arquivoProcessosProtocolosG1.delete();
-			} else if (Auxiliar.deveProcessarSegundoGrau() && arquivoProcessosProtocolosG2.exists()) {
-				arquivoProcessosProtocolosG2.delete();
-			}
-
-		}
-
 		if (parametroPaginaAtual > 0) {
 			LOGGER.info("Reiniciando o processo da página " + parametroPaginaAtual + "...");
 		}
-
-		// TODO Avaliar se vale à pena verificar e alertar se ainda existe algum
-		// protocolo com o status em processamento
 
 		// Como o serviço do CNJ não está implementado corretamente, decidiu-se por
 		// verificar se a consulta a uma página
@@ -496,7 +368,6 @@ public class Op_4_ConfereProtocolosCNJ {
 		// de alterações e falhas como a alteração do tamanho
 		// da página ou a correção do serviço.
 		boolean consultaCNJRetornouResultado = false;
-
 		do {
 			URI uri = atualizarParametroURIBuilder(builder, NOME_PARAMETRO_PAGINA,
 					Integer.toString(parametroPaginaAtual));
@@ -511,69 +382,31 @@ public class Op_4_ConfereProtocolosCNJ {
 			} catch (ParseException | IOException ex) {
 				AcumuladorExceptions.instance().adicionarException(agrupadorErrosConsultaProtocolosCNJ,
 						ex.getLocalizedMessage(), ex, true);
-
 				return;
 			}
 
 			LOGGER.info("* Analisando a resposta JSON...");
 
-			List<List<MetaInformacaoEnvio>> protocolosRespostaJson = carregaProtocolosRespostaJson(body);
-
-			List<MetaInformacaoEnvio> listaMetaInformacoesAnalisadasG1 = protocolosRespostaJson.get(0);
-			List<MetaInformacaoEnvio> listaMetaInformacoesAnalisadasG2 = protocolosRespostaJson.get(1);
+			List<MetaInformacaoEnvio> listaMetaInformacoesAnalisadas = carregaMetaInformacoes(body);
 
 			// Verifica se a consulta ao CNJ retornou algum resultado.
-			consultaCNJRetornouResultado = !listaMetaInformacoesAnalisadasG1.isEmpty()
-					|| !listaMetaInformacoesAnalisadasG2.isEmpty();
+			consultaCNJRetornouResultado = !listaMetaInformacoesAnalisadas.isEmpty();
 
-			List<Set<MetaInformacaoEnvio>> listaProcessosRespostaJson = carregaListaProcessos(mapProtocolosComArquivos,
-					listaMetaInformacoesAnalisadasG1, listaMetaInformacoesAnalisadasG2);
-
-			Set<MetaInformacaoEnvio> setProcessosAnalisadosRespostaG1 = listaProcessosRespostaJson.get(0);
-			Set<MetaInformacaoEnvio> setProcessosAnalisadosRespostaG2 = listaProcessosRespostaJson.get(1);
-
-			// Remove os duplicados. É usado o iterator no lugar do foreach pois a exceção
-			// ConcurrentModificationException
-			// será lançada ao tentar iterar sobre a lista após apagar um de seus elementos.
-			for (Iterator<MetaInformacaoEnvio> i = setProcessosAnalisadosRespostaG1.iterator(); i.hasNext();) {
-				MetaInformacaoEnvio metaInformacao = i.next();
-				if (setMetaInformacoesProcessosG1.contains(metaInformacao)) {
-					i.remove();
-				}
+			try {
+				JPAUtil.iniciarTransacao();
+				
+				this.salvarMetaInformacoes(mapProtocolosComLoteProcessos, listaMetaInformacoesAnalisadas);
+				
+				JPAUtil.commit();
+			} catch (Exception e) {
+				String origemOperacao = "Erro ao salvar meta-informações.";
+				AcumuladorExceptions.instance().adicionarException(origemOperacao,
+						"Erro ao salvar meta-informações: " + e.getLocalizedMessage(), e, true);
+				JPAUtil.rollback();
+			} finally {
+				// JPAUtil.printEstatisticas();
+				JPAUtil.close();
 			}
-
-			for (Iterator<MetaInformacaoEnvio> i = setProcessosAnalisadosRespostaG2.iterator(); i.hasNext();) {
-				MetaInformacaoEnvio metaInformacao = i.next();
-				if (setMetaInformacoesProcessosG2.contains(metaInformacao)) {
-					i.remove();
-				}
-			}
-
-			// Salva o número de processos nos arquivos
-			if (Auxiliar.deveProcessarPrimeiroGrau()) {
-				try {
-					gravarListaProcessosEmArquivoEMarcarComoProcessado(mapProtocolosComArquivos,
-							setProcessosAnalisadosRespostaG1, Auxiliar.getArquivoListaProcessosProtocolo(1), true);
-
-				} catch (IOException e) {
-					LOGGER.warn("Não foi possível escrever a lista de processos analisados no arquivo "
-							+ Auxiliar.getArquivoListaProcessosProtocolo(1).getPath());
-				}
-			}
-
-			if (Auxiliar.deveProcessarSegundoGrau()) {
-				try {
-					gravarListaProcessosEmArquivoEMarcarComoProcessado(mapProtocolosComArquivos,
-							setProcessosAnalisadosRespostaG2, Auxiliar.getArquivoListaProcessosProtocolo(2), true);
-				} catch (IOException e) {
-					LOGGER.warn("Não foi possível escrever a lista de processos analisados no arquivo "
-							+ Auxiliar.getArquivoListaProcessosProtocolo(2).getPath());
-				}
-			}
-
-			// Adiciona os processos da resposta atual ao conjunto total de processos
-			setMetaInformacoesProcessosG1.addAll(setProcessosAnalisadosRespostaG1);
-			setMetaInformacoesProcessosG2.addAll(setProcessosAnalisadosRespostaG2);
 
 			gravarUltimaPaginaConsultada(tipoValidacaoProtocolo, Integer.toString(parametroPaginaAtual));
 
@@ -583,47 +416,23 @@ public class Op_4_ConfereProtocolosCNJ {
 	}
 
 	/**
-	 * Retorna o valor de um parâmetro do URIBuilder
-	 * 
-	 * @param builder       URIBuilder a ser consultado
-	 * @param nomeParametro nome do parâmetro do URIBuilder
-	 * @return Valor do parâmetro
-	 */
-	private String consultarValorParametroBuilder(URIBuilder builder, String nomeParametro) {
-
-		List<NameValuePair> params = builder.getQueryParams();
-
-		for (NameValuePair nameValuePair : params) {
-			if (nameValuePair.getName().equals(nomeParametro)) {
-				return nameValuePair.getValue();
-			}
-		}
-
-		throw new RuntimeException(
-				"Não foi possível encontrar o parâmetro " + nomeParametro + " no URIBuilder " + builder.getPath());
-	}
-
-	/**
 	 * Carrega a lista de meta-informações retornada no objeto JSON.
 	 * 
 	 * @param body Corpo da resposta da requisição feita ao serviço do CNJ
 	 * 
-	 * @return Lista com 2 objetos: 1) Lista de protocolos analisados no 1° Grau; 2)
-	 *         Lista de protocolos analisados no 2° Grau;
+	 * @return Lista de protocolos analisados 
 	 */
-	private List<List<MetaInformacaoEnvio>> carregaProtocolosRespostaJson(String body) {
+	private List<MetaInformacaoEnvio> carregaMetaInformacoes(String body) {
 
-		List<List<MetaInformacaoEnvio>> resposta = new ArrayList<List<MetaInformacaoEnvio>>();
+		List<MetaInformacaoEnvio> resposta = new ArrayList<MetaInformacaoEnvio>();
 
-		List<MetaInformacaoEnvio> listaProtocolosAnalisadosG1 = new ArrayList<MetaInformacaoEnvio>();
-		List<MetaInformacaoEnvio> listaProtocolosAnalisadosG2 = new ArrayList<MetaInformacaoEnvio>();
 		try {
 			JsonObject rootObject = JsonParser.parseString(body).getAsJsonObject();
-	
+
 			JsonArray processos = rootObject.get("resultado").getAsJsonArray();
-	
+
 			for (JsonElement processoElement : processos) {
-	
+
 				JsonObject processoObject = processoElement.getAsJsonObject();
 				String codHash = !processoObject.get("codHash").toString().equals("null")
 						? processoObject.get("codHash").getAsString()
@@ -655,26 +464,18 @@ public class Op_4_ConfereProtocolosCNJ {
 				String urlArquivo = !processoObject.get("urlArquivo").toString().equals("null")
 						? processoObject.get("urlArquivo").getAsString()
 						: "";
-	
+
 				if (!numProtocolo.equals("") && !grau.equals("")) {
-					if ("G1".equals(grau)) {
-						listaProtocolosAnalisadosG1.add(
-								new MetaInformacaoEnvio(codHash, datDataEnvioProtocolo, flgExcluido, grau, numProtocolo,
-										seqProtocolo, siglaOrgao, tamanhoArquivo, tipStatusProtocolo, urlArquivo));
-					} else if ("G2".equals(grau)) {
-						listaProtocolosAnalisadosG2.add(
-								new MetaInformacaoEnvio(codHash, datDataEnvioProtocolo, flgExcluido, grau, numProtocolo,
-										seqProtocolo, siglaOrgao, tamanhoArquivo, tipStatusProtocolo, urlArquivo));
-					}
+					resposta.add(new MetaInformacaoEnvio(codHash, datDataEnvioProtocolo, flgExcluido, grau,
+							numProtocolo, seqProtocolo, siglaOrgao, tamanhoArquivo, tipStatusProtocolo, urlArquivo));
+					
 				} else {
-					LOGGER.warn(String.format("Erro ao carregar o protocolo %s do Grau %s.", numProtocolo, grau));
+					LOGGER.error(String.format("Erro ao carregar o protocolo %s do Grau %s.", numProtocolo, grau));
 				}
 			}
 		} catch (RuntimeException ex) {
-			LOGGER.warn("Não foi possível ler o número do protocolo JSON do CNJ: " + body);
+			LOGGER.error("Não foi possível ler o número do protocolo JSON do CNJ: " + body);
 		}
-		resposta.add(listaProtocolosAnalisadosG1);
-		resposta.add(listaProtocolosAnalisadosG2);
 
 		return resposta;
 	}
@@ -682,58 +483,55 @@ public class Op_4_ConfereProtocolosCNJ {
 	/**
 	 * Carrega a lista de processos a partir dos protocolos.
 	 * 
-	 * @param mapProtocolosComProcessos        Tupla Protocolo/Processo
+	 * @param mapProtocolosComProcessos        Tupla Protocolo/LoteProcesso
 	 * @param listaMetaInformacoesAnalisadasG1 Lista de meta-informações analisadas
-	 *                                         no 1° grau
-	 * @param listaMetaInformacoesAnalisadasG2 Lista de meta-informações analisadas
-	 *                                         no 2° grau
 	 * 
-	 * @return Lista com 2 posições: 1) Set com lista de processos analisados no 1°
-	 *         grau; 2) Set com lista de processos analisados no 2° grau.
 	 */
-	private List<Set<MetaInformacaoEnvio>> carregaListaProcessos(Map<String, File> mapProtocolosComProcessos,
-			List<MetaInformacaoEnvio> listaMetaInformacoesAnalisadasG1,
-			List<MetaInformacaoEnvio> listaMetaInformacoesAnalisadasG2) {
+	private void salvarMetaInformacoes(Map<String, LoteProcesso> mapProtocolosComProcessos,
+			List<MetaInformacaoEnvio> listaMetaInformacoesAnalisadas) {
 
-		List<Set<MetaInformacaoEnvio>> resposta = new ArrayList<Set<MetaInformacaoEnvio>>();
+		for (MetaInformacaoEnvio metaInformacao : listaMetaInformacoesAnalisadas) {
+			// Pesquisa o loteProcesso a partir dos protocolos
+			LoteProcesso loteProcesso = mapProtocolosComProcessos.get(metaInformacao.getNumProtocolo());
 
-		Set<MetaInformacaoEnvio> setProcessosAnalisadosG1 = new HashSet<MetaInformacaoEnvio>();
-		Set<MetaInformacaoEnvio> setProcessosAnalisadosG2 = new HashSet<MetaInformacaoEnvio>();
+			if (loteProcesso != null) {
+				metaInformacao.setNumProcesso(loteProcesso.getChaveProcessoCNJ().getNumeroProcesso());
+				
+				loteProcesso.setDataRecebimentoCNJ(metaInformacao.getLocalDateTimeEnvioProtocolo());
+				loteProcesso.setHashCNJ(metaInformacao.getCodHash());
+				
+				SituacaoLoteProcessoEnum situacaoCNJ = SituacaoLoteProcessoEnum.criarApartirCodigoCNJ(metaInformacao.getTipStatusProtocolo());
 
-		for (MetaInformacaoEnvio metaInformacaoEnvioG1 : listaMetaInformacoesAnalisadasG1) {
-
-			// Pesquisa o número do processo a partir dos protocolo lidos nos arquivos
-			File arquivoProtocolo = mapProtocolosComProcessos.get(metaInformacaoEnvioG1.getNumProtocolo());
-			String numProcesso = arquivoProtocolo == null ? null : arquivoProtocolo.getName().replace(".xml.protocolo", "");
-
-			if (numProcesso != null) {
-				metaInformacaoEnvioG1.setNumProcesso(numProcesso);
-				setProcessosAnalisadosG1.add(metaInformacaoEnvioG1);
+				if (situacaoCNJ == null) {
+					LOGGER.error(String.format("Não foi possível converter a situação do protocolo: %s.",
+							metaInformacao.getTipStatusProtocolo()));
+				} else {
+					loteProcesso.setSituacao(situacaoCNJ);
+					
+					if (situacaoCNJ.equals(SituacaoLoteProcessoEnum.PROCESSADO_COM_SUCESSO_CNJ)) {
+						LOGGER.debug("Protocolo baixado com SUCESSO: " + loteProcesso.getProtocoloCNJ() + ", processo '"
+										+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
+					} else if (situacaoCNJ.isSituacaoErro()) {
+						LOGGER.warn("Protocolo baixado com ERRO: " + loteProcesso.getProtocoloCNJ() + ", processo '"
+								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
+					} else {
+						LOGGER.info("Protocolo NÃO baixado ainda: " + loteProcesso.getProtocoloCNJ() + ", processo '"
+								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "', situação '"
+								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
+					}
+				} 
+				loteProcessoDAO.incluirOuAlterar(loteProcesso);
+				
+				qtdProtocolosConferidos++;
+				
+				if (progresso != null) {
+					progresso.incrementProgress();
+				}
 			} else {
-				LOGGER.warn("Não foi encontrado nos arquivos de protocolo o processo referente ao protocolo "
-						+ metaInformacaoEnvioG1.getNumProtocolo());
+				LOGGER.warn("Não foi encontrado para a presente Remessa um processo com o seguinte protocolo de envio: "
+						+ metaInformacao.getNumProtocolo());
 			}
 		}
-
-		for (MetaInformacaoEnvio metaInformacaoEnvioG2 : listaMetaInformacoesAnalisadasG2) {
-
-			// Pesquisa o número do processo a partir dos protocolo lidos nos arquivos
-			File arquivoProtocolo = mapProtocolosComProcessos.get(metaInformacaoEnvioG2.getNumProtocolo());
-			String numProcesso = arquivoProtocolo == null ? null :arquivoProtocolo.getName().replace(".xml.protocolo", "");
-
-			if (numProcesso != null) {
-				metaInformacaoEnvioG2.setNumProcesso(numProcesso);
-				setProcessosAnalisadosG2.add(metaInformacaoEnvioG2);
-			} else {
-				LOGGER.warn("Não foi encontrado nos arquivos de protocolo o processo referente ao protocolo "
-						+ metaInformacaoEnvioG2.getNumProtocolo());			
-			}
-		}
-
-		resposta.add(setProcessosAnalisadosG1);
-		resposta.add(setProcessosAnalisadosG2);
-
-		return resposta;
 	}
 
 	/**
@@ -757,20 +555,17 @@ public class Op_4_ConfereProtocolosCNJ {
 	}
 
 	/**
-	 * Constrói o URIBuilder a partir do parâmetro Parametro.url_webservice_cnj
-	 * concatenada com a string "/protocolos" e os parâmetros da URL passados para
-	 * esse método.
+	 * Constrói o URIBuilder a partir do parâmetro Parametro.url_webservice_cnj concatenada com a string "/protocolos" e
+	 * os parâmetros da URL passados para esse método.
 	 * 
 	 * @param parametroProcolo    Número do protocolo
 	 * @param parametroDataInicio Data de início do envio
 	 * @param parametroDataFim    Data de Fim do Envio
-	 * @param parametroStatus     Status do protocolo: 1 (Aguardando processamento),
-	 *                            3 (Processado com sucesso), 4 (Enviado), 5
-	 *                            (Duplicado), 6 (Processado com Erro), 7 (Erro no
-	 *                            Arquivo)
+	 * @param parametroStatus     Status do protocolo: 1 (Aguardando processamento), 3 (Processado com sucesso), 4
+	 *                            (Enviado), 5 (Duplicado), 6 (Processado com Erro), 7 (Erro no Arquivo)
 	 * 
-	 * @return URIBuilder composto por Parametro.url_webservice_cnj mais
-	 *         "/protocolos" e os parâmetros passados para o método.
+	 * @return URIBuilder composto por Parametro.url_webservice_cnj mais "/protocolos" e os parâmetros passados para o
+	 *         método.
 	 */
 	private URIBuilder construirBuilderWebServiceCNJ(String parametroProcolo, String parametroDataInicio,
 			String parametroDataFim, String parametroStatus) {
@@ -805,10 +600,8 @@ public class Op_4_ConfereProtocolosCNJ {
 	}
 
 	/**
-	 * Realiza a requisição HTTP ao serviço do CNJ. Mesmo quando o serviço está
-	 * ativo ele retorna o erro 504 algumas vezes, dessa forma são feitas 10
-	 * tentativas com 5 minutos entre cada uma antes de lançar a exceção
-	 * IOException.
+	 * Realiza a requisição HTTP ao serviço do CNJ. Mesmo quando o serviço está ativo ele retorna o erro 504 algumas
+	 * vezes, dessa forma são feitas 10 tentativas com 5 minutos entre cada uma antes de lançar a exceção IOException.
 	 * 
 	 * @param uri URI do serviço
 	 * 
@@ -866,7 +659,7 @@ public class Op_4_ConfereProtocolosCNJ {
 			throw e;
 		} finally {
 			if (response != null) {
-				EntityUtils.consumeQuietly(response.getEntity());				
+				EntityUtils.consumeQuietly(response.getEntity());
 			}
 		}
 
@@ -879,11 +672,9 @@ public class Op_4_ConfereProtocolosCNJ {
 	}
 
 	/**
-	 * Retorna a última página consultada de acordo com o status do processamento do
-	 * protocolo. A página inicial é a 0.
+	 * Retorna a última página consultada de acordo com o status do processamento do protocolo. A página inicial é a 0.
 	 * 
-	 * @param tipoValidacaoProtocolo Tipo de validação de protocolos utilizada no
-	 *                               processamento de protocolos no CNJ
+	 * @param tipoValidacaoProtocolo Tipo de validação de protocolos utilizada no processamento de protocolos no CNJ
 	 * @return -1 ou a última página consultada
 	 */
 	private int buscarUltimaPaginaConsultadaPorTipoDeValidacao(String tipoValidacaoProtocolo) {
@@ -963,25 +754,22 @@ public class Op_4_ConfereProtocolosCNJ {
 	}
 
 	/**
-	 * Itera sobre todos os arquivos com o número do protocolo para associá-los aos
-	 * respectivos arquivos.
+	 * Itera sobre todos os loteProcessos com o número do protocolo para associá-los ao respectivo loteProcesso.
 	 * 
-	 * @param arquivosComProtocolo
-	 * @return HashMap com a dupla Protocolo/File de todos os processos com
-	 *         protocolo a serem pesquisados.
+	 * @param loteProcessos
+	 * @return HashMap com a dupla Protocolo/LoteProcesso de todos os processos com protocolo a serem pesquisados.
 	 */
-	private Map<String, File> carregarListaFilesPorProtocolo(List<ArquivoComInstancia> arquivosComProtocolo) {
-		Map<String, File> protocolosComProcessos = new HashMap<String, File>();
+	private Map<String, LoteProcesso> carregarListaFilesPorProtocolo(List<LoteProcesso> loteProcessos) {
+		Map<String, LoteProcesso> protocolosComProcessos = new HashMap<String, LoteProcesso>();
 
-		for (ArquivoComInstancia arquivoComInstancia : arquivosComProtocolo) {
-			protocolosComProcessos.put(arquivoComInstancia.getProtocolo(), arquivoComInstancia.getArquivo());																								// ""));
+		for (LoteProcesso loteProcesso : loteProcessos) {
+			protocolosComProcessos.put(loteProcesso.getProtocoloCNJ(), loteProcesso);
 		}
 		return protocolosComProcessos;
 	}
 
 	/**
-	 * Verifica se um determinado protocolo ainda está pendente de conferência no
-	 * CNJ
+	 * Verifica se um determinado protocolo ainda está pendente de conferência no CNJ
 	 * 
 	 * @param arquivo
 	 * @return
@@ -991,15 +779,6 @@ public class Op_4_ConfereProtocolosCNJ {
 				&& !Auxiliar.gerarNomeArquivoProcessoNegado(arquivo).exists();
 	}
 
-	private void marcarArquivoComoProcessado(File arquivo, String json, boolean sucesso) {
-		File arquivoConfirmacao = sucesso ? Auxiliar.gerarNomeArquivoProcessoSucesso(arquivo)
-				: Auxiliar.gerarNomeArquivoProcessoNegado(arquivo);
-		try {
-			FileUtils.write(arquivoConfirmacao, json, StandardCharsets.UTF_8);
-		} catch (IOException ex) {
-			LOGGER.warn("Não foi possível marcar arquivo como processado: " + arquivo, ex);
-		}
-	}
 
 	public void gravarTotalProtocolosRecusados() throws IOException {
 		List<ArquivoComInstancia> arquivosProtocolos = ArquivoComInstancia
@@ -1017,83 +796,36 @@ public class Op_4_ConfereProtocolosCNJ {
 					+ listaRecusados);
 		}
 	}
+	
+	private static List<SituacaoLoteProcessoEnum> getSituacoesProcessosComProtocolo() {
+		List<SituacaoLoteProcessoEnum> situacoes = new ArrayList<SituacaoLoteProcessoEnum>();
+		situacoes.addAll(getSituacoesProcessosComProtocoloPendenteDeConsulta());
+		situacoes.add(SituacaoLoteProcessoEnum.PROCESSADO_COM_SUCESSO_CNJ);
+		situacoes.add(SituacaoLoteProcessoEnum.DUPLICADO_CNJ);
+		situacoes.add(SituacaoLoteProcessoEnum.PROCESSADO_COM_ERRO_CNJ);
+		situacoes.add(SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ);
+		return situacoes;
+	}
 
-	/**
-	 * Grava o conjunto de processos e suas meta-informações no arquivo de saída e
-	 * marca o arquvido como processado com sucesso ou com erro (Informação
-	 * utilizada no controle da Operação Y).
-	 * 
-	 * @param setMetaInformacoes      Conjunto de meta-informações dos processos
-	 *                                analisados
-	 * @param arquivoSaida            Arquivo a ser gravado
-	 * @param acrescentarFinalArquivo Indica se os processos devem ser acrescentados
-	 *                                ao final do arquivo, ou se um novo arquivo
-	 *                                será gerado
-	 * 
-	 * @throws IOException
-	 */
-	public void gravarListaProcessosEmArquivoEMarcarComoProcessado(Map<String, File> mapProtocolosComArquivos,
-			Set<MetaInformacaoEnvio> setMetaInformacoes, File arquivoSaida, boolean acrescentarFinalArquivo)
-			throws IOException {
-		arquivoSaida.getParentFile().mkdirs();
-		FileWriter fw = new FileWriter(arquivoSaida, acrescentarFinalArquivo);
-		try {
-			for (MetaInformacaoEnvio metaInformacaoEnvio : setMetaInformacoes) {
-				// Salva as meta-informacoes em um arquivo único
-				fw.append(metaInformacaoEnvio.getInformacaoFormatada());
-				fw.append("\r\n");
-
-				Integer status = 0;
-				try {
-					status = Integer.parseInt(metaInformacaoEnvio.getTipStatusProtocolo());
-				} catch (NumberFormatException e) {
-					LOGGER.error(String.format("Não foi possível converter o status do protocolo em um número: %s.", 
-							metaInformacaoEnvio.getTipStatusProtocolo()));
-				}
-
-				// Marca o arquvido como processado com sucesso ou com erro.
-				boolean sucesso = SituacaoProtocoloCNJ.SUCESSO.getId().equals(status);
-
-				if (sucesso) {
-					this.marcarArquivoComoProcessado(mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()),
-							metaInformacaoEnvio.getInformacaoFormatada(), sucesso);
-					LOGGER.debug(
-							"Protocolo baixado com SUCESSO: " + metaInformacaoEnvio.getNumProtocolo() + ", arquivo '"
-									+ mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()) + "'");
-				} else if(metaInformacaoEnvio.hasStatusErro()) {
-					this.marcarArquivoComoProcessado(mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()),
-							metaInformacaoEnvio.getInformacaoFormatada(), sucesso);
-					LOGGER.warn("Protocolo baixado com ERRO: " + metaInformacaoEnvio.getNumProtocolo() + ", arquivo '"
-							+ mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()) + "'");
-				} else {
-					LOGGER.debug(
-							"Protocolo NÃO baixado ainda: " + metaInformacaoEnvio.getNumProtocolo() + ", arquivo '"
-									+ mapProtocolosComArquivos.get(metaInformacaoEnvio.getNumProtocolo()) + "'");
-				}
-			}
-		} finally {
-			fw.close();
-		}
-
+	private static List<SituacaoLoteProcessoEnum> getSituacoesProcessosComProtocoloPendenteDeConsulta() {
+		List<SituacaoLoteProcessoEnum> situacoes = new ArrayList<SituacaoLoteProcessoEnum>();
+		situacoes.add(SituacaoLoteProcessoEnum.ENVIADO);
+		situacoes.add(SituacaoLoteProcessoEnum.RECEBIDO_CNJ);
+		situacoes.add(SituacaoLoteProcessoEnum.AGUARDANDO_PROCESSAMENTO_CNJ);
+		return situacoes;
 	}
 
 	/**
-	 * Grava em um arquivo as seguintes informações separadas por ponto e vírgula:
-	 * instância, número do processo, número do protocolo e data de geração do
-	 * arquivo .PROTOCOLO.
+	 * Grava em um arquivo as seguintes informações separadas por ponto e vírgula: instância, número do processo, número
+	 * do protocolo e data de geração do arquivo .PROTOCOLO.
 	 * 
 	 * @param arquivosComProtocolo    Lista de arquivos com instância e protocolo
-	 * @param arquivoSaida            Arquivo que será gravado. Como sugestão usar o
-	 *                                método new File(Auxiliar.getPastaOutputRaiz(),
-	 *                                "/nomeDoArquivo.txt"), caso tenha realizado
-	 *                                envios de vários tipos como COMPLETA, TESTES,
-	 *                                PROCESSO, ETC. e queria que o arquivo seja
-	 *                                gravado no mesmo local independentemente do
-	 *                                método de geração usado.
-	 * @param acrescentarFinalArquivo Indica se deverá sobrescrever o conteúdo do
-	 *                                arquivo existente, ou então acrescentar o
-	 *                                conteúdo ao seu final, mantendo o conteúdo do
-	 *                                arquivo.
+	 * @param arquivoSaida            Arquivo que será gravado. Como sugestão usar o método new
+	 *                                File(Auxiliar.getPastaOutputRaiz(), "/nomeDoArquivo.txt"), caso tenha realizado
+	 *                                envios de vários tipos como COMPLETA, TESTES, PROCESSO, ETC. e queria que o
+	 *                                arquivo seja gravado no mesmo local independentemente do método de geração usado.
+	 * @param acrescentarFinalArquivo Indica se deverá sobrescrever o conteúdo do arquivo existente, ou então
+	 *                                acrescentar o conteúdo ao seu final, mantendo o conteúdo do arquivo.
 	 * 
 	 * @throws IOException
 	 */

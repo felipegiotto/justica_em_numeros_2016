@@ -36,6 +36,7 @@ import com.google.gson.JsonParser;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
+import br.jus.trt4.justica_em_numeros_2016.auxiliar.DataJudException;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.dao.JPAUtil;
@@ -449,14 +450,16 @@ public class Op_3_EnviaArquivosCNJ {
 	 * @param jsonRespostaCNJ
 	 * @throws IOException
 	 */
-	private void marcarLoteProcessoComoEnviado(LoteProcesso loteProcesso, String jsonRespostaCNJ) throws IOException {
+	private void marcarLoteProcessoComoEnviado(LoteProcesso loteProcesso, String jsonRespostaCNJ) throws DataJudException {
 		// Verifica se o CNJ informou um protocolo no retorno JSON, para que esse protocolo seja validado posteriormente.
 		String protocolo = null;
+		ChaveProcessoCNJ processo = loteProcesso.getChaveProcessoCNJ();
 		try {
 			JsonObject rootObject = JsonParser.parseString(jsonRespostaCNJ).getAsJsonObject();
 			protocolo = rootObject.get("protocolo").getAsString();
 		} catch (JsonParseException ex) {
-			LOGGER.warn("Não foi possível ler o número do protocolo JSON do CNJ");
+			throw new DataJudException("Não foi possível marcar como ENVIADO o processo: " + processo.getNumeroProcesso() + ". Grau: " + processo.getGrau() 
+				+ ". Não foi possível ler o número do protocolo JSON do CNJ: " + ex.getLocalizedMessage(), ex);
 		}
 		
 		// Cria um arquivo para indicar que o arquivo foi enviado com sucesso ao CNJ
@@ -468,8 +471,7 @@ public class Op_3_EnviaArquivosCNJ {
 			loteProcessoDAO.incluirOuAlterar(loteProcesso);	
 
 		} catch (Exception ex) {
-			ChaveProcessoCNJ processo = loteProcesso.getChaveProcessoCNJ();
-			LOGGER.warn("Não foi possível marcar como enviado o processo: " + processo.getNumeroProcesso() + ". Grau: " + processo.getGrau(), ex);
+			LOGGER.warn("Não foi possível marcar como ENVIADO o processo: " + processo.getNumeroProcesso() + ". Grau: " + processo.getGrau(), ex);
 		}
 	}
 }

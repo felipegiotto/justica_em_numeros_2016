@@ -27,7 +27,6 @@ public class ProcessoEnvio extends BaseEntidade {
 
 	private static final long serialVersionUID = 1L;
 
-	// TODO: avaliar desempenho allocationSize = 100)
 	@Id
 	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_processo_envio", allocationSize = 1)
 	@GeneratedValue(generator = "generator")

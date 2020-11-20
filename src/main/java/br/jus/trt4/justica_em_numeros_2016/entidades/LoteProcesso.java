@@ -31,7 +31,6 @@ public class LoteProcesso extends BaseEntidade {
 
 	private static final long serialVersionUID = 1L;
 
-	// TODO: avaliar desempenho allocationSize = 100)
 	@Id
 	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_lote_processo", allocationSize = 1)
 	@GeneratedValue(generator = "generator")

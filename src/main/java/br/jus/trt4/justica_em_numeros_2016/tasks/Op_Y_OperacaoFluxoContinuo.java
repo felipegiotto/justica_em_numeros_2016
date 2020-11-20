@@ -37,7 +37,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	private HttpServerStatus serverStatus;
 	private boolean executandoOperacao1BaixandoLista;
 	private boolean executandoOperacao2Geracao;
-	private boolean executandoOperacao4Envio;
+	private boolean executandoOperacao3Envio;
 	private boolean executandoOperacao5Conferencia;
 	
 	private void iniciar() throws IOException, SQLException {
@@ -185,13 +185,13 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				
 				if (isAlgumProcessoComStatus(ProcessoSituacaoEnum.XML_GERADO)) {
 					try {
-						this.executandoOperacao4Envio = true;
-						Op_3_EnviaArquivosCNJ operacao4Envia = new Op_3_EnviaArquivosCNJ();
-						operacao4Envia.localizarEnviarXMLsAoCNJ();
+						this.executandoOperacao3Envio = true;
+						Op_3_EnviaArquivosCNJ operacao3Envia = new Op_3_EnviaArquivosCNJ();
+						operacao3Envia.localizarEnviarXMLsAoCNJ();
 					} catch (Exception e) {
 						LOGGER.error("Erro enviando dados ao CNJ: " + e.getLocalizedMessage(), e);
 					} finally {
-						this.executandoOperacao4Envio = false;
+						this.executandoOperacao3Envio = false;
 					}
 				}
 				
@@ -216,7 +216,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				try {
 					this.executandoOperacao5Conferencia = true;
 					Op_4_ConfereProtocolosCNJ operacao = new Op_4_ConfereProtocolosCNJ();
-					operacao.localizarProtocolosConsultarNoCNJ();
+					operacao.consultarProtocolosCNJ();
 					operacao.gravarTotalProtocolosRecusados();
 					
 					AcumuladorExceptions.instance().removerException("Conferência de protocolos no CNJ");
@@ -275,7 +275,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	}
 	
 	public boolean isExecutandoOperacao4Envio() {
-		return executandoOperacao4Envio;
+		return executandoOperacao3Envio;
 	}
 	
 	public boolean isExecutandoOperacao1BaixandoLista() {
