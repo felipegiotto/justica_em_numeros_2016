@@ -44,13 +44,13 @@ public class LoteProcessoDao extends DataJudBaseDao<LoteProcesso> {
 		return getSingleResultOrNull(query);
 	}
 	
-	public List<LoteProcesso> getProcessosPorLoteESituacao(Lote lote, List<SituacaoLoteProcessoEnum> situacoes) {
+	public List<Long> getIDProcessosPorLoteESituacao(Lote lote, List<SituacaoLoteProcessoEnum> situacoes) {
 		StringBuilder hql = new StringBuilder();
-		hql.append("select lp from LoteProcesso lp ");
+		hql.append("select lp.id from LoteProcesso lp ");
 		hql.append(" where lp.lote.id = :idLote ");
 		hql.append(" and lp.situacao IN ( :situacoes ) ");
 		
-		TypedQuery<LoteProcesso> query = JPAUtil.getEntityManager().createQuery(hql.toString(), LoteProcesso.class);
+		TypedQuery<Long> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Long.class);
 		query.setParameter("idLote", lote.getId());
 		query.setParameter("situacoes", situacoes);
 

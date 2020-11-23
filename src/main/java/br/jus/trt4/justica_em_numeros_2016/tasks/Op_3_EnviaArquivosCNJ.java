@@ -216,19 +216,19 @@ public class Op_3_EnviaArquivosCNJ {
 		
 		LOGGER.info("Total de arquivos XML encontrados: " + tamanhoDoLoteAtual.intValue());
 		
-		List<LoteProcesso> processosComXMLParaEnvio = loteProcessoDAO.getProcessosPorLoteESituacao(loteAtual, getSituacoesProcessosEnvio(enviarTodosOsXMLs));
+		List<Long> idProcessosComXMLParaEnvio = loteProcessoDAO.getIDProcessosPorLoteESituacao(loteAtual, getSituacoesProcessosEnvio(enviarTodosOsXMLs));
 		
-		LOGGER.info("Arquivos XML que precisam ser enviados: " + processosComXMLParaEnvio.size());
+		LOGGER.info("Arquivos XML que precisam ser enviados: " + idProcessosComXMLParaEnvio.size());
 
 		// Atualiza o progresso na interface
 		if (progresso != null) {
 			progresso.setMax(tamanhoDoLoteAtual.intValue());
-			progresso.setProgress(tamanhoDoLoteAtual.intValue() - processosComXMLParaEnvio.size());
+			progresso.setProgress(tamanhoDoLoteAtual.intValue() - idProcessosComXMLParaEnvio.size());
 		}
 		
-		if(processosComXMLParaEnvio.size() > 0) {
+		if(idProcessosComXMLParaEnvio.size() > 0) {
 			// Inicia o envio
-			enviarXMLsAoCNJ(processosComXMLParaEnvio);
+			enviarXMLsAoCNJ(idProcessosComXMLParaEnvio);
 		}
 		
 		Long qtdProcessosPendentes = loteProcessoDAO.getQuantidadeProcessosPorLoteESituacao(loteAtual, getSituacoesProcessosEnvio(enviarTodosOsXMLs));
@@ -271,30 +271,30 @@ public class Op_3_EnviaArquivosCNJ {
 		return situacoes;
 	}
 
-	private void enviarXMLsAoCNJ(List<LoteProcesso> processosComXMLParaEnviar) throws JAXBException, InterruptedException {
+	private void enviarXMLsAoCNJ(List<Long> idProcessosComXMLParaEnviar) throws JAXBException, InterruptedException {
 		// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
 		final int tamanhoLote = Math.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_envio_operacao_3, 1), 1);
 		final AtomicInteger counter = new AtomicInteger();
 
-		final Collection<List<LoteProcesso>> loteLoteProcessos = processosComXMLParaEnviar.stream()
+		final Collection<List<Long>> idsLoteLoteProcessos = idProcessosComXMLParaEnviar.stream()
 				.collect(Collectors.groupingBy(it -> counter.getAndIncrement() / tamanhoLote)).values();
 
 		// Para evitar a exceção "Unable to invoke factory method in class
 		// org.apache.logging.log4j.core.appender.RollingFileAppender
 		// for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
-		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1) > loteLoteProcessos.size() 
-				? loteLoteProcessos.size()
+		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1) > idsLoteLoteProcessos.size() 
+				? idsLoteLoteProcessos.size()
 				: Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1);
 
 		// Objeto que fará o envio dos arquivos em várias threads
-		LOGGER.info("Iniciando o envio de " + processosComXMLParaEnviar.size() + " XMLs, utilizando " + numeroThreads + " thread(s)");
+		LOGGER.info("Iniciando o envio de " + idProcessosComXMLParaEnviar.size() + " XMLs, utilizando " + numeroThreads + " thread(s)");
 		AtomicInteger posicaoAtual = new AtomicInteger();
-		for (List<LoteProcesso> loteProcessos : loteLoteProcessos) {
+		for (List<Long> idsLoteProcessos : idsLoteLoteProcessos) {
 			try {
-				JPAUtil.iniciarTransacao();
-				
-				List<Long> idsLoteProcessos = loteProcessos.stream().map(o -> o.getId()).collect(Collectors.toList());
+
 				List<LoteProcesso> loteProcessosComXML = loteProcessoDAO.getProcessosComXMLPorIDs(idsLoteProcessos);
+
+				JPAUtil.iniciarTransacao();				
 				
 				ExecutorService threadPool = Executors.newFixedThreadPool(numeroThreads);
 				for (LoteProcesso loteProcesso : loteProcessosComXML) {
@@ -358,18 +358,18 @@ public class Op_3_EnviaArquivosCNJ {
 								String body = EntityUtils.toString(result, Charset.forName("UTF-8"));
 								
 								int statusCode = response.getStatusLine().getStatusCode();
-								LOGGER.trace("* Arquivo: '" + loteProcesso + "', tempo=" + tempo + "ms, statusCode=" + statusCode + ", body=" + resumirBodyRequisicao(body, result.getContentType()));
+								LOGGER.trace("* Arquivo do processo: '" + processo.getNumeroProcesso() + "', tempo=" + tempo + "ms, statusCode=" + statusCode + ", body=" + resumirBodyRequisicao(body, result.getContentType()));
 								this.conferirRespostaSucesso(statusCode, body);
 								this.marcarLoteProcessoComoEnviado(loteProcesso, body);
-								LOGGER.info("* Arquivo enviado com sucesso: " + loteProcesso);
+								LOGGER.info("* Arquivo enviado com sucesso: " + processo.getNumeroProcesso());
 								qtdEnviadaComSucesso.incrementAndGet();
 								
 								// Mostra previsão de conclusão
 								if ((System.currentTimeMillis() - ultimaExibicaoProgresso) > 5_000) {
 									ultimaExibicaoProgresso = System.currentTimeMillis();
 									StringBuilder sbProgresso = new StringBuilder();
-									sbProgresso.append("Envio dos arquivos pendentes: " + i + "/" + processosComXMLParaEnviar.size());
-									double percentual = i * 10000 / processosComXMLParaEnviar.size() / 100.0;
+									sbProgresso.append("Envio dos arquivos pendentes: " + i + "/" + idProcessosComXMLParaEnviar.size());
+									double percentual = i * 10000 / idProcessosComXMLParaEnviar.size() / 100.0;
 									sbProgresso.append(" (" + percentual + "%");
 									synchronized (temposEnvioCNJ) {
 										int arquivosMedicao = temposEnvioCNJ.size();
@@ -379,7 +379,7 @@ public class Op_3_EnviaArquivosCNJ {
 												totalTempo += tempoEnvio;
 											}
 											long tempoMedio = totalTempo / arquivosMedicao;
-											long tempoRestante = (processosComXMLParaEnviar.size() - i) * tempoMedio;
+											long tempoRestante = (idProcessosComXMLParaEnviar.size() - i) * tempoMedio;
 											String tempoRestanteStr = "ETA " + DurationFormatUtils.formatDurationHMS(tempoRestante/numeroThreads);
 											sbProgresso.append(" - " + tempoRestanteStr + " em " + numeroThreads + " thread(s)");
 											sbProgresso.append(" - media de " + DurationFormatUtils.formatDurationHMS(tempoMedio) + "/arquivo");
