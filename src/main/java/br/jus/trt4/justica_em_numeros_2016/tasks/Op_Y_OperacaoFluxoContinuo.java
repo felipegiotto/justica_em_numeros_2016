@@ -217,7 +217,6 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 					this.executandoOperacao5Conferencia = true;
 					Op_4_ConfereProtocolosCNJ operacao = new Op_4_ConfereProtocolosCNJ();
 					operacao.consultarProtocolosCNJ();
-					operacao.gravarTotalProtocolosRecusados();
 					
 					AcumuladorExceptions.instance().removerException("Conferência de protocolos no CNJ");
 				} catch (Exception e) {

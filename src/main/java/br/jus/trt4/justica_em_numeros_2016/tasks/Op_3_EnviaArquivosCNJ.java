@@ -62,6 +62,7 @@ public class Op_3_EnviaArquivosCNJ {
 	private CloseableHttpClient httpClient;
 	private final List<Long> temposEnvioCNJ = new ArrayList<>();
 	private long ultimaExibicaoProgresso;
+	private boolean enviarTodosOsXMLs;
 
 	private final AtomicLong qtdEnviadaComSucesso = new AtomicLong(0);
 	private static ProgressoInterfaceGrafica progresso;
@@ -92,24 +93,18 @@ public class Op_3_EnviaArquivosCNJ {
 	 */
 	public Op_3_EnviaArquivosCNJ() throws Exception {
 		this.httpClient = HttpUtil.criarNovoHTTPClientComAutenticacaoCNJ();
-	}
-	
-	private static boolean enviarTodosOsXMLs() {
-		boolean enviarTodosOsXMLs = false;
-		
+		this.enviarTodosOsXMLs = false;
 		String situacaoXMLParaEnvio = Auxiliar
 				.getParametroConfiguracao(Parametro.situacao_xml_para_envio_operacao_3, false);
 		if (situacaoXMLParaEnvio == null
 				|| Auxiliar.ENVIAR_TODOS_OS_XMLS.equals(situacaoXMLParaEnvio)) {
-			enviarTodosOsXMLs = true;
+			this.enviarTodosOsXMLs = true;
 		} else if (Auxiliar.ENVIAR_APENAS_XMLS_GERADOS_COM_SUCESSO.equals(situacaoXMLParaEnvio)) {
-			enviarTodosOsXMLs = false;
+			this.enviarTodosOsXMLs = false;
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'situacao_xml_para_envio_operacao_3': "
 					+ situacaoXMLParaEnvio);
 		}
-		
-		return enviarTodosOsXMLs;
 	}
 
 	public static void validarEnviarArquivosCNJ(boolean reiniciarEmCasoDeErro) throws Exception {
@@ -211,12 +206,10 @@ public class Op_3_EnviaArquivosCNJ {
 		} 
 		
 		Long tamanhoDoLoteAtual = loteProcessoDAO.getQuantidadeProcessosPorLote(loteAtual);
-
-		boolean enviarTodosOsXMLs = enviarTodosOsXMLs();
 		
 		LOGGER.info("Total de arquivos XML encontrados: " + tamanhoDoLoteAtual.intValue());
 		
-		List<Long> idProcessosComXMLParaEnvio = loteProcessoDAO.getIDProcessosPorLoteESituacao(loteAtual, getSituacoesProcessosEnvio(enviarTodosOsXMLs));
+		List<Long> idProcessosComXMLParaEnvio = loteProcessoDAO.getIDProcessosPorLoteESituacao(loteAtual, this.getSituacoesProcessosEnvio());
 		
 		LOGGER.info("Arquivos XML que precisam ser enviados: " + idProcessosComXMLParaEnvio.size());
 
@@ -231,7 +224,7 @@ public class Op_3_EnviaArquivosCNJ {
 			enviarXMLsAoCNJ(idProcessosComXMLParaEnvio);
 		}
 		
-		Long qtdProcessosPendentes = loteProcessoDAO.getQuantidadeProcessosPorLoteESituacao(loteAtual, getSituacoesProcessosEnvio(enviarTodosOsXMLs));
+		Long qtdProcessosPendentes = loteProcessoDAO.getQuantidadeProcessosPorLoteESituacao(loteAtual, this.getSituacoesProcessosEnvio());
 		
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
@@ -262,10 +255,10 @@ public class Op_3_EnviaArquivosCNJ {
 		}
 	}
 	
-	private static List<SituacaoLoteProcessoEnum> getSituacoesProcessosEnvio(boolean enviarTodosOsXMLs) {
+	private List<SituacaoLoteProcessoEnum> getSituacoesProcessosEnvio() {
 		List<SituacaoLoteProcessoEnum> situacoes = new ArrayList<SituacaoLoteProcessoEnum>();
 		situacoes.add(SituacaoLoteProcessoEnum.XML_GERADO_COM_SUCESSO);
-		if (enviarTodosOsXMLs) {
+		if (this.enviarTodosOsXMLs) {
 			situacoes.add(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO);
 		}
 		return situacoes;

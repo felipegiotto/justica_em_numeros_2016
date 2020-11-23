@@ -1,24 +1,19 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +35,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.ArquivoComInstancia;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.MetaInformacaoEnvio;
@@ -71,11 +65,7 @@ public class Op_4_ConfereProtocolosCNJ {
 	private CloseableHttpClient httpClient;
 	private static ProgressoInterfaceGrafica progresso;
 
-	// Codigo de status de processo com status "Processado com Erro".
-	private static final String STATUS_CNJ_PROCESSADO_COM_ERRO = "6";
-	// Codigo de status de processo com status "Erro no Arquivo"
-	private static final String STATUS_CNJ_ERRO_ARQUIVO = "7";
-
+	//TODO criar um enum
 	private static final String NOME_PARAMETRO_PROTOCOLO = "protocolo";
 	private static final String NOME_PARAMETRO_DATA_INICIO = "dataInicio";
 	private static final String NOME_PARAMETRO_DATA_FIM = "dataFim";
@@ -87,8 +77,7 @@ public class Op_4_ConfereProtocolosCNJ {
 	private String tipoValidacaoProtocoloCNJ;
 
 	// Padrão de como a última página consultada no CNJ de um status é armazenada no
-	// arquivo.
-	// Composto pelo número do status (que é preenchido dinamicamente), espaço e o
+	// arquivo. Composto pelo número do status (que é preenchido dinamicamente), espaço e o
 	// número da página (dígito com 1 a 10 números).
 	private static final String PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA = "^(%s )(\\d{1,10})$";
 
@@ -257,7 +246,7 @@ public class Op_4_ConfereProtocolosCNJ {
 
 		LOGGER.info("Carregando os protocolos dos arquivos.");
 
-		Map<String, LoteProcesso> mapProtocolosComLoteProcessos = carregarListaFilesPorProtocolo(loteProcessosParaConsultar);
+		Map<String, LoteProcesso> mapProtocolosComLoteProcessos = carregarListaLoteProcessoPorProtocolo(loteProcessosParaConsultar);
 
 		URIBuilder builder;
 
@@ -275,7 +264,7 @@ public class Op_4_ConfereProtocolosCNJ {
 							.equals(this.tipoValidacaoProtocoloCNJ)) {
 				// Constrói a URL com o status "Processado com erro"
 				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
-						STATUS_CNJ_PROCESSADO_COM_ERRO);
+						SituacaoLoteProcessoEnum.PROCESSADO_COM_ERRO_CNJ.getCodigoCNJ());
 
 				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, 
 						Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO);
@@ -285,7 +274,7 @@ public class Op_4_ConfereProtocolosCNJ {
 					|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(this.tipoValidacaoProtocoloCNJ)) {
 				// Constrói a URL com o status "Erro no arquivo"
 				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
-						STATUS_CNJ_ERRO_ARQUIVO);
+						SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ.getCodigoCNJ());
 
 				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, 
 						Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO);
@@ -759,42 +748,13 @@ public class Op_4_ConfereProtocolosCNJ {
 	 * @param loteProcessos
 	 * @return HashMap com a dupla Protocolo/LoteProcesso de todos os processos com protocolo a serem pesquisados.
 	 */
-	private Map<String, LoteProcesso> carregarListaFilesPorProtocolo(List<LoteProcesso> loteProcessos) {
+	private Map<String, LoteProcesso> carregarListaLoteProcessoPorProtocolo(List<LoteProcesso> loteProcessos) {
 		Map<String, LoteProcesso> protocolosComProcessos = new HashMap<String, LoteProcesso>();
 
 		for (LoteProcesso loteProcesso : loteProcessos) {
 			protocolosComProcessos.put(loteProcesso.getProtocoloCNJ(), loteProcesso);
 		}
 		return protocolosComProcessos;
-	}
-
-	/**
-	 * Verifica se um determinado protocolo ainda está pendente de conferência no CNJ
-	 * 
-	 * @param arquivo
-	 * @return
-	 */
-	private static boolean deveConsultarArquivo(File arquivo) {
-		return !Auxiliar.gerarNomeArquivoProcessoSucesso(arquivo).exists()
-				&& !Auxiliar.gerarNomeArquivoProcessoNegado(arquivo).exists();
-	}
-
-
-	public void gravarTotalProtocolosRecusados() throws IOException {
-		List<ArquivoComInstancia> arquivosProtocolos = ArquivoComInstancia
-				.localizarArquivosInstanciasHabilitadas(Auxiliar.SUFIXO_PROTOCOLO_ERRO, true);
-		if (!arquivosProtocolos.isEmpty()) {
-			File listaRecusados = new File(Auxiliar.prepararPastaDeSaida(), "lista_protocolos_recusados_cnj.txt");
-			try (FileWriter fw = new FileWriter(listaRecusados)) {
-				for (ArquivoComInstancia arquivo : arquivosProtocolos) {
-					fw.append(arquivo.getArquivo().toString());
-					fw.append("\n");
-				}
-			}
-			LOGGER.warn("Um total de " + arquivosProtocolos.size()
-					+ " processos foram RECUSADOS no CNJ. A lista completa foi gravada neste arquivo: "
-					+ listaRecusados);
-		}
 	}
 	
 	private static List<SituacaoLoteProcessoEnum> getSituacoesProcessosComProtocolo() {
@@ -815,39 +775,4 @@ public class Op_4_ConfereProtocolosCNJ {
 		return situacoes;
 	}
 
-	/**
-	 * Grava em um arquivo as seguintes informações separadas por ponto e vírgula: instância, número do processo, número
-	 * do protocolo e data de geração do arquivo .PROTOCOLO.
-	 * 
-	 * @param arquivosComProtocolo    Lista de arquivos com instância e protocolo
-	 * @param arquivoSaida            Arquivo que será gravado. Como sugestão usar o método new
-	 *                                File(Auxiliar.getPastaOutputRaiz(), "/nomeDoArquivo.txt"), caso tenha realizado
-	 *                                envios de vários tipos como COMPLETA, TESTES, PROCESSO, ETC. e queria que o
-	 *                                arquivo seja gravado no mesmo local independentemente do método de geração usado.
-	 * @param acrescentarFinalArquivo Indica se deverá sobrescrever o conteúdo do arquivo existente, ou então
-	 *                                acrescentar o conteúdo ao seu final, mantendo o conteúdo do arquivo.
-	 * 
-	 * @throws IOException
-	 */
-	private void GravarListaProcessoProtocoloInstanciaEmArquivo(File arquivoSaida, boolean acrescentarFinalArquivo)
-			throws IOException {
-		List<ArquivoComInstancia> arquivosComProtocolo = ArquivoComInstancia
-				.localizarArquivosInstanciasHabilitadas(Auxiliar.SUFIXO_PROTOCOLO, false);
-		FileWriter fw = new FileWriter(arquivoSaida, acrescentarFinalArquivo);
-
-		for (ArquivoComInstancia arquivoComInstancia : arquivosComProtocolo) {
-
-			BasicFileAttributes atributos = Files.readAttributes(arquivoComInstancia.getArquivo().toPath(),
-					BasicFileAttributes.class);
-			Date dataInicio = new Date(atributos.lastModifiedTime().toMillis());
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-
-			fw.append(String.format("%s;%s;%s;%s", arquivoComInstancia.getGrau(),
-					arquivoComInstancia.getArquivo().getName().replace(".xml.protocolo", ""),
-					arquivoComInstancia.getProtocolo(), formatter.format(dataInicio)));
-			fw.append("\r\n");
-		}
-
-		fw.close();
-	}
 }
