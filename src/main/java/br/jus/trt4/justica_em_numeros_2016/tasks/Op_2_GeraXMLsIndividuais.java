@@ -1644,7 +1644,14 @@ public class Op_2_GeraXMLsIndividuais implements Closeable {
 		}
 		
 		// Objeto que identificará os movimentos processuais das tabelas nacionais do CNJ
-		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(baseEmAnalise, conexaoBasePrincipal);
+		Connection conexaoPJe = null;
+		if (this.baseEmAnalise.isBaseLegado()) {
+			conexaoPJe = Auxiliar.getConexao(this.grau, BaseEmAnaliseEnum.PJE);
+			conexaoPJe.setAutoCommit(false);			
+		} else {
+			conexaoPJe = this.conexaoBasePrincipal;
+		}
+		analisaMovimentosCNJ = new AnalisaMovimentosCNJ(this.baseEmAnalise, conexaoPJe);
 		analisaClassesProcessuaisCNJ = new AnalisaClassesProcessuaisCNJ();
 		
 		this.statusString = null;
