@@ -51,7 +51,9 @@ import br.jus.trt4.justica_em_numeros_2016.entidades.Remessa;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteProcessoEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoXMLParaEnvioEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoValidacaoProtocoloCNJEnum;
 import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
 /**
@@ -70,7 +72,6 @@ public class Op_4_ConfereProtocolosCNJ {
 	private CloseableHttpClient httpClient;
 	private static ProgressoInterfaceGrafica progresso;
 
-	// TODO criar um enum
 	private static final String NOME_PARAMETRO_PROTOCOLO = "protocolo";
 	private static final String NOME_PARAMETRO_DATA_INICIO = "dataInicio";
 	private static final String NOME_PARAMETRO_DATA_FIM = "dataFim";
@@ -79,7 +80,7 @@ public class Op_4_ConfereProtocolosCNJ {
 
 	private static int qtdProtocolosConferidos = 0;
 
-	private String tipoValidacaoProtocoloCNJ;
+	private TipoValidacaoProtocoloCNJEnum tipoValidacaoProtocoloCNJ;
 	private boolean considerarXMLsComErro;
 
 	// Padrão de como a última página consultada no CNJ de um status é armazenada no
@@ -115,27 +116,30 @@ public class Op_4_ConfereProtocolosCNJ {
 	 */
 	public Op_4_ConfereProtocolosCNJ() {
 		this.httpClient = HttpUtil.criarNovoHTTPClientComAutenticacaoCNJ();
-		this.tipoValidacaoProtocoloCNJ = Auxiliar.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj,
+		
+		String tipoValidacao = Auxiliar.getParametroConfiguracao(Parametro.tipo_validacao_protocolo_cnj,
 				false);
 
-		if (this.isTipoValidacaoProtocoloCNJValido()) {
+		if (this.isTipoValidacaoProtocoloCNJValido(tipoValidacao)) {
 			if (this.tipoValidacaoProtocoloCNJ != null) {
-				LOGGER.info(String.format("Tipo de validação escolhido: %s.", this.tipoValidacaoProtocoloCNJ));
+				this.tipoValidacaoProtocoloCNJ = TipoValidacaoProtocoloCNJEnum.criar(tipoValidacao);
+				LOGGER.info(String.format("Tipo de validação escolhido: %s.", this.tipoValidacaoProtocoloCNJ.getCodigo()));
 			} else {
 				// Validação padrão quando nenhum valor é preenchido
-				LOGGER.info("Tipo de validação escolhido: " + Auxiliar.VALIDACAO_CNJ_TODOS);
+				this.tipoValidacaoProtocoloCNJ = TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS;
+				LOGGER.info("Tipo de validação escolhido: " + this.tipoValidacaoProtocoloCNJ.getCodigo());
 			}
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_validacao_protocolo_cnj': "
-					+ this.tipoValidacaoProtocoloCNJ);
+					+ tipoValidacao);
 		}
 
 		this.considerarXMLsComErro = false;
 		String situacaoXMLParaEnvio = Auxiliar.getParametroConfiguracao(Parametro.situacao_xml_para_envio_operacao_3,
 				false);
-		if (situacaoXMLParaEnvio == null || Auxiliar.ENVIAR_TODOS_OS_XMLS.equals(situacaoXMLParaEnvio)) {
+		if (situacaoXMLParaEnvio == null || SituacaoXMLParaEnvioEnum.ENVIAR_TODOS_OS_XMLS.getCodigo().equals(situacaoXMLParaEnvio)) {
 			this.considerarXMLsComErro = true;
-		} else if (Auxiliar.ENVIAR_APENAS_XMLS_GERADOS_COM_SUCESSO.equals(situacaoXMLParaEnvio)) {
+		} else if (SituacaoXMLParaEnvioEnum.ENVIAR_APENAS_XMLS_GERADOS_COM_SUCESSO.getCodigo().equals(situacaoXMLParaEnvio)) {
 			this.considerarXMLsComErro = false;
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'situacao_xml_para_envio_operacao_3': "
@@ -143,13 +147,12 @@ public class Op_4_ConfereProtocolosCNJ {
 		}
 	}
 
-	private boolean isTipoValidacaoProtocoloCNJValido() {
-		// TODO criar um enum
-		return this.tipoValidacaoProtocoloCNJ == null
-				|| Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
-				|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
-				|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(this.tipoValidacaoProtocoloCNJ)
-				|| Auxiliar.VALIDACAO_CNJ_TODOS.equals(this.tipoValidacaoProtocoloCNJ);
+	private boolean isTipoValidacaoProtocoloCNJValido(String tipoValidacao) {
+		return tipoValidacao == null
+				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS_COM_ERRO.getCodigo().equals(tipoValidacao)
+				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO.getCodigo().equals(tipoValidacao)
+				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.getCodigo().equals(tipoValidacao)
+				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS.getCodigo().equals(tipoValidacao);
 	}
 
 	public static void executarOperacaoConfereProtocolosCNJ(boolean continuarEmCasoDeErro) throws Exception {
@@ -271,31 +274,31 @@ public class Op_4_ConfereProtocolosCNJ {
 		URIBuilder builder;
 
 		if (this.tipoValidacaoProtocoloCNJ == null
-				|| Auxiliar.VALIDACAO_CNJ_TODOS.equals(this.tipoValidacaoProtocoloCNJ)) {
+				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS.equals(this.tipoValidacaoProtocoloCNJ)) {
 			// Constrói a URL com o status "Processado com erro"
 			builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, "");
 
-			executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, Auxiliar.VALIDACAO_CNJ_TODOS);
+			executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS);
 		} else {
-			if (Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
-					|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO
+			if (TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
+					|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO
 							.equals(this.tipoValidacaoProtocoloCNJ)) {
 				// Constrói a URL com o status "Processado com erro"
 				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
 						SituacaoLoteProcessoEnum.PROCESSADO_COM_ERRO_CNJ.getCodigoCNJ());
 
 				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos,
-						Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO);
+						TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO);
 			}
 
-			if (Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
-					|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(this.tipoValidacaoProtocoloCNJ)) {
+			if (TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
+					|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.equals(this.tipoValidacaoProtocoloCNJ)) {
 				// Constrói a URL com o status "Erro no arquivo"
 				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
 						SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ.getCodigoCNJ());
 
 				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos,
-						Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO);
+						TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO);
 			}
 		}
 
@@ -391,7 +394,7 @@ public class Op_4_ConfereProtocolosCNJ {
 	 *                                      do 2° Grau
 	 */
 	private void executarConsultasProtocolosCNJ(URIBuilder builder,
-			Map<String, LoteProcesso> mapProtocolosComLoteProcessos, String tipoValidacaoProtocolo) {
+			Map<String, LoteProcesso> mapProtocolosComLoteProcessos, TipoValidacaoProtocoloCNJEnum tipoValidacaoProtocolo) {
 
 		String agrupadorErrosConsultaProtocolosCNJ = "Consulta de protocolos no CNJ";
 
@@ -717,7 +720,7 @@ public class Op_4_ConfereProtocolosCNJ {
 	 * @param tipoValidacaoProtocolo Tipo de validação de protocolos utilizada no processamento de protocolos no CNJ
 	 * @return -1 ou a última página consultada
 	 */
-	private int buscarUltimaPaginaConsultadaPorTipoDeValidacao(String tipoValidacaoProtocolo) {
+	private int buscarUltimaPaginaConsultadaPorTipoDeValidacao(TipoValidacaoProtocoloCNJEnum tipoValidacaoProtocolo) {
 
 		File arquivoPaginaAtual = Auxiliar.getArquivoUltimaPaginaConsultaCNJ();
 
@@ -726,7 +729,7 @@ public class Op_4_ConfereProtocolosCNJ {
 		if (arquivoPaginaAtual.exists() && arquivoPaginaAtual.length() != 0) {
 			try {
 				Pattern padraoER = Pattern
-						.compile(String.format(PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA, tipoValidacaoProtocolo));
+						.compile(String.format(PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA, tipoValidacaoProtocolo.getCodigo()));
 
 				List<String> conteudoArquivo = new ArrayList<>(
 						Files.readAllLines(arquivoPaginaAtual.toPath(), StandardCharsets.UTF_8));
@@ -749,14 +752,14 @@ public class Op_4_ConfereProtocolosCNJ {
 		return numUltimaPaginaConsultada;
 	}
 
-	private void gravarUltimaPaginaConsultada(String tipoValidacaoProtocolo, String pagina) {
+	private void gravarUltimaPaginaConsultada(TipoValidacaoProtocoloCNJEnum tipoValidacaoProtocolo, String pagina) {
 
 		File arquivoPaginaAtual = Auxiliar.getArquivoUltimaPaginaConsultaCNJ();
 
 		if (arquivoPaginaAtual.exists() && arquivoPaginaAtual.length() != 0) {
 			try {
 				Pattern padraoER = Pattern
-						.compile(String.format(PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA, tipoValidacaoProtocolo));
+						.compile(String.format(PADRAO_ER_ARQUIVO_ULTIMA_PAGINA_CONSULTADA, tipoValidacaoProtocolo.getCodigo()));
 
 				List<String> conteudoArquivo = new ArrayList<>(
 						Files.readAllLines(arquivoPaginaAtual.toPath(), StandardCharsets.UTF_8));
@@ -766,7 +769,7 @@ public class Op_4_ConfereProtocolosCNJ {
 
 					if (matcher.find()) {
 						// Encontrou uma linha com o formato, então apenas atualiza.
-						conteudoArquivo.set(i, String.format("%s %s", tipoValidacaoProtocolo, pagina));
+						conteudoArquivo.set(i, String.format("%s %s", tipoValidacaoProtocolo.getCodigo(), pagina));
 						Files.write(arquivoPaginaAtual.toPath(), conteudoArquivo, StandardCharsets.UTF_8);
 						return;
 					}

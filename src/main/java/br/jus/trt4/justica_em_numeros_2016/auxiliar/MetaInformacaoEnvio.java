@@ -123,7 +123,6 @@ public class MetaInformacaoEnvio {
 	}
 	
 	public LocalDateTime getLocalDateTimeEnvioProtocolo() {
-		//TODO testar comportamento
 		LocalDateTime data = null;
 		if (!this.datDataEnvioProtocolo.equals("")) {
 			data = LocalDateTime.ofInstant(Instant.ofEpochMilli(new Long(this.datDataEnvioProtocolo)), TimeZone.getDefault().toZoneId());

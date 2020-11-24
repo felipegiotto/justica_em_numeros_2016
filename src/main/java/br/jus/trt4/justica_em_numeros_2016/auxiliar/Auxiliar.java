@@ -42,6 +42,7 @@ import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoSistemaJudicialEnum;
 import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
 /**
@@ -65,19 +66,6 @@ public class Auxiliar {
 	public static final String SUFIXO_PROTOCOLO = ".protocolo";
 	public static final String SUFIXO_PROTOCOLO_SUCESSO = ".sucesso";
 	public static final String SUFIXO_PROTOCOLO_ERRO = ".erro";
-	
-	public static final String SISTEMA_JUDICIAL_APENAS_LEGADO = "APENAS_LEGADO";
-	public static final String SISTEMA_JUDICIAL_APENAS_PJE = "APENAS_PJE";
-	public static final String SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO = "APENAS_PJE_COM_MIGRADOS_LEGADO";
-	public static final String SISTEMA_JUDICIAL_TODOS = "TODOS";
-	
-	public static final String VALIDACAO_CNJ_TODOS = "TODOS";
-	public static final String VALIDACAO_CNJ_TODOS_COM_ERRO = "TODOS_COM_ERRO";
-	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO = "APENAS_COM_ERRO_PROCESSADO_COM_ERRO";
-	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO = "APENAS_COM_ERRO_NO_ARQUIVO";
-	
-	public static final String ENVIAR_TODOS_OS_XMLS = "TODOS";
-	public static final String ENVIAR_APENAS_XMLS_GERADOS_COM_SUCESSO = "APENAS_SUCESSO";
 	
 	private static final ProcessoEnvioDao processoEnvioDAO = new ProcessoEnvioDao();
 	
@@ -848,9 +836,9 @@ public class Auxiliar {
 		boolean retorno = false;
 		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
 
-		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE)
-				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO)
-				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
+		if (tipoSistema.equals(TipoSistemaJudicialEnum.APENAS_PJE.getCodigo())
+				|| tipoSistema.equals(TipoSistemaJudicialEnum.APENAS_PJE_COM_MIGRADOS_LEGADO.getCodigo())
+				|| tipoSistema.equals(TipoSistemaJudicialEnum.TODOS.getCodigo())) {
 			retorno = true;
 		}
 
@@ -861,8 +849,8 @@ public class Auxiliar {
 		boolean retorno = false;
 		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
 
-		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_LEGADO)
-				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
+		if (tipoSistema.equals(TipoSistemaJudicialEnum.APENAS_LEGADO.getCodigo())
+				|| tipoSistema.equals(TipoSistemaJudicialEnum.TODOS.getCodigo())) {
 			retorno = true;
 		}
 
@@ -873,8 +861,8 @@ public class Auxiliar {
 		boolean retorno = false;
 		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
 
-		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO)
-				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
+		if (tipoSistema.equals(TipoSistemaJudicialEnum.APENAS_PJE_COM_MIGRADOS_LEGADO.getCodigo())
+				|| tipoSistema.equals(TipoSistemaJudicialEnum.TODOS.getCodigo())) {
 			retorno = true;
 		}
 

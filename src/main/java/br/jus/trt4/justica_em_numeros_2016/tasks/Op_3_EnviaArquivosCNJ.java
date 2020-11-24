@@ -48,6 +48,7 @@ import br.jus.trt4.justica_em_numeros_2016.entidades.LoteProcesso;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteProcessoEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoXMLParaEnvioEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
@@ -97,9 +98,9 @@ public class Op_3_EnviaArquivosCNJ {
 		this.considerarXMLsComErro = false;
 		String situacaoXMLParaEnvio = Auxiliar.getParametroConfiguracao(Parametro.situacao_xml_para_envio_operacao_3,
 				false);
-		if (situacaoXMLParaEnvio == null || Auxiliar.ENVIAR_TODOS_OS_XMLS.equals(situacaoXMLParaEnvio)) {
+		if (situacaoXMLParaEnvio == null || SituacaoXMLParaEnvioEnum.ENVIAR_TODOS_OS_XMLS.getCodigo().equals(situacaoXMLParaEnvio)) {
 			this.considerarXMLsComErro = true;
-		} else if (Auxiliar.ENVIAR_APENAS_XMLS_GERADOS_COM_SUCESSO.equals(situacaoXMLParaEnvio)) {
+		} else if (SituacaoXMLParaEnvioEnum.ENVIAR_APENAS_XMLS_GERADOS_COM_SUCESSO.getCodigo().equals(situacaoXMLParaEnvio)) {
 			this.considerarXMLsComErro = false;
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'situacao_xml_para_envio_operacao_3': "
