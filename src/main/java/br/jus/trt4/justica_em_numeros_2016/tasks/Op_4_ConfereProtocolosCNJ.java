@@ -10,7 +10,9 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,11 +42,14 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpUtil;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.MetaInformacaoEnvio;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.dao.JPAUtil;
+import br.jus.trt4.justica_em_numeros_2016.dao.LoteDao;
 import br.jus.trt4.justica_em_numeros_2016.dao.LoteProcessoDao;
 import br.jus.trt4.justica_em_numeros_2016.dao.RemessaDao;
+import br.jus.trt4.justica_em_numeros_2016.entidades.Lote;
 import br.jus.trt4.justica_em_numeros_2016.entidades.LoteProcesso;
 import br.jus.trt4.justica_em_numeros_2016.entidades.Remessa;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteProcessoEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
@@ -65,16 +70,17 @@ public class Op_4_ConfereProtocolosCNJ {
 	private CloseableHttpClient httpClient;
 	private static ProgressoInterfaceGrafica progresso;
 
-	//TODO criar um enum
+	// TODO criar um enum
 	private static final String NOME_PARAMETRO_PROTOCOLO = "protocolo";
 	private static final String NOME_PARAMETRO_DATA_INICIO = "dataInicio";
 	private static final String NOME_PARAMETRO_DATA_FIM = "dataFim";
 	private static final String NOME_PARAMETRO_STATUS = "status";
 	private static final String NOME_PARAMETRO_PAGINA = "page";
-	
+
 	private static int qtdProtocolosConferidos = 0;
 
 	private String tipoValidacaoProtocoloCNJ;
+	private boolean considerarXMLsComErro;
 
 	// Padrão de como a última página consultada no CNJ de um status é armazenada no
 	// arquivo. Composto pelo número do status (que é preenchido dinamicamente), espaço e o
@@ -83,6 +89,7 @@ public class Op_4_ConfereProtocolosCNJ {
 
 	private static final RemessaDao remessaDAO = new RemessaDao();
 	private static final LoteProcessoDao loteProcessoDAO = new LoteProcessoDao();
+	private static final LoteDao loteDAO = new LoteDao();
 
 	public static void main(String[] args) throws Exception {
 
@@ -121,6 +128,18 @@ public class Op_4_ConfereProtocolosCNJ {
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_validacao_protocolo_cnj': "
 					+ this.tipoValidacaoProtocoloCNJ);
+		}
+
+		this.considerarXMLsComErro = false;
+		String situacaoXMLParaEnvio = Auxiliar.getParametroConfiguracao(Parametro.situacao_xml_para_envio_operacao_3,
+				false);
+		if (situacaoXMLParaEnvio == null || Auxiliar.ENVIAR_TODOS_OS_XMLS.equals(situacaoXMLParaEnvio)) {
+			this.considerarXMLsComErro = true;
+		} else if (Auxiliar.ENVIAR_APENAS_XMLS_GERADOS_COM_SUCESSO.equals(situacaoXMLParaEnvio)) {
+			this.considerarXMLsComErro = false;
+		} else {
+			throw new RuntimeException("Valor desconhecido para o parâmetro 'situacao_xml_para_envio_operacao_3': "
+					+ situacaoXMLParaEnvio);
 		}
 	}
 
@@ -200,7 +219,7 @@ public class Op_4_ConfereProtocolosCNJ {
 
 		Auxiliar.validarTipoRemessaAtual(tipoRemessaAtual);
 
-		Remessa remessa = remessaDAO.getRemessa(dataCorteRemessaAtual, tipoRemessaAtual, false, false);
+		Remessa remessa = remessaDAO.getRemessa(dataCorteRemessaAtual, tipoRemessaAtual, false, true);
 
 		if (remessa == null) {
 			throw new RuntimeException("Não foi possível localizar a remessa indicada em config.properties. "
@@ -208,7 +227,7 @@ public class Op_4_ConfereProtocolosCNJ {
 		}
 
 		Long totalProtocolosRecebidosDoCNJ = loteProcessoDAO.getQuantidadeProcessosPorRemessaESituacao(remessa,
-				getSituacoesProcessosComProtocolo());
+				getSituacoesProcessosComProtocolo(), true);
 		LOGGER.info("Quantidade de protocolos encontrados: " + totalProtocolosRecebidosDoCNJ.intValue());
 
 		if (totalProtocolosRecebidosDoCNJ.intValue() == 0) {
@@ -246,18 +265,17 @@ public class Op_4_ConfereProtocolosCNJ {
 
 		LOGGER.info("Carregando os protocolos dos arquivos.");
 
-		Map<String, LoteProcesso> mapProtocolosComLoteProcessos = carregarListaLoteProcessoPorProtocolo(loteProcessosParaConsultar);
+		Map<String, LoteProcesso> mapProtocolosComLoteProcessos = carregarListaLoteProcessoPorProtocolo(
+				loteProcessosParaConsultar);
 
 		URIBuilder builder;
-
 
 		if (this.tipoValidacaoProtocoloCNJ == null
 				|| Auxiliar.VALIDACAO_CNJ_TODOS.equals(this.tipoValidacaoProtocoloCNJ)) {
 			// Constrói a URL com o status "Processado com erro"
 			builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim, "");
 
-			executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, 
-					Auxiliar.VALIDACAO_CNJ_TODOS);
+			executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, Auxiliar.VALIDACAO_CNJ_TODOS);
 		} else {
 			if (Auxiliar.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
 					|| Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO
@@ -266,7 +284,7 @@ public class Op_4_ConfereProtocolosCNJ {
 				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
 						SituacaoLoteProcessoEnum.PROCESSADO_COM_ERRO_CNJ.getCodigoCNJ());
 
-				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, 
+				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos,
 						Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO);
 			}
 
@@ -276,7 +294,7 @@ public class Op_4_ConfereProtocolosCNJ {
 				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
 						SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ.getCodigoCNJ());
 
-				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos, 
+				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos,
 						Auxiliar.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO);
 			}
 		}
@@ -289,8 +307,41 @@ public class Op_4_ConfereProtocolosCNJ {
 
 		// Envio finalizado
 		Long qtdProcessosPendentes = loteProcessoDAO.getQuantidadeProcessosPorRemessaESituacao(remessa,
-				getSituacoesProcessosComProtocoloPendenteDeConsulta());
+				getSituacoesProcessosComProtocoloPendenteDeConsulta(), true);
 		LOGGER.info("Protocolos da remessa atual que ainda não foram analisados: " + qtdProcessosPendentes.intValue());
+
+		this.atualizarSituacaoLotesRemessa(remessa);
+
+	}
+
+	private void atualizarSituacaoLotesRemessa(Remessa remessa) {
+		try {
+			JPAUtil.iniciarTransacao();
+			for (Lote lote : remessa.getLotes()) {
+				List<SituacaoLoteProcessoEnum> situacoesLoteProcesso = getSituacoesProcessosComConferidos();
+				if (!this.considerarXMLsComErro) {
+					situacoesLoteProcesso.add(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO);
+				}
+
+				Long totalDeProcessosNaoConferidos = loteProcessoDAO.getQuantidadeProcessosPorLoteESituacao(lote,
+						situacoesLoteProcesso, false);
+				if (totalDeProcessosNaoConferidos.intValue() == 0) {
+					lote.setSituacao(SituacaoLoteEnum.CONFERIDO_CNJ);
+					loteDAO.alterar(lote);
+				}
+			}
+			JPAUtil.commit();
+			LOGGER.info("Lotes da Remessa Atual atualizado.");
+		} catch (Exception e) {
+			String origemOperacao = "Erro ao salvar situação do lote durante conferência de protocolos.";
+			AcumuladorExceptions.instance().adicionarException(origemOperacao,
+					"Erro ao salvar situação do lote durante conferência de protocolos: " + e.getLocalizedMessage(), e,
+					true);
+			JPAUtil.rollback();
+		} finally {
+			// JPAUtil.printEstatisticas();
+			JPAUtil.close();
+		}
 	}
 
 	/**
@@ -318,11 +369,11 @@ public class Op_4_ConfereProtocolosCNJ {
 
 		dataInicio = dataInicio.minusDays(1);
 		dataFim = dataFim.plusDays(1);
-		
+
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
-		datas.add(formatter.format(dataInicio));
-		datas.add(formatter.format(dataFim));
+		datas.add(formatter.format(Date.from(dataInicio.atZone(ZoneId.systemDefault()).toInstant())));
+		datas.add(formatter.format(Date.from(dataFim.atZone(ZoneId.systemDefault()).toInstant())));
 
 		return datas;
 	}
@@ -332,14 +383,15 @@ public class Op_4_ConfereProtocolosCNJ {
 	 * cada instância.
 	 * 
 	 * @param builder                       URIBuilder com a URI a ser consultada
-	 * @param mapProtocolosComLoteProcessos Map com a tupla Protocolo/LoteProcesso do Protocolo para conseguir o número do
-	 *                                      processo a partir do protocolo retornado pelo serviço do CNJ.
+	 * @param mapProtocolosComLoteProcessos Map com a tupla Protocolo/LoteProcesso do Protocolo para conseguir o número
+	 *                                      do processo a partir do protocolo retornado pelo serviço do CNJ.
 	 * @param setMetaInformacoesProcessosG1 Lista com as meta informações, retornadas pelo CNJ, dos processos analisados
 	 *                                      do 1° Grau
 	 * @param setMetaInformacoesProcessosG2 Lista com as meta informações, retornadas pelo CNJ, dos processos analisados
 	 *                                      do 2° Grau
 	 */
-	private void executarConsultasProtocolosCNJ(URIBuilder builder, Map<String, LoteProcesso> mapProtocolosComLoteProcessos, String tipoValidacaoProtocolo) {
+	private void executarConsultasProtocolosCNJ(URIBuilder builder,
+			Map<String, LoteProcesso> mapProtocolosComLoteProcessos, String tipoValidacaoProtocolo) {
 
 		String agrupadorErrosConsultaProtocolosCNJ = "Consulta de protocolos no CNJ";
 
@@ -383,9 +435,9 @@ public class Op_4_ConfereProtocolosCNJ {
 
 			try {
 				JPAUtil.iniciarTransacao();
-				
+
 				this.salvarMetaInformacoes(mapProtocolosComLoteProcessos, listaMetaInformacoesAnalisadas);
-				
+
 				JPAUtil.commit();
 			} catch (Exception e) {
 				String origemOperacao = "Erro ao salvar meta-informações.";
@@ -409,7 +461,7 @@ public class Op_4_ConfereProtocolosCNJ {
 	 * 
 	 * @param body Corpo da resposta da requisição feita ao serviço do CNJ
 	 * 
-	 * @return Lista de protocolos analisados 
+	 * @return Lista de protocolos analisados
 	 */
 	private List<MetaInformacaoEnvio> carregaMetaInformacoes(String body) {
 
@@ -457,7 +509,7 @@ public class Op_4_ConfereProtocolosCNJ {
 				if (!numProtocolo.equals("") && !grau.equals("")) {
 					resposta.add(new MetaInformacaoEnvio(codHash, datDataEnvioProtocolo, flgExcluido, grau,
 							numProtocolo, seqProtocolo, siglaOrgao, tamanhoArquivo, tipStatusProtocolo, urlArquivo));
-					
+
 				} else {
 					LOGGER.error(String.format("Erro ao carregar o protocolo %s do Grau %s.", numProtocolo, grau));
 				}
@@ -484,22 +536,21 @@ public class Op_4_ConfereProtocolosCNJ {
 			LoteProcesso loteProcesso = mapProtocolosComProcessos.get(metaInformacao.getNumProtocolo());
 
 			if (loteProcesso != null) {
-				metaInformacao.setNumProcesso(loteProcesso.getChaveProcessoCNJ().getNumeroProcesso());
-				
 				loteProcesso.setDataRecebimentoCNJ(metaInformacao.getLocalDateTimeEnvioProtocolo());
 				loteProcesso.setHashCNJ(metaInformacao.getCodHash());
-				
-				SituacaoLoteProcessoEnum situacaoCNJ = SituacaoLoteProcessoEnum.criarApartirCodigoCNJ(metaInformacao.getTipStatusProtocolo());
+
+				SituacaoLoteProcessoEnum situacaoCNJ = SituacaoLoteProcessoEnum
+						.criarApartirCodigoCNJ(metaInformacao.getTipStatusProtocolo());
 
 				if (situacaoCNJ == null) {
 					LOGGER.error(String.format("Não foi possível converter a situação do protocolo: %s.",
 							metaInformacao.getTipStatusProtocolo()));
 				} else {
 					loteProcesso.setSituacao(situacaoCNJ);
-					
+
 					if (situacaoCNJ.equals(SituacaoLoteProcessoEnum.PROCESSADO_COM_SUCESSO_CNJ)) {
 						LOGGER.debug("Protocolo baixado com SUCESSO: " + loteProcesso.getProtocoloCNJ() + ", processo '"
-										+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
+								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
 					} else if (situacaoCNJ.isSituacaoErro()) {
 						LOGGER.warn("Protocolo baixado com ERRO: " + loteProcesso.getProtocoloCNJ() + ", processo '"
 								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
@@ -508,11 +559,11 @@ public class Op_4_ConfereProtocolosCNJ {
 								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "', situação '"
 								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
 					}
-				} 
+				}
 				loteProcessoDAO.incluirOuAlterar(loteProcesso);
-				
+
 				qtdProtocolosConferidos++;
-				
+
 				if (progresso != null) {
 					progresso.incrementProgress();
 				}
@@ -752,18 +803,20 @@ public class Op_4_ConfereProtocolosCNJ {
 		Map<String, LoteProcesso> protocolosComProcessos = new HashMap<String, LoteProcesso>();
 
 		for (LoteProcesso loteProcesso : loteProcessos) {
-			protocolosComProcessos.put(loteProcesso.getProtocoloCNJ(), loteProcesso);
+			if (loteProcesso.getProtocoloCNJ() != null) {
+				protocolosComProcessos.put(loteProcesso.getProtocoloCNJ(), loteProcesso);
+			} else {
+				LOGGER.warn("Não foi possível carregar o protocolo do processo: "
+						+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso());
+			}
 		}
 		return protocolosComProcessos;
 	}
-	
+
 	private static List<SituacaoLoteProcessoEnum> getSituacoesProcessosComProtocolo() {
 		List<SituacaoLoteProcessoEnum> situacoes = new ArrayList<SituacaoLoteProcessoEnum>();
 		situacoes.addAll(getSituacoesProcessosComProtocoloPendenteDeConsulta());
-		situacoes.add(SituacaoLoteProcessoEnum.PROCESSADO_COM_SUCESSO_CNJ);
-		situacoes.add(SituacaoLoteProcessoEnum.DUPLICADO_CNJ);
-		situacoes.add(SituacaoLoteProcessoEnum.PROCESSADO_COM_ERRO_CNJ);
-		situacoes.add(SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ);
+		situacoes.addAll(getSituacoesProcessosComConferidos());
 		return situacoes;
 	}
 
@@ -772,6 +825,15 @@ public class Op_4_ConfereProtocolosCNJ {
 		situacoes.add(SituacaoLoteProcessoEnum.ENVIADO);
 		situacoes.add(SituacaoLoteProcessoEnum.RECEBIDO_CNJ);
 		situacoes.add(SituacaoLoteProcessoEnum.AGUARDANDO_PROCESSAMENTO_CNJ);
+		return situacoes;
+	}
+
+	private static List<SituacaoLoteProcessoEnum> getSituacoesProcessosComConferidos() {
+		List<SituacaoLoteProcessoEnum> situacoes = new ArrayList<SituacaoLoteProcessoEnum>();
+		situacoes.add(SituacaoLoteProcessoEnum.PROCESSADO_COM_SUCESSO_CNJ);
+		situacoes.add(SituacaoLoteProcessoEnum.DUPLICADO_CNJ);
+		situacoes.add(SituacaoLoteProcessoEnum.PROCESSADO_COM_ERRO_CNJ);
+		situacoes.add(SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ);
 		return situacoes;
 	}
 

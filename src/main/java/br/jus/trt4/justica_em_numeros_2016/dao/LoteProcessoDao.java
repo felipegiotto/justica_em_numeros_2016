@@ -57,11 +57,15 @@ public class LoteProcessoDao extends DataJudBaseDao<LoteProcesso> {
 		return query.getResultList();
 	}
 	
-	public Long getQuantidadeProcessosPorLoteESituacao(Lote lote, List<SituacaoLoteProcessoEnum> situacoes) {
+	public Long getQuantidadeProcessosPorLoteESituacao(Lote lote, List<SituacaoLoteProcessoEnum> situacoes, boolean inSituacoes) {
 		StringBuilder hql = new StringBuilder();
 		hql.append("select count(lp) from LoteProcesso lp ");
 		hql.append(" where lp.lote.id = :idLote ");
-		hql.append(" and lp.situacao IN ( :situacoes ) ");
+		if (inSituacoes) {
+			hql.append(" and lp.situacao IN ( :situacoes ) ");			
+		} else {
+			hql.append(" and lp.situacao NOT IN ( :situacoes ) ");
+		}
 		
 		TypedQuery<Long> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Long.class);
 		query.setParameter("idLote", lote.getId());
@@ -84,11 +88,15 @@ public class LoteProcessoDao extends DataJudBaseDao<LoteProcesso> {
 		return query.getResultList();
 	}
 	
-	public Long getQuantidadeProcessosPorRemessaESituacao(Remessa remessa, List<SituacaoLoteProcessoEnum> situacoes) {
+	public Long getQuantidadeProcessosPorRemessaESituacao(Remessa remessa, List<SituacaoLoteProcessoEnum> situacoes, boolean inSituacoes) {
 		StringBuilder hql = new StringBuilder();
 		hql.append("select count(lp) from LoteProcesso lp ");
 		hql.append(" where lp.lote.remessa.id = :idRemessa ");
-		hql.append(" and lp.situacao IN ( :situacoes ) ");
+		if (inSituacoes) {
+			hql.append(" and lp.situacao IN ( :situacoes ) ");			
+		} else {
+			hql.append(" and lp.situacao NOT IN ( :situacoes ) ");
+		}
 		
 		TypedQuery<Long> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Long.class);
 		query.setParameter("idRemessa", remessa.getId());
