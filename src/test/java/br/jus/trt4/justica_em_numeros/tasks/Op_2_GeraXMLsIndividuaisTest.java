@@ -57,11 +57,11 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 		int grau = 2;
 		BaseEmAnaliseEnum base = BaseEmAnaliseEnum.PJE;
 		try {
-			baixaDados.prepararConexao(grau, base, true);
+			baixaDados.prepararConexao(grau, base);
 			List<String> numeros = new ArrayList<>();
 			numeros.add("0020821-54.2013.5.04.0221");
 			numeros.add("0020583-31.2014.5.04.0017");
-			baixaDados.prepararCacheDadosProcessos(numeros, grau, base, true);
+			baixaDados.prepararCacheDadosProcessos(numeros, grau, base);
 			
 			TipoProcessoJudicial processo1 = baixaDados.analisarProcessoJudicialCompleto("0020821-54.2013.5.04.0221", grau, base);
 			assertEquals("00208215420135040221", processo1.getDadosBasicos().getNumero());
@@ -730,10 +730,10 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 		Op_2_GeraEValidaXMLsIndividuais baixaDados = new Op_2_GeraEValidaXMLsIndividuais();
 		BaseEmAnaliseEnum base = BaseEmAnaliseEnum.PJE;
 		try {
-			baixaDados.prepararConexao(grau, base, true);
+			baixaDados.prepararConexao(grau, base);
 			List<String> numeros = new ArrayList<>();
 			numeros.add(numeroProcesso);
-			baixaDados.prepararCacheDadosProcessos(numeros, grau, base, true);
+			baixaDados.prepararCacheDadosProcessos(numeros, grau, base);
 			return baixaDados.analisarProcessoJudicialCompleto(numeroProcesso, grau, base);
 		} finally {
 			baixaDados.close();
