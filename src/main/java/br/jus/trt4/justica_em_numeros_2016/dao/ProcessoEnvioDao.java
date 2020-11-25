@@ -59,20 +59,26 @@ public class ProcessoEnvioDao extends DataJudBaseDao<ProcessoEnvio> {
 		TypedQuery<ProcessoEnvio> query = JPAUtil.getEntityManager().createQuery(hql.toString(), ProcessoEnvio.class);
 		query.setParameter("dataCorte", dataCorte);
 		query.setParameter("tipoRemessa", tipoRemessa);
-
+		
 		return query.getResultList();
 	}
 	
 
-	public Long getQuantidadeProcessosRemessa(LocalDate dataCorte,	TipoRemessaEnum tipoRemessa) {
+	public Long getQuantidadeProcessosRemessa(LocalDate dataCorte,	TipoRemessaEnum tipoRemessa, List<String> graus) {
 		StringBuilder hql = new StringBuilder();
 		hql.append("select count(pe) from ProcessoEnvio pe ");
 		hql.append(" where pe.remessa.dataCorte = :dataCorte ");
 		hql.append(" and pe.remessa.tipoRemessa = :tipoRemessa ");
+		if (graus != null) {
+			hql.append(" and pe.grau IN ( :graus ) ");			
+		}
 
 		TypedQuery<Long> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Long.class);
 		query.setParameter("dataCorte", dataCorte);
 		query.setParameter("tipoRemessa", tipoRemessa);
+		if (graus != null) {
+			query.setParameter("graus", graus);
+		}
 
 		return getSingleResultOrNull(query);
 	}

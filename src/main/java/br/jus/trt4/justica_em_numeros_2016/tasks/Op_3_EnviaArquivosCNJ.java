@@ -235,7 +235,8 @@ public class Op_3_EnviaArquivosCNJ {
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());
 		LOGGER.info("Arquivos XMLs ainda pendentes de envio: " + qtdProcessosPendentes.intValue());
-
+		
+		//TODO centralizar o controle da maquina de estados do LOTE em uma classe
 		if (qtdProcessosPendentes.intValue() == 0 && loteAtual.getSituacao().in(SituacaoLoteEnum.CRIADO_PARCIALMENTE,
 				SituacaoLoteEnum.CRIADO_COM_ERROS, SituacaoLoteEnum.CRIADO_SEM_ERROS)) {
 			atualizarSituacaoLoteAtual(loteAtual);
