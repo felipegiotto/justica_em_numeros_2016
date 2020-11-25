@@ -274,7 +274,7 @@ public class Op_3_EnviaArquivosCNJ {
 	private void enviarXMLsAoCNJ(List<Long> idProcessosComXMLParaEnviar) throws JAXBException, InterruptedException {
 		// Agrupa os processos pendentes de geração em lotes para serem carregados do banco
 		final int tamanhoLote = Math
-				.max(Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_envio_operacao_3, 1), 1);
+				.max(Auxiliar.getParametroInteiroConfiguracaoComValorPadrao(Parametro.tamanho_lote_envio_operacao_3, 1), 1);
 		final AtomicInteger counter = new AtomicInteger();
 
 		final Collection<List<Long>> idsLoteLoteProcessos = idProcessosComXMLParaEnviar.stream()
@@ -283,9 +283,9 @@ public class Op_3_EnviaArquivosCNJ {
 		// Para evitar a exceção "Unable to invoke factory method in class
 		// org.apache.logging.log4j.core.appender.RollingFileAppender
 		// for element RollingFile" ao tentar criar um appender RollingFile para uma thread de um arquivo inexistente
-		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3,
+		int numeroThreads = Auxiliar.getParametroInteiroConfiguracaoComValorPadrao(Parametro.numero_threads_simultaneas_operacao_3,
 				1) > idsLoteLoteProcessos.size() ? idsLoteLoteProcessos.size()
-						: Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1);
+						: Auxiliar.getParametroInteiroConfiguracaoComValorPadrao(Parametro.numero_threads_simultaneas_operacao_3, 1);
 
 		// Objeto que fará o envio dos arquivos em várias threads
 		LOGGER.info("Iniciando o envio de " + idProcessosComXMLParaEnviar.size() + " XMLs, utilizando " + numeroThreads

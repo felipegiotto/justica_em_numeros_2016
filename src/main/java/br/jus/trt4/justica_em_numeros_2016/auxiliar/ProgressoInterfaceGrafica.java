@@ -91,7 +91,7 @@ public class ProgressoInterfaceGrafica {
 				// Checkbox de fechamento automático
 				JCheckBox checkFecharAutomaticamente = new JCheckBox("Fechar janela ao terminar");
 				try {
-					fecharJanelaAutomaticamente = Auxiliar.getParametroBooleanConfiguracao(Parametro.interface_grafica_fechar_automaticamente, false);
+					fecharJanelaAutomaticamente = Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.interface_grafica_fechar_automaticamente, false);
 				} catch (Exception ex) { }
 				checkFecharAutomaticamente.setSelected(fecharJanelaAutomaticamente);
 				checkFecharAutomaticamente.addActionListener(new ActionListener() {

@@ -17,7 +17,7 @@ import br.jus.trt4.justica_em_numeros_2016.enums.SituacaoLoteProcessoEnum;
  */
 public class LoteProcessoDao extends DataJudBaseDao<LoteProcesso> {
 
-	public List<LoteProcesso> getLoteProcesso(Lote lote) {
+	public List<LoteProcesso> getLoteProcessos(Lote lote) {
 		List<LoteProcesso> retorno = new ArrayList<LoteProcesso>();
 		if (lote.getId() != null) {
 			StringBuilder hql = new StringBuilder();

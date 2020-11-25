@@ -67,8 +67,14 @@ public class Auxiliar {
 	public static final String SUFIXO_PROTOCOLO_SUCESSO = ".sucesso";
 	public static final String SUFIXO_PROTOCOLO_ERRO = ".erro";
 	
-	private static final ProcessoEnvioDao processoEnvioDAO = new ProcessoEnvioDao();
+	public static String TIPO_SISTEMA = Auxiliar.getParametroConfiguracaoComValorPadrao(Parametro.sistema_judicial,
+			TipoSistemaJudicialEnum.APENAS_PJE.getCodigo());
 	
+	public static boolean MESCLAR_MOVIMENTOS_LEGADO_MIGRADO_VIA_XML = Auxiliar
+			.getParametroBooleanConfiguracaoComValorPadrao(Parametro.mesclar_movimentos_legado_migrado_via_xml, false);
+
+	private static final ProcessoEnvioDao processoEnvioDAO = new ProcessoEnvioDao();
+
 	/**
 	 * Recupera a pasta em que se encontram os arquivos sql dos diretórios 'op_1_baixa_lista_processos '
 	 * e 'op_2_gera_xmls' de acordo com o grau pesquisado e a base em análise. 
@@ -181,7 +187,7 @@ public class Auxiliar {
 	 * @param parametro
 	 * @return
 	 */
-	public static boolean getParametroBooleanConfiguracao(Parametro parametro, boolean valorPadrao) {
+	public static boolean getParametroBooleanConfiguracaoComValorPadrao(Parametro parametro, boolean valorPadrao) {
 		String valor = getParametroConfiguracao(parametro, false);
 		if ("SIM".equals(valor)) {
 			return true;
@@ -214,7 +220,7 @@ public class Auxiliar {
 	 * @param parametro
 	 * @return
 	 */
-	public static int getParametroInteiroConfiguracao(Parametro parametro, int valorPadrao) {
+	public static int getParametroInteiroConfiguracaoComValorPadrao(Parametro parametro, int valorPadrao) {
 		try {
 			return Integer.parseInt(getParametroConfiguracao(parametro, true));
 		} catch (NumberFormatException ex) {
@@ -246,7 +252,7 @@ public class Auxiliar {
 	 * 
 	 * Se o parâmetro não existir, será retornado o valor padrão.
 	 */
-	public static String getParametroConfiguracao(Parametro parametro, String valorPadrao) {
+	public static String getParametroConfiguracaoComValorPadrao(Parametro parametro, String valorPadrao) {
 		if (getConfigs().containsKey(parametro.toString())) {
 			return getConfigs().getProperty(parametro.toString());
 		} else {
@@ -628,7 +634,7 @@ public class Auxiliar {
 	 * @return
 	 */
 	public static File getPastaOutputRaiz() {
-		return new File(Auxiliar.getParametroConfiguracao(Parametro.pasta_saida_padrao, "output"));
+		return new File(Auxiliar.getParametroConfiguracaoComValorPadrao(Parametro.pasta_saida_padrao, "output"));
 	}
 	
 	/**
@@ -814,7 +820,6 @@ public class Auxiliar {
 		}
 	}
 
-
 	public static boolean deveProcessarSegundoGrau() {
 		return getParametroBooleanConfiguracao(Parametro.gerar_xml_2G);
 	}
@@ -833,40 +838,21 @@ public class Auxiliar {
 	}
 	
 	public static boolean deveProcessarProcessosPje() {
-		boolean retorno = false;
-		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
-
-		if (tipoSistema.equals(TipoSistemaJudicialEnum.APENAS_PJE.getCodigo())
-				|| tipoSistema.equals(TipoSistemaJudicialEnum.APENAS_PJE_COM_MIGRADOS_LEGADO.getCodigo())
-				|| tipoSistema.equals(TipoSistemaJudicialEnum.TODOS.getCodigo())) {
-			retorno = true;
-		}
-
-		return retorno;
+		return MESCLAR_MOVIMENTOS_LEGADO_MIGRADO_VIA_XML || TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.APENAS_PJE.getCodigo())
+				|| TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.APENAS_PJE_COM_MIGRADOS_LEGADO.getCodigo())
+				|| TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.TODOS.getCodigo());
 	}
 
-	public static boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje() {
-		boolean retorno = false;
-		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
-
-		if (tipoSistema.equals(TipoSistemaJudicialEnum.APENAS_LEGADO.getCodigo())
-				|| tipoSistema.equals(TipoSistemaJudicialEnum.TODOS.getCodigo())) {
-			retorno = true;
-		}
-
-		return retorno;
+	public static boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging() {
+		return !MESCLAR_MOVIMENTOS_LEGADO_MIGRADO_VIA_XML 
+				&& (TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.APENAS_LEGADO.getCodigo())
+				|| TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.TODOS.getCodigo()));
 	}
 
-	public static boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe() {
-		boolean retorno = false;
-		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
-
-		if (tipoSistema.equals(TipoSistemaJudicialEnum.APENAS_PJE_COM_MIGRADOS_LEGADO.getCodigo())
-				|| tipoSistema.equals(TipoSistemaJudicialEnum.TODOS.getCodigo())) {
-			retorno = true;
-		}
-
-		return retorno;
+	public static boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging() {
+		return !MESCLAR_MOVIMENTOS_LEGADO_MIGRADO_VIA_XML 
+				&& (TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.APENAS_PJE_COM_MIGRADOS_LEGADO.getCodigo())
+				|| TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.TODOS.getCodigo()));
 	}
 	
 	public static void validarTipoRemessaAtual(TipoRemessaEnum tipoRemessaAtual) {

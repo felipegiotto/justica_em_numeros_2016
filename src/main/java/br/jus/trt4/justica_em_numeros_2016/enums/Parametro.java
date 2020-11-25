@@ -43,7 +43,7 @@ public enum Parametro {
 	sistema_judicial,
 	descartar_movimentos_ausentes_de_para_cnj,
 	incluir_todos_movimentos_base_legado,
-	mesclar_movimentos_xml_legado_migrado,
+	mesclar_movimentos_legado_migrado_via_xml,
 	movimentos_sem_serventia_cnj,
 	possui_deslocamento_oj_legado_1g,
 	possui_deslocamento_oj_legado_2g,

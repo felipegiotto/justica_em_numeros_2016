@@ -162,7 +162,7 @@ public class AnalisaMovimentosCNJ {
 			// 1 - decisão COLEGIADA
 			// movimento.setTipoDecisao(...);
 
-			if (Auxiliar.getParametroBooleanConfiguracao(Parametro.descartar_movimentos_ausentes_de_para_cnj, false)) {
+			if (Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.descartar_movimentos_ausentes_de_para_cnj, false)) {
 				if (forcarMovimentoNacional) {
 					//Apenas movimentos mapeados no DE-PARA do CNJ serão mantidos
 					TipoMovimentoNacional movimentoNacional = new TipoMovimentoNacional();
@@ -224,7 +224,7 @@ public class AnalisaMovimentosCNJ {
 			} else {
 				//Movimento Local
 				
-				boolean incluirTodosMovimentosLegado = Auxiliar.getParametroBooleanConfiguracao(Parametro.incluir_todos_movimentos_base_legado, false);
+				boolean incluirTodosMovimentosLegado = Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.incluir_todos_movimentos_base_legado, false);
 				
 				if(incluirTodosMovimentosLegado) {
 					if (descricao == null) {

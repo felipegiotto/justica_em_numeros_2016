@@ -6,10 +6,8 @@ import java.util.List;
 import javax.persistence.TypedQuery;
 
 import br.jus.trt4.justica_em_numeros_2016.entidades.ProcessoEnvio;
-import br.jus.trt4.justica_em_numeros_2016.entidades.Remessa;
 import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
-import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
 /**
  * Classe responsável por acessar dados da entidade ProcessoEnvio
@@ -63,6 +61,20 @@ public class ProcessoEnvioDao extends DataJudBaseDao<ProcessoEnvio> {
 		query.setParameter("tipoRemessa", tipoRemessa);
 
 		return query.getResultList();
+	}
+	
+
+	public Long getQuantidadeProcessosRemessa(LocalDate dataCorte,	TipoRemessaEnum tipoRemessa) {
+		StringBuilder hql = new StringBuilder();
+		hql.append("select count(pe) from ProcessoEnvio pe ");
+		hql.append(" where pe.remessa.dataCorte = :dataCorte ");
+		hql.append(" and pe.remessa.tipoRemessa = :tipoRemessa ");
+
+		TypedQuery<Long> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Long.class);
+		query.setParameter("dataCorte", dataCorte);
+		query.setParameter("tipoRemessa", tipoRemessa);
+
+		return getSingleResultOrNull(query);
 	}
 
 }

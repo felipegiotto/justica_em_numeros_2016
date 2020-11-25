@@ -44,7 +44,7 @@ public class HttpUtil {
 		HttpClientBuilder httpClientBuilder = HttpClients.custom();
 
 		// Aumenta o limite de conexoes, para permitir acesso multi-thread
-		int numeroThreads = Auxiliar.getParametroInteiroConfiguracao(Parametro.numero_threads_simultaneas_operacao_3, 1);
+		int numeroThreads = Auxiliar.getParametroInteiroConfiguracaoComValorPadrao(Parametro.numero_threads_simultaneas_operacao_3, 1);
 		httpClientBuilder.setMaxConnPerRoute(numeroThreads * 2);
 		httpClientBuilder.setMaxConnTotal(numeroThreads * 2);
 
@@ -56,7 +56,7 @@ public class HttpUtil {
 		// Proxy
 		String proxyHost = Auxiliar.getParametroConfiguracao(Parametro.proxy_host, false);
 		if (proxyHost != null) {
-			int proxyPort = Auxiliar.getParametroInteiroConfiguracao(Parametro.proxy_port, 3128);
+			int proxyPort = Auxiliar.getParametroInteiroConfiguracaoComValorPadrao(Parametro.proxy_port, 3128);
 			HttpHost proxy = new HttpHost(proxyHost, proxyPort);
 			httpClientBuilder.setProxy(proxy);
 			LOGGER.info("Será utilizado proxy para conectar ao CNJ: " + proxyHost);

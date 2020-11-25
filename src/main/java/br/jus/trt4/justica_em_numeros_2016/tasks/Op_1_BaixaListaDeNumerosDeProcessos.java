@@ -68,9 +68,9 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	public Op_1_BaixaListaDeNumerosDeProcessos() {
 		this.deveProcessarProcessosPje = Auxiliar.deveProcessarProcessosPje();
 		this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar
-				.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje();
+				.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging();
 		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = Auxiliar
-				.deveProcessarProcessosSistemaLegadoMigradosParaOPJe();
+				.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging();
 
 		this.tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
 	}
