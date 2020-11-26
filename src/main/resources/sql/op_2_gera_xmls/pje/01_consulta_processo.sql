@@ -20,7 +20,7 @@ SELECT
   
   /*** orgaoJulgador ***/
   oj.id_orgao_julgador as cd_orgao_julgador, 
-  '' as ds_orgao_julgador, -- essa informação não será utilizada no pje, mas deve estar na query
+  oj.ds_orgao_julgador as ds_orgao_julgador, -- essa informação não será utilizada no pje, mas deve estar na query
 
   -- instancia
   -- UPDATE: NÃO PEGA a instância do banco de dados, pois a grande maioria dos registros no segundo grau estão com nr_instancia NULAS

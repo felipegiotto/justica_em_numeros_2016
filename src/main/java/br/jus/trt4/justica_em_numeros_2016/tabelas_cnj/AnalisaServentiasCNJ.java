@@ -119,9 +119,9 @@ public class AnalisaServentiasCNJ {
 				
 			} else {
 				if (orgaosJulgadoresSemServentiasCadastradas.add(Integer.toString(codigoOrgaoJudicial))) {
-					LOGGER.warn("Falta mapear serventia no arquivo " + AnalisaServentiasCNJ.getArquivoServentias() + ": " + Integer.toString(codigoOrgaoJudicial) + ";" + this.grau + ";<CODIGO SERVENTIA CNJ>;<NOME SERVENTIA CNJ>");
+					LOGGER.warn("Falta mapear serventia '" + descricaoOrgaoJudicialLegado + "' no arquivo " + AnalisaServentiasCNJ.getArquivoServentias() + ": " + Integer.toString(codigoOrgaoJudicial) + ";" + this.grau + ";<CODIGO SERVENTIA CNJ>;<NOME SERVENTIA CNJ>");
 					if(listaNumerosProcesso != null) {
-						LOGGER.warn(String.format("    Processos com histórico deslocamento ou na serventia de id %s: %s.", Integer.toString(codigoOrgaoJudicial), listaNumerosProcesso));
+						LOGGER.warn(String.format("    Processos com histórico deslocamento ou na serventia de id %s (%s): %s.", Integer.toString(codigoOrgaoJudicial), descricaoOrgaoJudicialLegado, listaNumerosProcesso));
 					}
 				}
 				return null;
@@ -175,12 +175,13 @@ public class AnalisaServentiasCNJ {
 				//TODO: ajustar consultas
 				// Monta SQL para consultar os ids dos OJs de todos os processos da lista, nessa instância
 				String sql = "SELECT DISTINCT oj.id_orgao_julgador as cd_orgao_julgador, " +
+						"oj.ds_orgao_julgador as ds_orgao_julgador," +
 						" 				STRING_AGG(proc.nr_processo, '; ') as nr_processos " +
 						"FROM tb_processo proc " +
 						"INNER JOIN tb_processo_trf ptrf ON (proc.id_processo = ptrf.id_processo_trf) " +
 						"INNER JOIN tb_orgao_julgador oj USING (id_orgao_julgador) " +
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ") " +
-						"GROUP BY oj.id_orgao_julgador";
+						"GROUP BY oj.id_orgao_julgador, oj.ds_orgao_julgador";
 				try (ResultSet rs = conexao.createStatement().executeQuery(sql.toString())) {
 					analisarExistenciaServentiasPje(rs);
 				}
@@ -188,20 +189,22 @@ public class AnalisaServentiasCNJ {
 				// Monta SQL para consultar os nomes de todos os outros OJs que o processo já passou, com base na tabela "tb_hist_desloca_oj".
 				// Esses dados serão utilizados para identificar o OJ que emitiu cada movimento processual.
 				String sqlHistorico = "SELECT DISTINCT oj.id_orgao_julgador as cd_orgao_julgador, " + 
+						"oj.ds_orgao_julgador as ds_orgao_julgador, " + 
 						" 					STRING_AGG(proc.nr_processo, '; ') as nr_processos " +
 						"FROM tb_hist_desloca_oj hdo " + 
 						"INNER JOIN tb_processo proc ON (proc.id_processo = hdo.id_processo_trf) " + 
 						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_origem) " + 
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ") " +
-						"GROUP BY oj.id_orgao_julgador " +
+						"GROUP BY oj.id_orgao_julgador, oj.ds_orgao_julgador " +
 						"UNION " + 
 						"SELECT DISTINCT oj.id_orgao_julgador as cd_orgao_julgador, " +
+						"oj.ds_orgao_julgador as ds_orgao_julgador, " +
 						" 					STRING_AGG(proc.nr_processo, '; ') as nr_processos " +
 						"FROM tb_hist_desloca_oj hdo " + 
 						"INNER JOIN tb_processo proc ON (proc.id_processo = hdo.id_processo_trf) " + 
 						"INNER JOIN tb_orgao_julgador oj ON (oj.id_orgao_julgador = hdo.id_oj_destino) " + 
 						"WHERE proc.nr_processo IN (" + sqlNumerosProcessos + ") " + 
-						"GROUP BY oj.id_orgao_julgador";
+						"GROUP BY oj.id_orgao_julgador, oj.ds_orgao_julgador";
 				LOGGER.info("Consultando historicos de deslocamento...");
 				try (ResultSet rs = conexao.createStatement().executeQuery(sqlHistorico.toString())) {
 					analisarExistenciaServentiasPje(rs);
@@ -217,7 +220,7 @@ public class AnalisaServentiasCNJ {
 	
 	private void analisarExistenciaServentiasPje(ResultSet rs) throws SQLException {
 		while (rs.next()) {
-			getServentiaByOJ("", rs.getString("nr_processos"), rs.getInt("cd_orgao_julgador"), BaseEmAnaliseEnum.PJE);
+			getServentiaByOJ(rs.getString("ds_orgao_julgador"), rs.getString("nr_processos"), rs.getInt("cd_orgao_julgador"), BaseEmAnaliseEnum.PJE);
 		}
 	}
 
