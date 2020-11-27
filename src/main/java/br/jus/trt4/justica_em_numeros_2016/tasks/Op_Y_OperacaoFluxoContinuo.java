@@ -22,7 +22,8 @@ import br.jus.trt4.justica_em_numeros_2016.enums.ProcessoSituacaoEnum;
 /**
  * Novo protótipo de operação completa que trabalha como uma linha de produção, gerando os arquivos XML, enviando-os ao CNJ
  * e validando o processamentos dos protocolos, de forma paralela.
- *
+ * 
+ * TODO: Observação operação não está funcionando adequadamente
  * TODO: Conferir erro no "Conferindo protocolos no CNJ"
  * TODO: Tratar travamentos da VPN (tentar forçar fechar conexão ao banco)
  * TODO: Encerrar operação quando todos arquivos forem processados
