@@ -14,7 +14,9 @@ public enum SituacaoLoteProcessoEnum {
 	// Estados finais
 	PROCESSADO_COM_SUCESSO_CNJ("6", "Processado com Sucesso no CNJ", "3"), DUPLICADO_CNJ("7", "Duplicado no CNJ", "5"),
 	PROCESSADO_COM_ERRO_CNJ("8", "Processado com Erro no CNJ", "6"),
-	ERRO_NO_ARQUIVO_CNJ("9", "Erro no Arquivo no CNJ", "7");
+	ERRO_NO_ARQUIVO_CNJ("9", "Erro no Arquivo no CNJ", "7"),
+	ERRO_GRAVACAO_CNJ("10", "Erro de gravação no Storage S3 do CNJ", "8");
+
 
 	private final String codigo;
 	private final String label;
@@ -94,9 +96,10 @@ public enum SituacaoLoteProcessoEnum {
 		return this.getCodigo().equals(situacaoLoteProcessoEnum.getCodigo());
 	}
 
-	public boolean isSituacaoErro() {
+	public boolean isSituacaoErroCNJ() {
 		return this.codigoCNJ.equals(SituacaoLoteProcessoEnum.PROCESSADO_COM_ERRO_CNJ.getCodigoCNJ())
-				|| this.codigoCNJ.equals(SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ.getCodigoCNJ());
+				|| this.codigoCNJ.equals(SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ.getCodigoCNJ())
+				|| this.codigoCNJ.equals(SituacaoLoteProcessoEnum.ERRO_GRAVACAO_CNJ.getCodigoCNJ());
 	}
 
 	@Override

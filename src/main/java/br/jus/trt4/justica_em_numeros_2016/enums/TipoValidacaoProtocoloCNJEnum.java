@@ -11,7 +11,8 @@ public enum TipoValidacaoProtocoloCNJEnum {
 	VALIDACAO_CNJ_TODOS("TODOS", "Valida todos os protocolos enviados ao CNJ."),
 	VALIDACAO_CNJ_TODOS_COM_ERRO("TODOS_COM_ERRO", "Busca todos os protocolos com status de erro (6 e 7)."),
 	VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO("APENAS_COM_ERRO_PROCESSADO_COM_ERRO", "Busca todos os protocolos com status de erro 6 (processado com erro)."),
-	VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO("APENAS_COM_ERRO_NO_ARQUIVO", "Busca todos os protocolos com status de erro 7 (Erro no arquivo).");
+	VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO("APENAS_COM_ERRO_NO_ARQUIVO", "Busca todos os protocolos com status de erro 7 (Erro no arquivo)."),
+	VALIDACAO_CNJ_APENAS_COM_ERRO_GRAVACAO("APENAS_COM_ERRO_GRAVACAO", "Busca todos os protocolos com status de erro 8 (Erro de gravação).");
 
 	private final String codigo;
 	private final String label;

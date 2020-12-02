@@ -161,7 +161,7 @@ CREATE TABLE datajud.tb_lote_processo
     id_lote bigint NOT NULL,
     id_chave_processo_cnj bigint NOT NULL,
     id_xml_processo bigint NOT NULL,
-    constraint tb_lote_processo_ck01 check (en_situacao in ('1','2','3','4','5','6','7','8','9')),
+    constraint tb_lote_processo_ck01 check (en_situacao in ('1','2','3','4','5','6','7','8','9','10')),
     constraint tb_lote_processo_ck02 check (en_origem_processo in ('H','L','P')),
     constraint tb_lote_processo_pk primary key (id_lote_processo)
 );
@@ -181,7 +181,7 @@ COMMENT ON COLUMN datajud.tb_lote_processo.dh_recebimento_cnj
 COMMENT ON COLUMN datajud.tb_lote_processo.en_situacao
  	IS 'Situação do XML que será gerado para envio ao CNJ. 1:XML GERADO COM SUCESSO; 2:XML GERADO COM ERRO;
     3:ENVIADO; 4:RECEBIDO NO CNJ; 5:AGUARDANDO PROCESSAMENTO NO CNJ; 6:PROCESSADO COM SUCESSO NO CNJ;
-    7:DUPLICADO NO CNJ; 8:PROCESSADO COM ERRO NO CNJ;9:ERRO NO ARQUIVO NO CNJ';
+    7:DUPLICADO NO CNJ; 8:PROCESSADO COM ERRO NO CNJ;9:ERRO NO ARQUIVO NO CNJ; 10: ERRO NA GRAVAÇÃO NO CNJ';
 
 COMMENT ON COLUMN datajud.tb_lote_processo.en_origem_processo
     IS 'Origem do Processo. H: Híbrido; L: Legado; P: PJe';

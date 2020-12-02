@@ -152,6 +152,7 @@ public class Op_4_ConfereProtocolosCNJ {
 				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS_COM_ERRO.getCodigo().equals(tipoValidacao)
 				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO.getCodigo().equals(tipoValidacao)
 				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO.getCodigo().equals(tipoValidacao)
+				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_GRAVACAO.getCodigo().equals(tipoValidacao)
 				|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS.getCodigo().equals(tipoValidacao);
 	}
 
@@ -299,6 +300,16 @@ public class Op_4_ConfereProtocolosCNJ {
 
 				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos,
 						TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO);
+			}
+			
+			if (TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_TODOS_COM_ERRO.equals(this.tipoValidacaoProtocoloCNJ)
+					|| TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_GRAVACAO.equals(this.tipoValidacaoProtocoloCNJ)) {
+				// Constrói a URL com o status "Erro no arquivo"
+				builder = construirBuilderWebServiceCNJ(parametroProcolo, parametroDataInicio, parametroDataFim,
+						SituacaoLoteProcessoEnum.ERRO_GRAVACAO_CNJ.getCodigoCNJ());
+
+				executarConsultasProtocolosCNJ(builder, mapProtocolosComLoteProcessos,
+						TipoValidacaoProtocoloCNJEnum.VALIDACAO_CNJ_APENAS_COM_ERRO_GRAVACAO);
 			}
 		}
 
@@ -554,7 +565,7 @@ public class Op_4_ConfereProtocolosCNJ {
 					if (situacaoCNJ.equals(SituacaoLoteProcessoEnum.PROCESSADO_COM_SUCESSO_CNJ)) {
 						LOGGER.debug("Protocolo baixado com SUCESSO: " + loteProcesso.getProtocoloCNJ() + ", processo '"
 								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
-					} else if (situacaoCNJ.isSituacaoErro()) {
+					} else if (situacaoCNJ.isSituacaoErroCNJ()) {
 						LOGGER.warn("Protocolo baixado com ERRO: " + loteProcesso.getProtocoloCNJ() + ", processo '"
 								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
 					} else {
@@ -837,6 +848,7 @@ public class Op_4_ConfereProtocolosCNJ {
 		situacoes.add(SituacaoLoteProcessoEnum.DUPLICADO_CNJ);
 		situacoes.add(SituacaoLoteProcessoEnum.PROCESSADO_COM_ERRO_CNJ);
 		situacoes.add(SituacaoLoteProcessoEnum.ERRO_NO_ARQUIVO_CNJ);
+		situacoes.add(SituacaoLoteProcessoEnum.ERRO_GRAVACAO_CNJ);
 		return situacoes;
 	}
 
