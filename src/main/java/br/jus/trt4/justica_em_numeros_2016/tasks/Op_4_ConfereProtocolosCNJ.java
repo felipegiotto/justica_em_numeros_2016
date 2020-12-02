@@ -571,7 +571,7 @@ public class Op_4_ConfereProtocolosCNJ {
 					} else {
 						LOGGER.info("Protocolo NÃO baixado ainda: " + loteProcesso.getProtocoloCNJ() + ", processo '"
 								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "', situação '"
-								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
+								+ loteProcesso.getSituacao().getLabel() + "'");
 					}
 				}
 				loteProcessoDAO.incluirOuAlterar(loteProcesso);
