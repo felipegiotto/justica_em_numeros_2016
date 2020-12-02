@@ -567,7 +567,8 @@ public class Op_4_ConfereProtocolosCNJ {
 								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
 					} else if (situacaoCNJ.isSituacaoErroCNJ()) {
 						LOGGER.warn("Protocolo baixado com ERRO: " + loteProcesso.getProtocoloCNJ() + ", processo '"
-								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "'");
+								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "', situação '"
+								+ loteProcesso.getSituacao().getLabel() + "'");
 					} else {
 						LOGGER.info("Protocolo NÃO baixado ainda: " + loteProcesso.getProtocoloCNJ() + ", processo '"
 								+ loteProcesso.getChaveProcessoCNJ().getNumeroProcesso() + "', situação '"
