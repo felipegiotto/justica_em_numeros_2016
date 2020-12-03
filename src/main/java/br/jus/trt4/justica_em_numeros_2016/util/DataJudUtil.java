@@ -12,12 +12,14 @@ import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
 public class DataJudUtil {
 	
-	public static final Pattern P_CARGA_PROCESSO = Pattern.compile("^PROCESSO (\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4})$");
-	public static final Pattern P_MES_ANO_CORTE = Pattern.compile("^(\\d+)-(\\d+)$");
+	private static final Pattern P_CARGA_PROCESSO = Pattern.compile("^PROCESSO (\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4})$");
+	private static final Pattern P_MES_ANO_CORTE = Pattern.compile("^(\\d+)-(\\d+)$");
+	
+	public static final String TIPO_CARGA = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
+	public static final String MES_ANO_CORTE = Auxiliar.getParametroConfiguracao(Parametro.mes_ano_corte, true);
 	
 	private static Matcher getMatcherMesAno() {
-		String mesAnoCorte = Auxiliar.getParametroConfiguracao(Parametro.mes_ano_corte, true);
-		Matcher matcher = DataJudUtil.P_MES_ANO_CORTE.matcher(mesAnoCorte);
+		Matcher matcher = DataJudUtil.P_MES_ANO_CORTE.matcher(MES_ANO_CORTE);
 		if (!matcher.find()) {
 			throw new RuntimeException(
 					"Parâmetro 'mes_ano_corte' não especifica corretamente o ano e o mês que precisam ser baixados! Verifique o arquivo 'config.properties'");
@@ -63,7 +65,7 @@ public class DataJudUtil {
 	}
 	
 	public static TipoRemessaEnum getTipoRemessa() {
-		return TipoRemessaEnum.criarApartirDoLabel(Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true));
+		return TipoRemessaEnum.criarApartirDoLabel(TIPO_CARGA);
 	}
 
 }

@@ -48,8 +48,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	private static final int BATCH_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_batch);
 	private static final int COMMIT_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_commit_operacao_1);
 
-	private String tipoCarga;
-
 	private boolean deveProcessarProcessosPje;
 	private boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje;
 	private boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe;
@@ -71,8 +69,6 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging();
 		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = Auxiliar
 				.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging();
-
-		this.tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
 	}
 	
 	public void executarOperacao() throws Exception {
@@ -96,7 +92,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	
 	public void baixarListaProcessos() throws IOException, SQLException {
 		LocalDate dataCorteRemessaAtual = DataJudUtil.getDataCorte();
-		TipoRemessaEnum tipoRemessaAtual = TipoRemessaEnum.criarApartirDoLabel(this.tipoCarga);
+
+		TipoRemessaEnum tipoRemessaAtual = DataJudUtil.getTipoRemessa();
 		
 		Auxiliar.validarTipoRemessaAtual(tipoRemessaAtual);
 		
@@ -158,14 +155,16 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	}
 
 	public Map<String, DadosBasicosProcessoDto> baixarListaProcessos(int grau) throws IOException, SQLException {
-		LOGGER.info("Executando consulta " + this.tipoCarga + " para o " + grau + "G...");
+		String tipoCarga = DataJudUtil.TIPO_CARGA;
+		
+		LOGGER.info("Executando consulta " + tipoCarga + " para o " + grau + "G...");
 		ResultSet rsConsultaProcessosPje = null;
 		ResultSet rsConsultaProcessosMigradosLegado = null;
 		ResultSet rsConsultaProcessosNaoMigradosLegado = null;
 		String pastaIntermediariaPje = Auxiliar.getPastaResources(BaseEmAnaliseEnum.PJE, grau);
 		String pastaIntermediariaLegado = Auxiliar.getPastaResources(BaseEmAnaliseEnum.LEGADO, grau);
 
-		if ("TESTES".equals(this.tipoCarga)) {
+		if ("TESTES".equals(tipoCarga)) {
 
 			// Se usuário selecionou carga "TESTES" no parâmetro "tipo_carga_xml", pega um
 			// lote qualquer de processos
@@ -197,11 +196,11 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			LOGGER.warn(
 					">>>>>>>>>> CUIDADO! Somente uma fração dos dados está sendo carregada, para testes! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 
-		} else if (this.tipoCarga.startsWith("PROCESSO ")) {
+		} else if (tipoCarga.startsWith("PROCESSO ")) {
 
 			// Se usuário preencheu um número de processo no parâmetro "tipo_carga_xml",
 			// carrega somente os dados dele
-			String numeroProcesso = DataJudUtil.getNumeroProcessoCargaProcesso(this.tipoCarga);
+			String numeroProcesso = DataJudUtil.getNumeroProcessoCargaProcesso(tipoCarga);
 
 			// Carrega o SQL do arquivo
 			if (this.deveProcessarProcessosPje) {
@@ -236,7 +235,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + numeroProcesso
 					+ "! Atente ao parâmetro 'tipo_carga_xml', nas configurações!! <<<<<<<<<<");
 
-		} else if ("COMPLETA".equals(this.tipoCarga)) {
+		} else if ("COMPLETA".equals(tipoCarga)) {
 			// Se usuário selecionou carga "COMPLETA" no parâmetro "tipo_carga_xml",
 			// gera os XMLs de todos os processos que obedecerem às regras descritas no site
 			// do CNJ
@@ -275,7 +274,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				rsConsultaProcessosNaoMigradosLegado = statementNaoMigradosLegado.executeQuery(sqlNaoMigradosLegado);
 			}
 
-		} else if ("TODOS_COM_MOVIMENTACOES".equals(this.tipoCarga)) {
+		} else if ("TODOS_COM_MOVIMENTACOES".equals(tipoCarga)) {
 
 			// Se usuário selecionou carga "TODOS_COM_MOVIMENTACOES" no parâmetro "tipo_carga_xml",
 			// gera os XMLs de todos os processos que tiveram qualquer movimentação processual na
@@ -310,7 +309,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				rsConsultaProcessosNaoMigradosLegado = statementNaoMigradosLegado.executeQuery(sqlNaoMigradosLegado);
 			}
 
-		} else if (this.tipoCarga.equals("MENSAL")) {
+		} else if (tipoCarga.equals("MENSAL")) {
 			// Identifica o início e o término do mês selecionado
 			String dataInicial = DataJudUtil.getDataPeriodoDeCorte(true);
 			String dataFinal = DataJudUtil.getDataPeriodoDeCorte(false);
@@ -348,7 +347,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			}
 
 		} else {
-			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + this.tipoCarga);
+			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + tipoCarga);
 		}
 
 		Map<String, DadosBasicosProcessoDto> mapProcessos = new HashMap<String, DadosBasicosProcessoDto>();

@@ -8,7 +8,11 @@ import java.util.Objects;
  * @author ivan.franca@trt6.jus.br
  */
 public enum TipoRemessaEnum {
-    COMPLETA("C", "COMPLETA"), MENSAL("M", "MENSAL");
+	TODOS_COM_MOVIMENTACOES("A", "TODOS_COM_MOVIMENTACOES"),
+    COMPLETA("C", "COMPLETA"), 
+    MENSAL("M", "MENSAL"),
+    PROCESSO("P", "PROCESSO"),
+    TESTES("T", "TESTES");
     
     private final String codigo;
     private final String label;
@@ -52,6 +56,9 @@ public enum TipoRemessaEnum {
      */
     public static TipoRemessaEnum criarApartirDoLabel(String label) {
         if (Objects.nonNull(label)) {
+        	if (label.startsWith(TipoRemessaEnum.PROCESSO.getLabel())) {
+        		return TipoRemessaEnum.PROCESSO;
+            }
             for (TipoRemessaEnum tipoRemessa : TipoRemessaEnum.values()) {
                 if (tipoRemessa.getLabel().equals(label)) {
                     return tipoRemessa;

@@ -601,13 +601,10 @@ public class Auxiliar {
 	 * Fonte: http://stackoverflow.com/questions/25114526/log4j2-how-to-write-logs-to-separate-files-for-each-user
 	 */
 	public static File prepararPastaDeSaida() {
-		
 		if (pastaSaida == null) {
 			File pastaOutputRaiz = getPastaOutputRaiz();
-			String tipoCarga = Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true);
-			if (tipoCarga.equals("MENSAL") || tipoCarga.equals("COMPLETA")) {
-				tipoCarga = tipoCarga + " " + Auxiliar.getParametroConfiguracao(Parametro.mes_ano_corte, true);
-			}
+			String tipoCarga = DataJudUtil.TIPO_CARGA + " " + DataJudUtil.MES_ANO_CORTE;
+
 			File pastaOutputCarga = new File(pastaOutputRaiz, tipoCarga);
 			pastaSaida = pastaOutputCarga;
 			
@@ -857,9 +854,7 @@ public class Auxiliar {
 	
 	public static void validarTipoRemessaAtual(TipoRemessaEnum tipoRemessaAtual) {
 		if (tipoRemessaAtual == null) {
-			// TODO: implementar os ajustes necessários para que a aplicação funcione para os tipos de carga:
-			// TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO. Outra possibilidade é remover de vez essas cargas do código.
-			throw new RuntimeException("Apenas os tipos de carga MENSAL e COMPLETA estão funcionando adequadamente.");
+			throw new RuntimeException("A remessa indicada no arquivo config.properties não é válida.");
 		}
 	}
 	

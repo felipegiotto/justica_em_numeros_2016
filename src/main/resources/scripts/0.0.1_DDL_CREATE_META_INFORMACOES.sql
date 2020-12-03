@@ -23,7 +23,7 @@ CREATE TABLE datajud.tb_remessa
 	id_remessa bigint NOT NULL DEFAULT nextval('datajud.sq_tb_remessa'::regclass),
     dt_corte DATE NOT NULL,
     cd_tipo varchar(1) NOT NULL,
-    constraint tb_remessa_ck01 check (cd_tipo in ('C','M')),
+    constraint tb_remessa_ck01 check (cd_tipo in ('A','C','M','P','T')),
     constraint tb_remessa_uk01 UNIQUE(dt_corte, cd_tipo),
     constraint tb_remessa_pk primary key (id_remessa)
 );
@@ -32,7 +32,7 @@ COMMENT ON COLUMN datajud.tb_remessa.dt_corte
     IS 'Data de corte da Remessa.';
 
 COMMENT ON COLUMN datajud.tb_remessa.cd_tipo
-    IS 'Indica se a Remessa é Completa (C) ou Mensal (M).';
+    IS 'Indica se a Remessa é TODOS COM MOVIMENTACOES(A), COMPLETA (C), MENSAL (M), PROCESSO(P) ou TESTES(T).';
 
     
 --------------------------------------------------------------
