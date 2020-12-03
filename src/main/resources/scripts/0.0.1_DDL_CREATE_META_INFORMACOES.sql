@@ -22,16 +22,16 @@ CREATE TABLE datajud.tb_remessa
 (
 	id_remessa bigint NOT NULL DEFAULT nextval('datajud.sq_tb_remessa'::regclass),
     dt_corte DATE NOT NULL,
-    en_tipo varchar(1) NOT NULL,
-    constraint tb_remessa_ck01 check (en_tipo in ('C','M')),
-    constraint tb_remessa_uk01 UNIQUE(dt_corte, en_tipo),
+    cd_tipo varchar(1) NOT NULL,
+    constraint tb_remessa_ck01 check (cd_tipo in ('C','M')),
+    constraint tb_remessa_uk01 UNIQUE(dt_corte, cd_tipo),
     constraint tb_remessa_pk primary key (id_remessa)
 );
 
 COMMENT ON COLUMN datajud.tb_remessa.dt_corte
     IS 'Data de corte da Remessa.';
 
-COMMENT ON COLUMN datajud.tb_remessa.en_tipo
+COMMENT ON COLUMN datajud.tb_remessa.cd_tipo
     IS 'Indica se a Remessa é Completa (C) ou Mensal (M).';
 
     
@@ -54,16 +54,16 @@ CREATE TABLE datajud.tb_lote
 (
 	id_lote bigint NOT NULL DEFAULT nextval('datajud.sq_tb_lote'::regclass),
     nm_numero varchar(10) NOT NULL,
-    en_situacao varchar(1),
+    cd_situacao varchar(1),
     id_remessa bigint NOT NULL,
     constraint tb_lote_pk primary key (id_lote),
-    constraint tb_lote_ck01 check (en_situacao in ('1','2','3','4','5'))
+    constraint tb_lote_ck01 check (cd_situacao in ('1','2','3','4','5'))
 );
 
 COMMENT ON COLUMN datajud.tb_lote.nm_numero
     IS 'Número do Lote.';
     
-COMMENT ON COLUMN datajud.tb_lote.en_situacao
+COMMENT ON COLUMN datajud.tb_lote.cd_situacao
  	IS 'Situação Lote que será enviado ao CNJ. 1:Criado Parcialmente; 2:Criado Com Erros; 3: Criado sem Erros; 4:Enviado; 5:Conferido no CNJ';
     
 alter table datajud.tb_lote
@@ -156,13 +156,13 @@ CREATE TABLE datajud.tb_lote_processo
     nm_protocolo_cnj varchar(60),
     nm_hash_cnj varchar(64),
     dh_recebimento_cnj timestamp,
-    en_situacao varchar(2),
-    en_origem_processo varchar(1),
+    cd_situacao varchar(2),
+    cd_origem_processo varchar(1),
     id_lote bigint NOT NULL,
     id_chave_processo_cnj bigint NOT NULL,
     id_xml_processo bigint NOT NULL,
-    constraint tb_lote_processo_ck01 check (en_situacao in ('1','2','3','4','5','6','7','8','9','10')),
-    constraint tb_lote_processo_ck02 check (en_origem_processo in ('H','L','P')),
+    constraint tb_lote_processo_ck01 check (cd_situacao in ('1','2','3','4','5','6','7','8','9','10')),
+    constraint tb_lote_processo_ck02 check (cd_origem_processo in ('H','L','P')),
     constraint tb_lote_processo_pk primary key (id_lote_processo)
 );
 
@@ -178,12 +178,12 @@ COMMENT ON COLUMN datajud.tb_lote_processo.nm_hash_cnj
 COMMENT ON COLUMN datajud.tb_lote_processo.dh_recebimento_cnj
     IS 'Momento em que o XML é recebido pelo CNJ.';
     
-COMMENT ON COLUMN datajud.tb_lote_processo.en_situacao
+COMMENT ON COLUMN datajud.tb_lote_processo.cd_situacao
  	IS 'Situação do XML que será gerado para envio ao CNJ. 1:XML GERADO COM SUCESSO; 2:XML GERADO COM ERRO;
     3:ENVIADO; 4:RECEBIDO NO CNJ; 5:AGUARDANDO PROCESSAMENTO NO CNJ; 6:PROCESSADO COM SUCESSO NO CNJ;
     7:DUPLICADO NO CNJ; 8:PROCESSADO COM ERRO NO CNJ;9:ERRO NO ARQUIVO NO CNJ; 10: ERRO NA GRAVAÇÃO NO CNJ';
 
-COMMENT ON COLUMN datajud.tb_lote_processo.en_origem_processo
+COMMENT ON COLUMN datajud.tb_lote_processo.cd_origem_processo
     IS 'Origem do Processo. H: Híbrido; L: Legado; P: PJe';
 
     
@@ -218,18 +218,18 @@ CREATE TABLE datajud.tb_processo_envio
 (
 	id_processo_envio bigint NOT NULL DEFAULT nextval('datajud.sq_tb_processo_envio'::regclass),
     nr_processo varchar(30) NOT NULL,
-    en_origem_processo varchar(1) NOT NULL,
+    cd_origem_processo varchar(1) NOT NULL,
     nm_grau varchar(1) NOT NULL,
     id_remessa bigint NOT NULL,
     constraint tb_processo_envio_pk primary key (id_processo_envio),
     constraint tb_processo_envio_uk01 UNIQUE( nr_processo, nm_grau, id_remessa),
-    constraint tb_processo_envio_ck01 check (en_origem_processo in ('H','L','P'))
+    constraint tb_processo_envio_ck01 check (cd_origem_processo in ('H','L','P'))
 );
 
 COMMENT ON COLUMN datajud.tb_processo_envio.nr_processo
     IS 'Número do Processo.';
 
-    COMMENT ON COLUMN datajud.tb_processo_envio.en_origem_processo
+    COMMENT ON COLUMN datajud.tb_processo_envio.cd_origem_processo
     IS 'Origem do Processo. H: Híbrido; L: Legado; P: PJe';
 
     COMMENT ON COLUMN datajud.tb_processo_envio.nm_grau

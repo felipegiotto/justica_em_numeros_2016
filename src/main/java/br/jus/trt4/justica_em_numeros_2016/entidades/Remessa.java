@@ -26,7 +26,7 @@ import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
  */
 @Entity
 @Table(name = "tb_remessa", uniqueConstraints = @UniqueConstraint(columnNames = {
-		"en_tipo", "dt_corte" }))
+		"cd_tipo", "dt_corte" }))
 public class Remessa extends BaseEntidade {
 
 	private static final long serialVersionUID = 1L;
@@ -38,7 +38,7 @@ public class Remessa extends BaseEntidade {
 	private Long id;
 
 	@Convert(converter = TipoRemessaEnumConverter.class)
-	@Column(name = "en_tipo", length = 1, nullable = false)
+	@Column(name = "cd_tipo", length = 1, nullable = false)
 	private TipoRemessaEnum tipoRemessa;
 
 	@Column(name = "dt_corte", nullable = false)

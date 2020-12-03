@@ -34,7 +34,7 @@ public class ProcessoEnvio extends BaseEntidade {
 	private Long id;
 
 	@Convert(converter = OrigemProcessoEnumConverter.class)
-	@Column(name = "en_origem_processo", length = 1, nullable = false)
+	@Column(name = "cd_origem_processo", length = 1, nullable = false)
 	private OrigemProcessoEnum origem;
 
 	@Column(name = "nr_processo", nullable = false, length = 30)

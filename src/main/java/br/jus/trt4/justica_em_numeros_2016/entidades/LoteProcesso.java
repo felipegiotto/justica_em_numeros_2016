@@ -50,11 +50,11 @@ public class LoteProcesso extends BaseEntidade {
 	private String hashCNJ;
 
 	@Convert(converter = SituacaoLoteProcessoEnumConverter.class)
-	@Column(name = "en_situacao", length = 2, nullable = true)
+	@Column(name = "cd_situacao", length = 2, nullable = true)
 	private SituacaoLoteProcessoEnum situacao;
 
 	@Convert(converter = OrigemProcessoEnumConverter.class)
-	@Column(name = "en_origem_processo", length = 1, nullable = true)
+	@Column(name = "cd_origem_processo", length = 1, nullable = true)
 	private OrigemProcessoEnum origem;
 
 	@ManyToOne(fetch = FetchType.LAZY)
