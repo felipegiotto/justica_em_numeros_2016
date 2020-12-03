@@ -20,8 +20,8 @@ public class XMLProcesso extends BaseEntidade {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_xml_processo", allocationSize = 1)
-	@GeneratedValue(generator = "generator")
+	@SequenceGenerator(name = "sq_tb_xml_processo", sequenceName = "sq_tb_xml_processo", allocationSize = 1)
+	@GeneratedValue(generator = "sq_tb_xml_processo")
 	@Column(name = "id_xml_processo", unique = true, nullable = false)
 	private Long id;
 

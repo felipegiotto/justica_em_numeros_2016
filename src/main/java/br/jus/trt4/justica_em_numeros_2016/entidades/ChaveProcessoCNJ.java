@@ -21,8 +21,8 @@ public class ChaveProcessoCNJ extends BaseEntidade {
 	private static final long serialVersionUID = 1L;
 	
 	@Id
-	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_chave_processo_cnj", allocationSize = 1) 
-	@GeneratedValue(generator = "generator")
+	@SequenceGenerator(name = "sq_tb_chave_processo_cnj", sequenceName = "sq_tb_chave_processo_cnj", allocationSize = 1) 
+	@GeneratedValue(generator = "sq_tb_chave_processo_cnj")
 	@Column(name = "id_chave_processo_cnj", unique = true, nullable = false)
 	private Long id;
 

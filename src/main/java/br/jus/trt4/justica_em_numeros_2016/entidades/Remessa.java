@@ -32,8 +32,8 @@ public class Remessa extends BaseEntidade {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_remessa", allocationSize = 1)
-	@GeneratedValue(generator = "generator")
+	@SequenceGenerator(name = "sq_tb_remessa", sequenceName = "sq_tb_remessa", allocationSize = 1)
+	@GeneratedValue(generator = "sq_tb_remessa")
 	@Column(name = "id_remessa", unique = true, nullable = false)
 	private Long id;
 

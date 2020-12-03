@@ -28,8 +28,8 @@ public class ProcessoEnvio extends BaseEntidade {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_processo_envio", allocationSize = 1)
-	@GeneratedValue(generator = "generator")
+	@SequenceGenerator(name = "sq_tb_processo_envio", sequenceName = "sq_tb_processo_envio", allocationSize = 1)
+	@GeneratedValue(generator = "sq_tb_processo_envio")
 	@Column(name = "id_processo_envio", unique = true, nullable = false)
 	private Long id;
 

@@ -32,8 +32,8 @@ public class LoteProcesso extends BaseEntidade {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@SequenceGenerator(name = "generator", sequenceName = "sq_tb_lote_processo", allocationSize = 1)
-	@GeneratedValue(generator = "generator")
+	@SequenceGenerator(name = "sq_tb_lote_processo", sequenceName = "sq_tb_lote_processo", allocationSize = 1)
+	@GeneratedValue(generator = "sq_tb_lote_processo")
 	@Column(name = "id_lote_processo", unique = true, nullable = false)
 	private Long id;
 
