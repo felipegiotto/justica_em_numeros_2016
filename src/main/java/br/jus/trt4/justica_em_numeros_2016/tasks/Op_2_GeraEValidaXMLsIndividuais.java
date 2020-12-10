@@ -371,8 +371,8 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 			situacoesErro.add(SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO);
 			
 			int quantidadeProcessosRemessa = processoEnvioDAO.getQuantidadeProcessosRemessa(lote.getRemessa().getDataCorte(), lote.getRemessa().getTipoRemessa(), null, null).intValue();
-			Long quantidadeProcessosComErroNoLote = loteProcessoDAO.getQuantidadeProcessosPorLoteESituacao(lote, situacoesErro, true);
-			Long quantidadeProcessosNoLote = loteProcessoDAO.getQuantidadeProcessosPorLote(lote);
+			Long quantidadeProcessosComErroNoLote = loteProcessoDAO.getQuantidadeProcessosPorLoteESituacao(lote, situacoesErro, null, true);
+			Long quantidadeProcessosNoLote = loteProcessoDAO.getQuantidadeProcessosPorLote(lote, null);
 			
 			if (quantidadeProcessosRemessa == quantidadeProcessosNoLote.intValue()) {
 				if (quantidadeProcessosComErroNoLote > 0) {

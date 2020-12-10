@@ -208,13 +208,21 @@ public class Op_3_EnviaArquivosCNJ {
 					"Não foi possível localizar o último lote da Remessa indicada em config.properties. "
 							+ "Certifique-se de que a operação Op_2_GeraEValidaXMLsIndividuais foi executada com sucesso.");
 		}
+		
+		int [] graus = {1, 2};
+		List<String> grausAProcessar = new ArrayList<String>();
+		for (int grau : graus) {
+			if (Auxiliar.deveProcessarGrau(grau)) {
+				grausAProcessar.add(Integer.toString(grau));			
+			}
+		}
 
-		Long tamanhoDoLoteAtual = loteProcessoDAO.getQuantidadeProcessosPorLote(loteAtual);
+		Long tamanhoDoLoteAtual = loteProcessoDAO.getQuantidadeProcessosPorLote(loteAtual, grausAProcessar);
 
 		LOGGER.info("Total de arquivos XML encontrados: " + tamanhoDoLoteAtual.intValue());
 
 		List<Long> idProcessosComXMLParaEnvio = loteProcessoDAO.getIDProcessosPorLoteESituacao(loteAtual,
-				this.getSituacoesProcessosEnvio());
+				this.getSituacoesProcessosEnvio(), grausAProcessar);
 
 		LOGGER.info("Arquivos XML que precisam ser enviados: " + idProcessosComXMLParaEnvio.size());
 
@@ -230,7 +238,7 @@ public class Op_3_EnviaArquivosCNJ {
 		}
 
 		Long qtdProcessosPendentes = loteProcessoDAO.getQuantidadeProcessosPorLoteESituacao(loteAtual,
-				this.getSituacoesProcessosEnvio(), true);
+				this.getSituacoesProcessosEnvio(), grausAProcessar, true);
 
 		// Envio finalizado
 		LOGGER.info("Total de arquivos enviados com sucesso: " + qtdEnviadaComSucesso.get());

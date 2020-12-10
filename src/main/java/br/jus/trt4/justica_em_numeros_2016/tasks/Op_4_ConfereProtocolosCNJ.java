@@ -338,7 +338,7 @@ public class Op_4_ConfereProtocolosCNJ {
 				}
 
 				Long totalDeProcessosNaoConferidos = loteProcessoDAO.getQuantidadeProcessosPorLoteESituacao(lote,
-						situacoesLoteProcesso, false);
+						situacoesLoteProcesso, null, false);
 				if (totalDeProcessosNaoConferidos.intValue() == 0) {
 					lote.setSituacao(SituacaoLoteEnum.CONFERIDO_CNJ);
 					loteDAO.alterar(lote);
