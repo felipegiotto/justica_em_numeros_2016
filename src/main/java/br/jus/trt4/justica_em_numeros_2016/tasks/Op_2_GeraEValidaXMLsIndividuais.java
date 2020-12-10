@@ -172,7 +172,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 	private static final ProcessoEnvioDao processoEnvioDAO  = new ProcessoEnvioDao();
 	
 	private static final int BATCH_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_batch);
-	private static final int COMMIT_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_commit_operacao_2);
+	private static final int COMMIT_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_commit_xml_legado);
 	
 	// Objetos que armazenam os dados do PJe para poder trazer dados de processos em lote,
 	// resultando em menos consultas ao banco de dados.

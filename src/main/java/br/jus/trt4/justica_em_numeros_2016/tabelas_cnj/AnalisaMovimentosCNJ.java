@@ -176,7 +176,7 @@ public class AnalisaMovimentosCNJ {
 						complementos += complemento + " | ";
 					}
 
-					LOGGER.info(String.format("O movimento (id=%s) de código %s (complementos: %s) foi descartado pelo mapeador DE-PARA.", 
+					LOGGER.trace(String.format("O movimento (id=%s) de código %s (complementos: %s) foi descartado pelo mapeador DE-PARA.", 
 							movimentoDto.getIdProcessoEvento(),
 							movimentoDto.getCodMovimentoCNJ(),
 							complementos.length() > 0 ? complementos.substring(0, complementos.length() - 3) : "nenhum"));
@@ -190,7 +190,7 @@ public class AnalisaMovimentosCNJ {
 
 				} else {
 					if (descricao == null) {
-						LOGGER.info("Movimento com código " + codigoMovimento + " não possui descrição. Será utilizada a descrição da tabela tb_evento_processual: " + descricaoEventoProcessual);
+						LOGGER.trace("Movimento com código " + codigoMovimento + " não possui descrição. Será utilizada a descrição da tabela tb_evento_processual: " + descricaoEventoProcessual);
 						descricao = descricaoEventoProcessual;
 					}
 					TipoMovimentoLocal movimentoLocal = new TipoMovimentoLocal();
@@ -228,7 +228,7 @@ public class AnalisaMovimentosCNJ {
 				
 				if(incluirTodosMovimentosLegado) {
 					if (descricao == null) {
-						LOGGER.info("Movimento com código " + codigoMovimento + " não possui descrição. Será utilizada a descrição da tabela tb_evento_processual: " + descricaoEventoProcessual);
+						LOGGER.trace("Movimento com código " + codigoMovimento + " não possui descrição. Será utilizada a descrição da tabela tb_evento_processual: " + descricaoEventoProcessual);
 						descricao = descricaoEventoProcessual;
 					}
 

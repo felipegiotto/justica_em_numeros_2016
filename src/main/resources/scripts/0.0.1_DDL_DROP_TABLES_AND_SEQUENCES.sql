@@ -11,3 +11,5 @@ DROP TABLE datajud.tb_lote_processo CASCADE;
 DROP TABLE datajud.tb_chave_processo_cnj CASCADE;
 DROP TABLE datajud.tb_lote CASCADE;
 DROP TABLE datajud.tb_remessa CASCADE;
+
+DROP SCHEMA datajud CASCADE;

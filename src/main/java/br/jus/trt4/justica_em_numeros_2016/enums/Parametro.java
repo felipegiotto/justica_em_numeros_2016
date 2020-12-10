@@ -49,7 +49,7 @@ public enum Parametro {
 	possui_deslocamento_oj_legado_2g,
 	tipo_validacao_protocolo_cnj,
 	tamanho_lote_commit_operacao_1,
-	tamanho_lote_commit_operacao_2,
+	tamanho_lote_commit_xml_legado,
 	tamanho_batch
 	;
 }

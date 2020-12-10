@@ -363,7 +363,11 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 					mapProcessos.get(chave).setOrigemProcessoEnum(OrigemProcessoEnum.HIBRIDO);
 				} else {
 					DadosBasicosProcessoDto processoHibrido = mapProcessosHibridos.get(chave);
-					LOGGER.error("O processo (grau: " + processoHibrido.getGrau() 
+					//Se a carga for mensal provavelmente não haverá problemas, pois a lista com os processos migrados 
+					//sempre é carregada com todos os processos, independentemente de terem movimentação ou não num mês. 
+					//Dessa forma, alguns desses processos que foram migrados podem não ter uma movimentação no mês, 
+					//e por isso realmente não devem ser enviados
+					LOGGER.warn("O processo (grau: " + processoHibrido.getGrau() 
 							+ "; número: " + processoHibrido.getNumeroProcesso()
 							+ ") foi localizado no Sistema Judicial Legado "
 							+ "como sendo um processo Híbrido, mas o mesmo não faz parte dos processos do PJe que serão enviados. "
@@ -378,7 +382,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			for (String chave : mapProcessosLegados.keySet()) {
 				DadosBasicosProcessoDto processoLegado = mapProcessosLegados.get(chave);
 				if (mapProcessos.containsKey(chave)) {
-					LOGGER.error("O processo (grau: " + processoLegado.getGrau() + "; número: "
+					LOGGER.warn("O processo (grau: " + processoLegado.getGrau() + "; número: "
 							+ processoLegado.getNumeroProcesso()
 							+ ") foi localizado no Sistema Judicial Legado como sendo um processo não migrado. "
 							+ "No entanto, o mesmo faz parte dos processos do PJe que serão enviados. "
