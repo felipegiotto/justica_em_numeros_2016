@@ -55,6 +55,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 	private Connection conexaoBasePrincipal;
 	private Connection conexaoBasePrincipalLegado;
 	private Connection conexaoBaseStagingEGestao;
+	
+	private Map<String, String> mapProcessosClet;
 
 	public static void main(String[] args) throws Exception {
 		Auxiliar.prepararPastaDeSaida();
@@ -63,12 +65,17 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		}
 	}
 
-	public Op_1_BaixaListaDeNumerosDeProcessos() {
+	public Op_1_BaixaListaDeNumerosDeProcessos() throws SQLException {
 		this.deveProcessarProcessosPje = Auxiliar.deveProcessarProcessosPje();
 		this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar
 				.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging();
 		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = Auxiliar
 				.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging();
+		
+		if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje
+				|| this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+			this.carregarProcessosClet();			
+		}
 	}
 	
 	public void executarOperacao() throws Exception {
@@ -159,8 +166,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		
 		LOGGER.info("Executando consulta " + tipoCarga + " para o " + grau + "G...");
 		ResultSet rsConsultaProcessosPje = null;
-		ResultSet rsConsultaProcessosMigradosLegado = null;
-		ResultSet rsConsultaProcessosNaoMigradosLegado = null;
+		ResultSet rsConsultaProcessosLegado = null;
 		String pastaIntermediariaPje = Auxiliar.getPastaResources(BaseEmAnaliseEnum.PJE, grau);
 		String pastaIntermediariaLegado = Auxiliar.getPastaResources(BaseEmAnaliseEnum.LEGADO, grau);
 
@@ -174,23 +180,15 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				rsConsultaProcessosPje = getConexaoBasePrincipalPJe(grau).createStatement(ResultSet.TYPE_FORWARD_ONLY,
 						ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-				String sqlMigradosLegado = Auxiliar
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_testes_migrados.sql");
-				rsConsultaProcessosMigradosLegado = getConexaoBasePrincipalLegado(grau)
+								+ pastaIntermediariaLegado + "/carga_testes.sql");
+				rsConsultaProcessosLegado = getConexaoBasePrincipalLegado(grau)
 						.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 								ResultSet.FETCH_FORWARD)
-						.executeQuery(sqlMigradosLegado);
-			}
-			if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
-				String sqlNaoMigradosLegado = Auxiliar
-						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_testes_nao_migrados.sql");
-				rsConsultaProcessosNaoMigradosLegado = getConexaoBasePrincipalLegado(grau)
-						.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-								ResultSet.FETCH_FORWARD)
-						.executeQuery(sqlNaoMigradosLegado);
+						.executeQuery(sqlLegado);
 			}
 
 			LOGGER.warn(
@@ -211,25 +209,16 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				ps.setString(1, numeroProcesso);
 				rsConsultaProcessosPje = ps.executeQuery();
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-				String sqlMigradosLegado = Auxiliar
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_um_processo_migrado.sql");
-				PreparedStatement psMigradosLegado = getConexaoBasePrincipalLegado(grau).prepareStatement(
-						sqlMigradosLegado, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+								+ pastaIntermediariaLegado + "/carga_um_processo.sql");
+				PreparedStatement psLegado = getConexaoBasePrincipalLegado(grau).prepareStatement(
+						sqlLegado, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						ResultSet.FETCH_FORWARD);
-				psMigradosLegado.setString(1, numeroProcesso);
-				rsConsultaProcessosMigradosLegado = psMigradosLegado.executeQuery();
-			}
-			if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
-				String sqlNaoMigradosLegado = Auxiliar
-						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_um_processo_nao_migrado.sql");
-				PreparedStatement psNaoMigradosLegado = getConexaoBasePrincipalLegado(grau).prepareStatement(
-						sqlNaoMigradosLegado, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-						ResultSet.FETCH_FORWARD);
-				psNaoMigradosLegado.setString(1, numeroProcesso);
-				rsConsultaProcessosNaoMigradosLegado = psNaoMigradosLegado.executeQuery();
+				psLegado.setString(1, numeroProcesso);
+				rsConsultaProcessosLegado = psLegado.executeQuery();
 			}
 
 			LOGGER.warn(">>>>>>>>>> CUIDADO! Somente estão sendo carregados os dados do processo " + numeroProcesso
@@ -255,23 +244,15 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				statement.setFetchSize(100);
 				rsConsultaProcessosPje = statement.executeQuery();
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-				String sqlMigradosLegado = Auxiliar
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_completa_migrados.sql");
-				Statement statementMigradosLegado = getConexaoBasePrincipalLegado(grau).createStatement(
+								+ pastaIntermediariaLegado + "/carga_completa.sql");
+				Statement statementLegado = getConexaoBasePrincipalLegado(grau).createStatement(
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-				statementMigradosLegado.setFetchSize(100);
-				rsConsultaProcessosMigradosLegado = statementMigradosLegado.executeQuery(sqlMigradosLegado);
-			}
-			if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
-				String sqlNaoMigradosLegado = Auxiliar
-						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_completa_nao_migrados.sql");
-				Statement statementNaoMigradosLegado = getConexaoBasePrincipalLegado(grau).createStatement(
-						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-				statementNaoMigradosLegado.setFetchSize(100);
-				rsConsultaProcessosNaoMigradosLegado = statementNaoMigradosLegado.executeQuery(sqlNaoMigradosLegado);
+				statementLegado.setFetchSize(100);
+				rsConsultaProcessosLegado = statementLegado.executeQuery(sqlLegado);
 			}
 
 		} else if ("TODOS_COM_MOVIMENTACOES".equals(tipoCarga)) {
@@ -290,25 +271,16 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				statement.setFetchSize(100);
 				rsConsultaProcessosPje = statement.executeQuery();
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-				String sqlMigradosLegado = Auxiliar
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_todos_com_movimentacoes_migrados.sql");
-				Statement statementMigradosLegado = getConexaoBasePrincipalLegado(grau).createStatement(
+								+ pastaIntermediariaLegado + "/carga_todos_com_movimentacoes.sql");
+				Statement statementLegado = getConexaoBasePrincipalLegado(grau).createStatement(
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-				statementMigradosLegado.setFetchSize(100);
-				rsConsultaProcessosMigradosLegado = statementMigradosLegado.executeQuery(sqlMigradosLegado);
+				statementLegado.setFetchSize(100);
+				rsConsultaProcessosLegado = statementLegado.executeQuery(sqlLegado);
 			}
-			if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
-				String sqlNaoMigradosLegado = Auxiliar
-						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_todos_com_movimentacoes_nao_migrados.sql");
-				Statement statementNaoMigradosLegado = getConexaoBasePrincipalLegado(grau).createStatement(
-						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-				statementNaoMigradosLegado.setFetchSize(100);
-				rsConsultaProcessosNaoMigradosLegado = statementNaoMigradosLegado.executeQuery(sqlNaoMigradosLegado);
-			}
-
 		} else if (tipoCarga.equals("MENSAL")) {
 			// Identifica o início e o término do mês selecionado
 			String dataInicial = DataJudUtil.getDataPeriodoDeCorte(true);
@@ -327,23 +299,15 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				statement.setFetchSize(100);
 				rsConsultaProcessosPje = statement.executeQuery();
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-				String sqlMigradosLegado = Auxiliar
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_mensal_migrados.sql");
-				Statement statementMigradosLegado = getConexaoBasePrincipalLegado(grau).createStatement(
+								+ pastaIntermediariaLegado + "/carga_mensal.sql");
+				Statement statementLegado = getConexaoBasePrincipalLegado(grau).createStatement(
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-				statementMigradosLegado.setFetchSize(100);
-				rsConsultaProcessosMigradosLegado = statementMigradosLegado.executeQuery(sqlMigradosLegado);
-			}
-			if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
-				String sqlNaoMigradosLegado = Auxiliar
-						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
-								+ pastaIntermediariaLegado + "/carga_mensal_nao_migrados.sql");
-				Statement statementNaoMigradosLegado = getConexaoBasePrincipalLegado(grau).createStatement(
-						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
-				statementNaoMigradosLegado.setFetchSize(100);
-				rsConsultaProcessosNaoMigradosLegado = statementNaoMigradosLegado.executeQuery(sqlNaoMigradosLegado);
+				statementLegado.setFetchSize(100);
+				rsConsultaProcessosLegado = statementLegado.executeQuery(sqlLegado);
 			}
 
 		} else {
@@ -354,46 +318,55 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		if (rsConsultaProcessosPje != null) {
 			mapProcessos.putAll(this.obterDadosBasicosProcessos(rsConsultaProcessosPje, OrigemProcessoEnum.PJE, grau));
 		}
-		if (rsConsultaProcessosMigradosLegado != null) {
-			Map<String, DadosBasicosProcessoDto> mapProcessosHibridos = this.obterDadosBasicosProcessos(
-					rsConsultaProcessosMigradosLegado, OrigemProcessoEnum.HIBRIDO, grau);
+		if (rsConsultaProcessosLegado != null) {
+			Map<String, DadosBasicosProcessoDto> mapProcessosLegadosEHibridos = this.obterDadosBasicosProcessos(
+					rsConsultaProcessosLegado, OrigemProcessoEnum.LEGADO, grau);
 
-			for (String chave : mapProcessosHibridos.keySet()) {
-				if (mapProcessos.containsKey(chave)) {
-					mapProcessos.get(chave).setOrigemProcessoEnum(OrigemProcessoEnum.HIBRIDO);
-				} else {
-					DadosBasicosProcessoDto processoHibrido = mapProcessosHibridos.get(chave);
-					//Se a carga for mensal provavelmente não haverá problemas, pois a lista com os processos migrados 
-					//sempre é carregada com todos os processos, independentemente de terem movimentação ou não num mês. 
-					//Dessa forma, alguns desses processos que foram migrados podem não ter uma movimentação no mês, 
-					//e por isso realmente não devem ser enviados
-					LOGGER.warn("O processo (grau: " + processoHibrido.getGrau() 
-							+ "; número: " + processoHibrido.getNumeroProcesso()
-							+ ") foi localizado no Sistema Judicial Legado "
-							+ "como sendo um processo Híbrido, mas o mesmo não faz parte dos processos do PJe que serão enviados. "
-							+ "Logo, tal processo não será enviado na Remessa atual.");
+			for (String chave : mapProcessosLegadosEHibridos.keySet()) {
+				DadosBasicosProcessoDto dadosProcesso = mapProcessosLegadosEHibridos.get(chave);
+
+				if (dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.HIBRIDO) 
+						&& this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+					if (mapProcessos.containsKey(chave)) {
+						mapProcessos.get(chave).setOrigemProcessoEnum(OrigemProcessoEnum.HIBRIDO);
+					}
+				} else if (dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.LEGADO) 
+						&& this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+					if (mapProcessos.containsKey(chave)) {
+						LOGGER.warn("O processo (grau: " + dadosProcesso.getGrau() + "; número: "
+								+ dadosProcesso.getNumeroProcesso()
+								+ ") foi localizado no Sistema Judicial Legado como sendo um processo não migrado. "
+								+ "No entanto, o mesmo faz parte dos processos do PJe que serão enviados. "
+								+ "Este processo será enviado apenas com as informações presentes na base do PJe.");
+					} else {
+						mapProcessos.put(chave, dadosProcesso);
+					}
 				}
 			}
 		}
-		if (rsConsultaProcessosNaoMigradosLegado != null) {
-			Map<String, DadosBasicosProcessoDto> mapProcessosLegados = this
-					.obterDadosBasicosProcessos(rsConsultaProcessosNaoMigradosLegado, OrigemProcessoEnum.LEGADO, grau);
-
-			for (String chave : mapProcessosLegados.keySet()) {
-				DadosBasicosProcessoDto processoLegado = mapProcessosLegados.get(chave);
-				if (mapProcessos.containsKey(chave)) {
-					LOGGER.warn("O processo (grau: " + processoLegado.getGrau() + "; número: "
-							+ processoLegado.getNumeroProcesso()
-							+ ") foi localizado no Sistema Judicial Legado como sendo um processo não migrado. "
-							+ "No entanto, o mesmo faz parte dos processos do PJe que serão enviados. "
-							+ "Este processo será enviado apenas com as informações presentes na base do PJe.");
-				} else {
-					mapProcessos.put(chave, processoLegado);
-				}
-			}
-		}
-
 		return mapProcessos;
+	}
+	
+	private void carregarProcessosClet() throws SQLException  {
+		this.mapProcessosClet = new HashMap<String, String>();
+		ResultSet rsConsultaProcessosClet = null;
+		try {
+			String sql = Auxiliar.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/pje/processos_na_clet_pje.sql");
+			Statement statement = getConexaoBasePrincipalPJe(1).createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+			statement.setFetchSize(100);
+			rsConsultaProcessosClet = statement.executeQuery(sql);
+			while (rsConsultaProcessosClet.next()) {
+				String numProcesso = rsConsultaProcessosClet.getString("nr_processo");
+				this.mapProcessosClet.put(numProcesso, numProcesso);
+			}
+		} catch (Exception ex) {
+				String origemOperacao = "Erro na consulta de processos na CLET.";
+				AcumuladorExceptions.instance().adicionarException(origemOperacao,
+						"Erro na consulta de processos na CLET: " + ex.getLocalizedMessage(), ex, true);
+		} finally {
+			rsConsultaProcessosClet.close();
+			this.fecharConexoes();
+		}
 	}
 
 	/**
@@ -410,6 +383,7 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 			OrigemProcessoEnum origemProcesso, int grau) throws IOException, SQLException {
 		// Itera sobre os processos encontrados
 		Map<String, DadosBasicosProcessoDto> mapDadosBasicosProcessos = new HashMap<String, DadosBasicosProcessoDto>();
+		OrigemProcessoEnum origem = OrigemProcessoEnum.PJE;
 		try {
 			int qtdProcessos = 0;
 			long tempo = System.currentTimeMillis();
@@ -420,9 +394,17 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				qtdProcessos++;
 
 				String numProcesso = rsConsultaProcessos.getString("nr_processo");
+
+				if (!origemProcesso.equals(OrigemProcessoEnum.PJE)) {
+					if (this.mapProcessosClet.containsKey(numProcesso)) {
+						origem = OrigemProcessoEnum.HIBRIDO;
+					} else {
+						origem = OrigemProcessoEnum.LEGADO;
+					}
+				}
 				
 				DadosBasicosProcessoDto dadosBasicosProcesso = new DadosBasicosProcessoDto(numProcesso, null,
-						null, Integer.toString(grau), origemProcesso);
+						null, Integer.toString(grau), origem);
 
 				mapDadosBasicosProcessos.put(numProcesso, dadosBasicosProcesso);
 
