@@ -1,14 +1,35 @@
-WITH versao AS (SELECT MAX(installed_on) AS data_max_versao_223
-					FROM pje_adm.tb_schema_version tsv
-	                WHERE "version" LIKE '%2.2.3%')
+WITH 
+	versao223 AS (SELECT MAX(installed_on) AS data_max_versao_223
+						FROM pje_adm.tb_schema_version tsv
+		                WHERE "version" LIKE '%2.2.3%'),
+	
+	versao213 AS (SELECT MAX(installed_on) AS data_max_versao_213
+						FROM pje_adm.tb_schema_version tsv
+		                WHERE "version" LIKE '%2.1.3%')
+
 SELECT
 	cs.id_movimento_processo,
 	tc.cd_tipo_complemento,
     tc.ds_nome,
-	CASE WHEN (tc.cd_tipo_complemento = '16') AND (pe.dt_atualizacao <  versao.data_max_versao_223) 
-		 		--tipo de audiência. Até a versão 2.2.2 o PJe preenchia erroneamente o código do complemento com o id_tipo_audiencia da tb_tipo_audiencia
-				THEN  COALESCE( (SELECT cd_sigla_tipo_audiencia FROM tb_tipo_audiencia ta WHERE ta.id_tipo_audiencia::TEXT = cs.ds_texto LIMIT 1), 
-								 cs.ds_texto, '')
+	CASE WHEN (tc.cd_tipo_complemento = '16') AND (pe.dt_atualizacao <  versao223.data_max_versao_223) THEN
+		 	--tipo de audiência. Até a versão 2.2.2 o PJe preenchia erroneamente o código do complemento com o id_tipo_audiencia da tb_tipo_audiencia
+		 	CASE
+				WHEN (pe.dt_atualizacao >  versao213.data_max_versao_213) THEN
+						--Entre 1 semana após a versão 2.1.3 e a versão 2.2.3 alguns movimentos eram preenchidos corretamente e outros não.
+						--Por isso valida se o id da tabela tb_tipo_audiencia (id_tipo_audiencia) e a descrição (cd_sigla_tipo_audiencia)
+						-- são os mesmos do código (ds_texto) e da descrição do complemento (ds_valor_complemento)
+						COALESCE( (SELECT cd_sigla_tipo_audiencia 
+									FROM tb_tipo_audiencia ta 
+									WHERE ta.id_tipo_audiencia::TEXT = cs.ds_texto 
+										AND UPPER(ta.ds_tipo_audiencia) = UPPER(cs.ds_valor_complemento)
+									LIMIT 1), 
+									 cs.ds_texto, '')
+				ELSE
+						--Antes da 2.1.3 o PJe preenchia erroneamente TODOS os código do complemento com o id_tipo_audiencia da tb_tipo_audiencia
+						COALESCE( (SELECT cd_sigla_tipo_audiencia FROM tb_tipo_audiencia ta 
+									WHERE ta.id_tipo_audiencia::TEXT = cs.ds_texto LIMIT 1), 
+									 cs.ds_texto, '')
+			END
 		 WHEN ((cs.ds_texto = '') OR (cs.ds_texto IS NULL)) AND cs.ds_valor_complemento = 'Petição (outras)' THEN '57' --Todos os complementos estão vazios e não tem registro na tb_elemento_dominio em pelo menos um dos Regionais (TRT-7)
 		 WHEN ((cs.ds_texto = '') OR (cs.ds_texto IS NULL)) AND cs.ds_valor_complemento = 'Indicação de Data de Diligência Pericial' THEN '7557' --Erro na nomenclatura, que deveria ser Indicação de Data de Realização de Diligência Pericial
 		 WHEN ((cs.ds_texto = '') OR (cs.ds_texto IS NULL)) AND cs.ds_valor_complemento = 'Apresentação de Renúncia de Procuração' THEN '7423' --Erro na nomenclatura, que deveria ser Apresentação de Renúncia de Procuração/Substabelecimento
