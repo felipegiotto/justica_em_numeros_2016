@@ -66,7 +66,7 @@ SELECT
 		 ELSE cs.ds_texto
 	END AS cd_complemento,
 	REGEXP_REPLACE(cs.ds_valor_complemento, '[\r\n]', '') AS ds_valor_complemento
-FROM versao, tb_complemento_segmentado cs
+FROM versao223, versao213, tb_complemento_segmentado cs
 INNER JOIN tb_tipo_complemento tc ON (tc.id_tipo_complemento = cs.id_tipo_complemento)
 INNER JOIN tb_processo_evento pe on (pe.id_processo_evento = cs.id_movimento_processo)
 WHERE 1=1
