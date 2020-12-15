@@ -1,5 +1,6 @@
 package br.jus.trt4.justica_em_numeros_2016.tasks;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,11 +11,15 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,6 +36,7 @@ import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
+import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.ServentiaCNJ;
 import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
 /**
@@ -47,10 +53,12 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 	private static final int BATCH_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_batch);
 	private static final int COMMIT_SIZE = Auxiliar.getParametroInteiroConfiguracao(Parametro.tamanho_lote_commit_operacao_1);
+	
+	private Map<String, Set<String>> processosAvulsosPorGrau;
 
 	private boolean deveProcessarProcessosPje;
-	private boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje;
-	private boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe;
+	private boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging;
+	private boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging;
 
 	private Connection conexaoBasePrincipal;
 	private Connection conexaoBasePrincipalLegado;
@@ -67,13 +75,13 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 	public Op_1_BaixaListaDeNumerosDeProcessos() throws SQLException {
 		this.deveProcessarProcessosPje = Auxiliar.deveProcessarProcessosPje();
-		this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar
+		this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging = Auxiliar
 				.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging();
-		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe = Auxiliar
+		this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging = Auxiliar
 				.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging();
 		
-		if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje
-				|| this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
+		if (this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging
+				|| this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging) {
 			this.carregarProcessosClet();			
 		}
 	}
@@ -103,6 +111,10 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 		TipoRemessaEnum tipoRemessaAtual = DataJudUtil.getTipoRemessa();
 		
 		Auxiliar.validarTipoRemessaAtual(tipoRemessaAtual);
+		
+		if (tipoRemessaAtual.equals(TipoRemessaEnum.AVULSA)) {
+			this.carregarProcessosAvulsos();
+		}
 		
 		Remessa remessaAtual = this.obterRemessaAtual(dataCorteRemessaAtual, tipoRemessaAtual);
 		if (remessaAtual.getId() == null) {
@@ -180,8 +192,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				rsConsultaProcessosPje = getConexaoBasePrincipalPJe(grau).createStatement(ResultSet.TYPE_FORWARD_ONLY,
 						ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD).executeQuery(sql);
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
-					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging) {
 				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
 								+ pastaIntermediariaLegado + "/carga_testes.sql");
@@ -209,8 +221,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				ps.setString(1, numeroProcesso);
 				rsConsultaProcessosPje = ps.executeQuery();
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
-					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging) {
 				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
 								+ pastaIntermediariaLegado + "/carga_um_processo.sql");
@@ -244,8 +256,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				statement.setFetchSize(100);
 				rsConsultaProcessosPje = statement.executeQuery();
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
-					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging) {
 				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
 								+ pastaIntermediariaLegado + "/carga_completa.sql");
@@ -271,8 +283,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				statement.setFetchSize(100);
 				rsConsultaProcessosPje = statement.executeQuery();
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
-					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging) {
 				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
 								+ pastaIntermediariaLegado + "/carga_todos_com_movimentacoes.sql");
@@ -299,8 +311,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				statement.setFetchSize(100);
 				rsConsultaProcessosPje = statement.executeQuery();
 			}
-			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe
-					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging) {
 				String sqlLegado = Auxiliar
 						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
 								+ pastaIntermediariaLegado + "/carga_mensal.sql");
@@ -310,40 +322,105 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 				rsConsultaProcessosLegado = statementLegado.executeQuery(sqlLegado);
 			}
 
+		} else if (tipoCarga.equals("AVULSA")) {
+			if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging
+					|| this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging) {
+				String sqlLegado = Auxiliar
+						.lerConteudoDeArquivo("src/main/resources/sql/op_1_baixa_lista_processos/"
+								+ pastaIntermediariaLegado + "/carga_avulsa.sql");
+				Statement statementLegado = getConexaoBasePrincipalLegado(grau).createStatement(
+						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.FETCH_FORWARD);
+				statementLegado.setFetchSize(100);
+				rsConsultaProcessosLegado = statementLegado.executeQuery(sqlLegado);
+			}
 		} else {
 			throw new RuntimeException("Valor desconhecido para o parâmetro 'tipo_carga_xml': " + tipoCarga);
 		}
 
 		Map<String, DadosBasicosProcessoDto> mapProcessos = new HashMap<String, DadosBasicosProcessoDto>();
-		if (rsConsultaProcessosPje != null) {
-			mapProcessos.putAll(this.obterDadosBasicosProcessos(rsConsultaProcessosPje, OrigemProcessoEnum.PJE, grau));
-		}
-		if (rsConsultaProcessosLegado != null) {
-			Map<String, DadosBasicosProcessoDto> mapProcessosLegadosEHibridos = this.obterDadosBasicosProcessos(
-					rsConsultaProcessosLegado, OrigemProcessoEnum.LEGADO, grau);
-
-			for (String chave : mapProcessosLegadosEHibridos.keySet()) {
-				DadosBasicosProcessoDto dadosProcesso = mapProcessosLegadosEHibridos.get(chave);
-
-				if (dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.HIBRIDO) 
-						&& this.deveProcessarProcessosSistemaLegadoMigradosParaOPJe) {
-					if (mapProcessos.containsKey(chave)) {
-						mapProcessos.get(chave).setOrigemProcessoEnum(OrigemProcessoEnum.HIBRIDO);
+		if (tipoCarga.equals("AVULSA")) {
+			//Salva os processo híbridos e os 100% legados
+			if (rsConsultaProcessosLegado != null) {
+				Map<String, DadosBasicosProcessoDto> mapProcessosLegadosEHibridos = this
+						.obterDadosBasicosProcessos(rsConsultaProcessosLegado, OrigemProcessoEnum.LEGADO, grau);
+				for (String numProcesso : mapProcessosLegadosEHibridos.keySet()) {
+					DadosBasicosProcessoDto dadosProcesso = mapProcessosLegadosEHibridos.get(numProcesso);
+					if ((dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.HIBRIDO)
+							&& this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging)
+							|| (dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.LEGADO)
+									&& this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging)) {
+						if (this.processosAvulsosPorGrau.get(dadosProcesso.getGrau()).contains(dadosProcesso.getNumeroProcesso())) {
+							mapProcessos.put(numProcesso, dadosProcesso);							
+						}
 					}
-				} else if (dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.LEGADO) 
-						&& this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje) {
-					if (mapProcessos.containsKey(chave)) {
-						LOGGER.warn("O processo (grau: " + dadosProcesso.getGrau() + "; número: "
-								+ dadosProcesso.getNumeroProcesso()
-								+ ") foi localizado no Sistema Judicial Legado como sendo um processo não migrado. "
-								+ "No entanto, o mesmo faz parte dos processos do PJe que serão enviados. "
-								+ "Este processo será enviado apenas com as informações presentes na base do PJe.");
-					} else {
-						mapProcessos.put(chave, dadosProcesso);
+				}
+			}
+			
+			//Os processos restante serão classificados como 100% pje
+			if (this.deveProcessarProcessosPje) {
+				for (String numeroProcesso : this.processosAvulsosPorGrau.get(Integer.toString(grau))) {
+					if (!mapProcessos.containsKey(numeroProcesso)) {
+						mapProcessos.put(numeroProcesso, new DadosBasicosProcessoDto(numeroProcesso, 
+								Integer.toString(grau), OrigemProcessoEnum.PJE));
+					}
+				}
+			}
+		} else {
+			if (rsConsultaProcessosPje != null) {
+				mapProcessos
+						.putAll(this.obterDadosBasicosProcessos(rsConsultaProcessosPje, OrigemProcessoEnum.PJE, grau));
+			}
+			if (rsConsultaProcessosLegado != null) {
+				Map<String, DadosBasicosProcessoDto> mapProcessosLegadosEHibridos = this
+						.obterDadosBasicosProcessos(rsConsultaProcessosLegado, OrigemProcessoEnum.LEGADO, grau);
+
+				for (String numeroProcesso : mapProcessosLegadosEHibridos.keySet()) {
+					DadosBasicosProcessoDto dadosProcesso = mapProcessosLegadosEHibridos.get(numeroProcesso);
+					if (dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.HIBRIDO)
+							&& this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging) {
+						if (mapProcessos.containsKey(numeroProcesso)) {
+							mapProcessos.get(numeroProcesso).setOrigemProcessoEnum(OrigemProcessoEnum.HIBRIDO);
+						} else {
+							//Se a carga for mensal provavelmente não haverá problemas, pois a lista com os processos migrados 
+							//sempre é carregada com todos os processos, independentemente de terem movimentação ou não num mês. 
+							//Dessa forma, alguns desses processos que foram migrados podem não ter uma movimentação no mês, 
+							//e por isso realmente não devem ser enviados
+							LOGGER.trace("O processo (grau: " + dadosProcesso.getGrau() 
+									+ "; número: " + dadosProcesso.getNumeroProcesso()
+									+ ") foi localizado no Sistema Judicial Legado "
+									+ "como sendo um processo Híbrido, mas o mesmo não faz parte dos processos do PJe que serão enviados na presente remessa.");
+						}
+					} else if (dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.LEGADO)
+							&& this.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging) {
+						if (mapProcessos.containsKey(numeroProcesso)) {
+							LOGGER.warn("O processo (grau: " + dadosProcesso.getGrau() + "; número: "
+									+ dadosProcesso.getNumeroProcesso()
+									+ ") foi localizado no Sistema Judicial Legado como sendo um processo não migrado. "
+									+ "No entanto, o mesmo faz parte dos processos do PJe que serão enviados. "
+									+ "Este processo será enviado apenas com as informações presentes na base do PJe.");
+						} else {
+							mapProcessos.put(numeroProcesso, dadosProcesso);
+						}
 					}
 				}
 			}
 		}
+		
+		
+		//Verifica se algum processo do pje está na CLET e não se encontra no staging.
+		if (this.deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging) {
+			for (String numeroProcesso : mapProcessos.keySet()) {
+				DadosBasicosProcessoDto dadosProcesso = mapProcessos.get(numeroProcesso);
+				if (dadosProcesso.getOrigemProcessoEnum().equals(OrigemProcessoEnum.PJE)
+						&& this.mapProcessosClet.containsKey(numeroProcesso)) {
+					LOGGER.warn("O processo (grau: " + dadosProcesso.getGrau() + "; número: "
+							+ dadosProcesso.getNumeroProcesso()
+							+ ") foi localizado na CLET, mas suas informações não constam no staging. "
+							+ "Este processo será enviado apenas com as informações presentes na base do PJe.");
+				}
+			}
+		}
+		
 		return mapProcessos;
 	}
 	
@@ -403,8 +480,8 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 					}
 				}
 				
-				DadosBasicosProcessoDto dadosBasicosProcesso = new DadosBasicosProcessoDto(numProcesso, null,
-						null, Integer.toString(grau), origem);
+				DadosBasicosProcessoDto dadosBasicosProcesso = new DadosBasicosProcessoDto(numProcesso, 
+						Integer.toString(grau), origem);
 
 				mapDadosBasicosProcessos.put(numProcesso, dadosBasicosProcesso);
 
@@ -487,6 +564,47 @@ public class Op_1_BaixaListaDeNumerosDeProcessos implements AutoCloseable {
 
 		LOGGER.info("Foram carregados " + qtdProcessosAEnviar + " processo(s) no " + grau + "º Grau.");
 		return remessa;
+	}
+	
+	private void carregarProcessosAvulsos() throws IOException {
+		if (this.processosAvulsosPorGrau == null) {
+			this.processosAvulsosPorGrau = new HashMap<String, Set<String>>();
+			
+			// Arquivo de onde os dados dos processos avulsos serão lidos.
+			File arquivoCargaAvulsa = new File("src/main/resources/carga_avulsa/carga_avulsa.csv");
+			if (!arquivoCargaAvulsa.exists()) {
+				throw new IOException("O arquivo '" + arquivoCargaAvulsa + "' não existe!");
+			}
+			
+			// Abre o arquivo e lê, linha por linha
+			Scanner scanner = new Scanner(arquivoCargaAvulsa, "UTF-8");
+			try {
+				int linha = 0;
+				while (scanner.hasNextLine()) {
+					linha++;
+					String line = scanner.nextLine();
+					if (line.isEmpty() || line.startsWith("#")) {
+						continue;
+					}
+					
+					// Quebra cada linha em duas partes: o grau e o número do processo
+					String[] partes = line.split(";");
+					if (partes.length != 2) {
+						throw new IOException("Inconsistência na linha " + linha + " do arquivo '" + arquivoCargaAvulsa + "': a linha deve conter 2 campos, separados por ponto e vírgula: o grau e o número do processo.");
+					}
+					String grau = partes[0];
+					String numProcesso = partes[1];
+	
+					if (!this.processosAvulsosPorGrau.containsKey(grau)) {
+						this.processosAvulsosPorGrau.put(grau, new HashSet<String>());
+					}
+	
+					this.processosAvulsosPorGrau.get(grau).add(numProcesso);
+				}
+			} finally {
+				scanner.close();
+			}
+		}
 	}
 
 	public Connection getConexaoBasePrincipalPJe(int grau) throws SQLException {

@@ -6,11 +6,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DataJudException;
-/**
- * 
- * @author job_pentaho
- *
- */
+
 public class ProcessoUtil {
 	
 	private static final int TAMANHO_NUMERO_PROCESSO_SEM_MASCARA = 20;

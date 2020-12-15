@@ -27,6 +27,12 @@ public class DadosBasicosProcessoDto {
 		this.grau = grau;
 		this.origemProcessoEnum = origemProcessoEnum;
 	}
+	
+	public DadosBasicosProcessoDto(String numeroProcesso, String grau, OrigemProcessoEnum origemProcessoEnum) {
+		this.numeroProcesso = numeroProcesso;
+		this.grau = grau;
+		this.origemProcessoEnum = origemProcessoEnum;
+	}
 
 	public String getNumeroProcesso() {
 		return numeroProcesso;

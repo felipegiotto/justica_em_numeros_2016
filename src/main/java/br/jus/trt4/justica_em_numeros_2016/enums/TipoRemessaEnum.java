@@ -8,10 +8,11 @@ import java.util.Objects;
  * @author ivan.franca@trt6.jus.br
  */
 public enum TipoRemessaEnum {
-	TODOS_COM_MOVIMENTACOES("A", "TODOS_COM_MOVIMENTACOES"),
+	AVULSA("A", "AVULSA"),
     COMPLETA("C", "COMPLETA"), 
     MENSAL("M", "MENSAL"),
     PROCESSO("P", "PROCESSO"),
+    TODOS_COM_MOVIMENTACOES("S", "TODOS_COM_MOVIMENTACOES"),
     TESTES("T", "TESTES");
     
     private final String codigo;

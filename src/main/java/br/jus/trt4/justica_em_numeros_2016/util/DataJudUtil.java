@@ -10,6 +10,10 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
+/**
+ * 
+ * @author ivan.franca@trt6.jus.br
+ */
 public class DataJudUtil {
 	
 	private static final Pattern P_CARGA_PROCESSO = Pattern.compile("^PROCESSO (\\d{7}\\-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4})$");
