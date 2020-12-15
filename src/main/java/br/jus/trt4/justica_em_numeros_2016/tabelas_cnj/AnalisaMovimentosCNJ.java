@@ -171,11 +171,12 @@ public class AnalisaMovimentosCNJ {
 				else {
 
 					String complementos = "";
-					for (String complemento : movimento.getComplemento()) {
-						complementos += complemento + " | ";
+					for (ComplementoDto complemento : movimentoDto.getComplementos()) {
+						complementos += complemento.getCodigoTipoComplemento() + ":" +
+											complemento.getCodigoComplemento() + " | ";
 					}
 
-					LOGGER.trace(String.format("O movimento (id=%s) de código %s (complementos: %s) foi descartado pelo mapeador DE-PARA.", 
+					LOGGER.trace(String.format("O movimento (id=%s) de código %s (complementos: %s) foi descartado pelo mapeador DE-PARA.",
 							movimentoDto.getIdProcessoEvento(),
 							movimentoDto.getCodMovimentoCNJ(),
 							complementos.length() > 0 ? complementos.substring(0, complementos.length() - 3) : "nenhum"));
