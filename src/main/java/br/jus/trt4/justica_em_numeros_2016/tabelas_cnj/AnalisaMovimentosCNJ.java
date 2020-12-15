@@ -68,9 +68,8 @@ public class AnalisaMovimentosCNJ {
 		File arquivoMovimentos = new File("src/main/resources/tabelas_cnj/movimentos_cnj.csv");
 		LOGGER.info("Carregando lista de movimentos CNJ do arquivo " + arquivoMovimentos + "...");
 		
-		// Lista de assuntos processuais unificados, do CNJ. Essa lista definirá se o assunto do processo
-		// deverá ser registrado com as tags "<assunto><codigoNacional>" ou "<assunto><assuntoLocal>"
-		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=A
+		// Lista de movimentos processuais unificados, do CNJ.
+		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=M
 		this.movimentosProcessuaisCNJ = new ArrayList<>();
 		for (String movimentoString: FileUtils.readLines(arquivoMovimentos, "UTF-8")) {
 			movimentosProcessuaisCNJ.add(Integer.parseInt(movimentoString));
