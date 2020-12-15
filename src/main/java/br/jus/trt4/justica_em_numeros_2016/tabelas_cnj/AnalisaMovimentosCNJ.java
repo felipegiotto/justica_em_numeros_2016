@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Scanner;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -72,7 +73,9 @@ public class AnalisaMovimentosCNJ {
 		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=M
 		this.movimentosProcessuaisCNJ = new ArrayList<>();
 		for (String movimentoString: FileUtils.readLines(arquivoMovimentos, "UTF-8")) {
-			movimentosProcessuaisCNJ.add(Integer.parseInt(movimentoString));
+			if (!StringUtils.isBlank(movimentoString) && !movimentoString.startsWith("#")) {
+				movimentosProcessuaisCNJ.add(Integer.parseInt(movimentoString));
+			}
 		}
 		
 		// PreparedStatements que localizarão movimentos no banco de dados do PJe
