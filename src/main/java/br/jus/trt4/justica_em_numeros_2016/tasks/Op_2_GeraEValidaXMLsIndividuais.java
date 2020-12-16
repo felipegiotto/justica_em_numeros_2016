@@ -1838,9 +1838,10 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 		this.statusString = "Preparando dados";
 
 		// Objeto que fará o de/para dos OJ e OJC do PJe para os do CNJ
-		if (processaServentiasCNJ == null) {
-			processaServentiasCNJ = new AnalisaServentiasCNJ(baseEmAnalise, grau);
-		}
+		// Não é avaliado se é igual a nulo para evitar conflito entre as serventias do 1 grau e do 2 grau, pois
+		// a classe AnalisaServentiasCNJ não foi preparada para armazenar serventias de mais de um grau que possam ter 
+		// ID's iguais.
+		processaServentiasCNJ = new AnalisaServentiasCNJ(baseEmAnalise, grau);
 
 		// Abre conexão com o banco de dados do PJe ou Legado
 		conexaoBasePrincipal = Auxiliar.getConexao(grau, baseEmAnalise);
