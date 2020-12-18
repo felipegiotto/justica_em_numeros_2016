@@ -1,3 +1,4 @@
+with consultaComlementos as (
 select 
 	pmc.cd_processo_movimento 				as id_movimento_processo,
 	pmc.cd_tipo_complemento  				as cd_tipo_complemento, 
@@ -14,14 +15,9 @@ from stage_legado_2grau.processo_movimento_complemento pmc,
 where
 	1=1
 	and pmc.cd_processo_movimento = pm.cd_processo_movimento
-	and pm.cd_processo_movimento = any(:id_movimento_processo)
+	and pm.cd_processo_movimento =  any(:id_movimento_processo)
 	and pm.cd_processo = p.cd_processo
-	and not exists (select 1
-			from 
-			stage_legado_2grau.processo_movimento_complemento c,
-			stage_legado_2grau.processo_movimento m
-		where 
-			c.cd_processo_movimento = m.cd_processo_movimento
-			and m.cd_processo_movimento = pmc.cd_processo_movimento
-			and (c.cd_complemento is null and c.ds_valor_complemento is null)
-	)
+	
+)
+select * from consultaComlementos 
+	where (cd_complemento is not null and ds_valor_complemento is not null);
