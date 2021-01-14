@@ -172,13 +172,13 @@ public class Op_3_EnviaArquivosCNJ {
 		// 201: CREATED
 		if (statusCode != 200 && statusCode != 201 && statusCode != 409) {
 			throw new IOException(
-					"Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201)");
+					"Falha ao conectar no Webservice do CNJ (codigo " + statusCode + ", esperado 200 ou 201). Resposta do servidor: " + body);
 		}
 
 		// Ex: statusCode=202, body={"status":"ERRO","protocolo":"TRT479782202007171595018643017","mensagem":"Não foi
 		// possível fazer a recepção do arquivo. Tente novamente mais tarde"}
 		if (body != null && body.contains("\"ERRO\"")) {
-			throw new IOException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO')");
+			throw new IOException("Falha ao conectar no Webservice do CNJ (body retornou 'ERRO'). Resposta do servidor: " + body);
 		}
 	}
 
