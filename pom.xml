@@ -115,6 +115,14 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
+            
+            <!-- Para incluir a pasta resources dentro da pasta resources no arquivo .JAR gerado -->
+            <plugin>
+			    <artifactId>maven-resources-plugin</artifactId>
+			    <configuration>
+			        <outputDirectory> ${project.build.outputDirectory}\resources</outputDirectory>
+			    </configuration>		
+	    	</plugin>
 
 			<!-- Make this jar executable -->
 			<plugin>
