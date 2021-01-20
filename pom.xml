@@ -116,13 +116,44 @@
                 </configuration>
             </plugin>
             
-            <!-- Para incluir a pasta resources dentro da raiz no arquivo .JAR gerado -->
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <configuration>
-                    <outputDirectory> ${project.build.outputDirectory}\resources</outputDirectory>
-                </configuration>		
-            </plugin>
+			<!-- Para incluir a pasta resources dentro da raiz no arquivo .JAR gerado 
+				com exceção do arquivo de configuração do log4j, que deve estar na pasta 
+				raiz -->
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<configuration>
+					<outputDirectory>${project.build.outputDirectory}\src\main\resources</outputDirectory>
+					<resources>
+						<resource>
+							<directory>${basedir}/src/main/resources</directory>
+							<excludes>
+								<exclude>**/log4j2-test.xml</exclude>
+							</excludes>
+						</resource>
+					</resources>
+				</configuration>
+			</plugin>
+
+			<!-- Para copiar o arquivo de configuração de log para dentro da raiz 
+				no arquivo .JAR gerado -->
+			<plugin>
+				<groupId>com.coderplus.maven.plugins</groupId>
+				<artifactId>copy-rename-maven-plugin</artifactId>
+				<version>1.0</version>
+				<executions>
+					<execution>
+						<id>copy-file</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<sourceFile>src/main/resources/log4j2-test.xml</sourceFile>
+							<destinationFile>${project.build.outputDirectory}\log4j2-test.xml</destinationFile>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 
 			<!-- Make this jar executable -->
 			<plugin>
