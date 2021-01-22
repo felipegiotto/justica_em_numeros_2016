@@ -23,6 +23,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -300,17 +302,20 @@ public class Auxiliar {
 	
 	
 	/**
-	 *  Carrega os dados de um arquivo ".properties", possibilitando que o parâmetro tipo_carga_xml seja
-	 *  passado como parâmetro da função, desconsiderando o que está no arquivo de propriedades.
+	 *  Carrega os dados de um arquivo ".properties", possibilitando que os parâmetros tipo_carga_xml e mes_ano_corte sejam
+	 *  passados como parâmetro da função, desconsiderando o que está no arquivo de propriedades.
 	 *  Esse método visa possibilitar a execução automatizada do extrator por linha de comando, evitando que seja necessário
 	 *  alterar o arquivo de propriedades indicando a competência de cada remessa mensal.
 
 	 * @param tipoCargaXml Tipo de carga em que os processos serão extraídos, podendo ser COMPLETA, MENSAL, 
 	 * 					   TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO.
+	 * @param mesAnoCorte String no formato YYYY-MM, em que o ano pode ter os valores entre 2000 e 2049 e o mês entre 01 e 12
 	 */
-	public static void carregarPropertiesDoArquivo(String tipoCargaXml) {
+	public static void carregarPropertiesDoArquivo(String tipoCargaXml, String mesAnoCorte) {
 		
 		final String ParametroTipoCargaXml = "tipo_carga_xml";
+		final String ParametroMesAnoCorte = "mes_ano_corte";
+		final Pattern padraoMesAnoCorte = Pattern.compile("^20[0-4]\\d[-](0[1-9]|1[0-2])$"); 
 		
 		if (configs == null) {
 			configs = getConfigs();
@@ -318,6 +323,14 @@ public class Auxiliar {
 		
 		if(tipoCargaXml != null && tipoCargaXml.length() > 0) {
 			configs.setProperty(ParametroTipoCargaXml, tipoCargaXml);			
+		}
+		
+		if(mesAnoCorte != null && padraoMesAnoCorte.matcher(mesAnoCorte).find()) {
+			configs.setProperty(ParametroMesAnoCorte, mesAnoCorte);			
+		} else {
+			//Nesse momento, é melhor não utilizar o LOGGER, pois ele ainda não está configurado para gravar na pasta correta (dentro de "output")
+			System.out.println("O valor atributo mes_ano_corte está nulo ou não foi conhecido. Será utilizado o dentro do arquivo config.properties."
+					+ "  Valor dele: " + mesAnoCorte + ".");
 		}
 		
 	}
