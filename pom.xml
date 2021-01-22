@@ -144,7 +144,7 @@
 				</configuration>
 			</plugin>
 
-			<!-- Para copiar o arquivo de configuração de log para dentro da raiz 
+			<!-- Para copiar o arquivo de configuração de log e o persistence.xml nos locais corretos 
 				no arquivo .JAR gerado -->
 			<plugin>
 				<groupId>com.coderplus.maven.plugins</groupId>
@@ -152,14 +152,22 @@
 				<version>1.0</version>
 				<executions>
 					<execution>
-						<id>copy-file</id>
+						<id>copy</id>
 						<phase>generate-sources</phase>
 						<goals>
 							<goal>copy</goal>
 						</goals>
 						<configuration>
-							<sourceFile>src/main/resources/log4j2-test.xml</sourceFile>
-							<destinationFile>${project.build.outputDirectory}\log4j2-test.xml</destinationFile>
+							<fileSets>
+								<fileSet>
+									<sourceFile>src/main/resources/log4j2-test.xml</sourceFile>
+									<destinationFile>${project.build.outputDirectory}\log4j2-test.xml</destinationFile>
+								</fileSet>
+								<fileSet>
+									<sourceFile>src/main/resources/META-INF/persistence.xml</sourceFile>
+									<destinationFile>${project.build.outputDirectory}\META-INF\persistence.xml</destinationFile>
+								</fileSet>
+							</fileSets>
 						</configuration>
 					</execution>
 				</executions>
