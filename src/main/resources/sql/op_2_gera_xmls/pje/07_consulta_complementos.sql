@@ -1,14 +1,23 @@
-WITH versao AS (SELECT MAX(installed_on) AS data_max_versao_223
+WITH versao223 AS (SELECT MAX(installed_on) AS data_max_versao_223
 					FROM pje_adm.tb_schema_version tsv
 	                WHERE "version" LIKE '%2.2.3%')
+
 SELECT
 	cs.id_movimento_processo,
 	tc.cd_tipo_complemento,
     tc.ds_nome,
-	CASE WHEN (tc.cd_tipo_complemento = '16') AND (pe.dt_atualizacao <  versao.data_max_versao_223) 
-		 		--tipo de audiência. Até a versão 2.2.2 o PJe preenchia erroneamente o código do complemento com o id_tipo_audiencia da tb_tipo_audiencia
-				THEN  COALESCE( (SELECT cd_sigla_tipo_audiencia FROM tb_tipo_audiencia ta WHERE ta.id_tipo_audiencia::TEXT = cs.ds_texto LIMIT 1), 
-								 cs.ds_texto, '')
+	CASE WHEN (tc.cd_tipo_complemento = '16') AND (pe.dt_atualizacao <  versao223.data_max_versao_223) THEN
+	 			--tipo de audiência. Entre 1 semana após a versão 2.1.3 e a versão 2.2.3 
+	 			--alguns movimentos eram preenchidos corretamente e outros não, e antes da versão 2.1.3 todos eram preenchidos incorretamente.
+	 			--Por isso valida se o id da tabela tb_tipo_audiencia (id_tipo_audiencia) e a descrição (cd_sigla_tipo_audiencia)
+				--são os mesmos do código (ds_texto) e da descrição do complemento (ds_valor_complemento).
+				--Caso não sejam, considerada-se o valor do complemento (ds_texto)
+				COALESCE( (SELECT cd_sigla_tipo_audiencia 
+							FROM tb_tipo_audiencia ta 
+							WHERE ta.id_tipo_audiencia::TEXT = cs.ds_texto 
+								AND UPPER(ta.ds_tipo_audiencia) = UPPER(cs.ds_valor_complemento)
+							LIMIT 1), 
+						 cs.ds_texto, '')
 		 WHEN ((cs.ds_texto = '') OR (cs.ds_texto IS NULL)) AND cs.ds_valor_complemento = 'Petição (outras)' THEN '57' --Todos os complementos estão vazios e não tem registro na tb_elemento_dominio em pelo menos um dos Regionais (TRT-7)
 		 WHEN ((cs.ds_texto = '') OR (cs.ds_texto IS NULL)) AND cs.ds_valor_complemento = 'Indicação de Data de Diligência Pericial' THEN '7557' --Erro na nomenclatura, que deveria ser Indicação de Data de Realização de Diligência Pericial
 		 WHEN ((cs.ds_texto = '') OR (cs.ds_texto IS NULL)) AND cs.ds_valor_complemento = 'Apresentação de Renúncia de Procuração' THEN '7423' --Erro na nomenclatura, que deveria ser Apresentação de Renúncia de Procuração/Substabelecimento
@@ -45,7 +54,7 @@ SELECT
 		 ELSE cs.ds_texto
 	END AS cd_complemento,
 	REGEXP_REPLACE(cs.ds_valor_complemento, '[\r\n]', '') AS ds_valor_complemento
-FROM versao, tb_complemento_segmentado cs
+FROM versao223, tb_complemento_segmentado cs
 INNER JOIN tb_tipo_complemento tc ON (tc.id_tipo_complemento = cs.id_tipo_complemento)
 INNER JOIN tb_processo_evento pe on (pe.id_processo_evento = cs.id_movimento_processo)
 WHERE 1=1
