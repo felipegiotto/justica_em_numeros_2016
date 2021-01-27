@@ -49,7 +49,6 @@ public class MainClass {
 			System.out.println("3: EnviaArquivosCNJ");
 			System.out.println("4: ConfereProtocolosCNJ");
 			System.out.println("5: BackupConfiguracoes");
-			System.out.println("6: BackupConfiguracoes");
 			System.out.println("X: OperacaoCompleta");
 			System.out.println("Y: Nova operação completa (protótipo Op_Y_OperacaoFluxoContinuo)");
 			opcao = Auxiliar.readStdin().toUpperCase();
