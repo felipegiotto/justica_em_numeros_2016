@@ -5,7 +5,7 @@ Observações:
   * '/resources/sql/op_1_baixa_lista_processos/legado/*'
   * '/resources/sql/op_2_gera_xmls/legado/*'
 
-1. Três parâmetros precisam ser informados no arquivo 'config.properties':
+1. Quatro parâmetros precisam ser informados no arquivo 'config.properties':
   * url_legado_1g: Indica a base postgres que armazena as informações relacionadas aos processos no 1º Grau do Sistema Judicial Legado;
   * url_legado_2g Indica a base postgres que armazena as informações relacionadas aos processos no 2º Grau do Sistema Judicial Legado;
   * sistema_judicial: Especifica o sistema judicial (Pje e Legado) que será utilizado na construção dos XMLs. Os valores possíveis são:
@@ -13,6 +13,10 @@ Observações:
     * APENAS_PJE: Os XMLs serão gerados apenas para os processos que forem recuperados do PJe. Nenhuma informação é recuperada do Sistema Judicial Legado;
     * APENAS_PJE_COM_MIGRADOS_LEGADO: Os XMLs serão gerados apenas para os processos que forem recuperados do PJe. Informações de Movimentos e Complementos de processos que tiverem sido migrados do Sistema Judicial Legado para o PJe também serão recuperadas das bases legadas para um merge de informações;
     * TODOS: Os XMLs serão gerados para os processos que forem recuperados do PJe e do Sistema Judicial Legado. Informações de Movimentos e Complementos de processos que tiverem sido migrados do Sistema Judicial Legado para o PJe também serão recuperadas das bases legadas para um merge de informações.
+  * incluir_todos_movimentos_base_legado: Indica se todos os movimentos da base do legado serão incluídos ou não, independentemente se foram ou não mapeados no "depara-jt-cnj".
+    * O valor NAO faz com que o movimento do legado seja descartado ou não a depender do valor do parâmetro descartar_movimentos_ausentes_de_para_cnj;
+    * O valor SIM faz com que todos os movimentos do legado sejam incluídos, mesmo os que não forem mapeados pelo projeto "depara-jt-cnj";
+    * Observação: para que o extrator funcione com os movimentos locais do legado, é necessário incluir os dados do movimento na tabela sgt_consulta.movimentos da base intermediária.
 
 2. Na primeira operação (Op_1_BaixaListaDeNumerosDeProcessos), o sistema gera uma ou mais listas de processos que serão armazenadas nas pastas 'output\COMPLETA\G1' para processos do primeiro grau e 'output\COMPLETA\G2' para processos do segundo grau. As lista são geradas de acordo com a configuração do parâmetro 'sistema_judicial'
   * No arquivo 'PJe_lista_processos.txt' são armazenados os números dos processos do PJe recuperados por uma das duas queries a seguir: 'resources/sql/op_1_baixa_lista_processos/pje/carga_completa_egestao_1g.sql' e  'resources/sql/op_1_baixa_lista_processos/pje/carga_completa_egestao_2g.sql';
@@ -32,6 +36,3 @@ Possíveis pontos de ajuste:
   * AnalisaAssuntosCNJ.java
     * Apenas Assuntos Nacionais do sistema legado serão enviados. Se o Regional deseja enviar assuntos locais, o método 'getAssunto' deve ser ajustado;
     * As informações dos 'assuntos' do sistema legado, salvas na base intermediária, devem estar com os valores esperados pelo CNJ. Logo, o de-para de assuntos não será aplicado para o sistema legado.
-  * AnalisaMovimentosCNJ.java
-    * Apenas Movimentos Nacionais do sistema legado serão enviados. Se o Regional deseja enviar movimentos locais, o método 'preencheDadosMovimentoCNJ' deve ser ajustado;
-    * As informações dos 'movimentos' do sistema legado, salvas na base intermediária, devem estar com os valores esperados pelo CNJ. Logo, o de-para de movimentos não será aplicado para o sistema legado.
