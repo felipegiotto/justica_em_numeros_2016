@@ -7,11 +7,16 @@ compatível com o solicitado pelo CNJ. Cada um desses passos é representado por
 no pacote "br.jus.trt4.justica_em_numeros_2016.tasks".
 
 Também é possível unir os arquivos do PJe com arquivos XMLs de sistemas legados, para enviar
-de uma vez só ao CNJ. 
+de uma vez só ao CNJ. Para tal, é necessário ativar o parâmetro mesclar_movimentos_legado_migrado_via_xml.
+
+É possível também extrair as informações dos sistemas legados usando uma base intermediária. Par mais detalhes, leia o arquivo README-SistemasLegados.md.
 
 DEPOIS de ler as instruções desse arquivo, leia o arquivo CHECKLIST_RESUMO.txt, que irá guiá-lo passo a 
 passo.
 
+Foi criado pelo TRT-6 um documento contendo as regras negociais desse extrator: https://docs.google.com/spreadsheets/d/1bv3M-VWWPMXK4gtQBQzNQn2wwl09ottk1AugQ_vrhq8/edit#gid=478400642
+
+E também as principais alterações da branch meta_informacoes_em_bd, que foi responsável pela inclusão da funcionalidade de gerenciar todo o processo pelo banco de dados no lugar do gerenciamento por aquivos:  https://docs.google.com/document/d/1RBsx7ulfUjKadNu8qiLmpBDbuWrf6zry2I8x51Dt-YQ/edit
 
 Autor: felipe.giotto@trt4.jus.br
 
@@ -64,9 +69,11 @@ PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderExce
 ```
 
 Nesse caso, se for preciso atualizar algum certificado da keystore, seguir os passos abaixo:
-1. Gravar os novos certificados na pasta `src/main/resources/certificados_rest_cnj/certificados`
-2. Em um terminal Linux, abrir a pasta `src/main/resources/certificados_rest_cnj`
-3. Executar o script `_importar_certificados_para_keystore.sh`
+1. Acessar www.cnj.jus.br (produção) ou https://wwwh.cnj.jus.br/ (homologação) e baixar o novo certificado. No windows pode escolher o formato "X.509 binário codificado por DER (*.cer)" e alterar a extensão do arquivo salvo para .CRT.
+2. Gravar os novos certificados na pasta `src/main/resources/certificados_rest_cnj/certificados`
+3. Em um terminal Linux, abrir a pasta `src/main/resources/certificados_rest_cnj` (pode usar o terminal do eclipse)
+4. Executar o script `_importar_certificados_para_keystore.sh`
+5. Atualizar o repositório com o novo certificado e keystore.
 
 
 
