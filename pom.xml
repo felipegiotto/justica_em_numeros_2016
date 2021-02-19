@@ -20,7 +20,7 @@
 		<dependency>
 			<groupId>br.jus.trt3</groupId>
 			<artifactId>depara-jt-cnj</artifactId>
-			<version>2.7</version>
+			<version>2.7.1</version>
 		</dependency>
 
 		<!-- Utilizado para criar JAR com todas as dependências -->
