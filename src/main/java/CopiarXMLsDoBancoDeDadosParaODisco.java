@@ -76,9 +76,7 @@ public class CopiarXMLsDoBancoDeDadosParaODisco {
 
 		List<String> grausAProcessar = new ArrayList<String>();
 		for (int grau : grausAnalisados) {
-			if (Auxiliar.deveProcessarGrau(grau)) {
-				grausAProcessar.add(Integer.toString(grau));
-			}
+			grausAProcessar.add(Integer.toString(grau));
 		}
 
 		Lote lote = loteDAO.getLoteDeUmaRemessaPeloNumero(dataCorteRemessa, tipoRemessa, numeroDoLote);
