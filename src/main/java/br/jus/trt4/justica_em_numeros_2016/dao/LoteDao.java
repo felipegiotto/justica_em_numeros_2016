@@ -37,6 +37,31 @@ public class LoteDao extends DataJudBaseDao<Lote> {
 
 		return getSingleResultOrNull(query);
 	}
+	
+	/**
+     * Recupera o último Lote de uma Remessa a partir da data de corte e do tipo da remessa.
+     * 
+     * @param dataCorte data de corte da Remessa
+     * @param tipoRemessa tipo da Remessa
+     * @param numeroLote número do Lote
+     * 
+     * @return uma instância do Lote
+     */
+	public Lote getLoteDeUmaRemessaPeloNumero(LocalDate dataCorte, TipoRemessaEnum tipoRemessa, String numeroLote) {
+		StringBuilder hql = new StringBuilder();
+		hql.append("select lot from Lote lot ");
+		hql.append(" where lot.remessa.dataCorte = :dataCorte ");
+		hql.append(" and lot.remessa.tipoRemessa = :tipoRemessa ");
+		hql.append(" and lot.numero = :numeroLote ");
+
+		TypedQuery<Lote> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Lote.class);
+		query.setParameter("dataCorte", dataCorte);
+		query.setParameter("tipoRemessa", tipoRemessa);
+		query.setParameter("numeroLote", numeroLote);
+		
+		return getSingleResultOrNull(query);
+	}
+
 
 
 }

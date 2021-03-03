@@ -746,7 +746,7 @@ public class Auxiliar {
 	}
 	
 	/**
-	 * Informa onde deve ser gravado o arquivo XML de um determinado processo
+	 * Informa onde deve ser gravado o arquivo JSON de um determinado processo
 	 * @param grau
 	 * @param numeroProcesso
 	 * @return
@@ -761,6 +761,24 @@ public class Auxiliar {
 						  );
 		File pastaRaizSistemaJudicial = new File(pastaRaiz, diretorio);
 		return new File(pastaRaizSistemaJudicial, numeroProcesso + "_validador_cnj.json");
+	}
+	
+	/**
+	 * Informa onde deve ser gravado o arquivo XML de um determinado processo
+	 * @param grau
+	 * @param numeroProcesso
+	 * @return
+	 */
+	public static File gerarNomeArquivoIndividualParaProcesso(int grau, String numeroProcesso, OrigemProcessoEnum origemProcessoEnum) {
+		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
+		String diretorio = origemProcessoEnum.equals(OrigemProcessoEnum.LEGADO) 
+						? "Legado" 
+						: (origemProcessoEnum.equals(OrigemProcessoEnum.HIBRIDO) 
+								? "PJe/Hibrido"
+								: "PJe"
+						  );
+		File pastaRaizSistemaJudicial = new File(pastaRaiz, diretorio);
+		return new File(pastaRaizSistemaJudicial, numeroProcesso + ".xml");
 	}
 
 	/**
