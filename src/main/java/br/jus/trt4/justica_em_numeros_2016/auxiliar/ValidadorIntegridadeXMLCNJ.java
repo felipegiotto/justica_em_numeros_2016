@@ -22,46 +22,32 @@ public class ValidadorIntegridadeXMLCNJ {
 		JsonObject rootObject = JsonParser.parseString(jsonRespostaValidador).getAsJsonObject();
 		elementoJSONDeveExistir(rootObject, "Validador do CNJ não retornou um JSON válido");
 
-		JsonArray processos = rootObject.get("processos").getAsJsonArray();
-		elementoJSONDeveExistir(processos, "Não foi possível identificar o array 'processos' dentro do JSON");
-
-		JsonObject processo = processos.get(0).getAsJsonObject();
-		elementoJSONDeveExistir(processo, "Não foi possível identificar o processo dentro do JSON");
-
-		JsonObject erros = rootObject.get("erros").getAsJsonObject();
-
-		List<String> problemas = new ArrayList<>();
+		JsonObject errosPorProcesso = rootObject.get("errosPorProcesso").getAsJsonObject();
+		JsonObject errosPorIdentificador = rootObject.get("errosPorIdentificador").getAsJsonObject();
+		int qtdErros = rootObject.get("qtdErros").getAsInt();
 		
-		// O objeto "processo" conterá diversos campos, entre eles os campos "enriquecidos" pelo validador do CNJ.
-		// Os que serão analisados aqui são os que iniciam com "dpj_", que possuem as informações úteis para a validação:
-		// "dpj_totalDatasMovimentosInvalidas", "dpj_totalAssuntosInvalidos", "dpj_assuntosInvalidos", "dpj_totalMovimentosInvalidos", "dpj_movimentosInvalidos".
-		// Os campos cuja chave contém "total" são numéricos. Os demais são arrays.
-		for (String key: processo.keySet()) {
-			if (key.contains("dpj_") && key.contains("Invalid")) {
-				
-				// Verifica se é um total de campos inválidos (que deve ser igual a zero)
-				// ou se é uma lista de valores inválidos (que deve ser uma lista vazia)
-				if (key.contains("total")) {
-					int totalInvalidos = processo.get(key).getAsInt();
-					if (totalInvalidos > 0) {
-						problemas.add(key + ": " + totalInvalidos);
-					}
-					
-				} else {
-					JsonArray itensInvalidos = processo.get(key).getAsJsonArray();
-					if (itensInvalidos.size() > 0) {
-						problemas.add(key + ": " + itensInvalidos);
-					}
+		List<String> problemas = new ArrayList<>();
+
+		if (!errosPorProcesso.keySet().isEmpty() || !errosPorIdentificador.keySet().isEmpty() || qtdErros > 0) {
+			for (String key : errosPorProcesso.keySet()) {
+				JsonArray arrayErrosPorProcesso = errosPorProcesso.get(key).getAsJsonArray();
+				for (JsonElement jsonElement : arrayErrosPorProcesso) {
+					JsonObject jsonErro = jsonElement.getAsJsonObject();
+					problemas.add(jsonErro.get("id").getAsString() + ": " + jsonErro.get("descricao").getAsString());
 				}
 			}
-		}
-		
-		for (String key : erros.keySet()) {
-			JsonArray errosJsonArray = erros.get(key).getAsJsonArray();
-			for (int i = 0; i < errosJsonArray.size(); i++) {
-				JsonObject erro = errosJsonArray.get(0).getAsJsonObject();
-				problemas.add(erro.get("id").getAsString() + ": " + erro.get("descricao").getAsString());
+			
+			String errosApontados = "";
+			
+			for (String key : errosPorIdentificador.keySet()) {
+				errosApontados = errosApontados + key + ";";			
 			}
+			
+			if (!errosApontados.equals("")) {
+				problemas.add("Resumo dos Erros Apontados: " + errosApontados.substring(0, errosApontados.length() - 1));			
+			}
+ 
+			problemas.add("Quantidade de Erros Reportados Pelo Validador: " + qtdErros);
 		}
 		
 		if (!problemas.isEmpty()) {
@@ -76,8 +62,7 @@ public class ValidadorIntegridadeXMLCNJ {
 	}
 	
 	public static void main(String[] args) throws Exception {
-//		String filename = "teste.json";
-		String filename = "teste_invalido.json";
+		String filename = "0001085-22.2014.5.06.0201_validador_cnj.json";
 		File arquivo = new File(filename);
 		String json = FileUtils.readFileToString(arquivo, StandardCharsets.UTF_8);
 		buscarProblemasValidadorCNJ(json);

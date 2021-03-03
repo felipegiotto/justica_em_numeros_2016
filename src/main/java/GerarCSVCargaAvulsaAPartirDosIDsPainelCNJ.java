@@ -3,11 +3,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,6 +14,9 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.util.ProcessoUtil;
 
 /**
+ * 
+ * Essa Classe pode ser utilizada para gerar o arquivo carga_avulsa.csv a partir do arquivo lista_ids_painel_qualificacao.csv,
+ * que contém o identificador dos xmls enviados no painel de qualificação
  * 
  * @author ivan.franca@trt6.jus.br
  *
