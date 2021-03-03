@@ -28,10 +28,13 @@ import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
 
 /**
  * 
- * Essa Classe pode ser utilizada para copiar os XMLs que foram salvos no banco para o sistema de Arquivos. Basta
- * informar no main: - A data de corte da Remessa; - O tipo da Remessa; - O número do Lote (o número, não o id!); - O
- * grau dos processos que devem ter o XML copiado. Se o array for vazio, todos os graus serão considerados; - As
- * situações dos loteProcessos que devem ter o XML copiado. Se o array for vazio, todas as situações serão consideradas.
+ * Essa Classe pode ser utilizada para copiar os XMLs que foram salvos no banco para o sistema de Arquivos. 
+ * Basta informar no main: 
+ * - A data de corte da Remessa; 
+ * - O tipo da Remessa; 
+ * - O número do Lote (o número, não o id!); 
+ * - O grau dos processos que devem ter o XML copiado. Se o array for vazio, todos os graus serão considerados; 
+ * - Assituações dos loteProcessos que devem ter o XML copiado. Se o array for vazio, todas as situações serão consideradas.
  * 
  * @author ivan.franca@trt6.jus.br
  *
@@ -50,8 +53,7 @@ public class CopiarXMLsDoBancoDeDadosParaODisco {
 		TipoRemessaEnum tipoRemessa = TipoRemessaEnum.MENSAL;
 		String numeroDoLote = "1";
 		int[] grausAnalisados = { 1, 2 };
-		SituacaoLoteProcessoEnum[] situacoesLoteProcesso = { SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO,
-				SituacaoLoteProcessoEnum.XML_GERADO_COM_SUCESSO };
+		SituacaoLoteProcessoEnum[] situacoesLoteProcesso = { SituacaoLoteProcessoEnum.XML_GERADO_COM_ERRO };
 
 		try {
 			CopiarXMLsDoBancoDeDadosParaODisco.copiarXMLs(dataCorteRemessa, tipoRemessa, numeroDoLote, grausAnalisados,
