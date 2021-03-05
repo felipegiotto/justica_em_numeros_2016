@@ -54,15 +54,19 @@ public class LoteProcessoDao extends DataJudBaseDao<LoteProcesso> {
 		StringBuilder hql = new StringBuilder();
 		hql.append("select lp.id from LoteProcesso lp ");
 		hql.append(" where lp.lote.id = :idLote ");
-		hql.append(" and lp.situacao IN ( :situacoes ) ");
-		if (graus != null) {
+		if (situacoes != null && !situacoes.isEmpty()) {
+			hql.append(" and lp.situacao IN ( :situacoes ) ");
+		}
+		if (graus != null  && !graus.isEmpty()) {
 			hql.append(" and lp.chaveProcessoCNJ.grau IN ( :graus ) ");			
 		}
 		
 		TypedQuery<Long> query = JPAUtil.getEntityManager().createQuery(hql.toString(), Long.class);
 		query.setParameter("idLote", lote.getId());
-		query.setParameter("situacoes", situacoes);
-		if (graus != null) {
+		if (situacoes != null  && !situacoes.isEmpty()) {
+			query.setParameter("situacoes", situacoes);
+		}
+		if (graus != null  && !graus.isEmpty()) {
 			query.setParameter("graus", graus);
 		}
 

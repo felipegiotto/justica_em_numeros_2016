@@ -1,5 +1,5 @@
 # Lista extraída do site do CNJ
-# Data: 04/12/2020
+# Data: 20/01/2020
 # Instruções:
 # 1. Baixei a estrutura e a base no formato PostgreSQL da página https://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=M
 # 2. Importei em uma base local (foram necessárias várias modificações nos scripts originais) e importei os dados da tabela "sgt_consulta.itens" (somente ela é necessária para a importação dessa tabela)

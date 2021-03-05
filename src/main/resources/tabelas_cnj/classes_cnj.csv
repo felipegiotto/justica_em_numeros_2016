@@ -1,5 +1,5 @@
 # Lista extraída do site do CNJ
-# Data: 04/12/2020
+# Data: 20/01/2020
 # Instruções:
 # 1. Baixei a estrutura e a base no formato PostgreSQL da página https://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=C
 # 2. Importei em uma base local (foram necessárias várias modificações nos scripts originais) e importei os dados da tabela "sgt_consulta.itens" (somente ela é necessária para a importação dessa tabela)
@@ -544,7 +544,6 @@
 11894
 11953
 11955
-12086
 12057
 12059
 12060
@@ -563,11 +562,11 @@
 12081
 12082
 12085
+12086
 12087
 12117
 12118
 12119
-12120
 12121
 12122
 12132
@@ -657,3 +656,4 @@
 12789
 12790
 12791
+14123
