@@ -20,4 +20,4 @@ where
 	
 )
 select * from consultaComlementos 
-	where (cd_complemento is not null and ds_valor_complemento is not null);
+	where (cd_complemento is not null or ds_valor_complemento is not null);
