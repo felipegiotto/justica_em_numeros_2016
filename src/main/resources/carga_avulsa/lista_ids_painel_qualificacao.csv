@@ -1,0 +1,7 @@
+# O arquivo deve ser preenchido com os IDs obtidos no painel de qualificação do CNJ. 
+# 
+# Este arquivo será utilizado para gerar o arquivo carga_avulsa.csv, que será utilizado na geração da Remessa Avulsa. 
+#
+# Observação: A utilização deste arquivo é opcional. Já que o arquivo carga_avulsa.csv pode ser preenchido manualmente.
+#
+# TRT0_0000_G1_0000_00000000020160000000

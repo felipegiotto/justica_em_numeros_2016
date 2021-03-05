@@ -37,6 +37,11 @@
 			<artifactId>postgresql</artifactId>
 			<version>9.4-1200-jdbc41</version>
 		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>5.4.22.Final</version>
+		</dependency>
 
 		<!-- Utilizado como ferramenta auxiliar em diversas classes -->
 		<dependency>
@@ -129,10 +134,10 @@
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
 				<configuration>
-					<outputDirectory>${project.build.outputDirectory}\src\main\resources</outputDirectory>
+					<outputDirectory>${project.build.directory}/src/main/resources</outputDirectory>
 					<resources>
 						<resource>
-							<directory>${basedir}/src/main/resources</directory>
+							<directory>src/main/resources</directory>
 							<excludes>
 								<exclude>**/log4j2-test.xml</exclude>
 							</excludes>
@@ -141,8 +146,8 @@
 				</configuration>
 			</plugin>
 
-			<!-- Para copiar o arquivo de configuração de log e o persistence.xml nos locais corretos 
-				no arquivo .JAR gerado -->
+			<!-- Para copiar o arquivo de configuração de log e o persistence.xml 
+				nos locais corretos no arquivo .JAR gerado -->
 			<plugin>
 				<groupId>com.coderplus.maven.plugins</groupId>
 				<artifactId>copy-rename-maven-plugin</artifactId>
@@ -158,11 +163,15 @@
 							<fileSets>
 								<fileSet>
 									<sourceFile>src/main/resources/log4j2-test.xml</sourceFile>
-									<destinationFile>${project.build.outputDirectory}\log4j2-test.xml</destinationFile>
+									<destinationFile>${project.build.outputDirectory}/log4j2-test.xml</destinationFile>
 								</fileSet>
 								<fileSet>
 									<sourceFile>src/main/resources/META-INF/persistence.xml</sourceFile>
-									<destinationFile>${project.build.outputDirectory}\META-INF\persistence.xml</destinationFile>
+									<destinationFile>${project.build.outputDirectory}/META-INF/persistence.xml</destinationFile>
+								</fileSet>
+								<fileSet>
+									<sourceFile>config.properties</sourceFile>
+									<destinationFile>${project.build.directory}/config.properties</destinationFile>
 								</fileSet>
 							</fileSets>
 						</configuration>
@@ -184,10 +193,12 @@
 				</configuration>
 			</plugin>
 
-
-
 			<!-- Utilizado para criar JAR com todas as dependências -->
 			<!-- Fonte: http://www.mkyong.com/maven/maven-create-a-fat-jar-file-one-jar-example/ -->
+
+			<!-- Avaliar migrar para o maven-assembly-plugin, já que o plugin onejar 
+				já tem quase 10 anos sem atualização -->
+			<!-- https://stackoverflow.com/questions/574594/how-can-i-create-an-executable-jar-with-dependencies-using-maven -->
 			<plugin>
 				<groupId>com.jolira</groupId>
 				<artifactId>onejar-maven-plugin</artifactId>
@@ -197,10 +208,12 @@
 						<goals>
 							<goal>one-jar</goal>
 						</goals>
+						<configuration>
+							<filename>extrator_datajud.jar</filename>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-
 
 		</plugins>
 

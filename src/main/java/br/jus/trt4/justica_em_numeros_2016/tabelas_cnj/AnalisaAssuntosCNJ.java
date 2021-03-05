@@ -23,8 +23,8 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoLocal;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoAssuntoProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.DataJudException;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 
 /**
  * Classe que montará um objeto do tipo {@link TipoAssuntoProcessual}, conforme o dado no PJe:

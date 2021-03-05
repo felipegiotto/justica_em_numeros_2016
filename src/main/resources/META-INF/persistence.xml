@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.1"
+    xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+    <persistence-unit name="emDatajud" transaction-type="RESOURCE_LOCAL">
+    	<provider>org.hibernate.ejb.HibernatePersistence</provider>
+        <class>br.jus.trt4.justica_em_numeros_2016.entidades.Remessa</class>
+        <class>br.jus.trt4.justica_em_numeros_2016.entidades.Lote</class>
+        <class>br.jus.trt4.justica_em_numeros_2016.entidades.ChaveProcessoCNJ</class>
+        <class>br.jus.trt4.justica_em_numeros_2016.entidades.LoteProcesso</class>
+        <class>br.jus.trt4.justica_em_numeros_2016.entidades.ProcessoEnvio</class>
+        <class>br.jus.trt4.justica_em_numeros_2016.entidades.XMLProcesso</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+        <properties>
+            <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false" />
+            <property name="hibernate.jdbc.batch_size" value="50" />
+            <property name="hibernate.order_inserts" value="true" />
+            <property name="hibernate.order_updates" value="true" />
+            <!-- <property name="hibernate.jdbc.fetch_size" value="400" /> -->
+          <!--  <property  name="hibernate.generate_statistics"  value="true"/> -->
+
+            <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />
+            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://#SERVERNAME:5432/#DATABASE" />
+      		<property name="hibernate.default_schema" value="datajud"/>
+            <property name="javax.persistence.jdbc.user" value="#USER" />
+            <property name="javax.persistence.jdbc.password" value="#PASSWORD" />
+      		
+            <property name="hibernate.hbm2ddl.auto" value="validate"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="false"/>
+        </properties>
+    </persistence-unit>
+</persistence>

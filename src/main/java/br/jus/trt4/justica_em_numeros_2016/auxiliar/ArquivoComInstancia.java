@@ -73,8 +73,6 @@ public class ArquivoComInstancia {
 			localizarArquivos(1, sufixo, arquivos);
 		}
 		
-		//TODO Avaliar se essa ordenação é realmente necessário ou se, pelo menos, é possível melhorar essa ordenação, 
-		//     que é bastante lenta para remessas com centenas de milhares de processos
 		if (ordenarArquivosTentouEnviar) {
 			// Coloca os arquivos que já tentou-se enviar (e, provavelmente, deu erro) no final da lista
 			Collections.sort(arquivos, new Comparator<ArquivoComInstancia>() {

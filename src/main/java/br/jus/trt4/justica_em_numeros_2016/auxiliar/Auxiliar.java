@@ -25,6 +25,7 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -37,7 +38,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 
+import br.jus.trt4.justica_em_numeros_2016.dao.ProcessoEnvioDao;
+import br.jus.trt4.justica_em_numeros_2016.entidades.ProcessoEnvio;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.OrigemProcessoEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoRemessaEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.TipoSistemaJudicialEnum;
+import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
 /**
  * Classe que contém métodos auxiliares utilizados nesse projeto.
@@ -53,20 +61,22 @@ public class Auxiliar {
 	private static boolean permitirAguardarUsuarioApertarENTER = true;
 	private static final SimpleDateFormat dfDataNascimento = new SimpleDateFormat("yyyyMMdd");
 	private static final SimpleDateFormat dfDataMovimentoProcessual = new SimpleDateFormat("yyyyMMddHHmmss");
+	private static final DateTimeFormatter dfDataDiaMesAno = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	private static File pastaSaida = null;
+	
 	public static final String SUFIXO_ARQUIVO_ENVIADO = ".enviado";
 	public static final String SUFIXO_PROTOCOLO = ".protocolo";
 	public static final String SUFIXO_PROTOCOLO_SUCESSO = ".sucesso";
 	public static final String SUFIXO_PROTOCOLO_ERRO = ".erro";
-	public static final String SISTEMA_JUDICIAL_APENAS_LEGADO = "APENAS_LEGADO";
-	public static final String SISTEMA_JUDICIAL_APENAS_PJE = "APENAS_PJE";
-	public static final String SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO = "APENAS_PJE_COM_MIGRADOS_LEGADO";
-	public static final String SISTEMA_JUDICIAL_TODOS = "TODOS";
-	public static final String VALIDACAO_CNJ_TODOS = "TODOS";
-	public static final String VALIDACAO_CNJ_TODOS_COM_ERRO = "TODOS_COM_ERRO";
-	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_PROCESSADO_COM_ERRO = "APENAS_COM_ERRO_PROCESSADO_COM_ERRO";
-	public static final String VALIDACAO_CNJ_APENAS_COM_ERRO_NO_ARQUIVO = "APENAS_COM_ERRO_NO_ARQUIVO";
 	
+	public static String TIPO_SISTEMA = Auxiliar.getParametroConfiguracaoComValorPadrao(Parametro.sistema_judicial,
+			TipoSistemaJudicialEnum.APENAS_PJE.getCodigo());
+	
+	public static boolean MESCLAR_MOVIMENTOS_LEGADO_MIGRADO_VIA_XML = Auxiliar
+			.getParametroBooleanConfiguracaoComValorPadrao(Parametro.mesclar_movimentos_legado_migrado_via_xml, false);
+
+	private static final ProcessoEnvioDao processoEnvioDAO = new ProcessoEnvioDao();
+
 	/**
 	 * Recupera a pasta em que se encontram os arquivos sql dos diretórios 'op_1_baixa_lista_processos '
 	 * e 'op_2_gera_xmls' de acordo com o grau pesquisado e a base em análise. 
@@ -179,7 +189,7 @@ public class Auxiliar {
 	 * @param parametro
 	 * @return
 	 */
-	public static boolean getParametroBooleanConfiguracao(Parametro parametro, boolean valorPadrao) {
+	public static boolean getParametroBooleanConfiguracaoComValorPadrao(Parametro parametro, boolean valorPadrao) {
 		String valor = getParametroConfiguracao(parametro, false);
 		if ("SIM".equals(valor)) {
 			return true;
@@ -212,7 +222,7 @@ public class Auxiliar {
 	 * @param parametro
 	 * @return
 	 */
-	public static int getParametroInteiroConfiguracao(Parametro parametro, int valorPadrao) {
+	public static int getParametroInteiroConfiguracaoComValorPadrao(Parametro parametro, int valorPadrao) {
 		try {
 			return Integer.parseInt(getParametroConfiguracao(parametro, true));
 		} catch (NumberFormatException ex) {
@@ -244,7 +254,7 @@ public class Auxiliar {
 	 * 
 	 * Se o parâmetro não existir, será retornado o valor padrão.
 	 */
-	public static String getParametroConfiguracao(Parametro parametro, String valorPadrao) {
+	public static String getParametroConfiguracaoComValorPadrao(Parametro parametro, String valorPadrao) {
 		if (getConfigs().containsKey(parametro.toString())) {
 			return getConfigs().getProperty(parametro.toString());
 		} else {
@@ -592,6 +602,10 @@ public class Auxiliar {
 		return formatter.format(data);
 	}
 	
+	public static String formataDataDiaMesAno(LocalDate data) {
+		return dfDataDiaMesAno.format(data);
+	}
+	
 	/**
 	 * Retorna a pasta padrão onde os arquivos TXT e XML serão gerados pela ferramenta.
 	 * 
@@ -600,10 +614,11 @@ public class Auxiliar {
 	 * Fonte: http://stackoverflow.com/questions/25114526/log4j2-how-to-write-logs-to-separate-files-for-each-user
 	 */
 	public static File prepararPastaDeSaida() {
-		
 		if (pastaSaida == null) {
 			File pastaOutputRaiz = getPastaOutputRaiz();
-			File pastaOutputCarga = new File(pastaOutputRaiz, Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, true));
+			String tipoCarga = DataJudUtil.TIPO_CARGA + " " + DataJudUtil.MES_ANO_CORTE;
+
+			File pastaOutputCarga = new File(pastaOutputRaiz, tipoCarga);
 			pastaSaida = pastaOutputCarga;
 			
 			// Mapeia STDOUT e STDERR para os arquivos de log
@@ -621,7 +636,6 @@ public class Auxiliar {
 		ThreadContext.put("logFolder", pastaSaida.getAbsolutePath());
 	}
 
-
 	/**
 	 * Retorna o caminho da pasta "output raiz", conforme definido pelo parâmetro "pasta_saida_padrao" no arquivo de configurações.
 	 * 
@@ -630,7 +644,7 @@ public class Auxiliar {
 	 * @return
 	 */
 	public static File getPastaOutputRaiz() {
-		return new File(Auxiliar.getParametroConfiguracao(Parametro.pasta_saida_padrao, "output"));
+		return new File(Auxiliar.getParametroConfiguracaoComValorPadrao(Parametro.pasta_saida_padrao, "output"));
 	}
 	
 	/**
@@ -705,32 +719,60 @@ public class Auxiliar {
 	    }
 	}
 	
-	public static List<String> carregarListaProcessosDoArquivo(File arquivoEntrada) {
-		if (!arquivoEntrada.exists()) {
-			LOGGER.warn("Arquivo de lista de processos não existe, nenhum processo será analisado nessa instância: " + arquivoEntrada);
-			return new ArrayList<String>();
-		}
-		
+	/**
+	 * Recupera a lista de processos do PJe que serão enviados na remessa atual.
+	 * 
+	 * @param grau
+	 * @return
+	 */
+	public static List<String> carregarListaProcessosPJe(String grau) {
 		try {
-			List<String> listaProcessos = FileUtils.readLines(arquivoEntrada, "UTF-8");
-			LOGGER.info("Arquivo '" + arquivoEntrada + "' carregado com " + listaProcessos.size() + " processo(s).");
+			LocalDate dataCorte = DataJudUtil.getDataCorte();
+			TipoRemessaEnum tipoRemessa = DataJudUtil.getTipoRemessa();
+			List<OrigemProcessoEnum> origens = new ArrayList<OrigemProcessoEnum>();
+			origens.add(OrigemProcessoEnum.PJE);
+			origens.add(OrigemProcessoEnum.HIBRIDO);
+
+			List<ProcessoEnvio> processosEnvio = processoEnvioDAO.getProcessosRemessa(dataCorte, tipoRemessa, grau, origens);
+			List<String> listaProcessos = processosEnvio.stream().map(o -> o.getNumeroProcesso()).collect(Collectors.toList());
+
+
+			LOGGER.info("Foram carregados " + listaProcessos.size() + " processo(s). Grau: " + grau +". Base: PJe");
 			return listaProcessos;
 			
-		} catch (IOException ex) {
+		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}
 	}
+	
+	/**
+	 * Informa onde deve ser gravado o arquivo XML de um determinado processo
+	 * @param grau
+	 * @param numeroProcesso
+	 * @return
+	 */
+	public static File gerarNomeArquivoJson(int grau, String numeroProcesso, OrigemProcessoEnum origemProcessoEnum) {
+		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
+		String diretorio = origemProcessoEnum.equals(OrigemProcessoEnum.LEGADO) 
+						? "Legado" 
+						: (origemProcessoEnum.equals(OrigemProcessoEnum.HIBRIDO) 
+								? "PJe/Hibrido"
+								: "PJe"
+						  );
+		File pastaRaizSistemaJudicial = new File(pastaRaiz, diretorio);
+		return new File(pastaRaizSistemaJudicial, numeroProcesso + "_validador_cnj.json");
+	}
 
 	/**
-	 * Informa onde deve ser gravado o arquivo XML de um determinado processo do PJe
+	 * Informa onde deve ser gravado o arquivo XML de um determinado processo
 	 * @param grau
 	 * @param numeroProcesso
 	 * @return
 	 */
 	public static File gerarNomeArquivoIndividualParaProcesso(BaseEmAnaliseEnum base, int grau, String numeroProcesso) {
 		File pastaRaiz = Auxiliar.getPastaXMLsIndividuais(grau);
-		File pastaRaizPJe = new File(pastaRaiz, base.isBasePJe() ? "PJe" : "Legado");
-		return new File(pastaRaizPJe, numeroProcesso + ".xml");
+		File pastaRaizSistemaJudicial = new File(pastaRaiz, base.isBasePJe() ? "PJe" : "Legado");
+		return new File(pastaRaizSistemaJudicial, numeroProcesso + ".xml");
 	}
 	
 	/**
@@ -788,7 +830,6 @@ public class Auxiliar {
 		}
 	}
 
-
 	public static boolean deveProcessarSegundoGrau() {
 		return getParametroBooleanConfiguracao(Parametro.gerar_xml_2G);
 	}
@@ -797,42 +838,39 @@ public class Auxiliar {
 		return getParametroBooleanConfiguracao(Parametro.gerar_xml_1G);
 	}
 	
+	public static boolean deveProcessarGrau(int grau) {
+		if (grau == 1) {
+			return getParametroBooleanConfiguracao(Parametro.gerar_xml_1G);
+		} else if (grau == 2) {
+			return getParametroBooleanConfiguracao(Parametro.gerar_xml_2G);
+		}
+		return false;
+	}
+	
 	public static boolean deveProcessarProcessosPje() {
-		boolean retorno = false;
-		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
-
-		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE)
-				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO)
-				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
-			retorno = true;
-		}
-
-		return retorno;
+		return MESCLAR_MOVIMENTOS_LEGADO_MIGRADO_VIA_XML || TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.APENAS_PJE.getCodigo())
+				|| TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.APENAS_PJE_COM_MIGRADOS_LEGADO.getCodigo())
+				|| TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.TODOS.getCodigo());
 	}
 
-	public static boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje() {
-		boolean retorno = false;
-		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
-
-		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_LEGADO)
-				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
-			retorno = true;
-		}
-
-		return retorno;
+	public static boolean deveProcessarProcessosSistemaLegadoNaoMigradosParaOPjeViaStaging() {
+		return !MESCLAR_MOVIMENTOS_LEGADO_MIGRADO_VIA_XML 
+				&& (TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.APENAS_LEGADO.getCodigo())
+				|| TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.TODOS.getCodigo()));
 	}
 
-	public static boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJe() {
-		boolean retorno = false;
-		String tipoSistema = Auxiliar.getParametroConfiguracao(Parametro.sistema_judicial, true);
-
-		if (tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_APENAS_PJE_COM_MIGRADOS_LEGADO)
-				|| tipoSistema.equals(Auxiliar.SISTEMA_JUDICIAL_TODOS)) {
-			retorno = true;
-		}
-
-		return retorno;
+	public static boolean deveProcessarProcessosSistemaLegadoMigradosParaOPJeViaStaging() {
+		return !MESCLAR_MOVIMENTOS_LEGADO_MIGRADO_VIA_XML 
+				&& (TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.APENAS_PJE_COM_MIGRADOS_LEGADO.getCodigo())
+				|| TIPO_SISTEMA.equals(TipoSistemaJudicialEnum.TODOS.getCodigo()));
 	}
+	
+	public static void validarTipoRemessaAtual(TipoRemessaEnum tipoRemessaAtual) {
+		if (tipoRemessaAtual == null) {
+			throw new RuntimeException("A remessa indicada no arquivo config.properties não é válida.");
+		}
+	}
+	
 	
 	public static File getArquivoconfiguracoes() {
 		return arquivoConfiguracoes;

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,7 +28,9 @@ public class AnalisaClassesProcessuaisCNJ {
 		// Fonte: http://www.cnj.jus.br/sgt/versoes.php?tipo_tabela=C
 		this.classesProcessuaisCNJ = new ArrayList<>();
 		for (String classeString: FileUtils.readLines(arquivoClasses, "UTF-8")) {
-			classesProcessuaisCNJ.add(Integer.parseInt(classeString));
+			if (!StringUtils.isBlank(classeString) && !classeString.startsWith("#")) {
+				classesProcessuaisCNJ.add(Integer.parseInt(classeString));
+			}
 		}
 	}
 	

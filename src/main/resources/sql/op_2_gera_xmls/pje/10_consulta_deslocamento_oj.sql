@@ -1,9 +1,9 @@
 SELECT
   proc.nr_processo,
-  hist.id_oj_origem, -- informação utilizada apenas pelo legado, representa o código do órgão julgador de origem
-  upper(to_ascii(oj_origem.ds_orgao_julgador)) as ds_oj_origem, 
-  hist.id_oj_destino, -- informação utilizada apenas pelo legado, representa o código do órgão julgador de destino
-  upper(to_ascii(oj_destino.ds_orgao_julgador)) as ds_oj_destino, 
+  oj_origem.id_orgao_julgador as cd_oj_origem, 
+  oj_origem.ds_orgao_julgador as ds_oj_origem, -- informação utilizada apenas pelo legado, representa o código do órgão julgador de origem
+  oj_destino.id_orgao_julgador as cd_oj_destino, 
+  oj_destino.ds_orgao_julgador as ds_oj_destino, -- informação utilizada apenas pelo legado, representa o código do órgão julgador de destino
   hist.dt_deslocamento, 
   hist.dt_retorno,
   ib_origem.id_municipio_ibge as id_municipio_origem,

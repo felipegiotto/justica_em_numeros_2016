@@ -24,6 +24,8 @@ import javax.swing.border.MatteBorder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+
 /**
  * Classe responsável por exibir uma interface gráfica que lista o progresso de cada operação sendo executada.
  * 
@@ -89,7 +91,7 @@ public class ProgressoInterfaceGrafica {
 				// Checkbox de fechamento automático
 				JCheckBox checkFecharAutomaticamente = new JCheckBox("Fechar janela ao terminar");
 				try {
-					fecharJanelaAutomaticamente = Auxiliar.getParametroBooleanConfiguracao(Parametro.interface_grafica_fechar_automaticamente, false);
+					fecharJanelaAutomaticamente = Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.interface_grafica_fechar_automaticamente, false);
 				} catch (Exception ex) { }
 				checkFecharAutomaticamente.setSelected(fecharJanelaAutomaticamente);
 				checkFecharAutomaticamente.addActionListener(new ActionListener() {

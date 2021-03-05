@@ -3,6 +3,7 @@ package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 import java.io.File;
 
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.ProcessoSituacaoEnum;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
 
 /**

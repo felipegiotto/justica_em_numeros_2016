@@ -29,9 +29,9 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRelacaoIncidental;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoRepresentanteProcessual;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.AbstractTestCase;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraEValidaXMLsIndividuais;
 
 /**
  * Testa a geração dos campos nos formatos exigidos pelo CNJ.
@@ -53,18 +53,20 @@ public class Op_2_GeraXMLsIndividuaisTest extends AbstractTestCase {
 	 */
 	@Test
 	public void testGerarProcessosEmLote() throws Exception {
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(2, BaseEmAnaliseEnum.PJE);
+		Op_2_GeraEValidaXMLsIndividuais baixaDados = new Op_2_GeraEValidaXMLsIndividuais();
+		int grau = 2;
+		BaseEmAnaliseEnum base = BaseEmAnaliseEnum.PJE;
 		try {
-			baixaDados.prepararConexao();
+			baixaDados.prepararConexao(grau, base);
 			List<String> numeros = new ArrayList<>();
 			numeros.add("0020821-54.2013.5.04.0221");
 			numeros.add("0020583-31.2014.5.04.0017");
-			baixaDados.prepararCacheDadosProcessos(numeros);
+			baixaDados.prepararCacheDadosProcessos(numeros, grau, base);
 			
-			TipoProcessoJudicial processo1 = baixaDados.analisarProcessoJudicialCompleto("0020821-54.2013.5.04.0221");
+			TipoProcessoJudicial processo1 = baixaDados.analisarProcessoJudicialCompleto("0020821-54.2013.5.04.0221", grau, base);
 			assertEquals("00208215420135040221", processo1.getDadosBasicos().getNumero());
 			
-			TipoProcessoJudicial processo2 = baixaDados.analisarProcessoJudicialCompleto("0020583-31.2014.5.04.0017");
+			TipoProcessoJudicial processo2 = baixaDados.analisarProcessoJudicialCompleto("0020583-31.2014.5.04.0017", grau, base);
 			assertEquals("00205833120145040017", processo2.getDadosBasicos().getNumero());
 			
 		} finally {
@@ -725,13 +727,14 @@ Em <nomeOrgao> deverão ser informados os mesmos descritivos das serventias judi
 	
 	public TipoProcessoJudicial retornaDadosProcesso(int grau, String numeroProcesso) throws Exception {
 		
-		Op_2_GeraXMLsIndividuais baixaDados = new Op_2_GeraXMLsIndividuais(grau, BaseEmAnaliseEnum.PJE);
+		Op_2_GeraEValidaXMLsIndividuais baixaDados = new Op_2_GeraEValidaXMLsIndividuais();
+		BaseEmAnaliseEnum base = BaseEmAnaliseEnum.PJE;
 		try {
-			baixaDados.prepararConexao();
+			baixaDados.prepararConexao(grau, base);
 			List<String> numeros = new ArrayList<>();
 			numeros.add(numeroProcesso);
-			baixaDados.prepararCacheDadosProcessos(numeros);
-			return baixaDados.analisarProcessoJudicialCompleto(numeroProcesso);
+			baixaDados.prepararCacheDadosProcessos(numeros, grau, base);
+			return baixaDados.analisarProcessoJudicialCompleto(numeroProcesso, grau, base);
 		} finally {
 			baixaDados.close();
 		}

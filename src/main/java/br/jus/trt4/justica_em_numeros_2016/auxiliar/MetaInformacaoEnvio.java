@@ -1,10 +1,8 @@
 package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import br.jus.trt4.justica_em_numeros_2016.enums.StatusProtocoloCNJ;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.TimeZone;
 
 public class MetaInformacaoEnvio {
 
@@ -124,24 +122,13 @@ public class MetaInformacaoEnvio {
 		this.numProcesso = numProcesso;
 	}
 	
-	public String getDataEnvioProtocoloFormatada() {
+	public LocalDateTime getLocalDateTimeEnvioProtocolo() {
+		LocalDateTime data = null;
 		if (!this.datDataEnvioProtocolo.equals("")) {
-			SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
-			Timestamp ts=new Timestamp(new Long(this.datDataEnvioProtocolo));
-			return dateFormat.format(new Date(ts.getTime()));
+			data = LocalDateTime.ofInstant(Instant.ofEpochMilli(new Long(this.datDataEnvioProtocolo)), TimeZone.getDefault().toZoneId());
 		}
-		return "";
+		return data;
 	}
-	
-	public String getInformacaoFormatada() {
-		return this.numProcesso + ";" + this.grau + ";" + this.numProtocolo + ";" + StatusProtocoloCNJ.getDescricaoPeloID(new Integer(this.tipStatusProtocolo)) 
-		+ ";" + this.codHash + ";" + this.getDataEnvioProtocoloFormatada();
-	}
-	
-	public boolean hasStatusErro() {
-		return StatusProtocoloCNJ.hasStatusErro(new Integer(this.tipStatusProtocolo));
-	}
-
 	
 	@Override
 	public int hashCode() {

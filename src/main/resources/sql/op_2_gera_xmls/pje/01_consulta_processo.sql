@@ -19,14 +19,9 @@ SELECT
   pt.dt_autuacao,
   
   /*** orgaoJulgador ***/
-  0 cd_orgao_julgador, -- essa informação não será utilizada no pje, mas deve estar na query
-  upper(to_ascii(oj.ds_orgao_julgador)) as ds_orgao_julgador, 
-  -- Sugestao TRT6, por causa de falha no PostgreSQL na conversão do caractere "º" para ASCII:
-  -- upper(to_ascii(replace(oj.ds_orgao_julgador, 'º', 'O'))) as ds_orgao_julgador
-  -- Fonte: e-mail com assunto "Sugestões de alterações justica_em_numeros_2016" do TRT6
-  -- Fonte: https://www.postgresql.org/message-id/20040607212810.15543.qmail@web13125.mail.yahoo.com
-  
-  
+  oj.id_orgao_julgador as cd_orgao_julgador, 
+  oj.ds_orgao_julgador as ds_orgao_julgador, -- essa informação não será utilizada no pje, mas deve estar na query
+
   -- instancia
   -- UPDATE: NÃO PEGA a instância do banco de dados, pois a grande maioria dos registros no segundo grau estão com nr_instancia NULAS
   -- pt.nr_instancia, 

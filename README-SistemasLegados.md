@@ -13,10 +13,6 @@ Observações:
     * APENAS_PJE: Os XMLs serão gerados apenas para os processos que forem recuperados do PJe. Nenhuma informação é recuperada do Sistema Judicial Legado;
     * APENAS_PJE_COM_MIGRADOS_LEGADO: Os XMLs serão gerados apenas para os processos que forem recuperados do PJe. Informações de Movimentos e Complementos de processos que tiverem sido migrados do Sistema Judicial Legado para o PJe também serão recuperadas das bases legadas para um merge de informações;
     * TODOS: Os XMLs serão gerados para os processos que forem recuperados do PJe e do Sistema Judicial Legado. Informações de Movimentos e Complementos de processos que tiverem sido migrados do Sistema Judicial Legado para o PJe também serão recuperadas das bases legadas para um merge de informações.
-  * incluir_todos_movimentos_base_legado: Indica se todos os movimentos da base do legado serão incluídos ou não, independentemente se foram ou não mapeados no "depara-jt-cnj".
-    * O valor NAO faz com que o movimento do legado seja descartado ou não a depender do valor do parâmetro descartar_movimentos_ausentes_de_para_cnj;
-    * O valor SIM faz com que todos os movimentos do legado sejam incluídos, mesmo os que não forem mapeados pelo projeto "depara-jt-cnj";
-    * Observação: para que o extrator funcione com os movimentos locais do legado, é necessário incluir os dados do movimento na tabela sgt_consulta.movimentos da base intermediária.
 
 2. Na primeira operação (Op_1_BaixaListaDeNumerosDeProcessos), o sistema gera uma ou mais listas de processos que serão armazenadas nas pastas 'output\COMPLETA\G1' para processos do primeiro grau e 'output\COMPLETA\G2' para processos do segundo grau. As lista são geradas de acordo com a configuração do parâmetro 'sistema_judicial'
   * No arquivo 'PJe_lista_processos.txt' são armazenados os números dos processos do PJe recuperados por uma das duas queries a seguir: 'resources/sql/op_1_baixa_lista_processos/pje/carga_completa_egestao_1g.sql' e  'resources/sql/op_1_baixa_lista_processos/pje/carga_completa_egestao_2g.sql';
@@ -25,12 +21,13 @@ Observações:
   * No arquivo 'Legado_lista_processos_nao_migrados.txt' são armazenados os números dos processos do Sistema Judicial Legado que NÃO foram migrados para o PJe e que são recuperados pela query 'resources/sql/op_1_baixa_lista_processos/legado/../carga_completa_nao_migrados.sql'.
     * Essa query precisa ser ajustada pelo Regional, adequando ao seu modelo de dados do Sistema Legado.
 
-3. Na operação Op_2_GeraXMLsIndividuais, o sistema utiliza as listas geradas na primeira operação para gerar os XMLs. 
+3. Na operação Op_2_GeraEValidaXMLsIndividuais, o sistema utiliza as listas geradas na primeira operação para gerar os XMLs. 
   * Supondo que o parâmetro 'sistema_judicial' tenha sido informado com o valor 'TODOS', para o primeiro grau: 
     * Os XMLs dos processos do PJe seriam armazenados na pasta '\output\COMPLETA\G1\xmls_individuais\PJe'. Se tais processos tiverem sido migrados do Sistema Judicial Legado, as informações de movimentos e complementos da base do Legado também serão recuperadas e incluídas no XML do processo. 
     * Os XMLs dos processos do Sistema Judicial Legado que NÃO foram migrados para o PJe seriam armazenados na pasta '\output\COMPLETA\G1\xmls_individuais\Legado'. 
-  * Para que a operação Op_2_GeraXMLsIndividuais possa ser utilizada para o Sistema Legado, o Regional precisa criar as queries localizadas no diretório '/resources/sql/op_2_gera_xmls/legado/*'. Os SELECTs devem retornar colunas com os mesmos nomes e tipos dos respectivos SELECTs localizados no diretório '/resources/sql/op_2_gera_xmls/pje/*';
+  * Para que a operação Op_2_GeraEValidaXMLsIndividuais possa ser utilizada para o Sistema Legado, o Regional precisa criar as queries localizadas no diretório '/resources/sql/op_2_gera_xmls/legado/*'. Os SELECTs devem retornar colunas com os mesmos nomes e tipos dos respectivos SELECTs localizados no diretório '/resources/sql/op_2_gera_xmls/pje/*';
     * A implementação da query '10_consulta_deslocamento_oj.sql' é opcional para o sistema legado. Tal consulta deve ser implementada para o 1º Grau quando o parâmetro 'possui_deslocamento_oj_legado_1g' tiver o valor SIM. E deve ser implementada para o 2º Grau quando o parâmetro 'possui_deslocamento_oj_legado_2g' tiver o valor SIM. Ler os comentários a respeito dos parâmetros no arquivo `config_modelo.properties` para mais informações.
+  * ATENÇÃO!!! Para que o extrator funcione com os movimentos locais do legado, é necessário incluir os dados do movimento na tabela sgt_consulta.movimentos da base intermediária.
 
 Possíveis pontos de ajuste:
   * AnalisaAssuntosCNJ.java

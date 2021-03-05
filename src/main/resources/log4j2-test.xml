@@ -4,7 +4,8 @@
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d{ISO8601} %-5level %msg%n" />
-			<ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY" /><!-- Na tela, mostra somente um determinado nível de log -->
+			<!-- Se quiser exibir no console do eclipse somente um determinado nível de log-->
+			<ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY" />
 		</Console>
 		
 		<Routing name="RoutingAppender">
@@ -26,7 +27,15 @@
 	</Appenders>
 	
 	<Loggers>
-		<Root level="TRACE">
+
+		<!-- Para atribuir um nível de log diferente para as mensagens do hibernate -->
+		<Logger name="org.hibernate" level="WARN" additivity="false">
+			<AppenderRef ref="Console" />
+			<AppenderRef ref="RoutingAppender" />
+		</Logger>
+		
+		<!-- Para alterar o nível de log geral a ser gravado no arquivo -->
+		<Root level="INFO">
 			<AppenderRef ref="Console" />
 			<AppenderRef ref="RoutingAppender" />
 		</Root>

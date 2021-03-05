@@ -3,28 +3,30 @@ package br.jus.trt4.justica_em_numeros_2016.dto;
 public class OrgaoJulgadorDto {
 
 	public int idMunicipioIBGE;
-	public String nomeNormalizado;
-	//Informação utilizada apenas pelo sistema judicial legado
-	public int codigoServentiaJudiciariaLegado;
+	public int codigoServentia;
 	
-	public void setIdMunicipioIBGE(int idMunicipioIBGE, String nomeNormalizado) {
+	//código da serventia no CNJ utilizada apenas para o sistema legado.
+	public String descricaoServentiaJudiciariaLegado;
+
+	public void setIdMunicipioIBGE(int idMunicipioIBGE, int codigoServentia) {
 		this.idMunicipioIBGE = idMunicipioIBGE;
-		this.nomeNormalizado = nomeNormalizado;
+		this.codigoServentia = codigoServentia;
 	}
-	
-	public String getNomeNormalizado() {
-		return nomeNormalizado;
+
+	public int getCodigoServentia() {
+		return codigoServentia;
 	}
-	
+
 	public int getIdMunicipioIBGE() {
 		return idMunicipioIBGE;
 	}
-	
-	public int getCodigoServentiaJudiciariaLegado() {
-		return codigoServentiaJudiciariaLegado;
+
+	public String getDescricaoServentiaJudiciariaLegado() {
+		return descricaoServentiaJudiciariaLegado;
 	}
-	
-	public void setCodigoServentiaJudiciariaLegado(int codigo) {
-		this.codigoServentiaJudiciariaLegado = codigo;
+
+	public void setDescricaoServentiaJudiciariaLegado(String descricaoServentiaJudiciariaLegado) {
+		this.descricaoServentiaJudiciariaLegado = descricaoServentiaJudiciariaLegado;
 	}
+
 }

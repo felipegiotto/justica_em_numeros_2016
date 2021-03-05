@@ -15,7 +15,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.ProcessoSituacaoEnum;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
+import br.jus.trt4.justica_em_numeros_2016.util.DataJudUtil;
 
 /**
  * Trata as requisições HTTP recebidas pela interface de acompanhamento web
@@ -65,7 +68,7 @@ public class HttpServerRequestHandler implements Runnable {
 					// Cabeçalho
 					html = html.replaceAll("META_REFRESH", "5; url=/");
 					html = html.replaceAll("NOME_TRIBUNAL", Auxiliar.getParametroConfiguracao(Parametro.sigla_tribunal, false));
-					html = html.replaceAll("ANO_MES", Auxiliar.getParametroConfiguracao(Parametro.tipo_carga_xml, false));
+					html = html.replaceAll("ANO_MES", DataJudUtil.TIPO_CARGA);
 					
 					// Quantidades de processos por status
 					DecimalFormat decimalFormat = new DecimalFormat("###.###");

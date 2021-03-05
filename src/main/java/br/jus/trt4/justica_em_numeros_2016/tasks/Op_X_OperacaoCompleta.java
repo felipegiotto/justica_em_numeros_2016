@@ -22,8 +22,8 @@ import br.jus.trt4.justica_em_numeros_2016.tabelas_cnj.AnalisaServentiasCNJ;
  * executando as operações necessárias em sequência.
  * 
  * Ela recebe OPCIONAMENTE como argumento de execução: 
- * 		1) Um caractere ('S' ou 'N') indicando se as operações Op_4_ValidaEnviaArquivosCNJ e 
- * 		   Op_5_ConfereProtocolosCNJ serão reiniciadas caso aconteça algum erro. É recomendável usar a opção 'N', 
+ * 		1) Um caractere ('S' ou 'N') indicando se as operações Op_3_EnviaArquivosCNJ e 
+ * 		   Op_4_ConfereProtocolosCNJ serão reiniciadas caso aconteça algum erro. É recomendável usar a opção 'N', 
  * 		   pois um erro em qualquer das operações anteriores às da 4 e 5 fará com que essas operações não terminem.
  * 		   Valor padrão é 'S'. 
  * 		2) Um caractere ('S' ou 'N') indicando se a operação Op_X_OperacaoCompleta deve continuar caso aconteça algum erro em quaisquer 
@@ -50,11 +50,11 @@ public class Op_X_OperacaoCompleta {
 	// Enum com todas as operações que serão executadas.
 	public enum ControleOperacoes {
 	    
-		OP_1_BAIXAR_LISTA                  (100),
-		OP_2_GERAR_XMLS_INDIVIDUAIS        (200),
-		OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ     (400), 
-		OP_5_CONFERE_PROTOCOLOS_CNJ        (500), 
-		OP_9_ULTIMOS_BACKUPS               (900);
+		OP_1_BAIXAR_LISTA                            (100),
+		OP_2_GERAR_E_VALIDAR_XMLS_INDIVIDUAIS        (200),
+		OP_3_ENVIA_ARQUIVOS_CNJ                      (400), 
+		OP_4_CONFERE_PROTOCOLOS_CNJ                  (500), 
+		OP_9_ULTIMOS_BACKUPS                         (900);
 		
 	    private int ordem;
 	    
@@ -126,17 +126,17 @@ public class Op_X_OperacaoCompleta {
 		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_1_BAIXAR_LISTA, new Operacao() {
 			
 			@Override
-			public void run(boolean reiniciarOperacaoEmCasoErro) throws SQLException, IOException {
+			public void run(boolean reiniciarOperacaoEmCasoErro) throws Exception {
 				Op_1_BaixaListaDeNumerosDeProcessos.main(null);
 			}
 		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 
 		// CHECKLIST: 5. Execute a classe "Op_2_GeraXMLsIndividuais"
-		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_GERAR_XMLS_INDIVIDUAIS, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_2_GERAR_E_VALIDAR_XMLS_INDIVIDUAIS, new Operacao() {
 
 			@Override
 			public void run(boolean reiniciarOperacaoEmCasoErro) throws SQLException, Exception {
-				Op_2_GeraXMLsIndividuais.main(null);
+				Op_2_GeraEValidaXMLsIndividuais.main(null);
 				
 				//Remove essa exceção caso exista para que não interfira nas demais fases.
 				String agrupadorErro = "Órgãos julgadores sem serventia cadastrada no arquivo " + AnalisaServentiasCNJ.getArquivoServentias();
@@ -145,22 +145,22 @@ public class Op_X_OperacaoCompleta {
 		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 
 		// CHECKLIST: 9. Execute a classe "Op_4_ValidaEnviaArquivosCNJ", ...
-		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_4_VALIDA_ENVIA_ARQUIVOS_CNJ, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_3_ENVIA_ARQUIVOS_CNJ, new Operacao() {
 			
 			@Override
 			public void run(boolean reiniciarOperacaoEmCasoErro) throws Exception {
 				
 				// Envia os XMLs ao CNJ
-				Op_4_ValidaEnviaArquivosCNJ.validarEnviarArquivosCNJ(reiniciarOperacaoEmCasoErro);
+				Op_3_EnviaArquivosCNJ.validarEnviarArquivosCNJ(reiniciarOperacaoEmCasoErro);
 			}
 		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 		
 		// CHECKLIST: TODO
-		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_5_CONFERE_PROTOCOLOS_CNJ, new Operacao() {
+		executaOperacaoSeAindaNaoFoiExecutada(ControleOperacoes.OP_4_CONFERE_PROTOCOLOS_CNJ, new Operacao() {
 
 			@Override
 			public void run(boolean reiniciarOperacaoEmCasoErro) throws Exception {
-				Op_5_ConfereProtocolosCNJ.executarOperacaoConfereProtocolosCNJ(reiniciarOperacaoEmCasoErro);
+				Op_4_ConfereProtocolosCNJ.executarOperacaoConfereProtocolosCNJ(reiniciarOperacaoEmCasoErro);
 			}
 		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 
@@ -169,7 +169,7 @@ public class Op_X_OperacaoCompleta {
 			
 			@Override
 			public void run(boolean reiniciarOperacaoEmCasoErro) throws Exception {
-				Op_6_BackupConfiguracoes.main(null);
+				Op_5_BackupConfiguracoes.main(null);
 			}
 		}, this.reiniciarOperacaoEmCasoErro, this.continuarOperacaoCompletaEmCasoErro);
 		

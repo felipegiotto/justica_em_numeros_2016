@@ -14,6 +14,7 @@ import br.jus.cnj.modeloDeTransferenciaDeDados.ModalidadeGeneroPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoPessoa;
 import br.jus.cnj.modeloDeTransferenciaDeDados.TipoQualificacaoPessoa;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
 
 /**
  * Classe que visa contornar problema de ausência de informação de sexo no PJe.
@@ -38,7 +39,7 @@ public class IdentificaGeneroPessoa implements AutoCloseable {
 		// Abre conexão com o outro banco de dados do PJe, para localizar o sexo de pessoas que podem
 		// estar sem essa informação
 		// OBS: só busca o sexo na outra instância se o parâmetro estiver habilitado nas configurações
-		if (Auxiliar.getParametroBooleanConfiguracao(Parametro.contornar_falta_de_genero, false)) {
+		if (Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.contornar_falta_de_genero, false)) {
 			try {
 				conexaoBasePrincipalOutraInstancia = Auxiliar.getConexao(grau, baseEmAnalise);
 				

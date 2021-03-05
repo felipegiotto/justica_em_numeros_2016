@@ -13,16 +13,17 @@ import br.jus.trt4.justica_em_numeros_2016.auxiliar.AcumuladorExceptions;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.Auxiliar;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ControleAbortarOperacao;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.HttpServerStatus;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.Parametro;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoFluxo;
-import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProcessoSituacaoEnum;
 import br.jus.trt4.justica_em_numeros_2016.auxiliar.ProgressoInterfaceGrafica;
 import br.jus.trt4.justica_em_numeros_2016.enums.BaseEmAnaliseEnum;
+import br.jus.trt4.justica_em_numeros_2016.enums.Parametro;
+import br.jus.trt4.justica_em_numeros_2016.enums.ProcessoSituacaoEnum;
 
 /**
  * Novo protótipo de operação completa que trabalha como uma linha de produção, gerando os arquivos XML, enviando-os ao CNJ
  * e validando o processamentos dos protocolos, de forma paralela.
- *
+ * 
+ * TODO: Observação operação não está funcionando adequadamente
  * TODO: Conferir erro no "Conferindo protocolos no CNJ"
  * TODO: Tratar travamentos da VPN (tentar forçar fechar conexão ao banco)
  * TODO: Encerrar operação quando todos arquivos forem processados
@@ -37,7 +38,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	private HttpServerStatus serverStatus;
 	private boolean executandoOperacao1BaixandoLista;
 	private boolean executandoOperacao2Geracao;
-	private boolean executandoOperacao4Envio;
+	private boolean executandoOperacao3Envio;
 	private boolean executandoOperacao5Conferencia;
 	
 	private void iniciar() throws IOException, SQLException {
@@ -46,12 +47,13 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 		iniciarServidorWeb();
 		
 		// Baixa lista de processos do PJe ou no Legado
-		if (Auxiliar.deveProcessarPrimeiroGrau()) {
-			op1BaixarListaProcesssoSeNecessario(1);
-		}
-		if (Auxiliar.deveProcessarSegundoGrau()) {
-			op1BaixarListaProcesssoSeNecessario(2);
-		}
+		//TODO ajustar comportamento da operação 1 na operação y
+//		if (Auxiliar.deveProcessarPrimeiroGrau()) {
+//			op1BaixarListaProcesssoSeNecessario(1);
+//		}
+//		if (Auxiliar.deveProcessarSegundoGrau()) {
+//			op1BaixarListaProcesssoSeNecessario(2);
+//		}
 		
 		iniciarAtualizacaoStatusBackground();
 		iniciarOperacoesGeracaoEnvioValidacaoEmBackground();
@@ -90,37 +92,37 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	 * @throws SQLException 
 	 * @throws IOException 
 	 */
-	private void op1BaixarListaProcesssoSeNecessario(int grau) throws IOException, SQLException {
-
-		File arquivoProcessosPje = Auxiliar.getArquivoListaProcessosPje(grau);
-		File arquivoProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(grau);
-		File arquivoProcessosSistemaLegadoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoMigradosParaOPJe(grau);
-		
-		try (Op_1_BaixaListaDeNumerosDeProcessos baixaListaProcessos = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
-			if ((Auxiliar.deveProcessarProcessosPje() && !arquivoProcessosPje.exists())
-					|| (Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje() && !arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists())
-					|| (Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe() && !arquivoProcessosSistemaLegadoMigradosParaOPje.exists())) {
-				try {
-					executandoOperacao1BaixandoLista = true;
-					baixaListaProcessos.baixarListaProcessos();
-				} finally {
-					executandoOperacao1BaixandoLista = false;
-				}
-			}
-		}
-		
-		if (arquivoProcessosPje.exists()) {
-			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosPje)) {
-				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.PJE, numeroProcesso));
-			}			
-		}
-		
-		if (arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
-			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosSistemaLegadoNaoMigradosParaOPje)) {
-				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.LEGADO, numeroProcesso));
-			}
-		}
-	}
+//	private void op1BaixarListaProcesssoSeNecessario(int grau) throws IOException, SQLException {
+//
+//		File arquivoProcessosPje = Auxiliar.getArquivoListaProcessosPje(grau);
+//		File arquivoProcessosSistemaLegadoNaoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoNaoMigradosParaOPje(grau);
+//		File arquivoProcessosSistemaLegadoMigradosParaOPje = Auxiliar.getArquivoListaProcessosSistemaLegadoMigradosParaOPJe(grau);
+//		
+//		try (Op_1_BaixaListaDeNumerosDeProcessos baixaListaProcessos = new Op_1_BaixaListaDeNumerosDeProcessos(grau)) {
+//			if ((Auxiliar.deveProcessarProcessosPje() && !arquivoProcessosPje.exists())
+//					|| (Auxiliar.deveProcessarProcessosSistemaLegadoNaoMigradosParaOPje() && !arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists())
+//					|| (Auxiliar.deveProcessarProcessosSistemaLegadoMigradosParaOPJe() && !arquivoProcessosSistemaLegadoMigradosParaOPje.exists())) {
+//				try {
+//					executandoOperacao1BaixandoLista = true;
+//					baixaListaProcessos.baixarListaProcessos();
+//				} finally {
+//					executandoOperacao1BaixandoLista = false;
+//				}
+//			}
+//		}
+//		
+//		if (arquivoProcessosPje.exists()) {
+//			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosPje)) {
+//				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.PJE, numeroProcesso));
+//			}			
+//		}
+//		
+//		if (arquivoProcessosSistemaLegadoNaoMigradosParaOPje.exists()) {
+//			for (String numeroProcesso : Auxiliar.carregarListaProcessosDoArquivo(arquivoProcessosSistemaLegadoNaoMigradosParaOPje)) {
+//				processosFluxos.add(new ProcessoFluxo(grau, BaseEmAnaliseEnum.LEGADO, numeroProcesso));
+//			}
+//		}
+//	}
 	
 	/**
 	 * Inicia uma thread, em background, que ficará monitorando as alterações nos status dos processos
@@ -159,7 +161,8 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				// TODO: Somente instanciar esses objetos se realmente existirem processos na fase correta (FILA)
 				try {
 					this.executandoOperacao2Geracao = true;
-					Op_2_GeraXMLsIndividuais.executarOperacaoGeracaoXML(false);
+					Op_2_GeraEValidaXMLsIndividuais baixaDados = new Op_2_GeraEValidaXMLsIndividuais();
+					baixaDados.executarOperacaoGeracaoXML();
 				} catch (Exception e) {
 					ControleAbortarOperacao.instance().aguardarTempoEnquantoNaoEncerrado(10);
 				} finally {
@@ -183,13 +186,13 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				
 				if (isAlgumProcessoComStatus(ProcessoSituacaoEnum.XML_GERADO)) {
 					try {
-						this.executandoOperacao4Envio = true;
-						Op_4_ValidaEnviaArquivosCNJ operacao4Envia = new Op_4_ValidaEnviaArquivosCNJ();
-						operacao4Envia.localizarEnviarXMLsAoCNJ();
+						this.executandoOperacao3Envio = true;
+						Op_3_EnviaArquivosCNJ operacao3Envia = new Op_3_EnviaArquivosCNJ();
+						operacao3Envia.localizarEnviarXMLsAoCNJ();
 					} catch (Exception e) {
 						LOGGER.error("Erro enviando dados ao CNJ: " + e.getLocalizedMessage(), e);
 					} finally {
-						this.executandoOperacao4Envio = false;
+						this.executandoOperacao3Envio = false;
 					}
 				}
 				
@@ -213,9 +216,8 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 				LOGGER.info("Início da conferência de protocolos enviados.");
 				try {
 					this.executandoOperacao5Conferencia = true;
-					Op_5_ConfereProtocolosCNJ operacao = new Op_5_ConfereProtocolosCNJ();
-					operacao.localizarProtocolosConsultarNoCNJ();
-					operacao.gravarTotalProtocolosRecusados();
+					Op_4_ConfereProtocolosCNJ operacao = new Op_4_ConfereProtocolosCNJ();
+					operacao.consultarProtocolosCNJ();
 					
 					AcumuladorExceptions.instance().removerException("Conferência de protocolos no CNJ");
 				} catch (Exception e) {
@@ -273,7 +275,7 @@ public class Op_Y_OperacaoFluxoContinuo implements AutoCloseable {
 	}
 	
 	public boolean isExecutandoOperacao4Envio() {
-		return executandoOperacao4Envio;
+		return executandoOperacao3Envio;
 	}
 	
 	public boolean isExecutandoOperacao1BaixandoLista() {

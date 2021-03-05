@@ -1,10 +1,10 @@
 package br.jus.trt4.justica_em_numeros_2016.auxiliar;
 
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_1_BaixaListaDeNumerosDeProcessos;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraXMLsIndividuais;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ValidaEnviaArquivosCNJ;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_5_ConfereProtocolosCNJ;
-import br.jus.trt4.justica_em_numeros_2016.tasks.Op_6_BackupConfiguracoes;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_2_GeraEValidaXMLsIndividuais;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_3_EnviaArquivosCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_4_ConfereProtocolosCNJ;
+import br.jus.trt4.justica_em_numeros_2016.tasks.Op_5_BackupConfiguracoes;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_X_OperacaoCompleta;
 import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
 
@@ -16,7 +16,7 @@ import br.jus.trt4.justica_em_numeros_2016.tasks.Op_Y_OperacaoFluxoContinuo;
  * 		2) Tipo de carga XML , podendo ser COMPLETA, MENSAL, TODOS_COM_MOVIMENTACOES, TESTES e PROCESSO.
  *   	3) Mês e ano no formato YYYY-MM , indicando o período da carga mensal. O ano pode ter os valores entre 2000 e 2049 
  *   	   e o mês entre 01 e 12. Se a carga for de outro tipo, pode preencher com qualquer valor em outro formato.
- *		4) Caractere (S, N) indicando se as operações Op_4_ValidaEnviaArquivosCNJ e Op_5_ConfereProtocolosCNJ
+ *		4) Caractere (S, N) indicando se as operações Op_3_EnviaArquivosCNJ e Op_4_ConfereProtocolosCNJ
  *		   serão reiniciadas caso aconteça algum erro. Valor padrão: N.
  *		5) Caractere (S, N) indicando se a operação Op_X_OperacaoCompleta deve continuar caso aconteça algum erro em quaisquer 
  *		   das operações. Dessa forma se acontecer qualquer erro não impeditivo nas operações 1 e 2, o processo nunca será concluído.
@@ -45,11 +45,10 @@ public class MainClass {
 		} else {
 			System.out.println("Digite código da operação a ser executada:");
 			System.out.println("1: BaixaListaDeNumerosDeProcessos");
-			System.out.println("2: GeraXMLsIndividuais");
-			System.out.println("3: DESATIVADO: UnificaArquivosXML");
-			System.out.println("4: ValidaEnviaArquivosCNJ");
-			System.out.println("5: ConfereProtocolosCNJ");
-			System.out.println("6: BackupConfiguracoes");
+			System.out.println("2: GeraEValidaXMLsIndividuais");
+			System.out.println("3: EnviaArquivosCNJ");
+			System.out.println("4: ConfereProtocolosCNJ");
+			System.out.println("5: BackupConfiguracoes");
 			System.out.println("X: OperacaoCompleta");
 			System.out.println("Y: Nova operação completa (protótipo Op_Y_OperacaoFluxoContinuo)");
 			opcao = Auxiliar.readStdin().toUpperCase();
@@ -63,16 +62,16 @@ public class MainClass {
 			Op_1_BaixaListaDeNumerosDeProcessos.main(null);
 			break;
 		case "2":
-			Op_2_GeraXMLsIndividuais.main(null);
+			Op_2_GeraEValidaXMLsIndividuais.main(null);
+			break;
+		case "3":
+			Op_3_EnviaArquivosCNJ.main(new String [] {reiniciarOperacaoEmCasoErro});
 			break;
 		case "4":
-			Op_4_ValidaEnviaArquivosCNJ.main(new String [] {reiniciarOperacaoEmCasoErro});
+			Op_4_ConfereProtocolosCNJ.main(new String [] {reiniciarOperacaoEmCasoErro});
 			break;
 		case "5":
-			Op_5_ConfereProtocolosCNJ.main(new String [] {reiniciarOperacaoEmCasoErro});
-			break;
-		case "6":
-			Op_6_BackupConfiguracoes.main(null);
+			Op_5_BackupConfiguracoes.main(null);
 			break;
 		case "X":
 			Op_X_OperacaoCompleta.main(new String [] {reiniciarOperacaoEmCasoErro, continuarOperacaoCompletaEmCasoErro});
