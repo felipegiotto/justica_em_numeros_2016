@@ -1165,7 +1165,7 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 		if(processoJudicial.getMovimento().size() == 0) {
 			LOGGER.error(String.format("Processo %s do %s° grau não possui nenhum movimento associado. Verifique se ele tem movimentos ativos "
 					+ "(tb_evento.in_ativo  = 'S') e se ele não foi descartado por causa do parâmetro "
-					+ "descartar_movimentos_ausentes_de_para_cnj.", processo.getNumeroProcesso(), processo.getNumeroInstancia()));
+					+ "descartar_movimentos_pje_ausentes_de_para_cnj.", processo.getNumeroProcesso(), processo.getNumeroInstancia()));
 		}
 
 		return processoJudicial;
@@ -1683,14 +1683,13 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 			// OBS: os complementos só existem no MovimentoNacional
 			TipoMovimentoNacional movimentoNacional = movimento.getMovimentoNacional();
 			
-			// Se o parâmetro descartar_movimentos_ausentes_de_para_cnj tiver o valor SIM, apenas movimentos mapeados 
-			// no DE-PARA do CNJ serão mantidos. No caso dos movimentos do legado, o parâmetro incluir_todos_movimentos_base_legado
-			// desconsidera o valor daquele parâmetro. 
-			boolean descartarMovimentosAusentesDeParaCNJ = Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.descartar_movimentos_ausentes_de_para_cnj, false);
+			// Se o parâmetro descartar_movimentos_pje_ausentes_de_para_cnj tiver o valor SIM, apenas movimentos mapeados 
+			// no DE-PARA do CNJ serão mantidos.
+			boolean descartarMovimentosAusentesDeParaCNJ = Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.descartar_movimentos_pje_ausentes_de_para_cnj, false);
 			
-			boolean incluirTodosMovimentosLegado = Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.incluir_todos_movimentos_base_legado, false);
+			//TODO Criar parâmetro para escolher entre incluir ou excluir movimento local 
 			if (!descartarMovimentosAusentesDeParaCNJ || (movimentoNacional != null)
-					|| (incluirTodosMovimentosLegado && baseEmAnalise.isBaseLegado())) {
+					|| (baseEmAnalise.isBaseLegado())) {
 				movimentos.add(movimento);
 			} 
 
@@ -1717,7 +1716,12 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 						sb.append(":");
 						sb.append(complementoDto.getNome());
 						String codigoComplemento = complementoDto.getCodigoComplemento();
-						if (!StringUtils.isBlank(codigoComplemento)) {
+
+						//Só inclui o código do complemento caso ele não estiver vazio, E
+						//ele for tabelado OU o parâmetro incluir_codigo_complemento_tipos_identificador_e_livre for SIM    
+						if (!StringUtils.isBlank(codigoComplemento) && 
+								( codComplementoTabelado != null ||
+									Auxiliar.getParametroBooleanConfiguracaoComValorPadrao(Parametro.incluir_codigo_complemento_tipos_identificador_e_livre, true))) {
 							sb.append(":");
 							sb.append(codigoComplemento);
 						}
