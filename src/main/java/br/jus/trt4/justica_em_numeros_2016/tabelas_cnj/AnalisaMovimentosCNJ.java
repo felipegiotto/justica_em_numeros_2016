@@ -252,13 +252,15 @@ public class AnalisaMovimentosCNJ {
 					movimentoDto.getComplementos().add(complementoDto);
 					
 					if((complementoDto.getCodigoComplemento() == null && TipoTipoComplemento.TABELADO.equals(complementoCNJ.getTipoTipoComplemento())))  {
-						LOGGER.trace(String.format("O complemento tabelado %s (%s) do movimento %s foi mapeado com o seu "
+						LOGGER.trace(String.format("O complemento tabelado %s (%s) do movimento %s (id=%s) processo %s %sº Grau foi mapeado com o seu "
 								+ "CÓDIGO de complemento igual a nulo.", complementoDto.getCodigoTipoComplemento(), 
-								complementoDto.getNome(), movimentoCNJ.getCodigoMovimento()));
+								complementoDto.getNome(), movimentoCNJ.getCodigoMovimento(), movimentoDto.getIdProcessoEvento(), 
+								processo.getNumeroProcesso(), processo.getNumeroInstancia()));
 					} else if (complementoDto.getValor() == null && TipoTipoComplemento.IDENTIFICADOR.equals(complementoCNJ.getTipoTipoComplemento())){
-						LOGGER.trace(String.format("O complemento identificador %s (%s) do movimento %s foi mapeado com o seu "
+						LOGGER.trace(String.format("O complemento identificador %s (%s) do movimento %s (id=%s) processo %s %sº Grau foi mapeado com o seu "
 								+ "VALOR de complemento igual a nulo.", complementoDto.getCodigoTipoComplemento(), 
-								complementoDto.getNome(), movimentoCNJ.getCodigoMovimento()));
+								complementoDto.getNome(), movimentoCNJ.getCodigoMovimento(), movimentoDto.getIdProcessoEvento(), 
+								processo.getNumeroProcesso(), processo.getNumeroInstancia()));
 					}
 				}
 			}

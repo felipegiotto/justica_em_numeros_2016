@@ -1944,6 +1944,10 @@ public class Op_2_GeraEValidaXMLsIndividuais implements Closeable {
 			AcumuladorExceptions.instance().removerException(origem);
 		} catch (Exception ex) {
 			AcumuladorExceptions.instance().adicionarException(origem, ex.getLocalizedMessage(), ex, true);
+			
+			if(analisaAssuntosCNJ == null) {
+				throw new RuntimeException("Não foi possível instanciar o analisador de assuntos analisaAssuntosCNJ");
+			}
 		}
 		
 		// Objeto que identificará os movimentos processuais das tabelas nacionais do CNJ

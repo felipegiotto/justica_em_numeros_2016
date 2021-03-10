@@ -112,7 +112,8 @@ public class AnalisaAssuntosCNJ implements AutoCloseable {
 			if (this.assuntoProcessualPadrao != null) {
 				this.assuntoProcessualPadrao.setPrincipal(true);
 			} else {
-			    throw new DataJudException("Foi definido um assunto padrão com código '" + codigoAssuntoPadraoString + "', mas esse assunto não foi localizado no PJe!");
+			    throw new DataJudException("Foi definido um assunto padrão com código '" + codigoAssuntoPadraoString + "', mas esse assunto "
+			    		+ "não foi localizado na planinha assuntos_cnj.csv de assuntos nacionais nem como assunto local no PJe!");
 			}
 		}
 	}
