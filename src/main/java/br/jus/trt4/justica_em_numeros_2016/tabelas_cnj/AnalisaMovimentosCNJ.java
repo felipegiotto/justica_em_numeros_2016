@@ -253,14 +253,18 @@ public class AnalisaMovimentosCNJ {
 					
 					if((complementoDto.getCodigoComplemento() == null && TipoTipoComplemento.TABELADO.equals(complementoCNJ.getTipoTipoComplemento())))  {
 						LOGGER.trace(String.format("O complemento tabelado %s (%s) do movimento %s (id=%s) processo %s %sº Grau foi mapeado com o seu "
-								+ "CÓDIGO de complemento igual a nulo.", complementoDto.getCodigoTipoComplemento(), 
+								+ "CÓDIGO de complemento igual a nulo. O mapeamento será descartado.", complementoDto.getCodigoTipoComplemento(), 
 								complementoDto.getNome(), movimentoCNJ.getCodigoMovimento(), movimentoDto.getIdProcessoEvento(), 
 								processo.getNumeroProcesso(), processo.getNumeroInstancia()));
+						//Descartando movimento
+						recuperarMovimentoComplementosCNJ = Optional.empty();
 					} else if (complementoDto.getValor() == null && TipoTipoComplemento.IDENTIFICADOR.equals(complementoCNJ.getTipoTipoComplemento())){
 						LOGGER.trace(String.format("O complemento identificador %s (%s) do movimento %s (id=%s) processo %s %sº Grau foi mapeado com o seu "
-								+ "VALOR de complemento igual a nulo.", complementoDto.getCodigoTipoComplemento(), 
+								+ "VALOR de complemento igual a nulo. O mapeamento será descartado.", complementoDto.getCodigoTipoComplemento(), 
 								complementoDto.getNome(), movimentoCNJ.getCodigoMovimento(), movimentoDto.getIdProcessoEvento(), 
 								processo.getNumeroProcesso(), processo.getNumeroInstancia()));
+						//Descartando movimento
+						recuperarMovimentoComplementosCNJ = Optional.empty();
 					}
 				}
 			}
